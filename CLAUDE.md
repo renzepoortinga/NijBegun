@@ -94,9 +94,20 @@ Inladen (VABI-export/dossier/CSV + huidige Standaard + foto voorkant/huisnummer)
 visueel ventilatieplan ventilatie/ventilatieplan_svg.py + Beoordelingsformulier-check + fotochecklist) ->
 Export-zip. Ingebouwde GUIDE (/guide) + per-stap hints met de kennisbank-eisen. End-to-end getest (test-client).
 Nij Begun-eisen verwerkt uit de kennisbank (docs/nijbegun-kennisbank-eisen.md): vuistregels ventilatie,
-Beoordelingsformulier (= indien-check), fotowerkwijze, Standaard-vs-30%-ISDE-regel. Roadmap: catalogus-API live
-(api_client tegen api.nij-begun.project.abl.nu; nu catalog.json) · ventilatieplan op echte plattegrond · output
-matchen aan de voorbeeldplan-PDF's (1930/70/93/2002).
+Beoordelingsformulier (= indien-check), fotowerkwijze, Standaard-vs-30%-ISDE-regel.
+CATALOGUS-API LIVE (25-6, geverifieerd): catalog/api_client.py --refresh haalt nu de ECHTE Nij Begun-API op
+(api.nij-begun.project.abl.nu, GEEN auth; JSON:API GET /api/v1/measures; spec /apipie.json?type=swagger). 192
+measures -> 287 catalogrijen (regularCosts=m²-brackets, contractorValuePerUnit=incl btw; additionalCosts=X-codes,
+gededupe). Prijzen matchen catalog.json (V1-1-A1 23.09≈23.0867). catalog.json blijft fallback; --refresh draait
+LOKAAL (sandbox=geen internet). Offline mapping-test in de suite. BOUWJAARKLASSE-OPNAMEGIDS (workflow):
+docs/bouwjaarklasse-opnamegids.md = bouwfysica per tijdvak (constructie/installaties/risico's/let-op/maatregelen).
+GITHUB: repo is git-init + .gitignore (geheimen/config.json/out/.epa uitgesloten) + commit op 'main'; pushen doet
+Renze lokaal (gh niet geinstalleerd; sandbox=geen net). MAGICPLAN (25-6 live geverifieerd): Object/Constructies/
+Installaties gepubliceerd + compleet (oriëntatie voorgevel, Schilddak+Lessenaarsdak, rekenzone per installatie,
+7 foto's, PV-detail, element-overrides Rekenzone/Rc-bron/Isolatiedikte). 2 gaten in form-als-code (additions.json),
+nog te pushen via push_forms.bat: 'Meerdere PV-systemen?' + 'Tweede opwekker (hybride)?'.
+Roadmap (nog open): ventilatieplan op echte MagicPlan-plattegrond · output 1-op-1 matchen aan de voorbeeldplan-
+PDF's (1930/70/93/2002; folder 206000101610) · 30%-ISDE-bucket apart in de plan-output.
 DAKTYPES + REKENZONE (25-6): core/geometry.py + parser kennen nu naast zadeldak ook LESSENAARSDAK (1 schuin
 vlak=footprint/cos) en SCHILDDAK/hip (alle zijden dak, GEEN verticale kopgevel; totaal=footprint/cos verdeeld
 over de zijden, geflagd voor Vabi-verfijning). Type dak-form heeft Zadeldak/Lessenaarsdak/Schilddak/Plat dak.
