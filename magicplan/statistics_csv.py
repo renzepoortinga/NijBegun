@@ -381,22 +381,50 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
 
     # ---- schil opbouwen ----
     schil = []
-    isol = _undot(G("Isolatie aanwezig")) or "Onbekend"
-    dikte_onbekend = (_undot(G("Isolatiedikte onbekend")).lower() == "yes")
-    # Rc-bron per bouwdeel (form-veld). "Kwaliteitsverklaring" -> de tool VLAGT het (adviseur zet
-    # Invoer=Kwaliteitsverklaring zelf in VABI; golden rule: niet gokken). Anders opgemeten/forfaitair.
-    def _rc_bron(s):
-        s = (s or "").lower()
-        if "kwaliteitsverklaring" in s or "verklaring" in s:
-            return "Kwaliteitsverklaring"
-        if "opgemeten" in s:
-            return "Opgemeten dikte"
-        if "onbekend" in s:
-            return "Dikte onbekend"
-        return "Dikte onbekend" if dikte_onbekend else ""
-    gevel_rc = _rc_bron(_undot(G("Rc-bron gevel") or G("Rc bron gevel") or G("rc_bron")))
-    vloer_rc = _rc_bron(_undot(G("Rc-bron vloer") or G("Rc bron vloer") or G("vloer_rc_bron")))
-    dak_rc = _rc_bron(_undot(G("Rc-bron dak") or G("Rc bron dak") or G("dak_rc_bron")))
+
+    # VABI-beslisboom per bouwdeel (nieuwe Constructies-form): Invoer (Kwaliteitsverklaring/Beslisschema)
+    # -> Isolatie aanwezig? (Ja/Nee/Onbekend) -> isolatiedikte onbekend?/bouwjaar/dikte (mm)/spouw.
+    # "Kwaliteitsverklaring" -> de tool VLAGT het (adviseur zet Invoer zelf in VABI; golden rule: niet gokken).
+    # Valt terug op de oude platte velden (Rc-bron <deel> / Isolatie aanwezig) zodat oudere exports blijven werken.
+    def _bouwdeel(prefix, oud_rcveld="", oud_isolveld="", oud_begrveld=""):
+        gv = lambda *names: next((v for v in (_undot(G(n)) for n in names) if v), "")
+        invoer = gv(prefix + " - invoer", prefix + " - invoer (override)")
+        iso = gv(prefix + " - isolatie aanwezig?")
+        dikte_onb = gv(prefix + " - isolatiedikte onbekend?").lower() in ("ja", "yes", "true")
+        dikte = _f(G(prefix + " - isolatiedikte (mm)"))
+        bouwjaar = gv(prefix + " - bouwjaar", prefix + " - bouwjaar (onbekend)")
+        spouw_s = gv(prefix + " - spouw aanwezig?", prefix + " - spouw aanwezig (indien <40mm)?")
+        begr = gv(prefix + " - begrenzing")
+        oud_rc = _undot(G(oud_rcveld)) if oud_rcveld else ""
+        # fallback naar de oude platte velden als de nieuwe boom leeg is
+        if not (invoer or iso or dikte or bouwjaar):
+            iso = (_undot(G(oud_isolveld)) if oud_isolveld else "") or _undot(G("Isolatie aanwezig"))
+            if _undot(G("Isolatiedikte onbekend")).lower() == "yes":
+                dikte_onb = True
+        if not begr and oud_begrveld:
+            begr = _undot(G(oud_begrveld))
+        # rc_bron afleiden
+        rcl = (invoer + " " + oud_rc).lower()
+        if "kwaliteitsverklaring" in rcl or "verklaring" in rcl:
+            rc = "Kwaliteitsverklaring"
+        elif "opgemeten" in oud_rc.lower() or (dikte and not dikte_onb):
+            rc = "Opgemeten dikte"
+        elif dikte_onb or "onbekend" in (iso + " " + oud_rc).lower() or bouwjaar:
+            rc = "Dikte onbekend"
+        else:
+            rc = ""
+        spouw = None if not spouw_s else (spouw_s.lower() in ("ja", "yes", "true"))
+        return {"rc_bron": rc,
+                "isolatie": {"ja": "Ja", "nee": "Nee", "onbekend": "Onbekend"}.get(iso.lower(), iso or "Onbekend"),
+                "dikte_mm": (dikte if not dikte_onb else None),
+                "dikte_onbekend": dikte_onb, "spouw": spouw, "begrenzing": begr, "bouwjaar": bouwjaar}
+
+    g_b = _bouwdeel("Gevel", "Rc-bron gevel", "Isolatie aanwezig")
+    v_b = _bouwdeel("Vloer", "Rc-bron vloer", "", "Begrenzing (vloer)")
+    d_b = _bouwdeel("Dakvlak 1", "Rc-bron dak")
+    gevel_rc, vloer_rc, dak_rc = g_b["rc_bron"], v_b["rc_bron"], d_b["rc_bron"]
+    isol = g_b["isolatie"] or "Onbekend"          # projectdefault gevel (wand-loop gebruikt dit)
+    dikte_onbekend = g_b["dikte_onbekend"]
     # gevels per oriëntatie + ISSO 8.2 hart-op-hart-toeslag (woningtype-afhankelijk)
     n_buur = aantal_woningscheidende_wanden(woningtype)
     toeslag_tot = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, woningtype) if n_buur else 0.0
@@ -415,6 +443,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             id=gid, type="gevel", subtype="", begrenzing=begr,
             orientatie=orient, gevel_naam=gnaam, oppervlakte_m2=round(opp + extra, 2),
             isolatie_aanwezig=wand_isol, rekenzone=rz, rc_bron=gevel_rc,
+            isolatiedikte_mm=g_b["dikte_mm"], spouw_aanwezig=g_b["spouw"],
             opmerkingen=((("%sgevel" % gnaam + " | ") if gnaam else "")
                          + "binnenwerks; AVR/party-walls uitgefilterd"
                          + (" | begrenzing %s (naamconventie)" % begr if begr != "Buitenlucht" else "")
@@ -449,21 +478,22 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                      % ", ".join(sorted(set(nareken_namen))))
 
     # vloer (begane grond): begrenzing uit Schil&zone/Floor; afwijkende delen (grond/kruip/kelder) via ruimtenaam
-    vloer_begr = _undot(G("Begrenzing (vloer)")) or "Kruipruimte"
+    vloer_begr = v_b["begrenzing"] or _undot(G("Begrenzing (vloer)")) or "Kruipruimte"
     bg_floor_area = footprint_bg or _f(G("Above grade living area"))  # begane-grond-footprint (niet de meerlaagse som)
     split_tot = round(sum(vloer_split.values()), 2)
     hoofd_area = round(max(0.0, (bg_floor_area or 0.0) - split_tot), 2) if split_tot else (bg_floor_area or 0.0)
     schil.append(SchilDeel(id="vloer", type="vloer", subtype="Begane grondvloer",
                            begrenzing=vloer_begr, oppervlakte_m2=hoofd_area or 0.0,
-                           isolatie_aanwezig=isol, rekenzone=1,
+                           isolatie_aanwezig=v_b["isolatie"], rekenzone=1,
+                           isolatiedikte_mm=v_b["dikte_mm"],
                            perimeter_m=geo.perimeter_m,   # randverlies begane-grondvloer (= buitenomtrek)
                            rc_bron=vloer_rc,
                            opmerkingen="opp = begane-grond-footprint (benadering); verifieer in Vabi"))
     for rb, rba in sorted(vloer_split.items()):
         schil.append(SchilDeel(id="vloer-%s" % rb[:4].lower().replace(" ", ""), type="vloer",
                                subtype="Begane grondvloer (deel)", begrenzing=rb, oppervlakte_m2=rba,
-                               isolatie_aanwezig=isol, rekenzone=1,
-                               rc_bron=vloer_rc,
+                               isolatie_aanwezig=v_b["isolatie"], rekenzone=1,
+                               isolatiedikte_mm=v_b["dikte_mm"], rc_bron=vloer_rc,
                                opmerkingen="vloerdeel uit ruimtenaam (%s); room-based, verifieer m²-verdeling in Vabi" % rb))
     if vloer_split:
         notes.append("Begane grond gesplitst per begrenzing op basis van ruimtenamen: %s (hoofdvloer %s = %.1f m²). "
@@ -499,7 +529,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             id="%s-%s-%s" % (v["kind"], (v.get("type") or "")[:4], v["orientatie"] or "x"),
             type=v["kind"], subtype=v.get("type", ""), begrenzing="Buitenlucht",
             orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
-            isolatie_aanwezig=isol, rekenzone=1, rc_bron=dak_rc,
+            isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
             opmerkingen="dak-per-vlak uit opname (%s, helling %.0f gr)" % (type_dak, helling)))
         dak_done = True
     if dakvlakken and ("schild" in tl or "tent" in tl):
@@ -508,13 +538,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     if plat_m2:
         schil.append(SchilDeel(id="dak-plat", type="dak", subtype="plat", begrenzing="Buitenlucht",
                                orientatie=plat_or or "", oppervlakte_m2=plat_m2, hellingshoek=0,
-                               isolatie_aanwezig=isol, rekenzone=1, rc_bron=dak_rc,
+                               isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
                                opmerkingen="plat dak (bv. erker)"))
         dak_done = True
     if not dak_done:
         schil.append(SchilDeel(id="dak", type="dak", subtype=type_dak, begrenzing="Buitenlucht",
                                orientatie="", oppervlakte_m2=bg_floor_area or 0.0,
-                               isolatie_aanwezig=isol, rekenzone=1, rc_bron=dak_rc,
+                               isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
                                opmerkingen="HELLINGSHOEK/dakvlakken ONTBREKEN -> dak-m2 = footprint (fallback)"))
         notes.append("Dak: geen hellingshoek/dakvlakken in de opname -> footprint-fallback. Voeg dak-velden toe "
                      "(Dak vloerbreedte/nokhoogte/knieschothoogte of Hellingshoek dak + oriëntaties schuine zijden).")

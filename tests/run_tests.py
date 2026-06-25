@@ -812,5 +812,29 @@ except Exception as _e:
     check("api-map: mapper draait zonder fout", False)
     print("     " + repr(_e)[:160])
 
+print("\n37. Parser: VABI-beslisboom per bouwdeel (nieuwe Constructies-form)")
+try:
+    import tempfile as _tf2
+    from magicplan.statistics_csv import build_dossier as _bd2
+    _boomcsv = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\n"
+                "Gevelhoogte (m),5.4\n"
+                "Gevel - invoer,Beslisschema\nGevel - isolatie aanwezig?,Ja\nGevel - isolatiedikte onbekend?,Nee\n"
+                "Gevel - isolatiedikte (mm),80\nGevel - begrenzing,Buitenlucht\n"
+                "Vloer - invoer,Kwaliteitsverklaring\nVloer - begrenzing,Kruipruimte\n\n"
+                "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+                "Ground Floor,40,2.50 m,Kruipruimte\n\n"
+                "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+                "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _bp = _tf2.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _bp.write(_boomcsv); _bp.close()
+    _bdo, _bn = _bd2(_bp.name)
+    _gev = next((s for s in _bdo.schil if s.type == "gevel"), None)
+    _vlo = next((s for s in _bdo.schil if s.type == "vloer"), None)
+    check("boom: gevel rc_bron=Opgemeten dikte (80mm bekend)", _gev is not None and _gev.rc_bron == "Opgemeten dikte")
+    check("boom: gevel isolatie=Ja + dikte 80mm",
+          _gev is not None and _gev.isolatie_aanwezig == "Ja" and _gev.isolatiedikte_mm == 80.0)
+    check("boom: vloer rc_bron=Kwaliteitsverklaring (Invoer=KV)", _vlo is not None and _vlo.rc_bron == "Kwaliteitsverklaring")
+except Exception as _e:
+    check("boom: parser draait zonder fout", False); print("     " + repr(_e)[:160])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
