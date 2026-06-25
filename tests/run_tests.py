@@ -171,8 +171,9 @@ from catalog.api_client import map_measures_to_catalog
 from engine.measure_engine import select_core
 _raw = json.load(open(os.path.join(HERE, "fixtures", "nijbegun_catalog_response.json"), encoding="utf-8"))
 _capi = map_measures_to_catalog(_raw)
-check("catalog-api versie gepind", _capi["versie"] == "V3_Q2_03062026")
-check("catalog-api aantal maatregelen", _capi["aantal_maatregelen"] == 6, str(_capi["aantal_maatregelen"]))
+check("catalog-api versie-label (live-datum)", _capi["versie"].startswith("api"))
+check("catalog-api aantal maatregelen (gevlakt: 2 brackets + X7 + bodem + dak + X1)",
+      _capi["aantal_maatregelen"] == 6, str(_capi["aantal_maatregelen"]))
 check("catalog-api incl-btw afgeleid", all(m.get("prijs_per_eenheid_incl_btw") for m in _capi["maatregelen"]))
 check("catalog-api werkt in engine", select_core(_capi, ["V1-1"], ["spouwmuurisolatie"], 30.0) is not None)
 
@@ -773,6 +774,42 @@ try:
     check("webapp: Beoordelingscheck spiegelt kennisbank (>=6 punten)", len(_bd) >= 6)
 except Exception as _e:
     check("webapp: laadt zonder fout", False)
+    print("     " + repr(_e)[:160])
+
+print("\n36. Catalogus-API live-mapping (JSON:API -> catalog.json)")
+try:
+    from catalog.api_client import map_measures_to_catalog
+    _raw = {"data": [
+        {"id": "V1-1-A1", "type": "measure", "attributes": {
+            "name": "Spouwmuurisolatie 60", "unit": "m²", "rcValue": 1.7, "thicknessInMm": 60,
+            "isBiobased": False,
+            "regularCosts": [
+                {"id": "V1-1-A1", "type": "cost", "attributes": {"contractorValuePerUnit": 23.09,
+                 "diyValuePerUnit": 18.8, "minUnits": 0, "maxUnits": 45, "unit": "m²"}},
+                {"id": "V1-1-A2", "type": "cost", "attributes": {"contractorValuePerUnit": 21.13,
+                 "minUnits": 45, "maxUnits": 75, "unit": "m²"}}],
+            "additionalCosts": [
+                {"id": "V1-1-X7", "type": "cost", "attributes": {"contractorValuePerUnit": 91.13,
+                 "unit": "won", "notes": "Betreft: Spouw richting dak dichtmaken van binnenuit"}}]}},
+        {"id": "V1-2-A1", "type": "measure", "attributes": {"name": "Andere", "unit": "m²",
+            "regularCosts": [{"id": "V1-2-A1", "type": "cost", "attributes": {
+                "contractorValuePerUnit": 50.0, "minUnits": 0, "maxUnits": None, "unit": "m²"}}],
+            "additionalCosts": [{"id": "V1-1-X7", "type": "cost", "attributes": {
+                "contractorValuePerUnit": 91.13, "unit": "won", "notes": "Betreft: dubbel"}}]}},
+    ]}
+    _cat = map_measures_to_catalog(_raw)
+    _ms = {m["code"]: m for m in _cat["maatregelen"]}
+    check("api-map: 4 rijen (2 brackets + 1 bracket + 1 X; gedeelde X gededupe)", len(_cat["maatregelen"]) == 4)
+    check("api-map: V1-1-A1 incl=23.09 / excl~19.08",
+          _ms["V1-1-A1"]["prijs_per_eenheid_incl_btw"] == 23.09 and abs(_ms["V1-1-A1"]["prijs_per_eenheid_excl"] - 19.0826) < 0.01)
+    check("api-map: bracket-tekst in omschrijving", "van 0 m² tot 45 m²" in _ms["V1-1-A1"]["omschrijving"])
+    check("api-map: onderdeel uit code-prefix", _ms["V1-1-A1"]["onderdeel"] == "A Gevel")
+    check("api-map: X-code 1x (gededupe over measures)",
+          sum(1 for m in _cat["maatregelen"] if m["code"] == "V1-1-X7") == 1)
+    check("api-map: 'Betreft:' uit X-notitie gestript", not _ms["V1-1-X7"]["omschrijving"].startswith("Betreft"))
+    check("api-map: extra rc_waarde meegenomen", _ms["V1-1-A1"].get("rc_waarde") == 1.7)
+except Exception as _e:
+    check("api-map: mapper draait zonder fout", False)
     print("     " + repr(_e)[:160])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
