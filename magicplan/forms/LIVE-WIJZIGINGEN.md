@@ -25,6 +25,11 @@ Invoer:  ① Kwaliteitsverklaring → 📷 Foto factuur (verplicht op form-nivea
 - **Rekenzone overal default 1**: MagicPlan kent geen veld-default → parser `_rz()` vult leeg → 1 (alleen invoeren bij overrulen).
 - **2e ventilatie + 2e tapwater**: conditionele blokken ("Tweede ventilatiesysteem?" / "Tweede tapwaterinstallatie?") naast 2e verwarming.
   Parser leest 2e tapwater (tapwater_extra) + flagt 2e ventilatie (golden rule). Tests #37–#39, 246/246 groen.
+- **Raam/paneel + Deur opgeschoond** (26-6): waren vol cruft (dubbele Type glas/Toevoerrooster + leftover wand-velden). Nu schoon:
+  Raam = Type glas (Enkel/Voorzetglas/Dubbel/HR/HR+/HR++/TripleHR/Vacuümglas/Onbekend) · Kozijnmateriaal (hout-kunststof / metaal TO / metaal niet-TO) ·
+  Toevoerrooster aanwezig?→type · Begrenzing-override · Raam/paneel-toggle. Deur = Type constructie · Type glas · Oppervlakte raam-in-deur · Kozijnmateriaal · Begrenzing.
+  **Verwijderd** (hoorde niet bij glas): isolatiedikte, Rc-bron, oriëntatie, bron, spouw. Oriëntatie + begrenzing erft een raam/deur van de moederwand (parser parent/child).
+  TODO generator-check: vabi/constructie_generate glas-enum-mapping voor HR+/HR++/TripleHR/Vacuümglas verifiëren (bij CSV-kalibratie).
 - "Gevel - project" (oude plan-groep) **leeggemaakt** (overbodig; Constructies-form dekt gevel-standaard).
 - Bouwjaar-klassen exact: Tot 1965 · 1965–74 · 1975–82 · 1983–87 · 1988–91 · 1992–2013 · 2014 · 2015–17 ·
   2018–20 (1 jan/Overig) · 2021 (1 jan/Overig).
