@@ -1,0 +1,34 @@
+# === Geheimen & persoonsgegevens (NOOIT naar GitHub) ===
+.env
+.env.*
+# config.json bevat dashboard-wachtwoord/secret + adviseur-persoonsgegevens
+config.json
+*secret*
+*credential*
+magicplan_forms_backup.json
+magicplan_fields_backup.json
+
+# === Projectdata / opnames (AVG: adressen, BAG, foto's, dossiers) ===
+out/
+
+# === Vabi/EPA-bestanden (kunnen versleuteld/persoonsgebonden zijn) ===
+*.epa
+*.epa.bak
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# === OS / editor (incl. Word/Excel tijdelijke ~$-bestanden) ===
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+~$*
+
+# === Claude/agent lokale state ===
+.claude/

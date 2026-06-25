@@ -1,0 +1,12 @@
+{
+  "_comment": "SYNTHETISCH voorbeeld van een Nij Begun catalogus-API-response, in de vorm die api_client.py defensief leest. De echte veldnamen/containers 1x bevestigen tegen out/catalog_api_raw.json en zo nodig FIELD_CANDIDATES/LIST_CONTAINERS bijstellen.",
+  "version": "V3_Q2_03062026",
+  "measures": [
+    {"code": "V1-1-A1", "description": "Spouwmuurisolatie vlokken 60 mm van 0 m² tot 45 m²", "unit": "m²", "priceExclVat": 19.665, "priceInclVat": 23.0867},
+    {"code": "V1-1-A2", "description": "Spouwmuurisolatie vlokken 60 mm van 45 m² tot 75 m²", "unit": "m²", "priceExclVat": 18.0, "priceInclVat": 21.132},
+    {"code": "V3-1-A1", "description": "Bodemisolatie van 0 m² tot 50 m²", "unit": "m²", "priceExclVat": 38.0, "priceInclVat": 45.98},
+    {"code": "V4-1-A1", "description": "Dakisolatie hellend binnenzijde", "unit": "m²", "priceExclVat": 105.0, "priceInclVat": 127.05},
+    {"code": "V2-1-A1", "description": "HR++ glas vervanging", "unit": "m²", "priceExclVat": 180.0},
+    {"code": "V6-1-X1", "description": "Kierdichtingspakket woning", "unit": "pst", "priceExclVat": 450.0, "priceInclVat": 544.5}
+  ]
+}

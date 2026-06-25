@@ -1,0 +1,83 @@
+{
+  "_comment": "SYNTHETISCH MagicPlan-plan in de v0.4-structuur: gevel/vloer/dak 'algemeen' op projectniveau (customFields); wanden leveren alleen geometrie (exterior + orientation + area); objecten = kozijnen. CONTAINER-namen (customFields/floors/walls/objects/exterior/orientation) 1x live bevestigen tegen out/plan_raw.json.",
+  "id": "demo-essenhage",
+  "customFields": [
+    {"key": "bag_vboid", "value": "0037010000368601"},
+    {"key": "postcode", "value": "9501TP"},
+    {"key": "huisnummer", "value": "32"},
+    {"key": "bouwjaar", "value": 1979},
+    {"key": "woningtype", "value": "Tussenwoning"},
+    {"key": "type_advies", "value": "Basis (B)"},
+    {"key": "qv10_gemeten", "value": false},
+    {"key": "bewijslast", "value": "Geen"},
+    {"key": "bouwlagen", "value": 2},
+    {"key": "ag_m2", "value": 57.70},
+
+    {"key": "geveltype", "value": "Spouwmuur"},
+    {"key": "gevel_begrenzing", "value": "Buitenlucht"},
+    {"key": "spouw_aanwezig", "value": true},
+    {"key": "isolatie_aanwezig", "value": "Nee"},
+    {"key": "rc_bron", "value": "Dikte onbekend"},
+    {"key": "gevel_afwijking", "value": "zijgevels O/W = adiabatisch (woningscheidend)"},
+
+    {"key": "vloerconstructie", "value": "Houten vloer"},
+    {"key": "vloer_begrenzing", "value": "Kruipruimte"},
+    {"key": "vloer_iso", "value": "Nee"},
+
+    {"key": "daktype", "value": "Hellend dak (binnenzijde)"},
+    {"key": "dak_iso", "value": "Nee"},
+    {"key": "dakhelling", "value": 45},
+    {"key": "rietdak", "value": false},
+
+    {"key": "vent_systeem", "value": "A Natuurlijke ventilatie"},
+    {"key": "vent_systeem_soort", "value": "Individueel"},
+    {"key": "verw_systeem", "value": "Individueel"},
+    {"key": "verw_type_opwekker", "value": "Gasgestookte ketel"},
+    {"key": "verw_subtype", "value": "HR107"},
+    {"key": "verw_afgifte", "value": "Radiatoren / convectoren"},
+    {"key": "verw_aanvoertemp", "value": "90/70 C"},
+    {"key": "tap_type_toestel", "value": "Gasgestookt combitoestel"},
+    {"key": "tap_cw_klasse", "value": "CW-4/5/6"},
+    {"key": "koeling_aanwezig", "value": false}
+  ],
+  "floors": [
+    {
+      "name": "Begane grond", "area": 56.31, "height": 2.61,
+      "rooms": [
+        {"name": "Woonkamer", "area": 30.0},
+        {"name": "Keuken", "area": 8.0},
+        {"name": "Hal", "area": 6.0},
+        {"name": "Toilet", "area": 1.5}
+      ],
+      "walls": [
+        {"area": 24.0, "exterior": true, "orientation": "Z",
+         "objects": [
+           {"area": 13.54, "customFields": [
+             {"key": "element", "value": "Raam"},
+             {"key": "kozijnmateriaal", "value": "Hout"},
+             {"key": "glastype", "value": "Dubbel"},
+             {"key": "u_glas", "value": 2.9}
+           ]}
+         ]},
+        {"area": 24.0, "exterior": true, "orientation": "N", "objects": []},
+        {"area": 12.0, "exterior": false, "orientation": "", "objects": []}
+      ]
+    },
+    {
+      "name": "Verdieping 1", "area": 50.0, "height": 2.55,
+      "rooms": [
+        {"name": "Slaapkamer 1", "area": 12.0},
+        {"name": "Slaapkamer 2", "area": 9.0},
+        {"name": "Badkamer", "area": 5.0}
+      ],
+      "walls": [
+        {"area": 24.0, "exterior": true, "orientation": "Z", "objects": []},
+        {"area": 24.0, "exterior": true, "orientation": "N", "objects": []}
+      ]
+    }
+  ],
+  "photos": [
+    {"file": "huisnummer.jpg", "tag": "huisnummer"},
+    {"file": "voorgevel.jpg", "tag": "voorblad"}
+  ]
+}

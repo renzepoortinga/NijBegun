@@ -1,0 +1,216 @@
+{
+  "schema_version": "0.2",
+  "identificatie": {
+    "bag_vboid": "0037010000368601",
+    "straat": "Essenhage",
+    "huisnummer": "32",
+    "postcode": "9501TP",
+    "plaats": "Stadskanaal",
+    "bouwjaar": 1979,
+    "renovatiejaar": null,
+    "renovatiejaar_toelichting": "",
+    "woningtype": "Tussenwoning",
+    "aantal_bouwlagen": 2
+  },
+  "adviseur": {
+    "naam": "Renze Poortinga",
+    "bedrijf": "Poortinga Energieadvies",
+    "telefoon": "0616691927",
+    "email": "renze@poortinga.org",
+    "registratie": ""
+  },
+  "opname": {
+    "opnamedatum": "2026-02-24",
+    "rapportagedatum": "2026-03-10",
+    "type_advies": "Basis",
+    "qv10_gemeten": false,
+    "qv10_waarde": null,
+    "bewijslast": "Geen"
+  },
+  "geometrie": {
+    "gebruiksoppervlakte_ag_m2": 57.7,
+    "verwarmd_volume_m3": 198.59,
+    "perimeter_m": 40.72,
+    "vloeren": [
+      {
+        "naam": "Begane grond",
+        "oppervlakte_m2": 56.31,
+        "hoogte_m": 2.61
+      }
+    ]
+  },
+  "schil": [
+    {
+      "id": "gevel-voor",
+      "type": "gevel",
+      "subtype": "Spouwmuur",
+      "begrenzing": "Buitenlucht",
+      "orientatie": "Z",
+      "oppervlakte_m2": 24.0,
+      "isolatie_aanwezig": "Niet",
+      "rc_huidig": 0.43,
+      "u_huidig": null,
+      "spouw_aanwezig": true,
+      "isolatiedikte_mm": null,
+      "glastype": "",
+      "kozijnmateriaal": "",
+      "rc_bron": "Forfaitair bouwjaar",
+      "opmerkingen": ""
+    },
+    {
+      "id": "gevel-achter",
+      "type": "gevel",
+      "subtype": "Spouwmuur",
+      "begrenzing": "Buitenlucht",
+      "orientatie": "N",
+      "oppervlakte_m2": 24.0,
+      "isolatie_aanwezig": "Niet",
+      "rc_huidig": 0.43,
+      "u_huidig": null,
+      "spouw_aanwezig": true,
+      "isolatiedikte_mm": null,
+      "glastype": "",
+      "kozijnmateriaal": "",
+      "rc_bron": "Forfaitair bouwjaar",
+      "opmerkingen": ""
+    },
+    {
+      "id": "vloer-bg",
+      "type": "vloer",
+      "subtype": "Begane grondvloer",
+      "begrenzing": "Grond",
+      "orientatie": "horizontaal",
+      "oppervlakte_m2": 56.31,
+      "isolatie_aanwezig": "Niet",
+      "rc_huidig": 0.15,
+      "u_huidig": null,
+      "spouw_aanwezig": null,
+      "isolatiedikte_mm": null,
+      "glastype": "",
+      "kozijnmateriaal": "",
+      "rc_bron": "Forfaitair bouwjaar",
+      "opmerkingen": ""
+    },
+    {
+      "id": "dak",
+      "type": "dak",
+      "subtype": "Hellend dak",
+      "begrenzing": "Buitenlucht",
+      "orientatie": "horizontaal",
+      "oppervlakte_m2": 60.0,
+      "isolatie_aanwezig": "Niet",
+      "rc_huidig": 0.86,
+      "u_huidig": null,
+      "spouw_aanwezig": null,
+      "isolatiedikte_mm": null,
+      "glastype": "",
+      "kozijnmateriaal": "",
+      "rc_bron": "Forfaitair bouwjaar",
+      "opmerkingen": ""
+    },
+    {
+      "id": "raam-z",
+      "type": "kozijn",
+      "subtype": "Raam",
+      "begrenzing": "Buitenlucht",
+      "orientatie": "Z",
+      "oppervlakte_m2": 13.54,
+      "isolatie_aanwezig": "Onbekend",
+      "rc_huidig": null,
+      "u_huidig": 2.9,
+      "spouw_aanwezig": null,
+      "isolatiedikte_mm": null,
+      "glastype": "Dubbel",
+      "kozijnmateriaal": "Hout",
+      "rc_bron": "",
+      "opmerkingen": ""
+    }
+  ],
+  "ventilatie": {
+    "systeem": "C: natuurlijke toevoer, mechanische afzuiging",
+    "wtw_rendement_pct": null,
+    "co2_sturing": null,
+    "opmerkingen": "Mechanische box; natuurlijke toevoer via roosters."
+  },
+  "berekening": {
+    "kwh_m2_huidig": 121.09,
+    "standaard_eis_kwh_m2": 70.0,
+    "kwh_m2_na_maatregelen": null,
+    "label_huidig": "B",
+    "bron": "Vabi EPA-W (NTA8800)"
+  },
+  "maatregelen": [
+    {
+      "code": "V1-1-A1",
+      "onderdeel": "A Gevel",
+      "omschrijving": "Spouwmuurisolatie",
+      "materiaal": "EPS-parels",
+      "rc_u_doel": "Rc 1,7",
+      "oppervlakte_m2": 48.0,
+      "eenheid": "m²",
+      "prijs_per_eenheid": 23.09,
+      "kosten": 1108.16,
+      "categorie": 1,
+      "biobased": false
+    },
+    {
+      "code": "V3-1",
+      "onderdeel": "C Vloeren",
+      "omschrijving": "Vloerisolatie (bodem)",
+      "materiaal": "—",
+      "rc_u_doel": "Rc 3,5",
+      "oppervlakte_m2": 56.31,
+      "eenheid": "m²",
+      "prijs_per_eenheid": 45.1,
+      "kosten": 2539.59,
+      "categorie": 1,
+      "biobased": false
+    },
+    {
+      "code": "V4-1",
+      "onderdeel": "D Daken",
+      "omschrijving": "Dakisolatie hellend (binnenzijde)",
+      "materiaal": "—",
+      "rc_u_doel": "Rc 3,5",
+      "oppervlakte_m2": 60.0,
+      "eenheid": "m²",
+      "prijs_per_eenheid": 124.82,
+      "kosten": 7488.92,
+      "categorie": 1,
+      "biobased": false
+    }
+  ],
+  "haalbaarheid": [
+    {
+      "maatregel_code": "V3-1",
+      "asbest": false,
+      "lood": null,
+      "bereikbaarheid": "Goed",
+      "kruipruimte_diepte_cm": 45,
+      "obstakels": "",
+      "vocht": false,
+      "toelichting": "Kruipruimte toegankelijk en droog."
+    }
+  ],
+  "fotos": [
+    {
+      "bestand": "huisnummer.jpg",
+      "bouwdeel": "-",
+      "type": "huisnummer"
+    },
+    {
+      "bestand": "voorgevel.jpg",
+      "bouwdeel": "-",
+      "type": "voorblad"
+    }
+  ],
+  "validatie": {
+    "status": "onbekend",
+    "issues": []
+  },
+  "meta": {
+    "catalogus_versie": "V3_Q2_03062026",
+    "gegenereerd_op": "2026-06-07",
+    "tool_versie": "0.1"
+  }
+}

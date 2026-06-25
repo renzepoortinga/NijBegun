@@ -1,0 +1,35 @@
+PLAN ATTRIBUTES
+Exterior perimeter: m,20.0,
+Total living area: m²,80.0,
+Floors,2,
+,Test
+Bouwjaar,1992.t.m.2013
+Isolatie aanwezig,Ja
+Isolatiedikte onbekend,Yes
+Begrenzing (vloer),Kruipruimte
+Thermische massa vloeren,Zwaar
+Type dak,Zadeldak
+Thermische massa wanden,Zwaar
+Qv10-waarde (dm3/s.m2),1.25
+Systeem (ventilatie),Individueel
+Subsysteem (zie type),A1.Standaard
+Ventilatiesysteem (A-E),A.Natuurlijke.ventilatie
+Verwarming – type opwekker,HR107
+
+FLOOR ATTRIBUTES,Ground surface without walls: m²,Volume: m³,Ground perimeter: m,Ceiling perimeter: m,Walls with openings: m²,Walls without openings: m²,Ground surface with all walls: m²,Ground surface with interior walls: m²,Ceiling Height,Exterior Wall Thickness,Interior Wall Thickness,Begrenzing,Rekenzone,Isolatiedikte onbekend,Bouwjaar,Telt mee voor gebruikersoppervlakte?,Isolatie aanwezig,
+Ground Floor,40.0,100.0,26.0,28.0,80.0,72.0,46.0,42.0,2.50 m,0.25 m,0.12 m,Kruipruimte,1,Yes,1992.t.m.2013,Yes,Ja,
+
+ROOM ATTRIBUTES,Ground surface without walls: m²,Volume: m³,Ground perimeter: m,Ceiling perimeter: m,Walls with openings: m²,Walls without openings: m²,Surface of doors: m²,Surface of windows: m²,Ceiling Height,
+Ground Floor,
+Kitchen,20.0,50.0,18.0,18.0,40.0,36.0,1.6,1.0,2.50 m,
+Living Room,20.0,50.0,18.0,18.0,40.0,36.0,0.0,1.0,2.50 m,
+
+WALL ATTRIBUTES,Wall,Symbol,Surface: m²,Surface without openings: m²,Width: m,Height: m,Annotation,Type,Isolatie aanwezig,Rekenzone,Oriëntatie,Bron,Rekenzone,Raam = ja | Paneel = nee,Is het kozijn van hout/kunststof?,Type glas,Oriëntatie,Type constructie,Oppervlakte raam in deur (m²),Type glas,Oriëntatie,Isolatie aanwezig,Distance to Floor,
+Ground Floor,
+Kitchen,Wall 0,Wall,10.0,9.0,4.0,2.50,1,Wall,,1,ZW,,,No,No,,,,,,,No,,
+Kitchen,Wall 0,Hung Window,1.0,,0.80,1.30,2,Window,,,,,,Yes,Yes,Dubbel,,,,,,No,0.80,
+Kitchen,Wall 1,Wall,8.0,8.0,3.20,2.50,3,Wall,,1,,,,No,No,,,,,,,No,,
+Kitchen,Wall 1,Hinged Door,1.6,,0.80,2.00,,Door,,,,,,No,No,,,,,,,No,0.00,
+Living Room,Wall 0,Wall,10.0,9.0,4.0,2.50,4,Wall,Onbekend,1,NO,Waarneming.in.het.gebouw,,,No,No,,,,,,,No,,
+Living Room,Wall 0,Fixed Window,1.0,,0.80,1.30,5,Window,,,,,,Yes,Yes,Dubbel,NO,,,,,No,0.90,
+Living Room,Wall 1,Wall,8.0,8.0,3.20,2.50,6,Wall,,1,,,,No,No,,,,,,,No,,

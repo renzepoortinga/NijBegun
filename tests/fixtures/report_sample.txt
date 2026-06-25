@@ -1,0 +1,42 @@
+Projectgegevens
+Postcode
+9503HN
+Bouwjaar
+1994
+Woningtype
+Vrijstaand
+Gebruiksoppervlak Ag [m2]
+175
+Ventilatie
+Ventilatiesysteem
+A Natuurlijke ventilatie
+VABI-subsysteemcode (indien bekend, bv. A1/C4b)
+A1
+Gevels
+Constructietype gevel
+Spouwmuur
+Gevel - isolatie aanwezig?
+Onbekend
+Vloer & dak
+Vloerconstructie
+Niet-massief (systeem-/combinatievloer)
+Daktype
+Hellend dak (buitenzijde)
+Dakhelling [graden]
+45
+Kierdichting
+V6 Kierdichting - huidige staat
+Slecht-tochtklachten
+Kozijnen
+Element
+Raam
+Kozijnmateriaal
+Hout
+Beglazingstype
+HR++
+Element
+Raam
+Kozijnmateriaal
+Kunststof
+Beglazingstype
+Dubbel (D)

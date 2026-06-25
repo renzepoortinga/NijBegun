@@ -1,0 +1,58 @@
+{
+  "_doc": "Velden die de tool nu verwacht maar nog niet (overal) in de MagicPlan-forms staan. form_push.py voegt ontbrekende velden toe NA de genoemde sectie en zet required-vlaggen. Veld bestaat al (zelfde naam)? -> overslaan. Idempotent.",
+  "forms": [
+    {
+      "form_match": "Nij Begun",
+      "add_after_section": {
+        "Gevels": [
+          {"name": "Oriëntatie voorgevel", "dataType": "list", "required": true,
+           "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"],
+           "help": "Richting waar de VOORGEVEL op wijst. De tool leidt de andere gevels hieruit af (benoem muren voorgevel/achtergevel/linkergevel/rechtergevel)."},
+          {"name": "Rc-bron gevel", "dataType": "list", "required": false,
+           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"],
+           "help": "Kwaliteitsverklaring -> tool vlagt het; je zet Invoer + Rc/U zelf in VABI."}
+        ],
+        "Vloer & Dak": [
+          {"name": "Rc-bron vloer", "dataType": "list", "required": false,
+           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"]},
+          {"name": "Rc-bron dak", "dataType": "list", "required": false,
+           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"]}
+        ]
+      }
+    },
+    {
+      "form_match": "Installaties",
+      "add_after_section": {
+        "Zonne-energie": [
+          {"name": "Meerdere PV-systemen?", "dataType": "bool", "required": false,
+           "children": [
+             {"name": "PV-2 - paneeltype", "dataType": "list",
+              "options": ["Monokristallijn", "Polykristallijn", "Dunne film", "Onbekend"]},
+             {"name": "PV-2 - fabricagejaar", "dataType": "list",
+              "options": ["Voor 2001", "2001-2010", "2011-2014", "2015-2017", "Vanaf 2018", "Onbekend"]},
+             {"name": "PV-2 - orientatie", "dataType": "list",
+              "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]},
+             {"name": "PV-2 - hellingshoek (graden)", "dataType": "number"},
+             {"name": "PV-2 - aantal panelen", "dataType": "number"},
+             {"name": "PV-2 - oppervlak per paneel (m2)", "dataType": "number"}
+           ]}
+        ],
+        "Verwarming": [
+          {"name": "Tweede opwekker (hybride)?", "dataType": "bool", "required": false,
+           "children": [
+             {"name": "Verwarming 2 - type opwekker", "dataType": "list",
+              "options": ["Gasgestookte ketel", "Warmtepomp elektrisch", "Biomassaketel", "WKK", "Anders"]},
+             {"name": "Verwarming 2 - HR-klasse", "dataType": "list",
+              "options": ["CR", "VR", "HR100", "HR104", "HR107"]},
+             {"name": "Verwarming 2 - installatiejaar", "dataType": "number"}
+           ]}
+        ]
+      }
+    }
+  ],
+  "set_required": [
+    {"form_match": "Nij Begun", "name": "Foto vooraanzicht", "required": true},
+    {"form_match": "Nij Begun", "name": "Foto huisnummer", "required": true},
+    {"form_match": "Nij Begun", "name": "Foto gevel overzicht", "required": true}
+  ]
+}

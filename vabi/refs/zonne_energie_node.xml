@@ -1,0 +1,74 @@
+<ZonneEnergieList Index="-1">
+				<Guid>00000000-0000-0000-0000-000000000000</Guid>
+				<ZonneEnergie Index="0">
+					<Guid>08acc3a7-56f0-49d9-a37e-a4521689df02</Guid>
+					<PiekvermogenPVPanelen>1</PiekvermogenPVPanelen>
+					<WattpiekvermogenPVPanelen>0.00</WattpiekvermogenPVPanelen>
+					<CodePVPanelen />
+					<FabricagejaarPVPanelen>4</FabricagejaarPVPanelen>
+					<Bouwintegratie>2</Bouwintegratie>
+					<RegeneratieKwaliteitsverklaring>0</RegeneratieKwaliteitsverklaring>
+					<RegeneratieKwaliteitsverklaringRendement>0.00</RegeneratieKwaliteitsverklaringRendement>
+					<RegeneratieKwaliteitsverklaringCode />
+					<KwaliteitsverklaringId>00000000-0000-0000-0000-000000000000</KwaliteitsverklaringId>
+					<KwaliteitsverklaringMerk />
+					<Naam />
+					<Merk />
+					<Type />
+					<Installatiejaar>0</Installatiejaar>
+					<ZonneEnergiesysteem>0</ZonneEnergiesysteem>
+					<Hellingshoek>35</Hellingshoek>
+					<InvoerBeschaduwing>-1</InvoerBeschaduwing>
+					<OphalenBcrg>0</OphalenBcrg>
+					<KwaliteitsverklaringType />
+					<OppervlakPaneel>0.00</OppervlakPaneel>
+					<AantalPanelen>10</AantalPanelen>
+					<Orientatie>4</Orientatie>
+					<ZijBelemmeringZonneEnergie>-1</ZijBelemmeringZonneEnergie>
+					<RelatieveBreedteZijbelemmeringZonneEnergie>-1</RelatieveBreedteZijbelemmeringZonneEnergie>
+					<Belemmering>0</Belemmering>
+					<HoogteverschilMiddenBovenstePunt>0.00</HoogteverschilMiddenBovenstePunt>
+					<AfstandMiddenBovenstePunt>0.00</AfstandMiddenBovenstePunt>
+					<PercentageVanZichtveld>0</PercentageVanZichtveld>
+					<ZijbelemmeringLinks>0</ZijbelemmeringLinks>
+					<AfstandVerstePuntMiddenLinks>0.00</AfstandVerstePuntMiddenLinks>
+					<BreedteVerstePuntVlakLinks>0.00</BreedteVerstePuntVlakLinks>
+					<ZijbelemmeringRechts>0</ZijbelemmeringRechts>
+					<AfstandVerstePuntMiddenRechts>0.00</AfstandVerstePuntMiddenRechts>
+					<BreedteVerstePuntVlakRechts>0.00</BreedteVerstePuntVlakRechts>
+					<BelemmeringDoorDakrand>0</BelemmeringDoorDakrand>
+					<HoogteDakrand>0.00</HoogteDakrand>
+					<AfstandTotDakrand>0.00</AfstandTotDakrand>
+					<Overstek>0</Overstek>
+					<HoogteverschilVerticaal>0.00</HoogteverschilVerticaal>
+					<HoogteverschilHorizontaal>0.00</HoogteverschilHorizontaal>
+					<PercentageVanZichtveldOverstek>0</PercentageVanZichtveldOverstek>
+					<TypeOpslag>-1</TypeOpslag>
+					<TotaalOpslagCapaciteit>0</TotaalOpslagCapaciteit>
+					<WarmteTbv>-1</WarmteTbv>
+					<Naverwarming>-1</Naverwarming>
+					<VolumeVoorraadvat>0.00</VolumeVoorraadvat>
+					<BackupVolumeBekend>0</BackupVolumeBekend>
+					<BackupVolume>0.00</BackupVolume>
+					<VoorraadvatAangeslotenOpTapwatersysteem>-1</VoorraadvatAangeslotenOpTapwatersysteem>
+					<WarmteverliezenVoorraadvatObv>-1</WarmteverliezenVoorraadvatObv>
+					<Warmteoverdrachtscoefficient>0.00</Warmteoverdrachtscoefficient>
+					<CodeZonneboilerVoorraadvat />
+					<EnergielabelOpslagvat>-1</EnergielabelOpslagvat>
+					<FabricagejaarVoorraadvat>-1</FabricagejaarVoorraadvat>
+					<TypeCollector>-1</TypeCollector>
+					<Zonbijdrage>0.00</Zonbijdrage>
+					<Hulpenergie>0.00</Hulpenergie>
+					<WarmteverliesVat>0.00</WarmteverliesVat>
+					<PvtSysteemGetestConformNEN>0</PvtSysteemGetestConformNEN>
+					<CodeZonneboiler />
+					<CollectorParametersBekend>0</CollectorParametersBekend>
+					<N0>0.000</N0>
+					<A1>0.000</A1>
+					<A2>0.000</A2>
+					<Khem>0.000</Khem>
+					<CodeZonnecollector />
+					<Bron>-1</Bron>
+					<Opmerkingen />
+				</ZonneEnergie>
+			</ZonneEnergieList>

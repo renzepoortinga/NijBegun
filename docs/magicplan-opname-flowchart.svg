@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 1560" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .t   { fill:#0f172a; }
+      .h   { font-size:15px; font-weight:700; }
+      .b   { font-size:13px; }
+      .s   { font-size:11.5px; fill:#475569; }
+      .lbl { font-size:12px; font-weight:700; fill:#1e3a8a; }
+      .flow{ stroke:#475569; stroke-width:2; fill:none; }
+      .step{ fill:#eff6ff; stroke:#3b82f6; stroke-width:1.5; }
+      .tool{ fill:#ecfdf5; stroke:#10b981; stroke-width:1.5; }
+      .vabi{ fill:#f5f3ff; stroke:#8b5cf6; stroke-width:1.5; }
+      .out { fill:#0f172a; }
+      .note{ fill:#fffbeb; stroke:#f59e0b; stroke-width:1.5; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="520" y="36" text-anchor="middle" class="t" font-size="22" font-weight="700">MagicPlan-opname → VABI → isolatieplan</text>
+  <text x="520" y="58" text-anchor="middle" class="s" font-size="13">één opname · teken + markeer buitengevels + vul alléén afwijkingen in</text>
+
+  <!-- ===== Column: MagicPlan steps ===== -->
+  <text x="300" y="92" text-anchor="middle" class="lbl" font-size="13">① OPNAME IN MAGICPLAN</text>
+
+  <!-- 0 voorbereiding -->
+  <rect class="step" x="120" y="104" width="360" height="46" rx="8"/>
+  <text x="138" y="126" class="t h">0 · Voorbereiding</text>
+  <text x="138" y="143" class="s">Nieuw project + adres · Forms "Schil &amp; zone" + "Installaties" eraan</text>
+
+  <!-- A plattegrond -->
+  <rect class="step" x="120" y="166" width="360" height="46" rx="8"/>
+  <text x="138" y="188" class="t h">A · Teken de plattegrond</text>
+  <text x="138" y="205" class="s">MagicPlan meet m², lengtes, hoogte → m² nooit intypen</text>
+
+  <!-- B gevels -->
+  <rect class="step" x="120" y="228" width="360" height="58" rx="8"/>
+  <text x="138" y="250" class="t h">B · Markeer buitengevels (Walls)</text>
+  <text x="138" y="267" class="s">Oriëntatie = buitengevel (telt mee). Geen oriëntatie =</text>
+  <text x="138" y="281" class="s">binnenwand. Alleen afwijkende begrenzing/isolatie invullen.</text>
+
+  <!-- C ramen -->
+  <rect class="step" x="120" y="302" width="360" height="46" rx="8"/>
+  <text x="138" y="324" class="t h">C · Ramen · deuren · panelen</text>
+  <text x="138" y="341" class="s">Per stuk: kozijn + glas. Oriëntatie erft van de gevel.</text>
+
+  <!-- D vloer -->
+  <rect class="step" x="120" y="364" width="360" height="46" rx="8"/>
+  <text x="138" y="386" class="t h">D · Vloer</text>
+  <text x="138" y="403" class="s">Default kruipruimte/grond · isolatie Ja/Onbekend/Nee · geen spouw</text>
+
+  <!-- E dak -->
+  <rect class="step" x="120" y="426" width="360" height="58" rx="8"/>
+  <text x="138" y="448" class="t h">E · Dak &amp; zolder</text>
+  <text x="138" y="465" class="s">Type dak + hellingshoek → tool: dak = footprint/cos(a),</text>
+  <text x="138" y="479" class="s">kopgevel → gevel · zolder 1,5 m-regel · dakkapel</text>
+
+  <!-- F rooms -->
+  <rect class="step" x="120" y="500" width="360" height="46" rx="8"/>
+  <text x="138" y="522" class="t h">F · Ruimtes (Rooms)</text>
+  <text x="138" y="539" class="s">Telt mee voor Ag? (Ja) · Rekenzone (1)</text>
+
+  <!-- G installaties -->
+  <rect class="step" x="120" y="562" width="360" height="58" rx="8"/>
+  <text x="138" y="584" class="t h">G · Installaties (Form)</text>
+  <text x="138" y="601" class="s">Ventilatie A–E = VERPLICHT · verwarming/tapwater/PV</text>
+  <text x="138" y="615" class="s">alleen voor energielabel (Nij Begun: schil + ventilatie)</text>
+
+  <!-- H zone -->
+  <rect class="step" x="120" y="636" width="360" height="58" rx="8"/>
+  <text x="138" y="658" class="t h">H · Zone &amp; algemeen (Form)</text>
+  <text x="138" y="675" class="s">Thermische massa wanden+vloeren (Licht…Zeer zwaar) ·</text>
+  <text x="138" y="689" class="s">qv10/renovatiejaar · perimeter · bouwjaar-klasse</text>
+
+  <!-- I foto -->
+  <rect class="step" x="120" y="710" width="360" height="46" rx="8"/>
+  <text x="138" y="732" class="t h">I · Foto's per bouwdeel</text>
+  <text x="138" y="749" class="s">Sluitende KWACO-verantwoording</text>
+
+  <!-- vertical connectors for steps -->
+  <path class="flow" d="M300 150 V166"/>
+  <path class="flow" d="M300 212 V228"/>
+  <path class="flow" d="M300 286 V302"/>
+  <path class="flow" d="M300 348 V364"/>
+  <path class="flow" d="M300 410 V426"/>
+  <path class="flow" d="M300 484 V500"/>
+  <path class="flow" d="M300 546 V562"/>
+  <path class="flow" d="M300 620 V636"/>
+  <path class="flow" d="M300 694 V710" marker-end="url(#arr)"/>
+
+  <!-- ===== Side note: gouden principe ===== -->
+  <rect class="note" x="540" y="166" width="380" height="200" rx="10"/>
+  <text x="560" y="192" class="t h" font-size="15">★ Het gouden principe</text>
+  <text x="560" y="216" class="b t" font-weight="700">Alleen afwijkingen invoeren</text>
+  <text x="560" y="238" class="s">per object → projectwaarde → tool-default</text>
+  <text x="560" y="254" class="s">(ingevuld wint; leeg = laag eronder)</text>
+  <line x1="560" y1="266" x2="900" y2="266" stroke="#f59e0b" stroke-dasharray="3 3"/>
+  <text x="560" y="286" class="b t" font-weight="700">Tool-defaults (niets invullen):</text>
+  <text x="560" y="306" class="s">• gevel-begrenzing → Buitenlucht</text>
+  <text x="560" y="323" class="s">• vloer-begrenzing → Kruipruimte/Grond</text>
+  <text x="560" y="340" class="s">• kozijn → Hout of kunststof · rekenzone → 1</text>
+  <text x="560" y="357" class="s">• ruimte telt mee voor Ag → Ja</text>
+
+  <!-- Side note: geometrie -->
+  <rect class="note" x="540" y="386" width="380" height="150" rx="10"/>
+  <text x="560" y="412" class="t h" font-size="15">△ Geometrie die de tool rekent</text>
+  <text x="560" y="436" class="s">Schuin dak = footprint / cos(hellingshoek)</text>
+  <text x="560" y="456" class="s">Kopgevel-driehoek → telt bij de gevel</text>
+  <text x="560" y="476" class="s">Zolder: vloer &lt; 1,5 m valt af (Ag)</text>
+  <text x="560" y="496" class="s">via hellingshoek + kniewandhoogte</text>
+  <text x="560" y="516" class="s">Dakkapel = extra gevel + plat dakje</text>
+
+  <!-- ===== Export ===== -->
+  <rect class="tool" x="300" y="800" width="440" height="50" rx="8"/>
+  <text x="520" y="822" text-anchor="middle" class="t h">② EXPORT — magicplan_export.bat</text>
+  <text x="520" y="840" text-anchor="middle" class="s">opname → out/plan_raw.json + project-report</text>
+  <path class="flow" d="M300 756 V780 H520 V800" marker-end="url(#arr)"/>
+
+  <!-- ===== Tool pipeline ===== -->
+  <text x="520" y="888" text-anchor="middle" class="lbl">③ DE TOOL (offline, geen AI-tokens)</text>
+
+  <rect class="tool" x="180" y="902" width="300" height="50" rx="8"/>
+  <text x="330" y="924" text-anchor="middle" class="t h">assemble.py</text>
+  <text x="330" y="941" text-anchor="middle" class="s">geometrie + form-antwoorden → dossier</text>
+
+  <rect class="tool" x="560" y="902" width="300" height="50" rx="8"/>
+  <text x="710" y="924" text-anchor="middle" class="t h">generate_all.py</text>
+  <text x="710" y="941" text-anchor="middle" class="s">dossier → 3 bibliotheken + IMPORTEREN.txt</text>
+
+  <path class="flow" d="M520 850 V876 H330 V902" marker-end="url(#arr)"/>
+  <path class="flow" d="M480 927 H560" marker-end="url(#arr)"/>
+
+  <!-- 3 bibliotheken -->
+  <rect class="tool" x="300" y="982" width="440" height="46" rx="8"/>
+  <text x="520" y="1004" text-anchor="middle" class="t h">Constructies · Objecten · Installaties (XML)</text>
+  <text x="520" y="1020" text-anchor="middle" class="s">import is alles-of-niets → harde validatie-poort vóór export</text>
+  <path class="flow" d="M710 952 V967 H520 V982" marker-end="url(#arr)"/>
+
+  <!-- ===== VABI ===== -->
+  <rect class="vabi" x="300" y="1060" width="440" height="58" rx="8"/>
+  <text x="520" y="1084" text-anchor="middle" class="t h" font-size="16">④ VABI EPA-W — de rekenkern</text>
+  <text x="520" y="1103" text-anchor="middle" class="s">importeer 3 bibliotheken → Algemeen → REKENEN (NTA 8800)</text>
+  <path class="flow" d="M520 1028 V1060" marker-end="url(#arr)"/>
+
+  <text x="760" y="1090" class="s" font-size="11">geattesteerd —</text>
+  <text x="760" y="1104" class="s" font-size="11">wij rekenen NTA</text>
+  <text x="760" y="1118" class="s" font-size="11">8800 nooit zelf</text>
+
+  <!-- ===== Outputs ===== -->
+  <rect class="out" x="180" y="1170" width="300" height="64" rx="8"/>
+  <text x="330" y="1194" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">Energielabel</text>
+  <text x="330" y="1214" text-anchor="middle" fill="#cbd5e1" class="s">VABI-invoer compleet ingevuld</text>
+
+  <rect class="out" x="560" y="1170" width="300" height="64" rx="8"/>
+  <text x="710" y="1190" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">Nij Begun isolatieplan</text>
+  <text x="710" y="1209" text-anchor="middle" fill="#cbd5e1" class="s">Word + ventilatie + foto's +</text>
+  <text x="710" y="1223" text-anchor="middle" fill="#cbd5e1" class="s">KWACO-validatie · Standaard-toets</text>
+
+  <path class="flow" d="M520 1118 V1146 H330 V1170" marker-end="url(#arr)"/>
+  <path class="flow" d="M520 1118 V1146 H710 V1170" marker-end="url(#arr)"/>
+
+  <!-- footer -->
+  <text x="520" y="1280" text-anchor="middle" class="s" font-size="12">Gouden regel: de tool levert invoer en leest de uitkomst — Vabi EPA-W blijft de geattesteerde rekenkern.</text>
+  <text x="520" y="1300" text-anchor="middle" class="s" font-size="11">Detail per veld: MagicPlan-VABI-veldenmapping.md · Workflow-tekst: magicplan-opname-howto.md</text>
+</svg>

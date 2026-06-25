@@ -1,0 +1,2557 @@
+{
+ "_meta": {
+  "velden_totaal": 237,
+  "met_codes": 142,
+  "zonder_codes": 95
+ },
+ "domeinen": {
+  "Common": {
+   "Bron": {
+    "codes": {
+     "0": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 100 mm isolatie"
+     ],
+     "1": [],
+     "-1": [
+      "Dak hellend (Noord-Oost)",
+      "Dak hellend (Noord-West)",
+      "Dak hellend (Zuid-Oost)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "KwaliteitsVerklaringInvoerMethode": {
+    "codes": {
+     "0": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 100 mm isolatie"
+     ],
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "TemperatuurniveauWarmte": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Constructie": {
+   "Bouwjaar": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2",
+     "5"
+    ],
+    "heeft_codes": false
+   },
+   "ConstructieInvoer": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "ConstructieType": {
+    "codes": {
+     "0": [
+      "Gevel 10 mm isolatie (met spouw)",
+      "Gevel 10 mm isolatie (zonder spouw)",
+      "Gevel 100 mm isolatie"
+     ],
+     "1": [
+      "Paneel in kozijn 10 mm isolatie (met spouw, Hout of kunststof)",
+      "Paneel in kozijn 10 mm isolatie (met spouw, Metaal (niet thermisch onderbroken))",
+      "Paneel in kozijn 10 mm isolatie (met spouw, Metaal (thermisch onderbroken))"
+     ],
+     "2": [
+      "Dubbel glas (hout/kunststof)",
+      "Dubbel glas (metaal)",
+      "Dubbel glas (therm. onderbroken metaal)"
+     ],
+     "3": [
+      "Deur (geisoleerd)",
+      "Deur (niet geisoleerd)",
+      "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)"
+     ],
+     "4": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 100 mm isolatie"
+     ],
+     "5": [
+      "Dak hellend 90 mm isolatie (Rc = 2.22)"
+     ],
+     "6": [
+      "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)"
+     ],
+     "7": [
+      "Vloer 10 mm isolatie (met spouw)",
+      "Vloer 10 mm isolatie (zonder spouw)",
+      "Vloer 100 mm isolatie"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "5",
+     "6",
+     "7"
+    ],
+    "heeft_codes": true
+   },
+   "Glas": {
+    "codes": {
+     "0": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 100 mm isolatie"
+     ],
+     "1": [
+      "Voorzetraam (hout/kunststof)",
+      "Voorzetraam (metaal)",
+      "Voorzetraam (therm. onderbroken metaal)"
+     ],
+     "2": [
+      "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+      "Deur ongeïsoleerd (U = 3.40)",
+      "Dubbel glas (hout/kunststof)"
+     ],
+     "3": [
+      "HR glas (hout/kunststof)",
+      "HR glas (metaal)",
+      "HR glas (therm. onderbroken metaal)"
+     ],
+     "4": [
+      "HR+ glas (hout/kunststof)",
+      "HR+ glas (metaal)",
+      "HR+ glas (therm. onderbroken metaal)"
+     ],
+     "5": [
+      "HR++ glas (hout/kunststof)",
+      "HR++ glas (metaal)",
+      "HR++ glas (therm. onderbroken metaal)"
+     ],
+     "6": [
+      "TripleHR glas (hout/kunststof)",
+      "TripleHR glas (metaal)",
+      "TripleHR glas (therm. onderbroken metaal)"
+     ],
+     "-1": [
+      "Dak hellend 90 mm isolatie (Rc = 2.22)",
+      "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)",
+      "Gevel isolatie onbekend (1992-2013, Rc = 2.50)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6"
+    ],
+    "heeft_codes": true
+   },
+   "IsolatieAanwezig": {
+    "codes": {
+     "0": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 100 mm isolatie"
+     ],
+     "1": [
+      "Dak met spouw",
+      "Dak zonder spouw",
+      "Deur (niet geisoleerd)"
+     ],
+     "2": [
+      "Vloer thermokussen"
+     ],
+     "3": [
+      "Dak isol. onbekend (1965-1974)",
+      "Dak isol. onbekend (1975-1982)",
+      "Dak isol. onbekend (1983-1987)"
+     ],
+     "-1": [
+      "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+      "Raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+      "Raam HR++ glas (Hout of kunststof, U = 1.80, g = 0.60)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "3"
+    ],
+    "heeft_codes": true
+   },
+   "Kozijn": {
+    "codes": {
+     "0": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 100 mm isolatie"
+     ],
+     "3": [
+      "Dubbel glas (therm. onderbroken metaal)",
+      "Enkel glas (therm. onderbroken metaal)",
+      "HR glas (therm. onderbroken metaal)"
+     ],
+     "4": [
+      "Dubbel glas (metaal)",
+      "Enkel glas (metaal)",
+      "HR glas (metaal)"
+     ],
+     "-1": [
+      "Dak hellend 90 mm isolatie (Rc = 2.22)",
+      "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)",
+      "Gevel isolatie onbekend (1992-2013, Rc = 2.50)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Rietdikte": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   }
+  },
+  "Csv": {
+   "CsvFileType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "KoppelKolom": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Energieplan": {
+   "ActionBronDataHeeftZonneEnergie": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "AlwaysReplace": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "MaatregelCategorie": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "MaatregelType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "PrijsEenheid": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "RekenzoneChoice": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "SpouwAanwezig": {
+    "codes": {
+     "0": [
+      "Dak 10 mm isolatie (zonder spouw)",
+      "Dak 20 mm isolatie (zonder spouw)",
+      "Dak 30 mm isolatie (zonder spouw)"
+     ],
+     "1": [
+      "Dak 10 mm isolatie (met spouw)",
+      "Dak 100 mm isolatie",
+      "Dak 110 mm isolatie"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "WanneerIwcToepassen": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Geometrie": {
+   "AangrenzendGebouwfunctie": {
+    "codes": {
+     "-1": [
+      "Dak hellend (Noord-Oost)",
+      "Dak hellend (Noord-West)",
+      "Dak hellend (Zuid-Oost)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalAangrenzendeGebouwen": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "Begrenzing": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "AOR",
+     "AOS",
+     "Buiten",
+     "Grond",
+     "Kruipruimte",
+     "SterkGeventileerdeRuimte"
+    ],
+    "heeft_codes": false
+   },
+   "Bodemisolatie": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "ConstanteBelemmering": {
+    "codes": {
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Hellingshoek": {
+    "codes": {
+     "3": [
+      "Dak hellend (Noord-Oost)",
+      "Dak hellend (Noord-West)",
+      "Dak hellend (Zuid-Oost)"
+     ],
+     "6": [
+      "Dak plat",
+      "Gevel",
+      "Gevel (Noord)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "180",
+     "2",
+     "25",
+     "3",
+     "30",
+     "38",
+     "4",
+     "45",
+     "6",
+     "60",
+     "8",
+     "90"
+    ],
+    "heeft_codes": true
+   },
+   "InvoerBeschaduwing": {
+    "codes": {
+     "0": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Locatie": {
+    "codes": {
+     "0": [
+      "Vloer"
+     ],
+     "1": [
+      "Dak hellend (Noord-Oost)",
+      "Dak hellend (Noord-West)",
+      "Dak hellend (Zuid-Oost)"
+     ],
+     "2": [
+      "Gevel",
+      "Gevel (Noord)",
+      "Gevel (Noord)-Kopie"
+     ],
+     "3": [
+      "Gevel",
+      "Gevel (Zuid-West)"
+     ],
+     "4": [
+      "Gevel",
+      "Gevel (Zuid-Oost)"
+     ],
+     "5": [
+      "Gevel",
+      "Gevel (Noord-West)"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ],
+    "heeft_codes": true
+   },
+   "Orientatie": {
+    "codes": {
+     "0": [],
+     "1": [
+      "Dak hellend (Zuid-West)",
+      "Gevel",
+      "Gevel (Zuid-West)"
+     ],
+     "3": [
+      "Dak hellend (Noord-West)",
+      "Gevel",
+      "Gevel (Noord-West)"
+     ],
+     "4": [
+      "Gevel (Noord)"
+     ],
+     "5": [
+      "Dak hellend (Noord-Oost)",
+      "Gevel",
+      "Gevel (Noord-Oost)"
+     ],
+     "6": [
+      "Gevel (Noord)-Kopie"
+     ],
+     "7": [
+      "Dak hellend (Zuid-Oost)",
+      "Gevel",
+      "Gevel (Zuid-Oost)"
+     ],
+     "-1": [
+      "Dak plat",
+      "Vloer"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "3",
+     "4",
+     "5",
+     "N",
+     "NO",
+     "NW",
+     "O",
+     "W",
+     "Z",
+     "ZO",
+     "ZW",
+     "horizontaal",
+     "onbekend"
+    ],
+    "heeft_codes": true
+   },
+   "Overstek": {
+    "codes": {
+     "0": [
+      "Deur",
+      "Raam"
+     ],
+     "1": [
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "RelatieveBreedteZijBelemmering": {
+    "codes": {
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Rotation": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "SpiegelAs": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "VasteZonwering": {
+    "codes": {
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "VentilatieKruipruimte": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "0.0000"
+    ],
+    "heeft_codes": false
+   },
+   "Zijbelemmering": {
+    "codes": {
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Zonwering": {
+    "codes": {
+     "3": [
+      "Deur"
+     ],
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "3",
+     "4",
+     "7",
+     "knikarmscherm",
+     "rolluiken (buiten), wit",
+     "screen (buiten), onbekende kleur",
+     "screen (buiten), zwart, antraciet, donkerbruin"
+    ],
+    "heeft_codes": true
+   },
+   "ZonweringBediening": {
+    "codes": {
+     "3": [
+      "Deur"
+     ],
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "3",
+     "4",
+     "5"
+    ],
+    "heeft_codes": true
+   },
+   "ZonweringKleur": {
+    "codes": {
+     "-1": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "3"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Installatie": {
+   "Opstelplaats": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Koeling": {
+   "Aandrijving": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalOpwekkers": {
+    "codes": {
+     "0": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "AfgiftesysteemRegelingType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "AfgiftesysteemType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "CirculatiepompType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "DistributieSysteemIngeregeldType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "DistributiemediumType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "ExpansieType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Fabricagejaar": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "IsolatiejaarType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Koelsysteemtype": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "KoudeAfgifte": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "LeidingenGeisoleerd": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "2",
+     "6"
+    ],
+    "heeft_codes": true
+   },
+   "LeidingenLengteType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "OmgevingLeidingenType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Splitsysteem": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "Tapwatersysteem": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeOpwekker": {
+    "codes": {
+     "0": [],
+     "4": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2",
+     "4",
+     "9"
+    ],
+    "heeft_codes": true
+   },
+   "VrijePassieveKoeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Wateraanvoertemperatuur": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "11",
+     "3"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Maatwerk": {
+   "GebruikersBewonersprofiel": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "InfiltratieInvoermethode": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "InvoermethodeApparatuur": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "InvoermethodeApparatuurVerlichting": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "InvoermethodeGebruikers": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "InvoermethodeSetpointtemperatuur": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "InvoermethodeVerlichting": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "InvoermethodeWarmTapwatergebruik": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "RcAanpassenVoor": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "StooklijnLuchtbehandelingskastInblaastemperatuur": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "UAanpassenVoor": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "WaardenInblaastemperatuur": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Meterstanden": {
+   "Fitmethode": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Klimaat": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Maand": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "ObjectAlgemeen": {
+   "BagIdentificatie": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "Bouwfase": {
+    "codes": {
+     "0": [
+      "Oosterkade"
+     ],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "Bestaande bouw"
+    ],
+    "heeft_codes": true
+   },
+   "Daktype": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2"
+    ],
+    "heeft_codes": true
+   },
+   "DpiGasloos": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "DpiIsolatieniveau": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Gebouwtype": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "Gebruiker": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "KlasseBacs": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Ligging": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "2"
+    ],
+    "heeft_codes": true
+   },
+   "Objecttype": {
+    "codes": {
+     "0": [
+      "Oosterkade"
+     ],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "Woning"
+    ],
+    "heeft_codes": true
+   },
+   "Opname": {
+    "codes": {
+     "0": [
+      "Oosterkade"
+     ],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "Basisopname"
+    ],
+    "heeft_codes": true
+   },
+   "Opnamemethodiek": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "RegistratieStatus": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "Object is niet geregistreerd"
+    ],
+    "heeft_codes": false
+   },
+   "Subtype": {
+    "codes": {
+     "0": [],
+     "4": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "heeft_codes": true
+   },
+   "SvbStatus": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "ThermischVermogen": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "WlcGwp": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Rekenzone": {
+   "ZoneType": {
+    "codes": {
+     "0": [
+      "Rekenzone"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "RekenzoneAlgemeen": {
+   "Gebruiksfunctie": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Gebruiksoppervlakte": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": false
+   },
+   "HoekType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Leidingdoorvoeren": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "2"
+    ],
+    "heeft_codes": false
+   },
+   "OrientatieType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "TypeBouwwijzeVloeren": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1",
+     "2"
+    ],
+    "heeft_codes": true
+   },
+   "TypeBouwwijzeWanden": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "TypePlafond": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "VentilatieveKoelingBedieningType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "VentilatieveKoelingType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Result": {
+   "Energielabel": {
+    "codes": {
+     "6": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "5",
+     "6"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Tapwater": {
+   "AanduidingTappatroon": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1",
+     "3"
+    ],
+    "heeft_codes": true
+   },
+   "AangeslotenOp": {
+    "codes": {
+     "0": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "2"
+    ],
+    "heeft_codes": true
+   },
+   "Aansluitwijze": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "5"
+    ],
+    "heeft_codes": true
+   },
+   "AansluitwijzeDWTW": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "AantalAangeslotenWoonfuncties": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalOpwekkers": {
+    "codes": {
+     "0": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "AantalVoorraadvaten": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalWarmtapwatersystemen": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "Aanvoertemperatuur": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "BoosterwarmtepompGekoppeldAan": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "BouwjaarWKK": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "BronWarmtepomp": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "Buitenlucht"
+    ],
+    "heeft_codes": true
+   },
+   "BronWarmtepompIndirectVerwarmdVat": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "CwKlasse": {
+    "codes": {
+     "3": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "2",
+     "3",
+     "CW-3",
+     "CW-4/5/6"
+    ],
+    "heeft_codes": true
+   },
+   "Diameter": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "FunctiesOpwekker": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "Gaskeur": {
+    "codes": {
+     "3": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "3"
+    ],
+    "heeft_codes": true
+   },
+   "Installatiejaar": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2007_2009",
+     "2021",
+     "2022",
+     "2024",
+     "2025",
+     "_1980",
+     "onbekend"
+    ],
+    "heeft_codes": false
+   },
+   "IsolatieKleppenAppendagesBeugels": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "IsolatieVat": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Isolatiedikte": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "100",
+     "120",
+     "160",
+     "170",
+     "50",
+     "60",
+     "70",
+     "80",
+     "90"
+    ],
+    "heeft_codes": false
+   },
+   "LeidingenGeisoleerd": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "2",
+     "6"
+    ],
+    "heeft_codes": true
+   },
+   "Leidinglengte": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0.00"
+    ],
+    "heeft_codes": true
+   },
+   "LeidinglengteNaar": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "LeidinglengteOnverwarmdeRuimte": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "LengteCirculatieleiding": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "NominaalVermogenBekend": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "OmgevingLeidingen": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Pompregeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Tapklasse": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeBiomassa": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeDWTW": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "TypeInstallatie": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "TypeKwaliteitsverklaring": {
+    "codes": {
+     "1": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeOpwekker": {
+    "codes": {
+     "0": [],
+     "4": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2",
+     "4",
+     "9"
+    ],
+    "heeft_codes": true
+   },
+   "TypeOpwekkerIndirectVerwarmdVat": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "6"
+    ],
+    "heeft_codes": true
+   },
+   "TypeToestel": {
+    "codes": {
+     "2": [],
+     "-1": [],
+     "10": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "10",
+     "11",
+     "2",
+     "8",
+     "9"
+    ],
+    "heeft_codes": true
+   },
+   "VermogenGasboiler": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "VermogenPompCirculatieleiding": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "VerwarmingsopwekkerNummer": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "VoorraadvatTypeKwaliteitsverklaring": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Utils": {
+   "LogFileFormat": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Ventilatie": {
+   "AantalVentilatoren": {
+    "codes": {
+     "1": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "Bypass": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "BypassFabricagejaar": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Debietregeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "FabricagejaarVentilator": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "FabricagejaarVentilatorForfaitair": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "IsolatieKanaalBuitenaansluiting": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "3"
+    ],
+    "heeft_codes": true
+   },
+   "IsolatiewaardeKanalen": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "LengteKanaalBuitenaansluiting": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "LengteKanalen": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "LintVerwarming": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Luchtdichtheidsklasse": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "3"
+    ],
+    "heeft_codes": true
+   },
+   "OpgaveVentilatoren": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Recirculatie": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Subsysteem": {
+    "codes": {
+     "0": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "15",
+     "27",
+     "4"
+    ],
+    "heeft_codes": true
+   },
+   "Systeem": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Terugregeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeElektromotor": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeElektromotorForfaitair": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "TypeVerklaring": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "TypeVerklaringWtw": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "VentilatiesysteemType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Volumeregeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Wtw": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Verlichting": {
+   "DaglichtregelingType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "InvoerType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "InvoermethodeFactorType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "LampType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "RegelingType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "Verwarming": {
+   "AantalWarmteOpwekkersType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "AantalWarmtemeters": {
+    "codes": {
+     "0": [],
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Afgiftesysteem": {
+    "codes": {
+     "3": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "2",
+     "3",
+     "4"
+    ],
+    "heeft_codes": true
+   },
+   "AquiferType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "BiomassHeaterType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "BiomassaToestel": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "BronType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "BronWarmtepompType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Circulatiepomp": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "pompvermogen en EEI onbekend"
+    ],
+    "heeft_codes": true
+   },
+   "DirecteLuchtverwarmerType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "DistributieIngeregeld": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "DistributieMedium": {
+    "codes": {
+     "1": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "1",
+     "directe expansie in de ruimte",
+     "geen watergedragen distributiesysteem aanwezig",
+     "tweepijpssysteem"
+    ],
+    "heeft_codes": true
+   },
+   "FabricagejaarToestel": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "FabricagejaarToestelWkk": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Hulpenergie": {
+    "codes": {
+     "0": [],
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0",
+     "0.00",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "IsolatiejaarLeidingen": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "KwaliteitsverklaringTypeBron": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "LeidingLengte": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0.00"
+    ],
+    "heeft_codes": true
+   },
+   "LeidingenGeisoleerd": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "2",
+     "6"
+    ],
+    "heeft_codes": true
+   },
+   "LokaleKachelType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "OmgevingLeidingen": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "OpwekkerType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Regeling": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0",
+     "2"
+    ],
+    "heeft_codes": true
+   },
+   "SubtypeOpwekkerType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "TerugkeerWarmeLucht": {
+    "codes": {
+     "2": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "2"
+    ],
+    "heeft_codes": true
+   },
+   "TypeDistributie": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "TypeLuchtverwarming": {
+    "codes": {
+     "1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "1"
+    ],
+    "heeft_codes": true
+   },
+   "TypeVerklaring": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "VentilatorenIndirecteLuchtverwarmerType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Vertrekhoogte": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "VerwarmingsysteemType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Warmtenet": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "WarmtepompType": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Wateraanvoertemperatuur": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1",
+     "11",
+     "3"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Vochtregeling": {
+   "TypeBevochtigingsinstallatie": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "Warmteverlies": {
+   "AantalGradenNachtverlaging": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalGradenNachtverlagingIsso53": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalLuchtwisselingenGebouw": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "AantalUrenVrijeKoeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "BuitentemperatuurOpgave": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Koudebruggen": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "MethodeSpecifiekeOpwarmtoeslag": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "MethodeVoorAfkoeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "Opwarmtijd": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "OpwarmtijdBeperkteAfkoeling": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "VorstbeveiligingWtw": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   },
+   "WijzeVanRegelen": {
+    "codes": {
+     "-1": []
+    },
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": true
+   }
+  },
+  "ZonneEnergie": {
+   "AangeslotenTapwater": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Bouwintegratie": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [
+     "1",
+     "2"
+    ],
+    "heeft_codes": false
+   },
+   "EnergielabelVat": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "Fabricagejaar": {
+    "codes": {},
+    "verplicht": true,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "FabricagejaarVat": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "InvoerBeschaduwing": {
+    "codes": {
+     "0": [
+      "Deur",
+      "Raam"
+     ]
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "Naverwarming": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "OrientatieCollector": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "PiekvermogenPVPanelen": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [
+     "0",
+     "1"
+    ],
+    "heeft_codes": false
+   },
+   "Systeem": {
+    "codes": {
+     "0": []
+    },
+    "verplicht": true,
+    "monitor_waarden": [
+     "0"
+    ],
+    "heeft_codes": true
+   },
+   "TypeCollector": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "TypeOpslag": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   },
+   "WarmteTbv": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [
+     "-1"
+    ],
+    "heeft_codes": false
+   },
+   "WarmteverliezenVatObv": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  },
+  "plog": {
+   "Severity": {
+    "codes": {},
+    "verplicht": false,
+    "monitor_waarden": [],
+    "heeft_codes": false
+   }
+  }
+ }
+}

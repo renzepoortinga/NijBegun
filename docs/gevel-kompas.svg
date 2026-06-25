@@ -1,0 +1,62 @@
+<svg viewBox="0 0 780 470" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif">
+<title>Gevel-naamgeving en oriëntatie-afleiding</title>
+<desc>Benoem gevels voorgevel/achtergevel/linkergevel/rechtergevel en geef alleen de oriëntatie van de voorgevel; de tool leidt de andere drie af. Voorbeeld: voorgevel op het zuiden geeft rechtergevel oost, linkergevel west, achtergevel noord. Links en rechts gezien vanaf de straat.</desc>
+<style>
+  .ttl{fill:#16181d;font-weight:700}.sub{fill:#5b616e}
+  .lab{fill:#16181d;font-weight:650}.det{fill:#16181d}
+  .house{fill:#eef4fc;stroke:#2f6fd0;stroke-width:2}
+  .front{stroke:#c9740a;stroke-width:6}
+  .side{stroke:#2f6fd0;stroke-width:3}
+  .green{fill:#15935a;font-weight:700}.orange{fill:#c9740a;font-weight:700}.blue{fill:#2f6fd0;font-weight:700}
+  .arr{stroke:#aeb3bd;stroke-width:2;fill:none;marker-end:url(#a)}
+</style>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#aeb3bd"/></marker></defs>
+<rect x="0" y="0" width="780" height="470" fill="#ffffff"/>
+<text x="30" y="40" font-size="23" class="ttl">Benoem gevels op hun plek — de tool rekent de richting uit</text>
+<text x="30" y="64" font-size="14" class="sub">Geef alléén de oriëntatie van de VOORGEVEL. De andere drie leidt de tool af. Links/rechts = gezien vanaf de straat.</text>
+
+<!-- huis (bovenaanzicht) -->
+<rect x="150" y="135" width="230" height="200" rx="6" class="house"/>
+<!-- voorgevel = onderkant (straatzijde) -->
+<line x1="150" y1="335" x2="380" y2="335" class="front"/>
+<line x1="150" y1="135" x2="380" y2="135" class="side"/>
+<line x1="150" y1="135" x2="150" y2="335" class="side"/>
+<line x1="380" y1="135" x2="380" y2="335" class="side"/>
+
+<text x="265" y="240" font-size="15" text-anchor="middle" class="lab">WONING</text>
+<text x="265" y="262" font-size="12" text-anchor="middle" class="sub">(bovenaanzicht)</text>
+
+<!-- labels per gevel -->
+<text x="265" y="358" font-size="14" text-anchor="middle" class="orange">VOORGEVEL</text>
+<text x="265" y="374" font-size="11.5" text-anchor="middle" class="sub">jij geeft de oriëntatie</text>
+<text x="265" y="127" font-size="13.5" text-anchor="middle" class="blue">ACHTERGEVEL</text>
+<text x="138" y="240" font-size="13.5" text-anchor="end" class="blue">LINKER&#8203;</text>
+<text x="138" y="256" font-size="13.5" text-anchor="end" class="blue">GEVEL</text>
+<text x="392" y="240" font-size="13.5" class="blue">RECHTER-</text>
+<text x="392" y="256" font-size="13.5" class="blue">GEVEL</text>
+
+<!-- straat + waarnemer -->
+<rect x="120" y="395" width="290" height="26" rx="4" fill="#f0f1f4" stroke="#d6d9e0"/>
+<text x="265" y="412" font-size="12" text-anchor="middle" class="sub">straat — je kijkt naar de voorgevel</text>
+<circle cx="265" cy="370" r="6" fill="#c9740a"/>
+<path class="arr" d="M265 390 V345"/>
+
+<!-- regel -->
+<rect x="450" y="120" width="305" height="120" rx="10" fill="#eef7f0" stroke="#bfe3cd"/>
+<text x="466" y="146" font-size="14.5" class="lab">De afleidregel</text>
+<text x="466" y="172" font-size="13" class="det"><tspan class="orange">voorgevel</tspan>  = de richting die jij opgeeft</text>
+<text x="466" y="194" font-size="13" class="det"><tspan class="blue">rechtergevel</tspan> = voorgevel <tspan class="green">&#8722; 90°</tspan></text>
+<text x="466" y="216" font-size="13" class="det"><tspan class="blue">linkergevel</tspan>  = voorgevel <tspan class="green">+ 90°</tspan></text>
+
+<!-- voorbeeld -->
+<rect x="450" y="255" width="305" height="180" rx="10" fill="#fbfbfc" stroke="#d6d9e0"/>
+<text x="466" y="282" font-size="14.5" class="lab">Voorbeeld: voorgevel op het ZUIDEN</text>
+<text x="466" y="312" font-size="13.5" class="det"><tspan class="orange">voorgevel</tspan> = Zuid</text>
+<text x="466" y="336" font-size="13.5" class="det"><tspan class="blue">rechtergevel</tspan> = Zuid &#8722; 90° = <tspan class="green">Oost</tspan></text>
+<text x="466" y="360" font-size="13.5" class="det"><tspan class="blue">linkergevel</tspan> = Zuid + 90° = <tspan class="green">West</tspan></text>
+<text x="466" y="384" font-size="13.5" class="det"><tspan class="blue">achtergevel</tspan> = Zuid + 180° = <tspan class="green">Noord</tspan></text>
+<text x="466" y="414" font-size="11.5" class="sub">Schuin/afwijkend huis? Zet de richting in de naam,</text>
+<text x="466" y="429" font-size="11.5" class="sub">bv. “Rechtergevel ZW” — dat overrulet de afleiding.</text>
+
+<text x="30" y="455" font-size="11.5" class="sub">De tool toont na de run de 4 afgeleide oriëntaties zodat je ze controleert. Achtergevel = voorgevel + 180°.</text>
+</svg>

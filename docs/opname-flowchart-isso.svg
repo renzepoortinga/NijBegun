@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 1580" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .t{fill:#0f172a;} .h{font-size:15px;font-weight:700;} .b{font-size:12.5px;}
+      .s{font-size:11px;fill:#475569;} .iso{font-size:10px;fill:#2563eb;font-weight:700;}
+      .lbl{font-size:13px;font-weight:700;fill:#1e3a8a;}
+      .flow{stroke:#475569;stroke-width:2;fill:none;}
+      .step{fill:#eff6ff;stroke:#3b82f6;stroke-width:1.5;}
+      .tool{fill:#ecfdf5;stroke:#10b981;stroke-width:1.5;}
+      .vabi{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:1.5;}
+      .out{fill:#0f172a;} .note{fill:#fffbeb;stroke:#f59e0b;stroke-width:1.5;}
+    </style>
+  </defs>
+
+  <text x="560" y="34" text-anchor="middle" class="t" font-size="21" font-weight="700">MagicPlan-opname → VABI EPA-W</text>
+  <text x="560" y="55" text-anchor="middle" class="s" font-size="12.5">geverifieerd tegen ISSO 82.1 (7e druk) · blauwe codes = ISSO-paragraaf · onderaan: BRL 9500-W-proces (Route A)</text>
+
+  <!-- ===== Left column: opname steps ===== -->
+  <text x="300" y="86" text-anchor="middle" class="lbl">① OPNAME IN MAGICPLAN</text>
+
+  <rect class="step" x="80" y="98" width="440" height="40" rx="8"/>
+  <text x="98" y="118" class="t h">0 · Project + Forms toepassen</text>
+  <text x="98" y="133" class="s">"Schil &amp; zone" + "Installaties" aan het project</text>
+
+  <rect class="step" x="80" y="150" width="440" height="40" rx="8"/>
+  <text x="98" y="170" class="t h">A · Plattegrond tekenen</text>
+  <text x="98" y="185" class="s">MagicPlan meet m², lengtes, hoogte (binnenwerks) — m² nooit intypen</text>
+
+  <rect class="step" x="80" y="202" width="440" height="58" rx="8"/>
+  <text x="98" y="222" class="t h">B · Algemeen / woning <tspan class="iso">§7.1</tspan></text>
+  <text x="98" y="239" class="s">Woningtype (Vrijstaand/2-1-kap/Tussen/Hoek) · bouwjaar ·</text>
+  <text x="98" y="253" class="s">renovatiejaar · gebouwhoogte · daktype</text>
+
+  <rect class="step" x="80" y="272" width="440" height="58" rx="8"/>
+  <text x="98" y="292" class="t h">C · Rekenzone <tspan class="iso">§7.2</tspan></text>
+  <text x="98" y="309" class="s">Thermische massa wanden + vloeren (Licht/Zwaar/Zeer zwaar) ·</text>
+  <text x="98" y="323" class="s">Ag per vertrek · qv10 gemeten / renovatiejaar</text>
+
+  <rect class="step" x="80" y="342" width="440" height="58" rx="8"/>
+  <text x="98" y="362" class="t h">D · Gevels markeren (Walls) <tspan class="iso">§8.2 §8.4 §8.5</tspan></text>
+  <text x="98" y="379" class="s">Oriëntatie (8 windr.) = buitengevel-markering · begrenzing</text>
+  <text x="98" y="393" class="s">(leeg=buitenlucht) · alleen afwijkingen per wand</text>
+
+  <rect class="step" x="80" y="412" width="440" height="40" rx="8"/>
+  <text x="98" y="432" class="t h">E · Ramen · deuren · panelen <tspan class="iso">§8.2.2</tspan></text>
+  <text x="98" y="447" class="s">Per stuk: kozijn + glas; oriëntatie erft van de gevel</text>
+
+  <rect class="step" x="80" y="464" width="440" height="58" rx="8"/>
+  <text x="98" y="484" class="t h">F · Vloer + Dak <tspan class="iso">§8.3 §8.6</tspan></text>
+  <text x="98" y="501" class="s">Vloer: begrenzing + perimeter · Dak: type + hellingshoek</text>
+  <text x="98" y="515" class="s">(tool: schuin vlak = footprint/cos · zolder 1,5 m · dakkapel)</text>
+
+  <rect class="step" x="80" y="534" width="440" height="58" rx="8"/>
+  <text x="98" y="554" class="t h">G · Installaties <tspan class="iso">§9–§15</tspan></text>
+  <text x="98" y="571" class="s">Ventilatie A–E + subsysteem (VERPLICHT) · verwarming ·</text>
+  <text x="98" y="585" class="s">tapwater · koeling · zonne-energie</text>
+
+  <rect class="step" x="80" y="604" width="440" height="40" rx="8"/>
+  <text x="98" y="624" class="t h">H · Foto's per bouwdeel <tspan class="iso">§dossier</tspan></text>
+  <text x="98" y="639" class="s">Detail- + overzichtsfoto's → KWACO-verantwoording</text>
+
+  <path class="flow" d="M300 138 V150"/>
+  <path class="flow" d="M300 190 V202"/>
+  <path class="flow" d="M300 260 V272"/>
+  <path class="flow" d="M300 330 V342"/>
+  <path class="flow" d="M300 400 V412"/>
+  <path class="flow" d="M300 452 V464"/>
+  <path class="flow" d="M300 522 V534"/>
+  <path class="flow" d="M300 592 V604" marker-end="url(#arr)"/>
+
+  <!-- ===== Right callouts ===== -->
+  <rect class="note" x="580" y="150" width="460" height="120" rx="10"/>
+  <text x="600" y="174" class="t h">★ Gouden principe — alleen afwijkingen</text>
+  <text x="600" y="195" class="s">per object → projectwaarde → tool-default (ingevuld wint)</text>
+  <text x="600" y="214" class="s">Defaults: gevel→Buitenlucht · vloer→Kruipruimte/Grond ·</text>
+  <text x="600" y="231" class="s">kozijn→Hout/kunststof · rekenzone→1 · ruimte telt mee→Ja</text>
+  <text x="600" y="252" class="s">Oriëntatie = óók de "dit is een buitengevel"-markering.</text>
+
+  <rect class="note" x="580" y="284" width="460" height="150" rx="10"/>
+  <text x="600" y="308" class="t h">⌂ Woningpositie = 2 effecten <tspan class="iso">§7.1.1 §8.2</tspan></text>
+  <text x="600" y="330" class="b t" font-weight="700">(A) Infiltratie → VABI rekent zelf uit Subtype</text>
+  <text x="600" y="349" class="s">(B) Gevel hart-op-hart → tool telt op (binnenwerks meten):</text>
+  <text x="600" y="367" class="s">  +0,11 m/buurwand × voor+achtergevel × hoogte</text>
+  <text x="600" y="385" class="s">  Tussen = 0,44 × hoogte · Hoek = 0,22 × hoogte · Vrij = 0</text>
+  <text x="600" y="406" class="s">Verwarmde buurwoning = géén begrenzing (buiten schil).</text>
+  <text x="600" y="424" class="s">Buurwand telt wél mee voor de thermische massa <tspan class="iso">§7.2.3</tspan></text>
+
+  <rect class="note" x="580" y="448" width="460" height="108" rx="10"/>
+  <text x="600" y="472" class="t h">△ Geometrie die de tool rekent</text>
+  <text x="600" y="493" class="s">Schuin dak = footprint / cos(hellingshoek)</text>
+  <text x="600" y="511" class="s">Kopgevel-driehoek → telt bij de gevel</text>
+  <text x="600" y="529" class="s">Zolder: vloer &lt; 1,5 m valt af voor Ag (kniewand + helling)</text>
+  <text x="600" y="547" class="s">Dakkapel = extra gevel + plat dakje</text>
+
+  <!-- ===== Export ===== -->
+  <rect class="tool" x="300" y="664" width="520" height="48" rx="8"/>
+  <text x="560" y="685" text-anchor="middle" class="t h">② EXPORT — magicplan_export.bat</text>
+  <text x="560" y="703" text-anchor="middle" class="s">opname → out/plan_raw.json + project-report</text>
+  <path class="flow" d="M300 644 V654 H560 V664" marker-end="url(#arr)"/>
+
+  <!-- ===== Tool pipeline ===== -->
+  <text x="560" y="746" text-anchor="middle" class="lbl">③ DE TOOL (offline · geen NTA-berekening · geen AI-tokens)</text>
+
+  <rect class="tool" x="170" y="760" width="320" height="56" rx="8"/>
+  <text x="330" y="781" text-anchor="middle" class="t h">assemble.py</text>
+  <text x="330" y="798" text-anchor="middle" class="s">geometrie + form-antwoorden → dossier</text>
+  <text x="330" y="812" text-anchor="middle" class="s">(past hart-op-hart-toeslag §8.2 toe)</text>
+
+  <rect class="tool" x="630" y="760" width="320" height="56" rx="8"/>
+  <text x="790" y="781" text-anchor="middle" class="t h">generate_all.py</text>
+  <text x="790" y="798" text-anchor="middle" class="s">dossier → 3 bibliotheken (XML)</text>
+  <text x="790" y="812" text-anchor="middle" class="s">+ harde validatie-poort (codebook)</text>
+
+  <path class="flow" d="M560 712 V736 H330 V760" marker-end="url(#arr)"/>
+  <path class="flow" d="M490 788 H630" marker-end="url(#arr)"/>
+
+  <rect class="tool" x="300" y="846" width="520" height="44" rx="8"/>
+  <text x="560" y="868" text-anchor="middle" class="t h">Constructies · Objecten · Installaties (alles-of-niets import)</text>
+  <text x="560" y="884" text-anchor="middle" class="s">nooit "enum mismatch": gekloond sjabloon + gevalideerde codes</text>
+  <path class="flow" d="M790 816 V831 H560 V846" marker-end="url(#arr)"/>
+
+  <!-- ===== VABI ===== -->
+  <rect class="vabi" x="300" y="922" width="520" height="58" rx="8"/>
+  <text x="560" y="946" text-anchor="middle" class="t h" font-size="16">④ VABI EPA-W — de geattesteerde rekenkern</text>
+  <text x="560" y="965" text-anchor="middle" class="s">importeer 3 bibliotheken → Algemeen → REKENEN (NTA 8800)</text>
+  <path class="flow" d="M560 890 V922" marker-end="url(#arr)"/>
+  <text x="838" y="945" class="s" font-size="10.5">wij rekenen</text>
+  <text x="838" y="959" class="s" font-size="10.5">NTA 8800</text>
+  <text x="838" y="973" class="s" font-size="10.5">nooit zelf</text>
+
+  <!-- ===== Outputs ===== -->
+  <rect class="out" x="170" y="1014" width="320" height="62" rx="8"/>
+  <text x="330" y="1038" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">Energielabel</text>
+  <text x="330" y="1058" text-anchor="middle" fill="#cbd5e1" class="s">VABI-invoer volledig &amp; ISSO-conform</text>
+
+  <rect class="out" x="630" y="1014" width="320" height="62" rx="8"/>
+  <text x="790" y="1034" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">Nij Begun isolatieplan</text>
+  <text x="790" y="1053" text-anchor="middle" fill="#cbd5e1" class="s">Word + ventilatie + foto's +</text>
+  <text x="790" y="1067" text-anchor="middle" fill="#cbd5e1" class="s">KWACO-validatie · Standaard-toets</text>
+
+  <path class="flow" d="M560 980 V998 H330 V1014" marker-end="url(#arr)"/>
+  <path class="flow" d="M560 980 V998 H790 V1014" marker-end="url(#arr)"/>
+
+  <!-- footer -->
+  <text x="560" y="1110" text-anchor="middle" class="s" font-size="12">Gouden regel: de tool levert ISSO-correcte invoer en leest de uitkomst — Vabi EPA-W blijft de geattesteerde rekenkern.</text>
+
+  <!-- ===== BRL 9500-W procesband (Route A) ===== -->
+  <line x1="60" y1="1150" x2="1060" y2="1150" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="560" y="1182" text-anchor="middle" class="lbl" font-size="15" fill="#c2410c">BRL 9500-W — procesketen rond deze opname (Route A · energielabel)</text>
+
+  <g>
+    <rect class="note" x="60" y="1200" width="190" height="92" rx="8"/>
+    <text x="74" y="1222" class="t h" font-size="13.5">1a · Opname-soort</text>
+    <text x="74" y="1241" class="s">basis (EP-W/B) of</text>
+    <text x="74" y="1255" class="s">detail (EP-W/D)</text>
+    <text x="74" y="1273" class="s">Bbl/oplevering → detail</text>
+    <text x="74" y="1287" class="s" fill="#c2410c">§4.2.2 / afbakeningstabel</text>
+
+    <rect class="note" x="268" y="1200" width="190" height="92" rx="8"/>
+    <text x="282" y="1222" class="t h" font-size="13.5">1b · Informeren</text>
+    <text x="282" y="1241" class="s">opdrachtgever:</text>
+    <text x="282" y="1255" class="s">EP-Online · dossierrecht</text>
+    <text x="282" y="1269" class="s">CI-controle · klachten</text>
+    <text x="282" y="1287" class="s" fill="#c2410c">§4.2.2</text>
+
+    <rect class="tool" x="476" y="1200" width="190" height="92" rx="8"/>
+    <text x="490" y="1222" class="t h" font-size="13.5">Opname → tool → Vabi</text>
+    <text x="490" y="1241" class="s">de hele flow hierboven</text>
+    <text x="490" y="1255" class="s">(②③④): opnemen,</text>
+    <text x="490" y="1269" class="s">3 bibliotheken, REKENEN</text>
+    <text x="490" y="1287" class="s" fill="#047857">ISSO 82.1 + NTA 8800</text>
+
+    <rect class="note" x="684" y="1200" width="190" height="92" rx="8"/>
+    <text x="698" y="1222" class="t h" font-size="13.5">5 · Registreren</text>
+    <text x="698" y="1241" class="s">EP-Online, ≤ 3 mnd na</text>
+    <text x="698" y="1255" class="s">opnamedatum · software-</text>
+    <text x="698" y="1269" class="s">versie · 2 adviseurs + nr.</text>
+    <text x="698" y="1287" class="s" fill="#c2410c">§4.2.5 · levering pas erná</text>
+
+    <rect class="note" x="892" y="1200" width="168" height="92" rx="8"/>
+    <text x="906" y="1222" class="t h" font-size="13.5">6 · Projectdossier</text>
+    <text x="906" y="1241" class="s">BRL Bijlage 3:</text>
+    <text x="906" y="1255" class="s">bewijs + herkomst</text>
+    <text x="906" y="1269" class="s">per gegeven</text>
+    <text x="906" y="1287" class="s" fill="#c2410c">15 jaar bewaren</text>
+
+    <path class="flow" d="M250 1246 H266" marker-end="url(#arr)"/>
+    <path class="flow" d="M458 1246 H474" marker-end="url(#arr)"/>
+    <path class="flow" d="M666 1246 H682" marker-end="url(#arr)"/>
+    <path class="flow" d="M874 1246 H890" marker-end="url(#arr)"/>
+  </g>
+  <text x="560" y="1320" text-anchor="middle" class="s" font-size="11.5">Route B (Nij Begun) slaat 1a/1b/5/6 over — géén EP-Online-registratie-/projectdossierplicht.</text>
+  <text x="560" y="1340" text-anchor="middle" class="s" font-size="11.5" fill="#c2410c">ISSO H7 niet vergeten op te nemen: BAG pand-/VBO-id · gebouwtype · fossiele brandstof op perceel · leidingdoorvoeren door de thermische schil.</text>
+
+  <text x="560" y="1380" text-anchor="middle" class="s" font-size="11">Detail: docs/ISSO-82.1-opnameguide.md · docs/BRL-9500W-proceshandleiding.md · docs/projectdossier-checklist-bijlage3.md · docs/ISSO-BRL-gap-analyse.md</text>
+</svg>

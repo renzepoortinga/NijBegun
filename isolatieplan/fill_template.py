@@ -1,0 +1,247 @@
+"""
+Vult het officiele Nij Begun isolatieplan-Word-template vanuit een canoniek dossier.
+Exporteert fill(dossier, template_path, out_path) zodat de orchestrator (run.py) het kan aanroepen.
+"""
+import os, sys, argparse, copy, re
+import docx
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.dossier import load_json  # noqa: E402
+
+def eur(x):
+    return "" if x is None else "EUR " + ("%.2f" % x).replace(".", ",")
+def num_nl(x):
+    return "" if x is None else str(x).replace(".", ",")
+
+def replace_in_paragraph(p, mapping):
+    full = "".join(run.text for run in p.runs); new = full
+    for k, v in mapping.items():
+        if k in new: new = new.replace(k, v)
+    if new != full:
+        for run in p.runs: run.text = ""
+        if p.runs: p.runs[0].text = new
+        else: p.add_run(new)
+
+def replace_everywhere(doc, mapping):
+    for p in doc.paragraphs: replace_in_paragraph(p, mapping)
+    for t in doc.tables:
+        for row in t.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs: replace_in_paragraph(p, mapping)
+
+def set_cell(cell, text): cell.text = "" if text is None else str(text)
+def find_table(doc, pred):
+    for t in doc.tables:
+        if pred(t): return t
+    return None
+def first_cell(row): return row.cells[0].text.strip()
+
+def insert_row_after(row):
+    new_tr = copy.deepcopy(row._tr); row._tr.addnext(new_tr)
+    from docx.table import _Row
+    return _Row(new_tr, row._parent)
+
+def fill_kv_table(table, kv):
+    for row in table.rows:
+        cells = row.cells
+        for li, vi in ((0, 1), (2, 3)):
+            if len(cells) > vi:
+                label = cells[li].text.strip().lower(); cur = cells[vi].text.strip()
+                fillable = (cur == "" or "keuze maken" in cur.lower() or cur == "U/B/L")
+                for key, val in kv.items():
+                    if key in label and fillable:
+                        set_cell(cells[vi], val); break
+
+def onderdeel_letter(text):
+    m = re.search(r'Onderdeel\s+([A-E])', text); return m.group(1) if m else None
+
+def fill_maatregelen(table, per_letter):
+    rows = list(table.rows); i = 0
+    while i < len(rows):
+        letter = onderdeel_letter(first_cell(rows[i]))
+        if letter and letter in per_letter:
+            ms = per_letter[letter]; target_idx = i + 1
+            if target_idx < len(rows):
+                anchor = rows[target_idx]
+                for j, m in enumerate(ms):
+                    r = anchor if j == 0 else insert_row_after(anchor)
+                    if j > 0: anchor = r
+                    cells = r.cells
+                    vals = [m["omschrijving"], m["code"], m["rc_u_doel"], m["materiaal"],
+                            num_nl(m["oppervlakte_m2"]) + " m2", eur(m["kosten"])]
+                    for ci in range(min(len(cells), len(vals))): set_cell(cells[ci], vals[ci])
+                rows = list(table.rows)
+        i += 1
+
+def fill_warmteverlies(table, ber, renovatiejaar):
+    for row in table.rows:
+        lbl = first_cell(row).lower()
+        if len(row.cells) < 2: continue
+        if "standaard voor woning" in lbl: set_cell(row.cells[1], num_nl(ber.standaard_eis_kwh_m2))
+        elif "maatregelen zijn toegepast" in lbl: set_cell(row.cells[1], num_nl(ber.kwh_m2_na_maatregelen))
+        elif "renovatiejaar" in lbl: set_cell(row.cells[1], str(renovatiejaar) if renovatiejaar else "Nee")
+
+
+def _summary(schils, is_glas, rc_threshold):
+    if not schils:
+        return ("", "")
+    rcs = [s.rc_huidig for s in schils if s.rc_huidig is not None]
+    us = [s.u_huidig for s in schils if s.u_huidig is not None]
+    statuses = set(s.isolatie_aanwezig for s in schils)
+    if (statuses & {"Wel", "Ja"}) and not (statuses & {"Niet", "Nee", "Gedeeltelijk", "Onbekend", ""}):
+        niveau = "Wel geisoleerd"
+    elif rcs:
+        if min(rcs) >= rc_threshold: niveau = "Wel geisoleerd"
+        elif max(rcs) >= rc_threshold: niveau = "Gedeeltelijk geisoleerd"
+        else: niveau = "Niet/onbekend geisoleerd"
+    else:
+        niveau = "Niet/onbekend"
+    if is_glas and us:
+        waarde = ("U %.1f W/m2K" % us[0]) if len(set(us)) == 1 else ("U %.1f-%.1f W/m2K" % (min(us), max(us)))
+        glas = sorted({s.glastype for s in schils if s.glastype})
+        if glas: waarde += " (" + ", ".join(glas) + ")"
+    elif rcs:
+        waarde = ("Rc %.2f m2.K/W" % rcs[0]) if len(set(rcs)) == 1 else ("Rc %.2f-%.2f m2.K/W" % (min(rcs), max(rcs)))
+    else:
+        waarde = ""
+    return (niveau, waarde)
+
+def fill_huidige_staat(doc, dos):
+    by = {"gevel": [], "vloer": [], "dak": [], "kozijn": []}
+    for s in dos.schil:
+        if s.type in by: by[s.type].append(s)
+    gevel = _summary(by["gevel"], False, 2.5)
+    vloer = _summary(by["vloer"], False, 2.5)
+    dak = _summary(by["dak"], False, 3.5)
+    glas = _summary(by["kozijn"], True, 1.6)
+    vent_letter = ""
+    syss = (dos.ventilatie.systeem or "")
+    for L in ("A", "B", "C", "D"):
+        if syss.strip().upper().startswith(L) or (L + ":") in syss:
+            vent_letter = L; break
+    def _fillable(txt):
+        t = txt.strip().lower()
+        return t == "" or t.startswith("wel/niet") or "in het geval van" in t or "gedeeltelijk ge" in t
+    def put(row, niveau, waarde):
+        c = row.cells
+        if len(c) > 1 and _fillable(c[1].text): set_cell(c[1], niveau)
+        if len(c) > 2 and _fillable(c[2].text): set_cell(c[2], waarde)
+    for t in doc.tables:
+        for row in t.rows:
+            lbl = first_cell(row).lower()
+            if "spouwmuur isolatie" in lbl: put(row, gevel[0], gevel[1])
+            elif "beglazing (enkel" in lbl or lbl.startswith("beglazing"): put(row, glas[0], glas[1])
+            elif "onderzijde begane grond" in lbl: put(row, vloer[0], vloer[1])
+            elif "binnenzijde hellend dak" in lbl: put(row, dak[0], dak[1])
+            elif "huidig warmteverlies in de" in lbl:
+                if len(row.cells) > 1 and row.cells[1].text.strip() == "":
+                    set_cell(row.cells[1], num_nl(dos.berekening.kwh_m2_huidig))
+            elif vent_letter and lbl.startswith("type " + vent_letter.lower()):
+                if len(row.cells) > 1 and row.cells[1].text.strip() == "":
+                    set_cell(row.cells[1], "Aanwezig (huidige situatie): " + syss)
+
+
+def _clone_table_after(table):
+    """Kloon een prijsopbouw-blok en plaats het (met lege tussenalinea) erna."""
+    from docx.table import Table
+    from docx.oxml.ns import qn
+    new_tbl = copy.deepcopy(table._tbl)
+    table._tbl.addnext(new_tbl)
+    new_tbl.addprevious(new_tbl.makeelement(qn("w:p"), {}))  # anders voegt Word tabellen samen
+    return Table(new_tbl, table._parent)
+
+def _cat_data_rows(table):
+    """{1: rij, 2: rij, 3: rij, 'subtotaal': rij} voor een prijsopbouw-blok."""
+    rows = list(table.rows); out = {}
+    for ri, row in enumerate(rows):
+        c1 = row.cells[1].text.lower() if len(row.cells) > 1 else ""
+        for cat in (1, 2, 3):
+            if ("categorie %d" % cat) in c1 and ri + 1 < len(rows):
+                out[cat] = rows[ri + 1]
+        if "subtotaal" in first_cell(row).lower():
+            out["subtotaal"] = row
+    return out
+
+def _fill_prijsregel(row, code, oms, prijs, eenheid, hoeveelheid, kosten):
+    hoev = (num_nl(round(hoeveelheid, 2)) + " " + (eenheid or "m2")) if hoeveelheid else (eenheid or "")
+    vals = [code, (oms or "")[:40], eur(prijs), hoev, eur(kosten)]
+    for ci in range(min(len(row.cells), len(vals))):
+        set_cell(row.cells[ci], vals[ci])
+
+def fill_prijsopbouw(doc, dos):
+    blocks = [t for t in doc.tables if t.rows and first_cell(t.rows[0]).lower().startswith("maatregel:")]
+    ms = dos.maatregelen
+    while blocks and len(blocks) < len(ms):     # blok per maatregel (kloon de rest)
+        blocks.append(_clone_table_after(blocks[-1]))
+    for bi, t in enumerate(blocks):
+        if bi >= len(ms):                        # ongebruikt blok leegmaken
+            set_cell(t.rows[0].cells[0], "Maatregel: -"); continue
+        m = ms[bi]
+        set_cell(t.rows[0].cells[0], "Maatregel: " + (m.omschrijving or m.code)[:60])
+        cr = _cat_data_rows(t)
+        if 1 in cr:
+            _fill_prijsregel(cr[1], m.code, m.omschrijving, m.prijs_per_eenheid,
+                             m.eenheid, m.oppervlakte_m2, m.kosten)
+        subtot = m.kosten or 0
+        for cat in (2, 3):
+            sp = next((s for s in m.subposten if s.categorie == cat), None)
+            if sp and cat in cr:
+                _fill_prijsregel(cr[cat], sp.code, sp.omschrijving, sp.prijs_per_eenheid,
+                                 sp.eenheid, sp.hoeveelheid, sp.kosten)
+                subtot += sp.kosten or 0
+        if "subtotaal" in cr and len(cr["subtotaal"].cells) > 1:
+            set_cell(cr["subtotaal"].cells[-1], eur(round(subtot, 2)))
+
+def fill(dos, template_path, out_path):
+    """Vul het template vanuit dossier-object. Retourneer (aantal_maatregelen, totaal)."""
+    doc = docx.Document(template_path)
+    idf, adv, opn, ber = dos.identificatie, dos.adviseur, dos.opname, dos.berekening
+    woning = idf.woningtype or ""
+    replace_everywhere(doc, {
+        "< Straatnaam >": (idf.straat + " " + idf.huisnummer).strip(),
+        "< Postcode >": idf.postcode, "<Plaatsnaam>": idf.plaats,
+        "< voor en achternaam isolatieadviseur >": adv.naam,
+        "< bedrijfsnaam invullen >": adv.bedrijf,
+        "<telefoonnummer waarop isolatieadviseur bereikbaar is>": adv.telefoon,
+        "< Keuze maken >": woning})
+    t_geg = find_table(doc, lambda t: t.rows and "1. Gegevens" in t.rows[0].cells[0].text)
+    if t_geg:
+        fill_kv_table(t_geg, {
+            "adres": (idf.straat + " " + idf.huisnummer).strip(),
+            "postcode": (idf.postcode + " " + idf.plaats).strip(),
+            "bouwjaar": str(idf.bouwjaar or ""), "type woning": woning,
+            "type advies": opn.type_advies, "opnamedatum": opn.opnamedatum,
+            "rapportagedatum": opn.rapportagedatum, "organisatie": adv.bedrijf,
+            "gebruikte isolat": "Vabi EPA-W (NTA 8800)", "naam adviseur": adv.naam})
+    per_letter = {}
+    for m in dos.maatregelen:
+        per_letter.setdefault((m.onderdeel or " ")[0], []).append({
+            "omschrijving": m.omschrijving, "code": m.code, "rc_u_doel": m.rc_u_doel,
+            "materiaal": m.materiaal, "oppervlakte_m2": m.oppervlakte_m2, "kosten": m.kosten})
+    for t in doc.tables:
+        if any(onderdeel_letter(first_cell(r)) for r in t.rows): fill_maatregelen(t, per_letter)
+    totaal = sum((m.kosten or 0) for m in dos.maatregelen)
+    for t in doc.tables:
+        for row in t.rows:
+            if "totale kosten" in first_cell(row).lower() and len(row.cells) > 1:
+                set_cell(row.cells[-1], eur(totaal))
+    t_wv = find_table(doc, lambda t: t.rows and "Warmteverlies" in t.rows[0].cells[0].text)
+    if t_wv: fill_warmteverlies(t_wv, ber, idf.renovatiejaar)
+    fill_huidige_staat(doc, dos)
+    fill_prijsopbouw(doc, dos)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True); doc.save(out_path)
+    return sum(len(v) for v in per_letter.values()), totaal
+
+def main():
+    here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--template", required=True)
+    ap.add_argument("--dossier", default=os.path.join(root, "sample_dossier_priced.json"))
+    ap.add_argument("--out", default=os.path.join(root, "out", "isolatieplan.docx"))
+    a = ap.parse_args()
+    dos = load_json(a.dossier)
+    n, totaal = fill(dos, a.template, a.out)
+    print("OK: " + a.out)
+    print("  maatregelen ingevuld: %d | totale kosten: %s" % (n, eur(totaal)))
+
+if __name__ == "__main__":
+    main()

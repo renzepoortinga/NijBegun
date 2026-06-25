@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Nij Begun & EPA canoniek dossier",
+  "version": "0.3",
+  "type": "object",
+  "required": [
+    "identificatie",
+    "schil"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "identificatie": {
+      "type": "object",
+      "properties": {
+        "bag_vboid": {
+          "type": "string"
+        },
+        "postcode": {
+          "type": "string"
+        },
+        "huisnummer": {
+          "type": "string"
+        },
+        "bouwjaar": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "renovatiejaar": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "woningtype": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "postcode",
+        "huisnummer"
+      ]
+    },
+    "adviseur": {
+      "type": "object"
+    },
+    "opname": {
+      "type": "object"
+    },
+    "geometrie": {
+      "type": "object"
+    },
+    "schil": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "gevel",
+              "vloer",
+              "dak",
+              "kozijn"
+            ]
+          },
+          "begrenzing": {
+            "type": "string"
+          },
+          "oppervlakte_m2": {
+            "type": "number"
+          },
+          "rc_huidig": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "u_huidig": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": []
+      }
+    },
+    "ventilatie": {
+      "type": "object"
+    },
+    "berekening": {
+      "type": "object"
+    },
+    "maatregelen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "onderdeel": {
+            "type": "string"
+          },
+          "oppervlakte_m2": {
+            "type": "number"
+          },
+          "kosten": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": []
+      }
+    },
+    "haalbaarheid": {
+      "type": "array"
+    },
+    "fotos": {
+      "type": "array"
+    },
+    "validatie": {
+      "type": "object"
+    },
+    "meta": {
+      "type": "object"
+    }
+  }
+}

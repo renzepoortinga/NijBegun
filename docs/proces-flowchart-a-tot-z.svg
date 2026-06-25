@@ -1,0 +1,115 @@
+<svg viewBox="0 0 1180 820" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif">
+<title>Werkwijze van woning tot energielabel/Nij Begun isolatieplan — conform ISSO 82.1 (7e druk) + BRL 9500-W</title>
+<desc>Volledige procesketen: opdracht en opname-soort, opdrachtgever informeren, opname in de woning, de tool draaien, Vabi EPA-W rekenen, registreren in EP-Online en het projectdossier archiveren. Twee routes: energielabel (BRL 9500-W) en Nij Begun isolatieplan.</desc>
+<style>
+  .ttl{fill:#16181d;font-weight:700}.sub{fill:#5b616e}
+  .box{fill:#ffffff;stroke:#d6d9e0;stroke-width:1.5}
+  .num{fill:#ffffff;font-weight:700}.lab{fill:#16181d;font-weight:650}.det{fill:#16181d}
+  .green{fill:#15935a}.gbar{fill:#15935a}.bbar{fill:#2f6fd0}.obar{fill:#c9740a}
+  .arr{stroke:#aeb3bd;stroke-width:2;fill:none;marker-end:url(#a)}
+  .arrd{stroke:#c2c7d0;stroke-width:1.6;fill:none;stroke-dasharray:5 4;marker-end:url(#a)}
+</style>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#aeb3bd"/></marker></defs>
+<rect x="0" y="0" width="1180" height="820" fill="#ffffff"/>
+<text x="34" y="40" font-size="25" class="ttl">Van woning tot energielabel én Nij Begun isolatieplan — A tot Z</text>
+<text x="34" y="66" font-size="14.5" class="sub">Procesketen conform ISSO 82.1 (7e druk) + BRL 9500-W (aangewezen 29-05-2026). Vabi EPA-W blijft de rekenkern (de tool rekent NTA 8800 nooit zelf).</text>
+
+<!-- route-split banner -->
+<rect x="34" y="84" width="560" height="40" rx="9" fill="#eef4fc" stroke="#bcd4f2"/>
+<rect x="34" y="84" width="7" height="40" rx="3.5" class="bbar"/>
+<text x="54" y="103" font-size="13.5" class="lab">Route A — Energielabel (BRL 9500-W + ISSO 82.1)</text>
+<text x="54" y="119" font-size="11.5" class="sub">registratie EP-Online + projectdossier verplicht · basis (EP-W/B) of detail (EP-W/D)</text>
+<rect x="610" y="84" width="536" height="40" rx="9" fill="#eef7f0" stroke="#bfe3cd"/>
+<rect x="610" y="84" width="7" height="40" rx="3.5" class="gbar"/>
+<text x="630" y="103" font-size="13.5" class="lab">Route B — Nij Begun isolatieplan (Maatregel 29)</text>
+<text x="630" y="119" font-size="11.5" class="sub">isolatieplan + ventilatie + KWACO · geen EP-Online-registratieplicht</text>
+
+<!-- STEP ROW 1: 1a, 1b, 2 -->
+<rect x="34" y="146" width="262" height="104" rx="12" class="box"/><rect x="34" y="146" width="262" height="7" rx="3.5" class="obar"/>
+<circle cx="58" cy="180" r="13" class="obar"/><text x="58" y="185" font-size="14" text-anchor="middle" class="num">1a</text>
+<text x="80" y="178" font-size="14.5" class="lab">Opdracht &amp; opname-soort</text><text x="80" y="196" font-size="11.5" class="sub">kantoor · BRL 9500-W §4.2.2</text>
+<text x="48" y="221" font-size="11" class="det">opdrachtgever · doel/bouwfase (Bbl-toets/</text>
+<text x="48" y="237" font-size="11" class="det">oplevering→DETAIL · bestaand→basis óf detail) · EP-W/B of /D</text>
+
+<rect x="312" y="146" width="262" height="104" rx="12" class="box"/><rect x="312" y="146" width="262" height="7" rx="3.5" class="obar"/>
+<circle cx="336" cy="180" r="13" class="obar"/><text x="336" y="185" font-size="14" text-anchor="middle" class="num">1b</text>
+<text x="358" y="178" font-size="14.5" class="lab">Opdrachtgever informeren</text><text x="358" y="196" font-size="11.5" class="sub">schriftelijk · BRL §4.2.2</text>
+<text x="326" y="221" font-size="11" class="det">EP-Online-registratie · recht op projectdossier ·</text>
+<text x="326" y="237" font-size="11" class="det">CI-controle · klachtenprocedure</text>
+
+<rect x="590" y="146" width="262" height="104" rx="12" class="box"/><rect x="590" y="146" width="262" height="7" rx="3.5" class="bbar"/>
+<circle cx="614" cy="180" r="13" class="bbar"/><text x="614" y="185" font-size="14" text-anchor="middle" class="num">2</text>
+<text x="636" y="178" font-size="14.5" class="lab">Opname in de woning</text><text x="636" y="196" font-size="11.5" class="sub">MagicPlan · ISSO 82.1 H6–H16</text>
+<text x="604" y="221" font-size="11" class="det">scan + tag + foto's · gebouwbegrenzing ·</text>
+<text x="604" y="237" font-size="11" class="det">schil + installaties + PV</text>
+
+<!-- STEP ROW: 3, 4, 5, 6 -->
+<rect x="868" y="146" width="278" height="104" rx="12" class="box"/><rect x="868" y="146" width="278" height="7" rx="3.5" class="gbar"/>
+<circle cx="892" cy="180" r="13" class="gbar"/><text x="892" y="185" font-size="14" text-anchor="middle" class="num">3</text>
+<text x="914" y="178" font-size="14.5" class="lab">Tool draaien</text><text x="914" y="196" font-size="11.5" class="sub">1 commando · automatisch</text>
+<text x="882" y="221" font-size="11" class="det green">3 VABI-bibliotheken + isolatieplan +</text>
+<text x="882" y="237" font-size="11" class="det green">ventilatie + foto-checklist + KWACO</text>
+
+<path class="arr" d="M296 198 H310"/><path class="arr" d="M574 198 H588"/><path class="arr" d="M852 198 H866"/>
+
+<!-- step 4 -->
+<rect x="34" y="286" width="262" height="104" rx="12" class="box"/><rect x="34" y="286" width="262" height="7" rx="3.5" class="bbar"/>
+<circle cx="58" cy="320" r="13" class="bbar"/><text x="58" y="325" font-size="14" text-anchor="middle" class="num">4</text>
+<text x="80" y="318" font-size="14.5" class="lab">Vabi EPA-W rekenen</text><text x="80" y="336" font-size="11.5" class="sub">importeren + Rekenen</text>
+<text x="48" y="361" font-size="11" class="det">label + Standaard/Bbl-toets · bij DETAIL:</text>
+<text x="48" y="377" font-size="11" class="det">Rc/U/g onderbouwd (DoP/verklaring/opgemeten)</text>
+
+<rect x="312" y="286" width="262" height="104" rx="12" class="box"/><rect x="312" y="286" width="262" height="7" rx="3.5" class="obar"/>
+<circle cx="336" cy="320" r="13" class="obar"/><text x="336" y="325" font-size="14" text-anchor="middle" class="num">5</text>
+<text x="358" y="318" font-size="14.5" class="lab">Registreren EP-Online</text><text x="358" y="336" font-size="11.5" class="sub">Route A · BRL §4.2.5</text>
+<text x="326" y="361" font-size="11" class="det">binnen 3 mnd na opnamedatum · juiste software-</text>
+<text x="326" y="377" font-size="11" class="det">versie · opnemende + registrerende adviseur (nr.)</text>
+
+<rect x="590" y="286" width="262" height="104" rx="12" class="box"/><rect x="590" y="286" width="262" height="7" rx="3.5" class="obar"/>
+<circle cx="614" cy="320" r="13" class="obar"/><text x="614" y="325" font-size="14" text-anchor="middle" class="num">6</text>
+<text x="636" y="318" font-size="14.5" class="lab">Projectdossier archiveren</text><text x="636" y="336" font-size="11.5" class="sub">BRL Bijlage 3 · ISSO §5.7</text>
+<text x="604" y="361" font-size="11" class="det">opdrachtgever · tekeningen · foto's · DoP/</text>
+<text x="604" y="377" font-size="11" class="det">verklaringen · uitvoerfile + versie · 15 jaar bewaren</text>
+
+<!-- representativiteit dotted optional -->
+<rect x="868" y="286" width="278" height="104" rx="12" fill="#fbfbfc" stroke="#c2c7d0" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="882" y="312" font-size="13.5" class="lab">Representativiteit (seriematig)</text><text x="882" y="330" font-size="11.5" class="sub">ISSO H17 · BRL §4.3 — BUITEN TOOLSCOPE</text>
+<text x="882" y="356" font-size="11" class="det">deelverzamelingen + steekproef (tabel 17.2) →</text>
+<text x="882" y="372" font-size="11" class="det">referentie-rapport · doet de adviseur handmatig</text>
+
+<!-- arrows down + across for bottom row -->
+<path class="arr" d="M165 250 V284"/>
+<path class="arr" d="M296 338 H310"/><path class="arr" d="M574 338 H588"/>
+<path class="arrd" d="M852 338 H866"/>
+
+<!-- detail panels -->
+<rect x="34" y="416" width="556" height="250" rx="12" fill="#f6f7f9" stroke="#d6d9e0" stroke-width="1.5"/>
+<text x="52" y="444" font-size="15.5" class="lab">Stap 2 — wat je in de woning opneemt (ISSO 82.1)</text>
+<text x="52" y="474" font-size="13" class="det">Gebouwbegrenzing (H6): beloopbare zolder ≥1,5 m + vaste trap · knieschot · garage/AOR · AVR</text>
+<text x="52" y="500" font-size="13" class="det">Algemeen (H7): gebouwtype · BAG pand-id/VBO-id · fossiele brandstof op perceel · leidingdoorvoeren</text>
+<text x="52" y="526" font-size="13" class="det">Schil (H8): elke buitenmuur een oriëntatie · begrenzing in de wandnaam · dak per vlak · isolatie(dikte)</text>
+<text x="52" y="552" font-size="13" class="det">Installaties (H9–13): verwarming · tapwater · koeling · ventilatie (A–E) — opwekker + afgifte + jaar</text>
+<text x="52" y="578" font-size="13" class="det">Opwekking (H15) + beschaduwing (H16): PV/zonneboiler — oriëntatie/hoek/m² · belemmering per vlak</text>
+<text x="52" y="604" font-size="13" class="det">Ruimtes benoemen (Woonkamer/Keuken/Slaapkamer) → ventilatiebalans</text>
+<text x="52" y="630" font-size="13" class="det">Foto's (7 velden in de MagicPlan-form): vooraanzicht + huisnummer (verplicht) · typeplaatjes · isolatiedikte (duimstok)</text>
+<text x="52" y="656" font-size="12.5" class="det" font-weight="650" fill="#c9740a">Route A-poort: bouwfase Bbl-toets/oplevering → DETAIL (EP-W/D) verplicht · "onbekend" bij waarneembaar = kritieke afwijking</text>
+
+<rect x="614" y="416" width="532" height="250" rx="12" fill="#f6f7f9" stroke="#d6d9e0" stroke-width="1.5"/>
+<text x="632" y="444" font-size="15.5" class="lab">Stap 3 — wat de tool maakt (automatisch)</text>
+<rect x="632" y="460" width="496" height="44" rx="9" fill="#ffffff" stroke="#bfe3cd"/><rect x="632" y="460" width="6" height="44" rx="3" class="gbar"/>
+<text x="652" y="480" font-size="12.5" font-weight="650" class="det">3 VABI-bibliotheken</text><text x="652" y="497" font-size="11" class="sub">Constructies · Objecten · Installaties (incl. PV) → importeren foutloos in EPA 12.0.1</text>
+<rect x="632" y="510" width="496" height="44" rx="9" fill="#ffffff" stroke="#bfe3cd"/><rect x="632" y="510" width="6" height="44" rx="3" class="gbar"/>
+<text x="652" y="530" font-size="12.5" font-weight="650" class="det">Nij Begun isolatieplan (Word)</text><text x="652" y="547" font-size="11" class="sub">maatregelpakket + prijzen + meerwerk</text>
+<rect x="632" y="560" width="496" height="44" rx="9" fill="#ffffff" stroke="#bfe3cd"/><rect x="632" y="560" width="6" height="44" rx="3" class="gbar"/>
+<text x="652" y="580" font-size="12.5" font-weight="650" class="det">Ventilatiebalans + foto-checklist + KWACO</text><text x="652" y="597" font-size="11" class="sub">Nij Begun-vuistregels · validator</text>
+<text x="632" y="632" font-size="12" class="sub" font-style="italic">De adviseur vult installatie-detail (warmtepomp/koeling/tapwater)</text>
+<text x="632" y="650" font-size="12" class="sub" font-style="italic">+ onderbouwing bij detailopname aan in Vabi (golden rule).</text>
+
+<!-- legend -->
+<rect x="34" y="690" width="14" height="14" rx="3" class="gbar"/><text x="55" y="702" font-size="12.5" class="sub">automatisch (de tool)</text>
+<rect x="220" y="690" width="14" height="14" rx="3" class="bbar"/><text x="241" y="702" font-size="12.5" class="sub">jij / in Vabi (rekenen + label)</text>
+<rect x="470" y="690" width="14" height="14" rx="3" class="obar"/><text x="491" y="702" font-size="12.5" class="sub">jij (BRL-proces: opdracht · registratie · dossier)</text>
+<rect x="820" y="690" width="14" height="14" rx="3" fill="#fbfbfc" stroke="#c2c7d0" stroke-dasharray="3 3"/><text x="841" y="702" font-size="12.5" class="sub">buiten toolscope (handmatig)</text>
+<text x="34" y="734" font-size="12" class="sub" font-style="italic">Gouden regel: de tool rekent NTA 8800 nooit zelf — Vabi EPA-W (geattesteerd) bevestigt het label en de Standaard. Route B (Nij Begun) heeft géén EP-Online-registratie-/projectdossierplicht.</text>
+<text x="34" y="758" font-size="11.5" class="sub">Bron: ISSO 82.1 Energieprestatie woningen en woongebouwen, 7e druk · BRL 9500-W (NL-EPBD®-procescertificaat, aangewezen 29-05-2026). Zie docs/WERKWIJZE-A-TOT-Z.md (stap-voor-stap) + docs/BRL-9500W-proceshandleiding.md (Route A) + docs/ISSO-BRL-gap-analyse.md (dekking).</text>
+</svg>

@@ -1,0 +1,2240 @@
+{
+ "sources": [
+  "standaard_constructies_v120001001.xml",
+  "Constructiebibliotheek Oosterkade.xml",
+  "Installatiebibliotheek Oosterkade.xml",
+  "Objectenbibliotheek Oosterkade.xml"
+ ],
+ "versions": [
+  "FullApplicationVersion=12.0.0",
+  "FullApplicationVersion=12.0.1",
+  "XmlVersie=120000061",
+  "XmlVersie=120001001"
+ ],
+ "enums": {
+  "Algemeen/AantalDoorLangsAndereAangrenzendeRekenzonesAvr": {
+   "0": []
+  },
+  "Algemeen/AantalLeidingdoorvoerenStandleidingen": {
+   "0": []
+  },
+  "Algemeen/AantalOnzelfstandigeDelenBinnenObject": {
+   "0": []
+  },
+  "Algemeen/BedieningVentilatieveKoeling": {
+   "-1": []
+  },
+  "Algemeen/Bron": {
+   "-1": []
+  },
+  "Algemeen/DoorLangsAndereAangrenzendeRekenzonesAvr": {
+   "0": []
+  },
+  "Algemeen/EffectieveInterneWarmtecapaciteitVolgensBijlageB": {
+   "0": []
+  },
+  "Algemeen/Hoofdfunctie": {
+   "-1": []
+  },
+  "Algemeen/IsEpvAanwezig": {
+   "0": []
+  },
+  "Algemeen/IsZorgwoning": {
+   "0": []
+  },
+  "Algemeen/KwaliteitsverklaringPCM": {
+   "0": []
+  },
+  "Algemeen/KwaliteitsverklaringVentilatieveKoeling": {
+   "0": []
+  },
+  "Algemeen/LeidingGeisoleerd": {
+   "0": []
+  },
+  "Algemeen/MassaList": {
+   "0": []
+  },
+  "Algemeen/Monument": {
+   "0": []
+  },
+  "Algemeen/Qv10Gemeten": {
+   "0": []
+  },
+  "Algemeen/SoortelijkeWarmteList": {
+   "0": []
+  },
+  "Algemeen/Status": {
+   "0": []
+  },
+  "Algemeen/TypeBouwwijzeVloeren": {
+   "1": []
+  },
+  "Algemeen/TypeBouwwijzeWanden": {
+   "1": []
+  },
+  "Algemeen/TypePlafond": {
+   "-1": []
+  },
+  "Algemeen/TypeVentilatieveKoeling": {
+   "-1": []
+  },
+  "Algemeen/VentilatieveKoelingAanwezig": {
+   "0": []
+  },
+  "Algemeen/ZwareVloerMetLichtPlafond": {
+   "0": []
+  },
+  "Biomassa/Eenheid": {
+   "3": [],
+   "-1": []
+  },
+  "Biomassa/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Biomassa/Type": {
+   "5": [],
+   "-1": []
+  },
+  "Constructie/AutoNaam": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "1": [
+    "Dak hellend 90 mm isolatie (Rc = 2.22)",
+    "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)",
+    "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+    "Deur ongeïsoleerd (U = 3.40)"
+   ]
+  },
+  "Constructie/Blocked": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Constructie/Bron": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "-1": [
+    "Dak hellend 90 mm isolatie (Rc = 2.22)",
+    "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)",
+    "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+    "Deur ongeïsoleerd (U = 3.40)"
+   ]
+  },
+  "Constructie/ConstructieType": {
+   "0": [
+    "Gevel 10 mm isolatie (met spouw)",
+    "Gevel 10 mm isolatie (zonder spouw)",
+    "Gevel 100 mm isolatie",
+    "Gevel 110 mm isolatie"
+   ],
+   "1": [
+    "Paneel in kozijn 10 mm isolatie (met spouw, Hout of kunststof)",
+    "Paneel in kozijn 10 mm isolatie (met spouw, Metaal (niet thermisch onderbroken))",
+    "Paneel in kozijn 10 mm isolatie (met spouw, Metaal (thermisch onderbroken))",
+    "Paneel in kozijn 10 mm isolatie (zonder spouw, Hout of kunststof)"
+   ],
+   "2": [
+    "Dubbel glas (hout/kunststof)",
+    "Dubbel glas (metaal)",
+    "Dubbel glas (therm. onderbroken metaal)",
+    "Enkel glas (hout/kunststof)"
+   ],
+   "3": [
+    "Deur (geisoleerd)",
+    "Deur (niet geisoleerd)",
+    "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+    "Deur ongeïsoleerd (U = 3.40)"
+   ],
+   "4": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "5": [
+    "Dak hellend 90 mm isolatie (Rc = 2.22)"
+   ],
+   "6": [
+    "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)"
+   ],
+   "7": [
+    "Vloer 10 mm isolatie (met spouw)",
+    "Vloer 10 mm isolatie (zonder spouw)",
+    "Vloer 100 mm isolatie",
+    "Vloer 110 mm isolatie"
+   ]
+  },
+  "Constructie/DeurMetRaamGlas65Procent": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "1": [
+    "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)"
+   ]
+  },
+  "Constructie/Glas": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "1": [
+    "Voorzetraam (hout/kunststof)",
+    "Voorzetraam (metaal)",
+    "Voorzetraam (therm. onderbroken metaal)"
+   ],
+   "2": [
+    "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+    "Deur ongeïsoleerd (U = 3.40)",
+    "Dubbel glas (hout/kunststof)",
+    "Dubbel glas (metaal)"
+   ],
+   "3": [
+    "HR glas (hout/kunststof)",
+    "HR glas (metaal)",
+    "HR glas (therm. onderbroken metaal)"
+   ],
+   "4": [
+    "HR+ glas (hout/kunststof)",
+    "HR+ glas (metaal)",
+    "HR+ glas (therm. onderbroken metaal)"
+   ],
+   "5": [
+    "HR++ glas (hout/kunststof)",
+    "HR++ glas (metaal)",
+    "HR++ glas (therm. onderbroken metaal)",
+    "Raam HR++ glas (Hout of kunststof, U = 1.80, g = 0.60)"
+   ],
+   "6": [
+    "TripleHR glas (hout/kunststof)",
+    "TripleHR glas (metaal)",
+    "TripleHR glas (therm. onderbroken metaal)"
+   ],
+   "-1": [
+    "Dak hellend 90 mm isolatie (Rc = 2.22)",
+    "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)",
+    "Gevel isolatie onbekend (1992-2013, Rc = 2.50)",
+    "Vloer isolatie onbekend (1992-2013, Rc = 2.50)"
+   ]
+  },
+  "Constructie/Hidden": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Constructie/Invoer": {
+   "6": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Constructie/IsolatieAanwezig": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "1": [
+    "Dak met spouw",
+    "Dak zonder spouw",
+    "Deur (niet geisoleerd)",
+    "Deur ongeïsoleerd (U = 3.40)"
+   ],
+   "2": [
+    "Vloer thermokussen"
+   ],
+   "3": [
+    "Dak isol. onbekend (1965-1974)",
+    "Dak isol. onbekend (1975-1982)",
+    "Dak isol. onbekend (1983-1987)",
+    "Dak isol. onbekend (1988-1991)"
+   ],
+   "-1": [
+    "Deur met raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+    "Raam Dubbel glas (Hout of kunststof, U = 2.90, g = 0.75)",
+    "Raam HR++ glas (Hout of kunststof, U = 1.80, g = 0.60)"
+   ]
+  },
+  "Constructie/IsolatiedikteOnbekend": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "1": [
+    "Dak isol. onbekend (1965-1974)",
+    "Dak isol. onbekend (1975-1982)",
+    "Dak isol. onbekend (1983-1987)",
+    "Dak isol. onbekend (1988-1991)"
+   ]
+  },
+  "Constructie/Kozijn": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ],
+   "3": [
+    "Dubbel glas (therm. onderbroken metaal)",
+    "Enkel glas (therm. onderbroken metaal)",
+    "HR glas (therm. onderbroken metaal)",
+    "HR+ glas (therm. onderbroken metaal)"
+   ],
+   "4": [
+    "Dubbel glas (metaal)",
+    "Enkel glas (metaal)",
+    "HR glas (metaal)",
+    "HR+ glas (metaal)"
+   ],
+   "-1": [
+    "Dak hellend 90 mm isolatie (Rc = 2.22)",
+    "Dak plat isolatie onbekend (1992-2013, Rc = 2.50)",
+    "Gevel isolatie onbekend (1992-2013, Rc = 2.50)",
+    "Vloer isolatie onbekend (1992-2013, Rc = 2.50)"
+   ]
+  },
+  "Constructie/KwaliteitsverklaringInvoermethode": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Constructie/ProductinformatieGWaarde": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Constructie/RietenDak": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Constructie/SpouwAanwezig": {
+   "0": [
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 20 mm isolatie (zonder spouw)",
+    "Dak 30 mm isolatie (zonder spouw)",
+    "Dak hellend 90 mm isolatie (Rc = 2.22)"
+   ],
+   "1": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie",
+    "Dak 120 mm isolatie"
+   ]
+  },
+  "Constructie/ZonwerendeFolieOfGlas": {
+   "0": [
+    "Dak 10 mm isolatie (met spouw)",
+    "Dak 10 mm isolatie (zonder spouw)",
+    "Dak 100 mm isolatie",
+    "Dak 110 mm isolatie"
+   ]
+  },
+  "Deelfunctie/Deelfunctie": {
+   "0": []
+  },
+  "Deelfunctie/Functie": {
+   "-1": []
+  },
+  "Deelvlak/AutoNaam": {
+   "1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/Belemmering": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/BelemmeringLinks": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/BelemmeringLinksHoogteverschil": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/BelemmeringPercentage": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/BelemmeringRechts": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/BelemmeringRechtsHoogteverschil": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/ConstanteBelemmering": {
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/InvoerBeschaduwing": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/InvoerOverstek": {
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/Overstek": {
+   "0": [
+    "Deur",
+    "Raam"
+   ],
+   "1": [
+    "Raam"
+   ]
+  },
+  "Deelvlak/OverstekPercentage": {
+   "0": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/RelatieveBreedteZijbelemmering": {
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/VasteZonwering": {
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/Zijbelemmering": {
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/Zonwering": {
+   "3": [
+    "Deur"
+   ],
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/ZonweringBediening": {
+   "3": [
+    "Deur"
+   ],
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Deelvlak/ZonweringKleur": {
+   "-1": [
+    "Deur",
+    "Raam"
+   ]
+  },
+  "Elektriciteit/Eenheid": {
+   "1": [],
+   "-1": []
+  },
+  "Elektriciteit/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Elektriciteit/Type": {
+   "0": [],
+   "-1": []
+  },
+  "Financieel/HeeftSlimmeMeter": {
+   "0": [],
+   "1": []
+  },
+  "Financieel/InclBtw": {
+   "1": []
+  },
+  "Gas/Eenheid": {
+   "0": [],
+   "-1": []
+  },
+  "Gas/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Gas/Type": {
+   "2": [],
+   "-1": []
+  },
+  "Hoofdvlak/AangrenzendGebouwIsAnderGebouwcomplex": {
+   "0": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/AangrenzendGebouwfunctie": {
+   "-1": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/AanwezigheidVentilatieKruipruimte": {
+   "-1": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/AutoNaam": {
+   "0": [
+    "Gevel (Noord)",
+    "Gevel (Noord)-Kopie"
+   ],
+   "1": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/AutoPerimeter": {
+   "0": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/BodemisolatieKruipruimte": {
+   "2": [
+    "Vloer"
+   ],
+   "-1": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/BouwdeelIsInactief": {
+   "0": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/Bron": {
+   "-1": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ]
+  },
+  "Hoofdvlak/GrenstAan": {
+   "0": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ],
+   "2": [
+    "Gevel",
+    "Vloer"
+   ],
+   "3": [
+    "Vloer"
+   ],
+   "4": [
+    "Gevel"
+   ]
+  },
+  "Hoofdvlak/Hellingshoek": {
+   "3": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ],
+   "6": [
+    "Dak plat",
+    "Gevel",
+    "Gevel (Noord)",
+    "Gevel (Noord)-Kopie"
+   ]
+  },
+  "Hoofdvlak/Locatie": {
+   "0": [
+    "Vloer"
+   ],
+   "1": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ],
+   "2": [
+    "Gevel",
+    "Gevel (Noord)",
+    "Gevel (Noord)-Kopie",
+    "Gevel (Noord-Oost)"
+   ],
+   "3": [
+    "Gevel",
+    "Gevel (Zuid-West)"
+   ],
+   "4": [
+    "Gevel",
+    "Gevel (Zuid-Oost)"
+   ],
+   "5": [
+    "Gevel",
+    "Gevel (Noord-West)"
+   ]
+  },
+  "Hoofdvlak/Orientatie": {
+   "1": [
+    "Dak hellend (Zuid-West)",
+    "Gevel",
+    "Gevel (Zuid-West)"
+   ],
+   "3": [
+    "Dak hellend (Noord-West)",
+    "Gevel",
+    "Gevel (Noord-West)"
+   ],
+   "4": [
+    "Gevel (Noord)"
+   ],
+   "5": [
+    "Dak hellend (Noord-Oost)",
+    "Gevel",
+    "Gevel (Noord-Oost)"
+   ],
+   "6": [
+    "Gevel (Noord)-Kopie"
+   ],
+   "7": [
+    "Dak hellend (Zuid-Oost)",
+    "Gevel",
+    "Gevel (Zuid-Oost)"
+   ],
+   "-1": [
+    "Dak plat",
+    "Vloer"
+   ]
+  },
+  "Hoofdvlak/VloerOpBovenMaaiveld": {
+   "0": [
+    "Dak hellend (Noord-Oost)",
+    "Dak hellend (Noord-West)",
+    "Dak hellend (Zuid-Oost)",
+    "Dak hellend (Zuid-West)"
+   ],
+   "1": [
+    "Vloer"
+   ]
+  },
+  "HuidigeWaarde/Streefpercentage": {
+   "0": []
+  },
+  "HuidigeWaarde/WozJaar": {
+   "0": []
+  },
+  "Installatie/KoelingBron": {
+   "-1": [
+    "Installatie"
+   ]
+  },
+  "Installatie/VerwarmingBron": {
+   "1": [
+    "Installatie"
+   ]
+  },
+  "KoelingAfgifte/AantalToestellen": {
+   "0": []
+  },
+  "KoelingAfgifte/Afgiftesysteem": {
+   "-1": []
+  },
+  "KoelingAfgifte/AfgiftesysteemRegeling": {
+   "-1": []
+  },
+  "KoelingAfgifte/VentilatorvermogenBekend": {
+   "0": []
+  },
+  "KoelingDistributie/AantalBouwlagenWaardoorLeidingenLopen": {
+   "0": []
+  },
+  "KoelingDistributie/AantalWarmtemeters": {
+   "0": []
+  },
+  "KoelingDistributie/Circulatiepomp": {
+   "-1": []
+  },
+  "KoelingDistributie/CirculatiepompTotaalVermogen": {
+   "0": []
+  },
+  "KoelingDistributie/Distributiemedium": {
+   "-1": []
+  },
+  "KoelingDistributie/Ingeregeld": {
+   "-1": []
+  },
+  "KoelingDistributie/KleppenBeugelsGeisoleerd": {
+   "0": []
+  },
+  "KoelingDistributie/LeidingenDoorOngekoeldeRuimte": {
+   "0": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteBinnendiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteBuitendiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteDiameterLeidingMetIsolatie": {
+   "0": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteDiepteLeidingenVloerWandPlafond": {
+   "0": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteIsolatiejaar": {
+   "-1": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteLeidingenGeisoleerd": {
+   "-1": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteLeidingenLengte": {
+   "-1": []
+  },
+  "KoelingDistributie/OngekoeldeRuimteOmgevingLeidingen": {
+   "-1": []
+  },
+  "KoelingDistributie/TweedeCirculatiepomp": {
+   "-1": []
+  },
+  "KoelingDistributie/TweedeCirculatiepompAanwezig": {
+   "0": []
+  },
+  "KoelingDistributie/TweedeCirculatiepompVermogen": {
+   "0": []
+  },
+  "KoelingDistributie/Wateraanvoertemperatuur": {
+   "-1": []
+  },
+  "KoelingDistributie/WaterzijdigInregelen": {
+   "0": []
+  },
+  "KoelingOpwekker/Aandrijving": {
+   "-1": []
+  },
+  "KoelingOpwekker/AangeslotenOpWarmtepomp": {
+   "0": []
+  },
+  "KoelingOpwekker/BodemtemperatuurBovenNulGraden": {
+   "0": []
+  },
+  "KoelingOpwekker/Expansie": {
+   "-1": []
+  },
+  "KoelingOpwekker/KoudeAfgifte": {
+   "-1": []
+  },
+  "KoelingOpwekker/KwaliteitsverklaringKoudeOpwekker": {
+   "0": []
+  },
+  "KoelingOpwekker/PrimaireEnergiefactorUitsluitendGemeten": {
+   "0": []
+  },
+  "KoelingOpwekker/Splitsysteem": {
+   "-1": []
+  },
+  "KoelingOpwekker/Tapwatersysteem": {
+   "-1": []
+  },
+  "KoelingOpwekker/TypeOpwekker": {
+   "-1": []
+  },
+  "KoelingOpwekker/VrijePassieveKoeling": {
+   "-1": []
+  },
+  "KoelingOpwekker/WarmtepompRegeneratieTapwater": {
+   "0": []
+  },
+  "KoelingOpwekking/AantalIdentiekeSystemen": {
+   "0": []
+  },
+  "KoelingOpwekking/AantalIdentiekeSystemenAuto": {
+   "1": []
+  },
+  "KoelingOpwekking/AantalOpwekkers": {
+   "-1": []
+  },
+  "KoelingOpwekking/KoelingAanwezig": {
+   "0": []
+  },
+  "KoelingOpwekking/Koelsysteem": {
+   "-1": []
+  },
+  "Koudebrug/Toeslag25Procent": {
+   "0": []
+  },
+  "Koudenet/Eenheid": {
+   "2": [],
+   "-1": []
+  },
+  "Koudenet/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Koudenet/Type": {
+   "4": [],
+   "-1": []
+  },
+  "LeidingenOnverwarmdeRuimte/BinnendiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "LeidingenOnverwarmdeRuimte/BuitendiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "LeidingenOnverwarmdeRuimte/DiameterLeidingMetIsolatie": {
+   "0": []
+  },
+  "LeidingenOnverwarmdeRuimte/DiepteLeidingenVloerWandPlafond": {
+   "0": []
+  },
+  "LeidingenOnverwarmdeRuimte/IsolatieJaar": {
+   "-1": []
+  },
+  "LeidingenOnverwarmdeRuimte/IsolatieKleppenAppendagesBeugels": {
+   "-1": []
+  },
+  "LeidingenOnverwarmdeRuimte/LeidingenGeisoleerd": {
+   "-1": []
+  },
+  "LeidingenOnverwarmdeRuimte/LeidinglengteDistributieleidingen": {
+   "-1": []
+  },
+  "LeidingenOnverwarmdeRuimte/OmgevingLeidingen": {
+   "-1": []
+  },
+  "Maatwerk/BrandurenVerlichtingAvond": {
+   "0": []
+  },
+  "Maatwerk/BrandurenVerlichtingOverdag": {
+   "0": []
+  },
+  "Maatwerk/CorrectiefactorBezettingstijdAanpassen": {
+   "1": []
+  },
+  "Maatwerk/CorrectiefactorGWaardeRamenAanpassen": {
+   "0": []
+  },
+  "Maatwerk/CorrectiefactorIsolatieGeslotenConstructies": {
+   "0": []
+  },
+  "Maatwerk/CorrectiefactorIsolatieRamenDeurenPanelen": {
+   "0": []
+  },
+  "Maatwerk/CorrectiefactorSpuiventilatieVolgensVrijeInvoer": {
+   "0": []
+  },
+  "Maatwerk/CorrectiefactorVentilatiehoeveelheidVolgensVrijeInvoer": {
+   "0": []
+  },
+  "Maatwerk/DagenAndereSetpointtemperatuur": {
+   "0": []
+  },
+  "Maatwerk/DagenGereduceerdeSetpointtemperatuur": {
+   "0": []
+  },
+  "Maatwerk/GebruikersBewonersprofiel": {
+   "1": []
+  },
+  "Maatwerk/GemiddeldAantalGebruikers": {
+   "0": []
+  },
+  "Maatwerk/GemiddeldElektriciteitsverbruikApparatuur": {
+   "0": []
+  },
+  "Maatwerk/HasCorrectiefactorOpbrengstPV": {
+   "0": []
+  },
+  "Maatwerk/HasElektriciteitExtern": {
+   "0": []
+  },
+  "Maatwerk/InfiltratieInvoermethode": {
+   "1": []
+  },
+  "Maatwerk/InfiltratieVolgensVrijeInvoer": {
+   "0": []
+  },
+  "Maatwerk/InvoermethodeApparatuur": {
+   "-1": []
+  },
+  "Maatwerk/InvoermethodeApparatuurVerlichting": {
+   "0": []
+  },
+  "Maatwerk/InvoermethodeGebruikers": {
+   "1": []
+  },
+  "Maatwerk/InvoermethodeSetpointtemperatuur": {
+   "1": []
+  },
+  "Maatwerk/InvoermethodeVerlichting": {
+   "-1": []
+  },
+  "Maatwerk/InvoermethodeWarmTapwatergebruik": {
+   "-1": []
+  },
+  "Maatwerk/KoelingAanpassen": {
+   "1": []
+  },
+  "Maatwerk/RcAanpassenVoor": {
+   "0": []
+  },
+  "Maatwerk/StooklijnLuchtbehandelingskastInblaastemperatuur": {
+   "1": []
+  },
+  "Maatwerk/UAanpassenVoor": {
+   "0": []
+  },
+  "Maatwerk/UrenPerWerkdagGereduceerd": {
+   "10": []
+  },
+  "Maatwerk/VerwarmingAanpassen": {
+   "1": []
+  },
+  "Maatwerk/WaardenInblaastemperatuur": {
+   "1": []
+  },
+  "Maatwerk/WarmtestroomApparatuur": {
+   "0": []
+  },
+  "Meterstanden/Aardolie": {
+   "0": []
+  },
+  "Meterstanden/AardolieJaargegeven": {
+   "0": []
+  },
+  "Meterstanden/Biomassa": {
+   "0": []
+  },
+  "Meterstanden/ElektriciteitKoken": {
+   "0": []
+  },
+  "Meterstanden/Elektriciteitsopwekking": {
+   "0": []
+  },
+  "Meterstanden/ElektriciteitsopwekkingJaargegeven": {
+   "0": []
+  },
+  "Meterstanden/Elektriciteitsverbruik": {
+   "1": []
+  },
+  "Meterstanden/ElektriciteitsverbruikJaargegeven": {
+   "0": []
+  },
+  "Meterstanden/Fitmethode": {
+   "0": []
+  },
+  "Meterstanden/FittenRekenmodelMeetgegevens": {
+   "0": []
+  },
+  "Meterstanden/Gasverbruik": {
+   "0": []
+  },
+  "Meterstanden/GasverbruikJaargegeven": {
+   "0": []
+  },
+  "Meterstanden/GasverbruikKoken": {
+   "37": []
+  },
+  "Meterstanden/Klimaat": {
+   "0": []
+  },
+  "Meterstanden/KokenOpGas": {
+   "1": []
+  },
+  "Meterstanden/Koudeverbruik": {
+   "0": []
+  },
+  "Meterstanden/MaatwerkadviesVoorRenovatiepaspoort": {
+   "0": []
+  },
+  "Meterstanden/Startmaand": {
+   "0": []
+  },
+  "Meterstanden/ToetsenAanVooroorlogseStandaard": {
+   "0": []
+  },
+  "Meterstanden/Warmteverbruik": {
+   "0": []
+  },
+  "Meterstanden/Weerstation": {
+   "0": []
+  },
+  "Notitie/Type": {
+   "1": [],
+   "8": []
+  },
+  "ObjectAlgemeen/BacsAanwezig": {
+   "0": []
+  },
+  "ObjectAlgemeen/Bron": {
+   "-1": []
+  },
+  "ObjectAlgemeen/DpiGasloosAuto": {
+   "1": []
+  },
+  "ObjectAlgemeen/DpiGasloosInvoer": {
+   "-1": []
+  },
+  "ObjectAlgemeen/DpiIsolatieniveauAuto": {
+   "1": []
+  },
+  "ObjectAlgemeen/DpiIsolatieniveauInvoer": {
+   "-1": []
+  },
+  "ObjectAlgemeen/KlasseAutomatischeRegeling": {
+   "-1": []
+  },
+  "ObjectAlgemeen/KlasseEnergiemanagement": {
+   "-1": []
+  },
+  "ObjectAlgemeen/ThermischVermogenVerwarmingsOfKoelsysteem": {
+   "2": []
+  },
+  "ObjectClassificatie/AantalWoonfuncties": {
+   "0": []
+  },
+  "ObjectClassificatie/Daktype": {
+   "0": []
+  },
+  "ObjectClassificatie/Gebouwtype": {
+   "0": []
+  },
+  "ObjectClassificatie/GeenFossieleBrandstoffenOpPerceel": {
+   "0": []
+  },
+  "ObjectClassificatie/Ligging": {
+   "-1": []
+  },
+  "ObjectClassificatie/Subtype": {
+   "0": []
+  },
+  "ObjectObject/IsSubsidieAanwezigObv": {
+   "0": []
+  },
+  "ObjectObject/IsWoningNomGebouwd": {
+   "0": []
+  },
+  "ObjectObject/UitgebreideMethodeAorAos": {
+   "0": []
+  },
+  "ObjectObject/UitgebreideMethodeKoudebruggen": {
+   "0": []
+  },
+  "Project/Backup": {
+   "0": []
+  },
+  "Project/CreatedBy": {
+   "-1": []
+  },
+  "Project/Hidden": {
+   "0": []
+  },
+  "Project/IsBasisVoorraadPrimairSysteem": {
+   "0": []
+  },
+  "Project/IsVoorbeeldproject": {
+   "0": []
+  },
+  "Projectgegevens/Bouwfase": {
+   "0": [
+    "Oosterkade"
+   ],
+   "-1": []
+  },
+  "Projectgegevens/IsMaatwerk": {
+   "0": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/IsMeenemenInSync": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/MeenemenInRegistratiemomenten": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/Objecttype": {
+   "0": [
+    "Oosterkade"
+   ],
+   "-1": []
+  },
+  "Projectgegevens/Opname": {
+   "0": [
+    "Oosterkade"
+   ],
+   "-1": []
+  },
+  "Projectgegevens/ProjectNr": {
+   "23": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/ToonDeelvoorraad": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UWaardeRaamMetOmtrekEnOppervlakte": {
+   "0": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorBouwjaar": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorBuurt": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorComplex": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorDetailaanduiding": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorEenheid": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorFinancieelComplex": {
+   "0": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorGemeente": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorHuisletterHuisnummertoevoeging": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorHuisnummer": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorNaam": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorPlaats": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorPostcode": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorRenovatiejaar": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorStraat": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorTechnischComplex": {
+   "0": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorVestiging": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/UpdateMetConnectorWijk": {
+   "1": [
+    "Oosterkade"
+   ]
+  },
+  "Projectgegevens/Warmteverliesberekening": {
+   "0": [
+    "Oosterkade"
+   ]
+  },
+  "PuntenTotaal/Keuken": {
+   "0": []
+  },
+  "PuntenTotaal/OppervlakteOverigeRuimte": {
+   "0": []
+  },
+  "PuntenTotaal/OppervlakteVertrekken": {
+   "0": []
+  },
+  "PuntenTotaal/PriveBuitenruimte": {
+   "0": []
+  },
+  "PuntenTotaal/Renovatie": {
+   "0": []
+  },
+  "PuntenTotaal/Sanitair": {
+   "0": []
+  },
+  "PuntenTotaal/Verwarming": {
+   "0": []
+  },
+  "PuntenTotaal/WoonvoorzieningenGehandicapten": {
+   "0": []
+  },
+  "RegistratiegegevensInvoer/BezoekendeEpAdviseurGelijkAanRegistrerendeEpAdviseur": {
+   "1": []
+  },
+  "RegistratiegegevensInvoer/EpcVergunning": {
+   "1": []
+  },
+  "RegistratiegegevensInvoer/Gebruiker": {
+   "0": []
+  },
+  "RegistratiegegevensInvoer/GtoBerekening": {
+   "0": []
+  },
+  "RegistratiegegevensInvoer/GtoUren": {
+   "0": []
+  },
+  "RegistratiegegevensInvoer/KoelsysteemKoellastBerekening": {
+   "0": []
+  },
+  "RegistratiegegevensInvoer/RepresentatieveWoningen": {
+   "0": []
+  },
+  "RegistratiegegevensInvoer/Status": {
+   "2": []
+  },
+  "RegistratiegegevensInvoer/WlcGwp": {
+   "-1": []
+  },
+  "RegistratiegegevensVastgelegd/Bouwfase": {
+   "0": []
+  },
+  "RegistratiegegevensVastgelegd/Energielabel": {
+   "6": []
+  },
+  "RegistratiegegevensVastgelegd/HeeftRegistratiegegevensRepresentatief": {
+   "0": []
+  },
+  "RegistratiegegevensVastgelegd/IsObvReferentieAE": {
+   "0": []
+  },
+  "RegistratiegegevensVastgelegd/Opname": {
+   "0": []
+  },
+  "RegistratiegegevensVastgelegd/Registratiemethodiek": {
+   "2": []
+  },
+  "Rekenzone/AantalAchtergevel": {
+   "2": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalDaken": {
+   "5": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalDeuren": {
+   "3": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalIdentiekeSystemenKoeling": {
+   "1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalIdentiekeSystemenTapwaterSysteem1": {
+   "1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalIdentiekeSystemenTapwaterSysteem2": {
+   "1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalIdentiekeSystemenVentilatie": {
+   "1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalIdentiekeSystemenVerwarming": {
+   "1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalLinkergevel": {
+   "3": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalOnbekend": {
+   "0": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalPanelenInKozijn": {
+   "0": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalRamen": {
+   "13": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalRechtergevel": {
+   "3": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalVloeren": {
+   "2": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/AantalVoorgevel": {
+   "4": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/KoelingBron": {
+   "-1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/VerwarmingBron": {
+   "-1": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/VerwarmingEigenAfgifte": {
+   "0": [
+    "Rekenzone"
+   ]
+  },
+  "Rekenzone/ZoneType": {
+   "0": [
+    "Rekenzone"
+   ]
+  },
+  "Stookolie/Eenheid": {
+   "3": [],
+   "-1": []
+  },
+  "Stookolie/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Stookolie/Type": {
+   "6": [],
+   "-1": []
+  },
+  "StrategischVoorraadbeleid/Status": {
+   "-1": []
+  },
+  "Tapwater/AantalWarmtapwatersystemen": {
+   "0": []
+  },
+  "Tapwater/Bron": {
+   "-1": []
+  },
+  "TapwaterLeidingen/BinnenDiameterLeiding": {
+   "0": []
+  },
+  "TapwaterLeidingen/BuitenDiameterLeiding": {
+   "0": []
+  },
+  "TapwaterLeidingen/Diameter": {
+   "-1": []
+  },
+  "TapwaterLeidingen/DiameterLeidingMetIsolatie": {
+   "0": []
+  },
+  "TapwaterLeidingen/DiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "TapwaterLeidingen/DiepteLeidingenVloerWandPlafond": {
+   "0": []
+  },
+  "TapwaterLeidingen/LeidingenGeisoleerd": {
+   "-1": []
+  },
+  "TapwaterLeidingen/OmgevingLeidingen": {
+   "-1": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/BinnenDiameterLeiding": {
+   "0": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/BuitenDiameterLeiding": {
+   "0": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/Diameter": {
+   "-1": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/DiameterLeidingMetIsolatie": {
+   "0": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/DiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/DiepteLeidingenVloerWandPlafond": {
+   "0": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/LeidingenGeisoleerd": {
+   "-1": []
+  },
+  "TapwaterLeidingenOnverwarmdeRuimte/OmgevingLeidingen": {
+   "-1": []
+  },
+  "TapwaterMeetgegevens/AanduidingTappatroon": {
+   "-1": []
+  },
+  "TapwaterMeetgegevens/DuurzaamBeng3": {
+   "0": []
+  },
+  "TapwaterMeetgegevens/Tapklasse": {
+   "-1": []
+  },
+  "TapwaterOpwekker/Aanvoertemperatuur": {
+   "0": []
+  },
+  "TapwaterOpwekker/Aflevertemperatuur": {
+   "-1": []
+  },
+  "TapwaterOpwekker/BoosterwarmtepompGekoppeldAan": {
+   "-1": []
+  },
+  "TapwaterOpwekker/BouwjaarWKK": {
+   "-1": []
+  },
+  "TapwaterOpwekker/BronWarmtepomp": {
+   "-1": []
+  },
+  "TapwaterOpwekker/BronWarmtepompIndirectVerwarmdVat": {
+   "-1": []
+  },
+  "TapwaterOpwekker/CwKlasse": {
+   "3": [],
+   "-1": []
+  },
+  "TapwaterOpwekker/DuurzaamBeng3": {
+   "0": []
+  },
+  "TapwaterOpwekker/FunctiesOpwekker": {
+   "-1": []
+  },
+  "TapwaterOpwekker/Gaskeur": {
+   "3": [],
+   "-1": []
+  },
+  "TapwaterOpwekker/Hre": {
+   "0": []
+  },
+  "TapwaterOpwekker/IsolatieVat": {
+   "-1": []
+  },
+  "TapwaterOpwekker/Jaar": {
+   "0": []
+  },
+  "TapwaterOpwekker/Kwaliteitsverklaring": {
+   "0": [],
+   "1": []
+  },
+  "TapwaterOpwekker/KwaliteitsverklaringInvoermethode": {
+   "1": []
+  },
+  "TapwaterOpwekker/NominaalVermogenBekend": {
+   "-1": []
+  },
+  "TapwaterOpwekker/OpenVerbrandingstoestel": {
+   "0": []
+  },
+  "TapwaterOpwekker/Opstelplaats": {
+   "-1": []
+  },
+  "TapwaterOpwekker/OpwekkerIndirecteVerwarmdVatOokVoorRuimteverwarming": {
+   "0": []
+  },
+  "TapwaterOpwekker/PrimaireEnergiefactorUitsluitendGemeten": {
+   "0": []
+  },
+  "TapwaterOpwekker/Type": {
+   "Kombi Kompakt HRE 36/30": []
+  },
+  "TapwaterOpwekker/TypeBiomassa": {
+   "-1": []
+  },
+  "TapwaterOpwekker/TypeKwaliteitsverklaring": {
+   "1": [],
+   "-1": []
+  },
+  "TapwaterOpwekker/TypeOpwekkerIndirectVerwarmdVat": {
+   "-1": []
+  },
+  "TapwaterOpwekker/TypeToestel": {
+   "2": [],
+   "-1": [],
+   "10": []
+  },
+  "TapwaterOpwekker/VermogenGasboiler": {
+   "-1": []
+  },
+  "TapwaterOpwekker/Verwarmingsopwekker": {
+   "-1": []
+  },
+  "TapwaterOpwekker/VolumeBoilervat": {
+   "0": []
+  },
+  "TapwaterOpwekker/VolumeBoilervatBekend": {
+   "0": []
+  },
+  "TapwaterOpwekker/WarmtepompOpMenglucht": {
+   "0": []
+  },
+  "TapwaterVoorraadvat/Aansluitwijze": {
+   "-1": []
+  },
+  "TapwaterVoorraadvat/EnergielabelVoorraadvat": {
+   "-1": []
+  },
+  "TapwaterVoorraadvat/FabricagejaarVoorraadvat": {
+   "-1": []
+  },
+  "TapwaterVoorraadvat/ForfaitairVolume": {
+   "0": []
+  },
+  "TapwaterVoorraadvat/InvoermethodeKwaliteitsverklaring": {
+   "1": []
+  },
+  "TapwaterVoorraadvat/Kwaliteitsverklaring": {
+   "0": []
+  },
+  "TapwaterVoorraadvat/Opstelplaats": {
+   "-1": []
+  },
+  "TapwaterVoorraadvat/TypeKwaliteitsverklaring": {
+   "-1": []
+  },
+  "TapwaterVoorraadvat/WarmteverliezenVoorraadvatObv": {
+   "-1": []
+  },
+  "Tapwatersysteem/AangeslotenOp": {
+   "0": [],
+   "-1": []
+  },
+  "Tapwatersysteem/AantalAangeslotenWoonfuncties": {
+   "-1": []
+  },
+  "Tapwatersysteem/AantalAfleversets": {
+   "1": []
+  },
+  "Tapwatersysteem/AantalBadkamers": {
+   "0": []
+  },
+  "Tapwatersysteem/AantalBouwlagenAangeslotenOpWarmtapwatersysteem": {
+   "0": []
+  },
+  "Tapwatersysteem/AantalDouches": {
+   "0": []
+  },
+  "Tapwatersysteem/AantalIdentiekeSystemen": {
+   "1": []
+  },
+  "Tapwatersysteem/AantalIdentiekeSystemenAuto": {
+   "1": []
+  },
+  "Tapwatersysteem/AantalKeukens": {
+   "0": []
+  },
+  "Tapwatersysteem/AantalOpwekkers": {
+   "0": []
+  },
+  "Tapwatersysteem/AantalVoorraadvaten": {
+   "-1": []
+  },
+  "Tapwatersysteem/AfleversetAanwezig": {
+   "0": []
+  },
+  "Tapwatersysteem/BepaalAangeslotenWoonfunctiesUitAlgemeneGegevens": {
+   "1": []
+  },
+  "Tapwatersysteem/CirculatieleidingAanwezig": {
+   "0": []
+  },
+  "Tapwatersysteem/DwtwAanwezig": {
+   "0": []
+  },
+  "Tapwatersysteem/IndividueleAfleversetPerObject": {
+   "1": []
+  },
+  "Tapwatersysteem/IsSportzaalInGebouw": {
+   "0": []
+  },
+  "Tapwatersysteem/IsolatieKleppenAppendagesBeugels": {
+   "-1": []
+  },
+  "Tapwatersysteem/IsolatieKleppenAppendagesBeugelsOnverwarmdeRuimte": {
+   "-1": []
+  },
+  "Tapwatersysteem/LeidingenDoorOnverwarmdeRuimte": {
+   "0": []
+  },
+  "Tapwatersysteem/Leidinglengte": {
+   "-1": []
+  },
+  "Tapwatersysteem/LeidinglengteNaarBadkamer": {
+   "1": [],
+   "-1": []
+  },
+  "Tapwatersysteem/LeidinglengteNaarKeuken": {
+   "2": [],
+   "-1": []
+  },
+  "Tapwatersysteem/LeidinglengteOnverwarmdeRuimte": {
+   "-1": []
+  },
+  "Tapwatersysteem/LengteCirculatieleiding": {
+   "-1": []
+  },
+  "Tapwatersysteem/Pompregeling": {
+   "-1": []
+  },
+  "Tapwatersysteem/TypeInstallatie": {
+   "0": []
+  },
+  "Tapwatersysteem/TypeOpwekker": {
+   "0": [],
+   "-1": []
+  },
+  "Tapwatersysteem/Vermogen": {
+   "0": []
+  },
+  "Tapwatersysteem/VermogenPompCirculatieleiding": {
+   "-1": []
+  },
+  "TerugleveringBovenGrens/Eenheid": {
+   "1": [],
+   "-1": []
+  },
+  "TerugleveringBovenGrens/HeeftPrijsplafond": {
+   "0": []
+  },
+  "TerugleveringBovenGrens/Type": {
+   "8": [],
+   "-1": []
+  },
+  "TerugleveringTotGrens/Eenheid": {
+   "1": [],
+   "-1": []
+  },
+  "TerugleveringTotGrens/HeeftPrijsplafond": {
+   "0": []
+  },
+  "TerugleveringTotGrens/Type": {
+   "7": [],
+   "-1": []
+  },
+  "Ventilatie/AantalIdentiekeSystemen": {
+   "1": []
+  },
+  "Ventilatie/AantalIdentiekeSystemenAuto": {
+   "1": []
+  },
+  "Ventilatie/Bron": {
+   "1": []
+  },
+  "Ventilatie/CollectiefSysteemOokGebruiktVoorAndereRekenzones": {
+   "0": []
+  },
+  "Ventilatie/Systeem": {
+   "0": []
+  },
+  "Ventilatie/Ventilatiesysteem": {
+   "0": []
+  },
+  "Ventilatiesysteem/AandeelDebietVoorverwarmd": {
+   "0": []
+  },
+  "Ventilatiesysteem/AantalVentilatoren": {
+   "-1": []
+  },
+  "Ventilatiesysteem/BuitenluchtTempVoorInschakelen": {
+   "0": []
+  },
+  "Ventilatiesysteem/Bypass": {
+   "-1": []
+  },
+  "Ventilatiesysteem/BypassFabricagejaar": {
+   "-1": []
+  },
+  "Ventilatiesysteem/BypassPercentage": {
+   "0": []
+  },
+  "Ventilatiesysteem/Debiet": {
+   "0": []
+  },
+  "Ventilatiesysteem/Debietregeling": {
+   "-1": []
+  },
+  "Ventilatiesysteem/IsDebietBekend": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsKoelingAangeslotenOpLbk": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsLbkAanwezig": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsLintVerwarmingAanwezig": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsSysteemVoorzienVanPassieveKoeling": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsToevoerkanalenBuitenVerwarmdeZone": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsVerwarmingAangeslotenOpLbk": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsolatieDikteKanaalBuitenaansluiting": {
+   "0": []
+  },
+  "Ventilatiesysteem/IsolatieKanaalBuitenaansluiting": {
+   "-1": []
+  },
+  "Ventilatiesysteem/IsolatiewaardeKanalen": {
+   "-1": []
+  },
+  "Ventilatiesysteem/KoudeterugwinningWtw": {
+   "0": []
+  },
+  "Ventilatiesysteem/KwaliteitsverklaringInvoermethode": {
+   "0": []
+  },
+  "Ventilatiesysteem/KwaliteitsverklaringInvoermethodeWTW": {
+   "0": []
+  },
+  "Ventilatiesysteem/KwaliteitsverklaringVla": {
+   "0": []
+  },
+  "Ventilatiesysteem/LengteKanaalBuitenaansluiting": {
+   "-1": []
+  },
+  "Ventilatiesysteem/LengteKanalen": {
+   "-1": []
+  },
+  "Ventilatiesysteem/LintVerwarming": {
+   "-1": []
+  },
+  "Ventilatiesysteem/Luchtdichtheidsklasse": {
+   "-1": []
+  },
+  "Ventilatiesysteem/MaxInblaastempVoorRegeling": {
+   "0": []
+  },
+  "Ventilatiesysteem/MaximaalVermogen": {
+   "0": []
+  },
+  "Ventilatiesysteem/MaximaleTemperatuurSprong": {
+   "0": []
+  },
+  "Ventilatiesysteem/OpgaveVentilatoren": {
+   "-1": []
+  },
+  "Ventilatiesysteem/OpstelplaatsLbk": {
+   "-1": []
+  },
+  "Ventilatiesysteem/Recirculatie": {
+   "-1": []
+  },
+  "Ventilatiesysteem/RecirculatiePercentage": {
+   "0": []
+  },
+  "Ventilatiesysteem/RendementKvWtwInclusiefDissipatie": {
+   "0": []
+  },
+  "Ventilatiesysteem/Subsysteem": {
+   "0": [],
+   "-1": []
+  },
+  "Ventilatiesysteem/Terugregeling": {
+   "-1": []
+  },
+  "Ventilatiesysteem/TypeElektromotor": {
+   "-1": []
+  },
+  "Ventilatiesysteem/TypeVerklaring": {
+   "-1": []
+  },
+  "Ventilatiesysteem/TypeVerklaringKvWtw": {
+   "-1": []
+  },
+  "Ventilatiesysteem/TypeWtw": {
+   "-1": []
+  },
+  "Ventilatiesysteem/Volumeregeling": {
+   "-1": []
+  },
+  "Ventilatiesysteem/ZwembadAanwezig": {
+   "0": []
+  },
+  "Ventilator/TypeElektromotor": {
+   "-1": []
+  },
+  "Verwarming/AantalIdentiekeSystemen": {
+   "1": []
+  },
+  "Verwarming/AantalIdentiekeSystemenAuto": {
+   "1": []
+  },
+  "Verwarming/AantalWarmteopwekkers": {
+   "0": []
+  },
+  "Verwarming/Verwarmingsysteem": {
+   "0": []
+  },
+  "VerwarmingAfgifte/AantalRadialeVentilatoren": {
+   "0": []
+  },
+  "VerwarmingAfgifte/AantalVentilatoren": {
+   "1": []
+  },
+  "VerwarmingAfgifte/Afgiftesysteem": {
+   "3": []
+  },
+  "VerwarmingAfgifte/RadialeVentilatorvermogenBekend": {
+   "0": []
+  },
+  "VerwarmingAfgifte/Regeling": {
+   "0": []
+  },
+  "VerwarmingAfgifte/TerugkeerWarmeLucht": {
+   "2": []
+  },
+  "VerwarmingAfgifte/TypeDirecteLuchtverwarmer": {
+   "-1": []
+  },
+  "VerwarmingAfgifte/TypeLuchtverwarming": {
+   "1": []
+  },
+  "VerwarmingAfgifte/VentilatorenIndirecteLuchtverwarmer": {
+   "0": []
+  },
+  "VerwarmingAfgifte/VentilatorvermogenBekend": {
+   "1": []
+  },
+  "VerwarmingAfgifte/VermogenPerRadialeVentilator": {
+   "0": []
+  },
+  "VerwarmingAfgifte/Vertrekhoogte": {
+   "0": []
+  },
+  "VerwarmingBuffervat/EnergielabelBuffervat": {
+   "-1": []
+  },
+  "VerwarmingBuffervat/FabricagejaarBuffervat": {
+   "-1": []
+  },
+  "VerwarmingBuffervat/InvoermethodeKwaliteitsverklaring": {
+   "0": []
+  },
+  "VerwarmingBuffervat/Kwaliteitsverklaring": {
+   "0": []
+  },
+  "VerwarmingBuffervat/OpstelplaatsBuffervat": {
+   "-1": []
+  },
+  "VerwarmingBuffervat/TypeKwaliteitsverklaring": {
+   "-1": []
+  },
+  "VerwarmingBuffervat/WarmteverliezenBuffervatObv": {
+   "-1": []
+  },
+  "VerwarmingDistributie/AantalAfgiftesystemen": {
+   "0": []
+  },
+  "VerwarmingDistributie/AantalBouwlagenWaardoorLeidingenLopen": {
+   "0": []
+  },
+  "VerwarmingDistributie/AantalBuffervaten": {
+   "-1": []
+  },
+  "VerwarmingDistributie/AantalWarmtemeters": {
+   "1": []
+  },
+  "VerwarmingDistributie/AanvullendePompen": {
+   "-1": []
+  },
+  "VerwarmingDistributie/AanvullendePompenAanwezig": {
+   "0": []
+  },
+  "VerwarmingDistributie/AanvullendePompenVermogen": {
+   "0": []
+  },
+  "VerwarmingDistributie/DistributieMedium": {
+   "1": []
+  },
+  "VerwarmingDistributie/DistributieType": {
+   "-1": []
+  },
+  "VerwarmingDistributie/Hoofdpomp": {
+   "-1": []
+  },
+  "VerwarmingDistributie/HoofdpompVermogen": {
+   "0": []
+  },
+  "VerwarmingDistributie/OnverwarmdLeidingenDoorRuimte": {
+   "0": []
+  },
+  "VerwarmingDistributie/SysteemIngeregeld": {
+   "-1": []
+  },
+  "VerwarmingDistributie/VerwarmingssysteemTapwater": {
+   "0": []
+  },
+  "VerwarmingDistributie/WaterAanvoertemperatuur": {
+   "-1": []
+  },
+  "VerwarmingDistributie/WaterzijdigIngeregeld": {
+   "0": []
+  },
+  "VerwarmingLeidingen/BinnendiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "VerwarmingLeidingen/BuitendiameterLeidingZonderIsolatie": {
+   "0": []
+  },
+  "VerwarmingLeidingen/DiameterLeidingMetIsolatie": {
+   "0": []
+  },
+  "VerwarmingLeidingen/DiepteLeidingenVloerWandPlafond": {
+   "0": []
+  },
+  "VerwarmingLeidingen/IsolatieJaar": {
+   "-1": []
+  },
+  "VerwarmingLeidingen/IsolatieKleppenAppendagesBeugels": {
+   "-1": []
+  },
+  "VerwarmingLeidingen/LeidingenGeisoleerd": {
+   "-1": []
+  },
+  "VerwarmingLeidingen/LeidinglengteDistributieleidingen": {
+   "-1": []
+  },
+  "VerwarmingLeidingen/OmgevingLeidingen": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/AantalToestellenMetWaakvlam": {
+   "0": []
+  },
+  "VerwarmingOpwekker/Aflevertemperatuur": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/BiomassaToestel": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/BronWarmtepomp": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/DirectGestookteLuchtverwarming": {
+   "0": []
+  },
+  "VerwarmingOpwekker/FabricagejaarToestelWkk": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/HeeftStekker": {
+   "0": []
+  },
+  "VerwarmingOpwekker/HreLabelPresent": {
+   "0": []
+  },
+  "VerwarmingOpwekker/Hulpenergie": {
+   "0": [],
+   "-1": []
+  },
+  "VerwarmingOpwekker/HulpenergieFabricagejaarToestel": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/HulpenergieInvoermethode": {
+   "1": []
+  },
+  "VerwarmingOpwekker/HulpenergieTypeVerklaring": {
+   "0": [],
+   "-1": []
+  },
+  "VerwarmingOpwekker/IsAdditioneelGeplaatstBijRenovatie": {
+   "0": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringCollectieveBronWarmtepomp": {
+   "1": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringDuurzaamBeng3": {
+   "0": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringInvoermethode": {
+   "0": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringModulerendeWarmtepomp": {
+   "1": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringPrimaireEnergiefactorUitsluitendGemeten": {
+   "0": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringTypeBron": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringWarmtenet": {
+   "0": []
+  },
+  "VerwarmingOpwekker/KwaliteitsverklaringWarmteopwekker": {
+   "0": []
+  },
+  "VerwarmingOpwekker/LokaleKachel": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/OpenVerbrandingstoestel": {
+   "0": []
+  },
+  "VerwarmingOpwekker/OpstelplaatsOpwekker": {
+   "0": [],
+   "-1": []
+  },
+  "VerwarmingOpwekker/StandbyAantal": {
+   "0": []
+  },
+  "VerwarmingOpwekker/StandbyInvoermethode": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/StandbyKwaliteitsverklaring": {
+   "0": []
+  },
+  "VerwarmingOpwekker/SubType": {
+   "4": [],
+   "-1": []
+  },
+  "VerwarmingOpwekker/Type": {
+   "Kombi Kompakt HRE 36/30": []
+  },
+  "VerwarmingOpwekker/TypeBiomassakachel": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/TypeBron": {
+   "2": []
+  },
+  "VerwarmingOpwekker/TypeGrondwateraquifer": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/TypeOpwekker": {
+   "4": [],
+   "-1": []
+  },
+  "VerwarmingOpwekker/TypeWarmtepomp": {
+   "-1": []
+  },
+  "VerwarmingOpwekker/VoldoetAanMinCOP": {
+   "0": []
+  },
+  "VochtRegeling/BevochtigdGebruikersoppervlak": {
+   "0": []
+  },
+  "VochtRegeling/BevochtigingAanwezig": {
+   "0": []
+  },
+  "VochtRegeling/BevochtigingNietInLBK": {
+   "0": []
+  },
+  "VochtRegeling/Bron": {
+   "-1": []
+  },
+  "VochtRegeling/TypeBevochtigingsinstallatie": {
+   "-1": []
+  },
+  "Warmtenet/Eenheid": {
+   "2": [],
+   "-1": []
+  },
+  "Warmtenet/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Warmtenet/Type": {
+   "3": [],
+   "-1": []
+  },
+  "Warmteverlies/AantalGradenNachtverlaging": {
+   "-1": []
+  },
+  "Warmteverlies/AantalGradenNachtverlagingIsso53": {
+   "-1": []
+  },
+  "Warmteverlies/AantalLuchtwisselingenGebouw": {
+   "-1": []
+  },
+  "Warmteverlies/AantalNaastgelegenAangrenzendeGebouwen": {
+   "0": []
+  },
+  "Warmteverlies/AantalUrenVrijeKoeling": {
+   "-1": []
+  },
+  "Warmteverlies/AantalVerdiepingen": {
+   "0": []
+  },
+  "Warmteverlies/Buitentemperatuur": {
+   "0": []
+  },
+  "Warmteverlies/BuitentemperatuurOpgave": {
+   "-1": []
+  },
+  "Warmteverlies/InblaastemperatuurNaVerwarmingbatterij": {
+   "0": []
+  },
+  "Warmteverlies/Koudebruggen": {
+   "-1": []
+  },
+  "Warmteverlies/MethodeSpecifiekeOpwarmtoeslag": {
+   "-1": []
+  },
+  "Warmteverlies/MethodeVoorAfkoeling": {
+   "-1": []
+  },
+  "Warmteverlies/Nachtverlaging": {
+   "0": []
+  },
+  "Warmteverlies/Opwarmtijd": {
+   "-1": []
+  },
+  "Warmteverlies/OpwarmtijdBeperkteAfkoeling": {
+   "-1": []
+  },
+  "Warmteverlies/OpwarmtijdBeperkteAfkoelingIsso53": {
+   "-1": []
+  },
+  "Warmteverlies/Seniorenwoning": {
+   "0": []
+  },
+  "Warmteverlies/SpecifiekeOpwarmtoeslag": {
+   "0": []
+  },
+  "Warmteverlies/VerwarmingsbatterijAanwezig": {
+   "0": []
+  },
+  "Warmteverlies/VoldoetGebouwBesluitBouwwerkenLeefomgevingEisen": {
+   "0": []
+  },
+  "Warmteverlies/VorstbeveiligingWtw": {
+   "-1": []
+  },
+  "Warmteverlies/WijzeVanRegelen": {
+   "-1": []
+  },
+  "Water/Eenheid": {
+   "0": [],
+   "-1": []
+  },
+  "Water/HeeftPrijsplafond": {
+   "0": []
+  },
+  "Water/Type": {
+   "1": [],
+   "-1": []
+  },
+  "Zomernachtventilatie/CdCeFactoren": {
+   "0": []
+  },
+  "Zomernachtventilatie/Hoek": {
+   "0": []
+  },
+  "Zomernachtventilatie/Orientatie": {
+   "0": []
+  }
+ }
+}
