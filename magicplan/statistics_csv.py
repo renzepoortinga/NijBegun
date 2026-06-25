@@ -703,6 +703,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("Extra installatie(s) opgenomen (%dx verwarming, %dx tapwater, %dx koeling): de tool zet "
                      "exemplaar 1 volledig door; voeg de extra opwekker(s) in Vabi toe (golden rule: niet gegokt)."
                      % (len(inst.verwarming_extra), len(inst.tapwater_extra), len(inst.koeling_extra)))
+    vent2 = G2("Ventilatie 2 - systeem (A-E)")
+    if vent2:
+        notes.append("Tweede ventilatiesysteem opgenomen (%s): de tool zet ventilatiesysteem 1 door; voeg het 2e "
+                     "ventilatiesysteem in Vabi toe (golden rule: niet gegokt)." % vent2)
     kwv = sorted({s.type for s in dos.schil if s.rc_bron == "Kwaliteitsverklaring"})
     if kwv:
         notes.append("Kwaliteitsverklaring geselecteerd voor: %s. De tool kiest een forfaitaire constructie en "

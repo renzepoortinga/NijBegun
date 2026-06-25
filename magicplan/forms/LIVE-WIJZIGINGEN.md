@@ -19,8 +19,12 @@ Invoer:  ① Kwaliteitsverklaring → 📷 Foto factuur (verplicht op form-nivea
 - **GEVEL** = met spouw-tak. **VLOER** = zonder spouw. **DAK** = per dakvlak (Dakvlak 1 + "Tweede/Derde dakvlak aanwezig?")
   elk met daktype·oriëntatie·m²·hellingshoek + dezelfde isolatie-boom + begrenzing; + **9 m²-vakjes** (N..NW + Horizontaal)
   als fallback bij type "Anders".
-- **Element-override**: "Gevel per wand" (All Walls) + "Vloer" (All Floors) dragen **exact dezelfde boom** (+ wand: oriëntatie-
-  override; +rekenzone; +vloer: telt-mee-voor-Ag). Leeg = neem form-standaard; invullen = overrule per stuk.
+- **Element-override**: "Gevel per wand" (All Walls) + "Vloer" (**All Rooms = PER KAMER**, context 'room') dragen **exact dezelfde
+  boom** (+ wand: oriëntatie-override; +rekenzone; +vloer: telt-mee-voor-Ag). Leeg = neem form-standaard; invullen = overrule per stuk.
+  Vloer-override hangt nu per KAMER (living room→kelder, bedroom→AOS), niet meer op verdieping-niveau.
+- **Rekenzone overal default 1**: MagicPlan kent geen veld-default → parser `_rz()` vult leeg → 1 (alleen invoeren bij overrulen).
+- **2e ventilatie + 2e tapwater**: conditionele blokken ("Tweede ventilatiesysteem?" / "Tweede tapwaterinstallatie?") naast 2e verwarming.
+  Parser leest 2e tapwater (tapwater_extra) + flagt 2e ventilatie (golden rule). Tests #37–#39, 246/246 groen.
 - "Gevel - project" (oude plan-groep) **leeggemaakt** (overbodig; Constructies-form dekt gevel-standaard).
 - Bouwjaar-klassen exact: Tot 1965 · 1965–74 · 1975–82 · 1983–87 · 1988–91 · 1992–2013 · 2014 · 2015–17 ·
   2018–20 (1 jan/Overig) · 2021 (1 jan/Overig).

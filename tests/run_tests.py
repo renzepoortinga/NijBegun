@@ -864,5 +864,27 @@ try:
 except Exception as _e:
     check("dak-uit-Constructies: parser draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n39. Parser: rekenzone default 1 + 2e tapwater/ventilatie")
+try:
+    import tempfile as _tf4
+    from magicplan.statistics_csv import build_dossier as _bd4
+    _ic = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\nGevelhoogte (m),5.4\n"
+           "Verwarming - type opwekker,Gasgestookte ketel\nTapwater - toestel,Combiketel (gas)\n"
+           "Tapwater 2 - toestel,Elektrische boiler\nTapwater 2 - installatiejaar,2020\n"
+           "Ventilatiesysteem (A-E),C Mechanische afvoer\nSubsysteem (C),C1 Standaard\n"
+           "Tweede ventilatiesysteem?,Ja\nVentilatie 2 - systeem (A-E),D Mechanische balansventilatie\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\nGround Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _ip = _tf4.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _ip.write(_ic); _ip.close()
+    _ido, _inotes = _bd4(_ip.name)
+    check("rekenzone default 1 (leeg) op ventilatie + verwarming",
+          _ido.ventilatie.rekenzone == 1 and _ido.installaties.verwarming.rekenzone == 1)
+    check("2e tapwater gelezen (tapwater_extra)",
+          len(_ido.installaties.tapwater_extra) == 1 and "boiler" in (_ido.installaties.tapwater_extra[0].type_toestel or "").lower())
+    check("2e ventilatiesysteem geflagd", any("Tweede ventilatiesysteem" in n for n in _inotes))
+except Exception as _e:
+    check("installaties-extra: parser draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
