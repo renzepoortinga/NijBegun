@@ -25,9 +25,13 @@ Invoer:  ① Kwaliteitsverklaring → 📷 Foto factuur (verplicht op form-nivea
 - Bouwjaar-klassen exact: Tot 1965 · 1965–74 · 1975–82 · 1983–87 · 1988–91 · 1992–2013 · 2014 · 2015–17 ·
   2018–20 (1 jan/Overig) · 2021 (1 jan/Overig).
 
-## Object / Installaties (eerder deze sessie)
-Aanvoertemp 80/60+90/70; foto vooraanzicht+huisnummer → Object; spouwdikte-dak weg; PV-kwaliteitsverklaring; multi-PV
-(PV-2); hybride (Verwarming 2); dak m²-override (zijde 1/2). Rekenzone per installatie + 7 foto's stonden al.
+## Object / Installaties
+Aanvoertemp 80/60+90/70; foto vooraanzicht+huisnummer → Object; spouwdikte-dak weg; PV-kwaliteitsverklaring; multi-PV (PV-2).
+**Installaties VABI-getrouw (laatste ronde):**
+- **Ventilatie-subsysteem conditioneel per type A–E** (VABI-labels uit refs: A1/A2a-c+onbekend, B1-3, C1..C5b, D1..D5c, E1;
+  Type WTW conditioneel bij D/E). Oude platte "Subsysteem (zie type)" verwijderd.
+- **Rekenzone inline** bij elke installatie (ventilatie/verwarming/koeling/tapwater/PV); losse REKENZONE-sectie weg; leeg = zone 1.
+- **"Tweede verwarmingsinstallatie? (2e ketel / hybride)"** (hernoemd van hybride) → 2e volledige verwarming (2 CV-ketels of WP+ketel).
 
 ## TODO parser (tool-side, blokkeert opname-INVOER niet, wel de export naar VABI-libs)
 `magicplan/statistics_csv.py` moet de **nieuwe boom-veldnamen** lezen i.p.v. de oude platte velden:
