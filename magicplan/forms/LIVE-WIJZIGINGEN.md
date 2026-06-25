@@ -33,11 +33,22 @@ Aanvoertemp 80/60+90/70; foto vooraanzicht+huisnummer → Object; spouwdikte-dak
 - **Rekenzone inline** bij elke installatie (ventilatie/verwarming/koeling/tapwater/PV); losse REKENZONE-sectie weg; leeg = zone 1.
 - **"Tweede verwarmingsinstallatie? (2e ketel / hybride)"** (hernoemd van hybride) → 2e volledige verwarming (2 CV-ketels of WP+ketel).
 
-## TODO parser (tool-side, blokkeert opname-INVOER niet, wel de export naar VABI-libs)
-`magicplan/statistics_csv.py` moet de **nieuwe boom-veldnamen** lezen i.p.v. de oude platte velden:
-- per bouwdeel: `<Gevel|Vloer|Dak> - invoer` (Kwaliteitsverklaring→flag; Beslisschema), `- isolatie aanwezig?`
-  (Ja/Nee/Onbekend), `- isolatiedikte onbekend?`, `- bouwjaar` / `- bouwjaar (onbekend)`, `- isolatiedikte (mm)`,
-  `- spouw aanwezig?` (gevel), `- thermische massa`, `- begrenzing`.
-- DAK: `Dakvlak 1/2/3 - daktype/oriëntatie/oppervlak/hellingshoek/begrenzing` + isolatie-boom; `Dak m² <ori>` (9 vakjes).
-- Element-overrides (wand/vloer) met dezelfde namen → per-element overrule.
-Daarna: end-to-end test (synthetische CSV → dossier → generate_all) + regressietests groen.
+## Dak geconsolideerd naar Constructies (Optie A)
+Alle dak-velden uit **Object** verwijderd (Object houdt: oriëntatie voorgevel, Qv10, renovatiejaar, woningtype,
+gevelhoogte, Ag-aftrek zolder, 2 foto's). **Constructies → DAK** heeft nu bovenin een geometrie-blok
+(Dak - vloerbreedte / nokhoogte / knieschothoogte / kopgevel oriëntatie 1+2) → standaard daktype = tool rekent
+m² + kopgevel-driehoek vóór; type "Anders" = de 9 m²-vakjes. Per dakvlak: type/oriëntatie/m²/hellingshoek + isolatie-boom + begrenzing.
+
+## Parser-stand (magicplan/statistics_csv.py) — GEWIRED + getest (243/243)
+- Leest per bouwdeel de **VABI-beslisboom**: `<Gevel|Vloer|Dakvlak 1> - invoer` (KV→flag / Beslisschema) → isolatie
+  aanwezig (Ja/Nee/Onbekend) → isolatiedikte onbekend?/bouwjaar/dikte (mm)/spouw → begrenzing → rc_bron/isolatie/dikte op SchilDeel.
+- **DAK** uit Constructies: `Dakvlak 1 - daktype/hellingshoek/oriëntatie` + `Dak - vloerbreedte/kopgevel oriëntatie 1/2`
+  → zadeldak/lessenaar/schild (auto-m² + kopgevel-driehoek); type Anders → `Dak m² <N..NW/Horizontaal>` (9 vakjes); plat → dakvlak.
+- **Ventilatie subsysteem** conditioneel: leest `Subsysteem (A..E)` (whichever gevuld). **Rekenzone inline** per installatie.
+- Alles met **fallback naar de oude platte velden** (oudere CSV's blijven werken). Tests #37/#38.
+
+## RESTERENDE kalibratie — alleen op de eerste ECHTE Statistics-CSV
+De **element-overrides** (per-wand/vloer invoer-boom: `Gevel/Vloer - invoer/isolatie aanwezig?/...`) exporteren als
+WALL/FLOOR-attribuutkolommen; die kolomnamen/-posities ken ik pas uit een echte export. De parser leest de per-wand
+override nu nog via de naamconventie + positionele kolommen — dat verfijn ik 1-op-1 zodra Renze één CSV exporteert,
+plus de exacte project-veld-kolomnamen (MagicPlan kan ze net iets anders schrijven dan de form-labels).

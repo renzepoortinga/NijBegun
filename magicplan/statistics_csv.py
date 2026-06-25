@@ -503,16 +503,18 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
 
     # dak-per-vlak: gebruik dak-velden uit de opname indien aanwezig (helling uit nok/knie/breedte
     # of direct + oriëntaties van de schuine vlakken/kopgevels + plat dak), anders footprint-fallback.
-    type_dak = _undot(G("Type dak")) or "Zadeldak"
-    helling = _f(G("Hellingshoek dak")) or _f(G("Dak hellingshoek"))
-    breedte = _f(G("Dak vloerbreedte"))
+    # dak-velden komen nu uit het CONSTRUCTIES-dakblok (geconsolideerd uit Object); oude Object-velden = fallback.
+    type_dak = _undot(G("Dakvlak 1 - daktype") or G("Type dak")) or "Zadeldak"
+    helling = _f(G("Dakvlak 1 - hellingshoek (°)")) or _f(G("Dakvlak 1 - hellingshoek")) or _f(G("Hellingshoek dak")) or _f(G("Dak hellingshoek"))
+    breedte = _f(G("Dak - vloerbreedte (m)")) or _f(G("Dak vloerbreedte"))
     if helling is None:
-        helling = hellingshoek_uit_nok(breedte, _f(G("Dak nokhoogte")), _f(G("Dak knieschothoogte")) or 0.0)
-    o1 = _undot(G("Dak orientatie zijde 1")) or _undot(G("Dak oriëntatie zijde 1"))
-    o2 = _undot(G("Dak orientatie zijde 2")) or _undot(G("Dak oriëntatie zijde 2"))
-    k1 = _undot(G("Kopgevel orientatie 1")) or _undot(G("Kopgevel oriëntatie 1"))
-    k2 = _undot(G("Kopgevel orientatie 2")) or _undot(G("Kopgevel oriëntatie 2"))
-    plat_m2 = _f(G("Plat dak m2")) or _f(G("Plat dak m²"))
+        helling = hellingshoek_uit_nok(breedte, _f(G("Dak - nokhoogte (m, optioneel)")) or _f(G("Dak nokhoogte")),
+                                       (_f(G("Dak - knieschothoogte (m, optioneel)")) or _f(G("Dak knieschothoogte")) or 0.0))
+    o1 = _undot(G("Dakvlak 1 - oriëntatie") or G("Dakvlak 1 - orientatie") or G("Dak orientatie zijde 1") or G("Dak oriëntatie zijde 1"))
+    o2 = _undot(G("Dakvlak 2 - oriëntatie") or G("Dakvlak 2 - orientatie") or G("Dak orientatie zijde 2") or G("Dak oriëntatie zijde 2"))
+    k1 = _undot(G("Dak - kopgevel oriëntatie 1") or G("Dak - kopgevel orientatie 1") or G("Kopgevel orientatie 1") or G("Kopgevel oriëntatie 1"))
+    k2 = _undot(G("Dak - kopgevel oriëntatie 2") or G("Dak - kopgevel orientatie 2") or G("Kopgevel orientatie 2") or G("Kopgevel oriëntatie 2"))
+    plat_m2 = _f(G("Plat dak m2")) or _f(G("Plat dak m²"))   # legacy; plat dak nu als dakvlak met daktype 'Plat dak'
     plat_or = _undot(G("Plat dak orientatie")) or _undot(G("Plat dak oriëntatie"))
     dak_done = False
     tl = type_dak.lower()
@@ -524,6 +526,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         dakvlakken = dak_vlakken_lessenaar(bg_floor_area or 0.0, helling, o1)
     elif helling and ("schild" in tl or "tent" in tl) and (o1 or o2 or k1 or k2):
         dakvlakken = dak_vlakken_schilddak(bg_floor_area or 0.0, helling, (o1, o2, k1, k2))
+    elif "plat" in tl:
+        _pa = _f(G("Dakvlak 1 - oppervlak (m²)")) or _f(G("Dakvlak 1 - oppervlak (m2)")) or plat_m2 or (bg_floor_area or 0.0)
+        if _pa:
+            dakvlakken = [{"kind": "dak", "type": "plat", "orientatie": o1 or plat_or or "", "m2": _pa, "hellingshoek": 0}]
     for v in dakvlakken:
         schil.append(SchilDeel(
             id="%s-%s-%s" % (v["kind"], (v.get("type") or "")[:4], v["orientatie"] or "x"),
@@ -541,6 +547,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
                                opmerkingen="plat dak (bv. erker)"))
         dak_done = True
+    if not dak_done:   # type 'Anders'/complex dak: 9 m²-vakjes per oriëntatie (N..NW + Horizontaal)
+        for _o in ("N", "NO", "O", "ZO", "Z", "ZW", "W", "NW", "Horizontaal"):
+            _m = _f(G("Dak m² " + _o))
+            if _m:
+                schil.append(SchilDeel(id="dak-%s" % _o.lower()[:4], type="dak", subtype="vlak (Anders)",
+                    begrenzing="Buitenlucht", orientatie=("" if _o == "Horizontaal" else _o),
+                    oppervlakte_m2=_m, hellingshoek=(0 if _o == "Horizontaal" else helling),
+                    isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
+                    opmerkingen="dak-m² per oriëntatie (handmatig, type Anders)"))
+                dak_done = True
     if not dak_done:
         schil.append(SchilDeel(id="dak", type="dak", subtype=type_dak, begrenzing="Buitenlucht",
                                orientatie="", oppervlakte_m2=bg_floor_area or 0.0,
@@ -570,7 +586,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
 
     # ---- installaties ----
     vsys = _undot(G("Ventilatiesysteem (A-E)"))      # 'A Natuurlijke ventilatie'
-    sub = _undot(G("Subsysteem (zie type)"))          # 'A1 Standaard'
+    # subsysteem nu conditioneel per type: 'Subsysteem (A)'..'(E)' (whichever gevuld); oude platte = fallback
+    sub = (_undot(G("Subsysteem (A)")) or _undot(G("Subsysteem (B)")) or _undot(G("Subsysteem (C)"))
+           or _undot(G("Subsysteem (D)")) or _undot(G("Subsysteem (E)")) or _undot(G("Subsysteem (zie type)")))
     dos.ventilatie = Ventilatie(
         systeem=(vsys.split()[0] if vsys else ""),
         systeem_soort=_undot(G("Systeem (ventilatie)")),

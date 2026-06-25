@@ -836,5 +836,33 @@ try:
 except Exception as _e:
     check("boom: parser draait zonder fout", False); print("     " + repr(_e)[:160])
 
+print("\n38. Parser: dak geconsolideerd uit Constructies + 9 m²-vakjes (type Anders)")
+try:
+    import tempfile as _tf3
+    from magicplan.statistics_csv import build_dossier as _bd3
+    _dak2 = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\nGevelhoogte (m),5.4\n"
+             "Dakvlak 1 - daktype,Zadeldak\nDak - vloerbreedte (m),8\nDakvlak 1 - hellingshoek (°),45\n"
+             "Dakvlak 1 - oriëntatie,ZW\nDakvlak 2 - oriëntatie,NO\nDak - kopgevel oriëntatie 1,NW\nDak - kopgevel oriëntatie 2,ZO\n\n"
+             "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\nGround Floor,40,2.50 m,Kruipruimte\n\n"
+             "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+             "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _dp = _tf3.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _dp.write(_dak2); _dp.close()
+    _ddo, _ = _bd3(_dp.name)
+    check("dak-uit-Constructies: 2 schuine dakvlakken (zadeldak)", len([s for s in _ddo.schil if s.type == "dak"]) == 2)
+    check("dak-uit-Constructies: kopgevel-driehoek als gevel",
+          any(s.type == "gevel" and "kopgevel" in (s.subtype or "") for s in _ddo.schil))
+    _av = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1992.t.m.2013\nWoningtype,Vrijstaand\nGevelhoogte (m),5.4\n"
+           "Dakvlak 1 - daktype,Anders\nDak m² Z,30\nDak m² Horizontaal,12\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\nGround Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _ap2 = _tf3.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _ap2.write(_av); _ap2.close()
+    _ado, _ = _bd3(_ap2.name)
+    _adak = [s for s in _ado.schil if s.type == "dak"]
+    check("dak 9-vakjes (Anders): 2 vlakken, Z=30 m²",
+          len(_adak) == 2 and any(abs(s.oppervlakte_m2 - 30) < 0.1 for s in _adak))
+except Exception as _e:
+    check("dak-uit-Constructies: parser draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
