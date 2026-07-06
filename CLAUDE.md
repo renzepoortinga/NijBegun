@@ -93,6 +93,12 @@ Inladen (VABI-export/dossier/CSV + huidige Standaard + foto voorkant/huisnummer)
 (toekomstige-staat-libs via generate_all + upload-terug -> Standaard-verdict) -> Afronden (fill_template Word +
 visueel ventilatieplan ventilatie/ventilatieplan_svg.py + Beoordelingsformulier-check + fotochecklist) ->
 Export-zip. Ingebouwde GUIDE (/guide) + per-stap hints met de kennisbank-eisen. End-to-end getest (test-client).
+LEADS-MODULE (26-6, /leads): Nij Begun-portal-mail ("AdviseurToegekend", JSON-blok van smarttwin.nl) plakken ->
+lead geparsed (dedupe op BAG-id) -> statusflow (nieuw..afgerond) -> concept-kennismakingsmail (adviseur verstuurt
+ZELF; vraagt bewoner ISSO-bewijslast klaar te leggen) -> CSV-export. Data lokaal in out/leads (AVG). BAG-KNOP:
+dashboard/bag.py verrijkt met straat/woonplaats/bouwjaar/m2 via PDOK (GEEN sleutel; live geverifieerd): Locatie-
+server (nummeraanduiding_id = BagAdresId uit de mail!) + kadaster/bag/wfs/v2_0 (LET OP: CQL_FILTER genegeerd ->
+bbox om centroide + client-side match op verblijfsobject-id). Internet nodig -> draait op adviseur-machine.
 Nij Begun-eisen verwerkt uit de kennisbank (docs/nijbegun-kennisbank-eisen.md): vuistregels ventilatie,
 Beoordelingsformulier (= indien-check), fotowerkwijze, Standaard-vs-30%-ISDE-regel.
 CATALOGUS-API LIVE (25-6, geverifieerd): catalog/api_client.py --refresh haalt nu de ECHTE Nij Begun-API op
