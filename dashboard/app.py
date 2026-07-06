@@ -58,9 +58,19 @@ def _password():
             or _cfg().get("dashboard", {}).get("wachtwoord") or DEFAULT_PW)
 
 
+def _dash_cfg():
+    """Dashboard-beveiligingsconfig: env-vars (PaaS zoals Render/Railway) > config.json (eigen server/lokaal)."""
+    d = dict(_cfg().get("dashboard", {}))
+    for env, key in (("NIJBEGUN_PW_HASH", "pw_hash"), ("NIJBEGUN_TOTP_SECRET", "totp_secret"),
+                     ("NIJBEGUN_SECRET", "secret")):
+        if os.environ.get(env):
+            d[key] = os.environ[env]
+    return d
+
+
 def _secret_key():
-    """Vaste secret key (sessies overleven een herstart): config > persistent bestand > nieuw."""
-    s = _cfg().get("dashboard", {}).get("secret")
+    """Vaste secret key (sessies overleven een herstart): env/config > persistent bestand > nieuw."""
+    s = _dash_cfg().get("secret")
     if s:
         return s
     pad = os.path.join(TOOL_DIR, "out", ".secret_key")
@@ -492,7 +502,7 @@ Inhoud: doeltreffend (haalt de Standaard) · juiste set (uit de opname) · uitvo
 # ---------------- routes ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    dash = _cfg().get("dashboard", {})
+    dash = _dash_cfg()
     if request.method == "POST":
         ok, fout = sec.login_check(dash, request.form.get("wachtwoord"), request.form.get("code"),
                                    request.remote_addr or "?", fallback_pw=_password())
@@ -1141,7 +1151,7 @@ def leads_csv():
 if __name__ == "__main__":
     prod = bool(os.environ.get("NIJBEGUN_PROD")) or "--serve" in sys.argv
     if prod:
-        dash = _cfg().get("dashboard", {})
+        dash = _dash_cfg()
         if not dash.get("pw_hash") or not dash.get("totp_secret"):
             print("GEWEIGERD: productie-modus vereist pw_hash + totp_secret (MFA, M29-eis punt 27).")
             print("Draai eerst:  python dashboard/security.py --setup")

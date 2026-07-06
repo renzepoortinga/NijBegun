@@ -989,6 +989,12 @@ try:
     check("app: secret key persistent + origin-check geregistreerd",
           bool(_WA4.app.secret_key) and any(f.__name__ == "_origin_check"
           for f in _WA4.app.before_request_funcs.get(None, [])))
+    os.environ["NIJBEGUN_PW_HASH"] = _h
+    os.environ["NIJBEGUN_TOTP_SECRET"] = _sec
+    _d = _WA4._dash_cfg()
+    check("app: PaaS env-vars overrulen config (Render/Railway)",
+          _d.get("pw_hash") == _h and _d.get("totp_secret") == _sec)
+    del os.environ["NIJBEGUN_PW_HASH"], os.environ["NIJBEGUN_TOTP_SECRET"]
 except Exception as _e:
     check("beveiliging: module draait zonder fout", False); print("     " + repr(_e)[:170])
 

@@ -1,0 +1,27 @@
+# Render.com blueprint — "deploy from GitHub" voor nijbegun.poortinga-energieadvies.nl
+# In Render: New + > Blueprint > kies de GitHub-repo > dit bestand wordt automatisch gelezen.
+# Daarna bij het service-scherm de 2 geheime env-vars invullen (uit: python dashboard/security.py --setup)
+# en onder Settings > Custom Domains het subdomein toevoegen (Render toont dan het CNAME voor Cloud86-DNS).
+services:
+  - type: web
+    name: nijbegun-webapp
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    region: frankfurt            # EU (M29-eis punt 25)
+    plan: starter                # altijd-aan (free tier slaapt en heeft geen schijf)
+    disk:
+      name: nijbegun-data
+      mountPath: /app/out        # projecten + leads blijven bewaard tussen deploys
+      sizeGB: 2
+    envVars:
+      - key: NIJBEGUN_PROD
+        value: "1"
+      - key: NIJBEGUN_HTTPS
+        value: "1"
+      - key: NIJBEGUN_PW_HASH
+        sync: false              # geheim: handmatig invullen in het Render-dashboard
+      - key: NIJBEGUN_TOTP_SECRET
+        sync: false              # geheim: handmatig invullen in het Render-dashboard
+      - key: NIJBEGUN_SECRET
+        generateValue: true      # vaste sessie-sleutel

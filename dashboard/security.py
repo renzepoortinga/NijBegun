@@ -132,6 +132,9 @@ def main():
     print("  Secret:  %s" % secret)
     print("  Of URI:  %s" % otpauth_uri(secret))
     print("\nHuidige code (ter controle): %s" % totp_code(secret))
+    print("\nHost je op Render/Railway (PaaS)? Zet daar deze omgevingsvariabelen (Environment):")
+    print("  NIJBEGUN_PW_HASH     = %s" % d["pw_hash"])
+    print("  NIJBEGUN_TOTP_SECRET = %s" % secret)
 
 
 if __name__ == "__main__":
