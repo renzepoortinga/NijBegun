@@ -28,7 +28,7 @@ from dashboard.measures import (laad_catalog, suggesties, bouw_maatregelen,     
 from dashboard import leads as leads_mod                                              # noqa: E402
 from dashboard import bag as bag_mod                                                  # noqa: E402
 from dashboard import security as sec                                                 # noqa: E402
-from ventilatie.ventilatie import bereken as vent_bereken                             # noqa: E402
+from ventilatie.ventilatie import bereken as vent_bereken, rapport as vent_rapport    # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
 from foto import checklist as foto_checklist                                          # noqa: E402
@@ -212,6 +212,9 @@ def _beoordeling(tag, st, dossier):
         (has("fotochecklist") or has("foto"), "Fotoblad / foto-checklist toegevoegd"),
         (bool(dossier and dossier.berekening.kwh_m2_huidig is not None),
          "Huidige woningstaat (V1–V6 + warmteverlies) ingevuld"),
+        (has("ventilatieberekening"), "Ventilatieberekening (tabel) toegevoegd"),
+        (not st.get("kwaco"), "KWACO-validatie zonder bevindingen"
+         + ((" — " + " · ".join(st["kwaco"][:3])) if st.get("kwaco") else "")),
     ]
     return out
 
@@ -968,11 +971,22 @@ def afronden(tag):
                 fh.write(foto_checklist.generate(dos))
         except Exception:
             pass
-    # ventilatieplan (altijd vers)
+    # ventilatieplan (altijd vers) + de VENTILATIEBEREKENING-tabel (Beoordelingsformulier vraagt de berekening)
     vres = vent_bereken(dos.geometrie.ruimtes)
     svg = ventilatieplan_svg(vres, adres=st.get("adres", ""))
     with open(os.path.join(pdir, "ventilatieplan_%s.svg" % tag), "w", encoding="utf-8") as fh:
         fh.write(svg)
+    try:
+        with open(os.path.join(pdir, "ventilatieberekening_%s.txt" % tag), "w", encoding="utf-8") as fh:
+            fh.write(vent_rapport(vres))
+    except Exception:
+        pass
+    # KWACO-validator (maatregelcodes/kruipruimte/Standaard-blockers) -> in de indien-check
+    try:
+        codes = validator_mod.load_catalog_codes(os.path.join(TOOL_DIR, "catalog", "catalog.json"))
+        st["kwaco"] = [str(x) for x in (validator_mod.validate(dos, codes) or [])]
+    except Exception:
+        st["kwaco"] = []
     # losse bijlage: toelichting + technische haalbaarheid per maatregel (M29-eis Bijlage 1 punt 13)
     regels = ["TOELICHTING OP ADVIES + TECHNISCHE HAALBAARHEID — %s" % st.get("adres", ""), "=" * 60, ""]
     if st.get("toelichting"):
@@ -984,6 +998,11 @@ def afronden(tag):
         regels.append("  %s — %s (zelf gekozen, %s %s)" % (v.get("code", ""),
                       v.get("haalbaarheid") or "geen bijzonderheden genoteerd",
                       v.get("hoeveelheid", ""), v.get("eenheid", "")))
+    if st.get("isde"):
+        regels += ["", "Geadviseerd BUITEN de subsidietabel (30% ISDE — bouwfysisch wenselijk, "
+                   "niet nodig voor de Standaard):"]
+        for m in st["isde"]:
+            regels.append("  %s — %s (%s)" % (m.get("code", ""), m.get("omschrijving", ""), m.get("onderdeel", "")))
     with open(os.path.join(pdir, "haalbaarheid_toelichting_%s.txt" % tag), "w", encoding="utf-8") as fh:
         fh.write("\n".join(regels) + "\n")
     st["stap"] = "klaar"

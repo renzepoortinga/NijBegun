@@ -998,5 +998,36 @@ try:
 except Exception as _e:
     check("beveiliging: module draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n44. Deep-dive-fixes: dak direct-m² wint + kozijn 0,65-regel + perimeter-note")
+try:
+    import tempfile as _tf5
+    from magicplan.statistics_csv import build_dossier as _bd5
+    _dd5 = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\nGevelhoogte (m),5.4\n"
+            "Dakvlak 1 - daktype,Zadeldak\nDakvlak 1 - oppervlak (m²),33.92\nDakvlak 1 - oriëntatie,Z\nDakvlak 1 - hellingshoek (°),45\n"
+            "Dakvlak 2 - daktype,Plat dak\nDakvlak 2 - oppervlak (m²),5.53\nDak - vloerbreedte (m),8\n\n"
+            "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\nGround Floor,40,2.50 m,Kruipruimte\n\n"
+            "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+            "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,Z\n")
+    _p5 = _tf5.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _p5.write(_dd5); _p5.close()
+    _d5, _n5 = _bd5(_p5.name)
+    _dk5 = [s for s in _d5.schil if s.type == "dak"]
+    check("dak: direct ingevoerde m² winnen (2 vlakken, 33.92 + 5.53; geen auto-berekening)",
+          len(_dk5) == 2 and {round(s.oppervlakte_m2, 2) for s in _dk5} == {33.92, 5.53})
+    check("dak: direct-m²-note aanwezig", any("direct ingevoerde m²" in n for n in _n5))
+    check("perimeter: woningscheidende-wand-note bij tussenwoning", any("WONINGSCHEIDENDE" in n for n in _n5))
+    # kozijn < 0.65 m2 -> 0.65 (via assemble/kozijn-route: window in WALL-attributen)
+    _kc = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Vrijstaand\nGevelhoogte (m),5.4\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\nGround Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,Z\n"
+           "Voorgevel,Window 1,Window,0.36,0.36,0.6,0.6,1,Window,HR++,1,Z\n")
+    _pk = _tf5.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _pk.write(_kc); _pk.close()
+    _dk, _ = _bd5(_pk.name)
+    _rr5 = [s for s in _dk.schil if s.type == "kozijn" and s.subtype == "Raam"]
+    check("kozijn: klein raam (0,36 m²) -> 0,65 m² (Nij Begun-regel)",
+          bool(_rr5) and abs(_rr5[0].oppervlakte_m2 - 0.65) < 0.001 and "0,65" in (_rr5[0].opmerkingen or ""))
+except Exception as _e:
+    check("deep-dive-fixes: parser draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

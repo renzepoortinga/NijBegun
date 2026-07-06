@@ -482,6 +482,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     bg_floor_area = footprint_bg or _f(G("Above grade living area"))  # begane-grond-footprint (niet de meerlaagse som)
     split_tot = round(sum(vloer_split.values()), 2)
     hoofd_area = round(max(0.0, (bg_floor_area or 0.0) - split_tot), 2) if split_tot else (bg_floor_area or 0.0)
+    if n_buur:
+        notes.append("Vloer-perimeter = volledige buitenomtrek (%.1f m), maar de WONINGSCHEIDENDE wand(en) "
+                     "tellen NIET mee in de perimeter (opname-handleiding §3.4) — corrigeer de perimeter "
+                     "in Vabi voor dit woningtype (%s, %d buurwand(en))."
+                     % (geo.perimeter_m or 0, woningtype, n_buur))
     schil.append(SchilDeel(id="vloer", type="vloer", subtype="Begane grondvloer",
                            begrenzing=vloer_begr, oppervlakte_m2=hoofd_area or 0.0,
                            isolatie_aanwezig=v_b["isolatie"], rekenzone=1,
@@ -519,7 +524,33 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     dak_done = False
     tl = type_dak.lower()
     dakvlakken = []
-    if helling and "zadel" in tl and (o1 or o2):
+    # SOBOLT-stijl: DIRECT ingevoerde m² per dakvlak WINT van de auto-berekening (adviseur weet het beste).
+    # Elk Dakvlak N (1..3) met een ingevuld oppervlak wordt 1-op-1 een dakvlak met eigen type/oriëntatie/
+    # helling/begrenzing; de geometrie-benadering is alleen de fallback wanneer geen m² is ingevuld.
+    directe_vlakken = []
+    for n in (1, 2, 3):
+        p = "Dakvlak %d" % n
+        m2_d = _f(G(p + " - oppervlak (m²)")) or _f(G(p + " - oppervlak (m2)"))
+        if not m2_d:
+            continue
+        t_d = _undot(G(p + " - daktype")) or type_dak
+        o_d = _undot(G(p + " - oriëntatie") or G(p + " - orientatie"))
+        h_d = _f(G(p + " - hellingshoek (°)")) or _f(G(p + " - hellingshoek")) or helling
+        b_d = _bouwdeel(p, "Rc-bron dak")
+        schil.append(SchilDeel(
+            id="dak-vlak%d-%s" % (n, (o_d or "x").lower()), type="dak", subtype=t_d,
+            begrenzing=b_d["begrenzing"] or "Buitenlucht",
+            orientatie=("" if o_d == "Horizontaal" else o_d),
+            oppervlakte_m2=m2_d, hellingshoek=(0 if "plat" in t_d.lower() else h_d),
+            isolatie_aanwezig=b_d["isolatie"], rekenzone=1, isolatiedikte_mm=b_d["dikte_mm"],
+            rc_bron=b_d["rc_bron"] or dak_rc,
+            opmerkingen="dakvlak %d: m² direct ingevoerd (heeft voorrang op auto-berekening)" % n))
+        directe_vlakken.append(n)
+        dak_done = True
+    if directe_vlakken:
+        notes.append("Dak: %d dakvlak(ken) met direct ingevoerde m² (%s) — auto-berekening overgeslagen."
+                     % (len(directe_vlakken), ", ".join("vlak %d" % n for n in directe_vlakken)))
+    if not dak_done and helling and "zadel" in tl and (o1 or o2):
         dakvlakken = dak_vlakken_zadeldak(bg_floor_area or 0.0, breedte or 0.0, helling,
                                           orient_schuin=(o1, o2), orient_kopgevel=(k1, k2))
     elif helling and "lessenaar" in tl and o1:
@@ -567,12 +598,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
 
     # kozijnen (ramen): erven begrenzing + oriëntatie van de moederwand (parent/child); kozijn A/B/C
     for i, k in enumerate(kozijnen):
+        # Nij Begun opname-handleiding: kleine ruiten < 0,65 m2 ALTIJD rekenen als 0,65 m2
+        area = k["area"] or 0.0
+        klein = 0 < area < 0.65
         schil.append(SchilDeel(
             id="raam-%d" % (i + 1), type="kozijn", subtype="Raam",
             begrenzing=k.get("begr", "Buitenlucht"),
-            orientatie=k["orient"], oppervlakte_m2=k["area"],
+            orientatie=k["orient"], oppervlakte_m2=(0.65 if klein else area),
             glastype=_undot(k["glas"]) or "", kozijnmateriaal=_norm_kozijn_mat(k.get("kozijn_hk", "")),
-            opmerkingen=("" if k["glas"] else "GLASTYPE ONTBREEKT")))
+            opmerkingen=(("klein raam %.2f m2 -> 0,65 m2 (Nij Begun-regel)" % area if klein else "")
+                         + ("" if k["glas"] else " GLASTYPE ONTBREEKT")).strip()))
     # deuren: erven begrenzing + oriëntatie van de moederwand
     for i, d in enumerate(deuren):
         met_raam = "raam" in (d["type_constructie"] or "").lower()
