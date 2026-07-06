@@ -13,7 +13,7 @@ later live via catalog/api_client). Niets wordt zelf "gerekend": het zijn catalo
     groepen = suggesties(dossier, cat)          # -> UI toont checkboxes per bouwdeel
     maatregelen, totaal = bouw_maatregelen(cat, keuze)   # keuze = aangevinkte codes + hoeveelheden
 """
-import os, sys, json
+import os, sys, json, re
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import Maatregel, Subpost                                   # noqa: E402
 from engine.measure_engine import (element_spec, price_incl, is_delta, bracket_match,
@@ -71,6 +71,57 @@ def suggesties(dossier, catalog):
                            "prijs": s.prijs_per_eenheid, "eenheid": s.eenheid} for s in subs]})
     out.sort(key=lambda x: x["onderdeel"])
     return out
+
+
+CAT_LABEL = {"V1": "Gevel", "V2": "Beglazing en kozijnen", "V3": "Vloer",
+             "V4": "Dak", "V5": "Ventilatie", "V6": "Kierdichting"}
+
+
+def _schoon_label(oms):
+    """'Spouwmuurisolatie vlokken 60 mm van 0 m² tot 45 m²' -> 'Spouwmuurisolatie vlokken'."""
+    s = re.sub(r"\s*van(af)?\s+[\d.,]+\s*m².*$", "", oms or "", flags=re.I)
+    s = re.sub(r"\s*[\d.,]+\s*mm\s*$", "", s).strip(" -·")
+    return s.strip()
+
+
+def catalogus_boom(catalog):
+    """Volledige Maatregelencatalogus als boom voor de 'zelf kiezen'-UI (zoals het Nij Begun-portal):
+    categorieën (V1..V6) -> subcategorieën (V1-1..) -> kern-maatregelen + bijkomende kosten (X-codes)."""
+    cats = {}
+    for m in catalog.get("maatregelen", []):
+        code = m.get("code") or ""
+        parts = code.split("-")
+        if len(parts) < 3 or parts[0] not in CAT_LABEL:
+            continue
+        sub = "-".join(parts[:2])
+        c = cats.setdefault(parts[0], {"code": parts[0], "naam": CAT_LABEL[parts[0]], "subs": {}})
+        s = c["subs"].setdefault(sub, {"code": sub, "naam": "", "kern": [], "meerwerk": []})
+        rij = {"code": code, "omschrijving": (m.get("omschrijving") or "").strip(),
+               "prijs": round(price_incl(m) or 0, 2), "eenheid": m.get("eenheid") or "m²",
+               "biobased": bool(m.get("biobased"))}
+        (s["meerwerk"] if parts[2].startswith("X") else s["kern"]).append(rij)
+    out = []
+    for cat in sorted(cats):
+        c = cats[cat]
+        subs = []
+        for sc in sorted(c["subs"]):
+            s = c["subs"][sc]
+            basis = s["kern"] or s["meerwerk"]
+            if not basis:
+                continue
+            s["naam"] = min((_schoon_label(r["omschrijving"]) for r in basis if r["omschrijving"]),
+                            key=len, default=sc) or sc
+            s["kern"].sort(key=lambda r: r["code"])
+            s["meerwerk"].sort(key=lambda r: r["code"])
+            subs.append(s)
+        c["subs"] = subs
+        out.append(c)
+    return out
+
+
+def zoek_maatregel(catalog, code):
+    """-> catalogusrij of None (voor de vrije-keuze-flow)."""
+    return next((m for m in catalog.get("maatregelen", []) if m.get("code") == code), None)
 
 
 def bouw_maatregelen(catalog, keuze):

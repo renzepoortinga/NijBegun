@@ -23,7 +23,8 @@ from vabi.monitor_xml import parse as parse_monitor                             
 from vabi.result_reader import read_results                                           # noqa: E402
 from vabi.sanity import check as sanity_check                                         # noqa: E402
 from vabi import generate_all                                                         # noqa: E402
-from dashboard.measures import laad_catalog, suggesties, bouw_maatregelen             # noqa: E402
+from dashboard.measures import (laad_catalog, suggesties, bouw_maatregelen,           # noqa: E402
+                                catalogus_boom, zoek_maatregel)
 from dashboard import leads as leads_mod                                              # noqa: E402
 from dashboard import bag as bag_mod                                                  # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken                             # noqa: E402
@@ -37,8 +38,8 @@ UPLOAD_DIR = os.path.join(TOOL_DIR, "out", "_uploads")
 CONFIG = os.path.join(TOOL_DIR, "config.json")
 TEMPLATE_DOCX = os.path.join(TOOL_DIR, "templates", "isolatieplan_template.docx")
 DEFAULT_PW = "nijbegun"
-STAPPEN = [("inladen", "Inladen"), ("maatregelen", "Maatregelen"), ("vabi", "VABI-toets"),
-           ("afronden", "Afronden"), ("klaar", "Opleveren")]
+STAPPEN = [("inladen", "Inladen"), ("opname", "Opname"), ("maatregelen", "Maatregelen"),
+           ("vabi", "VABI-toets"), ("afronden", "Afronden"), ("klaar", "Opleveren")]
 
 app = Flask(__name__)
 
@@ -245,7 +246,84 @@ INLADEN = """{{stepper|safe}}<h1>Inladen & controleren</h1>
 <div><label>Foto voorkant woning{% if st.foto_voorkant %} ✓{% endif %}</label><input type=file name=foto_voorkant accept="image/*"></div>
 <div><label>Foto huisnummer{% if st.foto_huisnummer %} ✓{% endif %}</label><input type=file name=foto_huisnummer accept="image/*"></div></div>
 <p class=muted small>Kwaliteitscommissie-eis: adres én foto op de voorkant komen overeen · ≥8 MP · max 5 MB (SNN).</p></div>
-<div class=btn-row><div class=spacer></div><button class="btn lg">Door naar maatregelen →</button></div></form>"""
+<div class=btn-row><div class=spacer></div><button class="btn lg">Door naar de opname →</button></div></form>"""
+
+# --------- opname-editor (SOBOLT-achtig: alle gegevens zichtbaar + bewerkbaar) ---------
+BEGR_OPTS = ["Buitenlucht", "Grond", "Kruipruimte", "AOR", "AOS", "AVR", "Sterk geventileerd", "Water"]
+ORI_OPTS = ["", "N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
+GLAS_OPTS = ["", "Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++",
+             "TripleHR", "Vacuümglas", "Onbekend"]
+KOZ_OPTS = ["", "Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (niet thermisch onderbroken)"]
+TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟"}
+
+OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
+<p class=lead>Alle opnamegegevens, bewerkbaar. Uit MagicPlan/VABI geïmporteerd; pas aan waar nodig — <b>Vabi blijft de rekenkern</b>.</p>
+<div class=card><h2>Algemeen</h2><form method=post action="{{url_for('opname_algemeen', tag=tag)}}"><div class=grid2>
+<div><label>BAG nummeraanduiding-ID</label><input name=bag_vboid value="{{d.identificatie.bag_vboid}}"></div>
+<div><label>Woningtype</label><input name=woningtype value="{{d.identificatie.woningtype}}"></div>
+<div><label>Bouwjaar</label><input name=bouwjaar value="{{d.identificatie.bouwjaar or ''}}"></div>
+<div><label>Renovatiejaar (huidig)</label><input name=renovatiejaar value="{{d.identificatie.renovatiejaar or ''}}"></div>
+<div><label>Gevelhoogte (m)</label><input name=gevelhoogte value="{{d.opname.gevelhoogte_m or ''}}"></div>
+<div><label>Gebruiksoppervlakte Ag (m²)</label><input name=ag value="{{d.geometrie.gebruiksoppervlakte_ag_m2 or ''}}"></div>
+<div><label>Qv10 (dm³/s·m²) — alleen indien gemeten</label><input name=qv10 value="{{d.opname.qv10_waarde or ''}}"></div>
+<div><label>Oriëntatie voorgevel</label><select name=ori_voor>{% for o in ori_opts %}<option {{'selected' if o==d.identificatie.orientatie_voorgevel}}>{{o}}</option>{% endfor %}</select></div>
+</div><div class=btn-row><button class=btn>Algemeen opslaan</button></div></form></div>
+
+<div class=card><h2>Gebouw <span class="pill gray">{{elementen|length}} vlakken</span></h2>
+{% for rz, els in zones %}<h3 style="margin-top:14px">Rekenzone {{rz}}</h3>
+{% for i, s in els %}<details class=acc><summary>{{ico.get(s.type,'▫')}} <b>{{s.id}}</b>
+<span class="pill gray">{{s.type}}{{' · '+s.subtype if s.subtype}}</span>
+{% if s.orientatie %}<span class="pill blue">{{s.orientatie}}</span>{% endif %}
+<span class="pill gray">{{'%.2f'|format(s.oppervlakte_m2 or 0)}} m²</span>
+{% if s.rc_huidig %}<span class="pill green">Rc={{s.rc_huidig}}</span>{% elif s.u_huidig %}<span class="pill green">U={{s.u_huidig}}</span>{% endif %}
+{% if s.begrenzing and s.begrenzing != 'Buitenlucht' %}<span class="pill amber">{{s.begrenzing}}</span>{% endif %}</summary>
+<div class=acc-body><form method=post action="{{url_for('opname_el', tag=tag, i=i)}}"><div class=grid2>
+<div><label>Naam</label><input name=id value="{{s.id}}"></div>
+<div><label>Subtype</label><input name=subtype value="{{s.subtype}}"></div>
+<div><label>Oppervlakte (m²)</label><input name=m2 value="{{s.oppervlakte_m2 or ''}}"></div>
+<div><label>Oriëntatie</label><select name=orientatie>{% for o in ori_opts %}<option {{'selected' if o==s.orientatie}}>{{o}}</option>{% endfor %}</select></div>
+<div><label>Begrenzing</label><select name=begrenzing>{% for b in begr_opts %}<option {{'selected' if b==s.begrenzing}}>{{b}}</option>{% endfor %}</select></div>
+<div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option {{'selected' if z==s.rekenzone}}>{{z}}</option>{% endfor %}</select></div>
+{% if s.type == 'kozijn' %}
+<div><label>Type glas</label><select name=glastype>{% for g in glas_opts %}<option {{'selected' if g==s.glastype}}>{{g}}</option>{% endfor %}</select></div>
+<div><label>Kozijnmateriaal</label><select name=kozijnmateriaal>{% for k in koz_opts %}<option {{'selected' if k==s.kozijnmateriaal}}>{{k}}</option>{% endfor %}</select></div>
+<div><label>U-waarde (huidig)</label><input name=u value="{{s.u_huidig or ''}}"></div>
+{% else %}
+<div><label>Rc-waarde (huidig, m²K/W)</label><input name=rc value="{{s.rc_huidig or ''}}"></div>
+<div><label>Isolatie aanwezig</label><select name=isolatie>{% for x in ('Ja','Nee','Onbekend') %}<option {{'selected' if x==s.isolatie_aanwezig}}>{{x}}</option>{% endfor %}</select></div>
+<div><label>Isolatiedikte (mm)</label><input name=dikte value="{{s.isolatiedikte_mm or ''}}"></div>
+{% endif %}
+{% if s.type == 'dak' %}<div><label>Hellingshoek (°)</label><input name=helling value="{{s.hellingshoek or ''}}"></div>{% endif %}
+<div><label>Opmerkingen</label><input name=opmerkingen value="{{s.opmerkingen}}"></div>
+</div><div class=btn-row><button class=btn>Opslaan</button>
+<button class="btn sec" formaction="{{url_for('opname_el_kopie', tag=tag, i=i)}}">⧉ Dupliceer</button>
+<button class="btn sec" formaction="{{url_for('opname_el_weg', tag=tag, i=i)}}" onclick="return confirm('{{s.id}} verwijderen?')">🗑 Verwijder</button>
+</div></form></div></details>{% endfor %}{% endfor %}
+<form method=post action="{{url_for('opname_el_nieuw', tag=tag)}}" class=btn-row style="margin-top:14px">
+<select name=type style="max-width:180px"><option value=gevel>Gevel</option><option value=dak>Dak</option>
+<option value=vloer>Vloer</option><option value=kozijn>Raam/deur</option></select>
+<button class="btn sec">+ Vlak toevoegen</button></form></div>
+
+<div class=card><h2>Installaties</h2><form method=post action="{{url_for('opname_installaties', tag=tag)}}"><div class=grid2>
+<div><label>Ventilatie (A-E)</label><input name=vent_systeem value="{{d.ventilatie.systeem}}" placeholder="A/B/C/D/E"></div>
+<div><label>Ventilatie subsysteem</label><input name=vent_sub value="{{d.ventilatie.subsysteem_code}}" placeholder="bv. C1"></div>
+<div><label>Verwarming — type opwekker</label><input name=vw_opwekker value="{{d.installaties.verwarming.type_opwekker}}"></div>
+<div><label>Verwarming — subtype (HR-klasse/WP)</label><input name=vw_subtype value="{{d.installaties.verwarming.subtype}}"></div>
+<div><label>Verwarming — afgifte</label><input name=vw_afgifte value="{{d.installaties.verwarming.afgifte}}"></div>
+<div><label>Verwarming — aanvoertemperatuur</label><input name=vw_temp value="{{d.installaties.verwarming.aanvoertemperatuur}}"></div>
+<div><label>Tapwater — toestel</label><input name=tw_toestel value="{{d.installaties.tapwater.type_toestel}}"></div>
+<div><label>Tapwater — installatiejaar</label><input name=tw_jaar value="{{d.installaties.tapwater.installatiejaar or ''}}"></div>
+</div><div class=btn-row><button class=btn>Installaties opslaan</button>
+<span class="muted small">PV/koeling/2e installaties: uit de opname overgenomen; detail-aanpassing in Vabi.</span></div></form></div>
+
+<div class=card><div class=kv>
+<dt>Totaal verliesoppervlak</dt><dd>{{'%.2f'|format(verlies)}} m²</dd>
+<dt>Gebruiksoppervlak (Ag)</dt><dd>{{'%.2f'|format(ag) if ag else '—'}} m²</dd>
+<dt>Compactheid (verlies/Ag)</dt><dd>{{'%.2f'|format(verlies/ag) if ag else '—'}}</dd></div>
+<p class="muted small">AVR-vlakken tellen niet mee in het verliesoppervlak (adiabatisch).</p></div>
+
+<div class=btn-row><a class="btn sec" href="{{url_for('opname_vabi_huidig', tag=tag)}}">⬇ Exporteer naar VABI (huidige staat)</a>
+<div class=spacer></div><a class="btn lg" href="{{url_for('naar_maatregelen', tag=tag)}}">Door naar maatregelen →</a></div>"""
 
 MAATREGELEN = """{{stepper|safe}}<h1>Maatregelen kiezen</h1>
 <p class=lead>Vink aan wat je toepast. De goedkoopste passende maatregel is voorgeselecteerd; je kunt per bouwdeel wisselen.</p>
@@ -268,11 +346,36 @@ Bouwfysisch wenselijke extra's (bv. dakkapel-wangen, deur) adviseer je wél, maa
 <select name="code_{{loop.index0}}" class=cm data-grp="{{loop.index0}}">
 {% for k in g.kandidaten %}<option value="{{k.code}}" data-prijs="{{k.prijs}}" {{'selected' if k.code==g.default_code else ''}}>{{k.code}} · {{k.omschrijving[:70]}} — €{{'%.2f'|format(k.prijs)}}/{{k.eenheid}}</option>{% endfor %}</select>
 <p class=muted small>doelwaarde {{g.rc_u_doel}} · regel-subtotaal <b class=sub data-grp="{{loop.index0}}">€{{'%.0f'|format(g.kandidaten[0].kosten)}}</b></p>
-</div>{% endfor %}
+<label>Technische haalbaarheid (per maatregel — komt in de losse bijlage)</label>
+<input name="haal_{{loop.index0}}" placeholder="bv. kruipruimte 60 cm en droog · bereikbaar via luik hal · geen asbest gezien" value="{{(st.haal or {}).get(loop.index0|string, '')}}">
+</div>{% endfor %}</form>
+
+<div class=card><h2>Zelf kiezen uit de catalogus</h2>
+<p class=muted>De volledige Nij Begun-catalogus (zoals het portal): categorie → subcategorie → maatregel of bijkomende kosten. Voeg toe met eigen hoeveelheid.</p>
+{% if vrij %}<table><tr><th>Code</th><th>Omschrijving</th><th>Hoeveelheid</th><th>Kosten</th><th>Bucket</th><th></th></tr>
+{% for v in vrij %}<tr><td class=small>{{v.code}}</td><td>{{v.omschrijving[:58]}}</td>
+<td>{{v.hoeveelheid}} {{v.eenheid}}</td><td>€{{'%.0f'|format(v.kosten)}}</td>
+<td><span class="pill {{'green' if v.bucket=='standaard' else 'amber'}}">{{'Standaard' if v.bucket=='standaard' else '30% ISDE'}}</span></td>
+<td><form method=post action="{{url_for('maatregel_del', tag=tag, idx=loop.index0)}}"><button class="btn sec">✕</button></form></td></tr>{% endfor %}</table>
+<p class="muted small">Subtotaal catalogus-keuze (Standaard-bucket): <b>€{{'%.0f'|format(vrij_tot)}}</b></p>{% endif %}
+{% for c in boom %}<details class=acc><summary><b>{{c.naam}}</b> <span class="pill gray">{{c.code}}</span></summary><div class=acc-body>
+{% for s in c.subs %}<details class=acc><summary>{{s.naam[:60]}} <span class="pill gray">{{s.code}}</span></summary><div class=acc-body>
+{% for m in s.kern %}<form method=post action="{{url_for('maatregel_add', tag=tag)}}" style="display:flex;gap:8px;align-items:center;padding:4px 0">
+<input type=hidden name=code value="{{m.code}}"><span style="flex:1" class=small>{{m.code}} · {{m.omschrijving[:64]}} — €{{'%.2f'|format(m.prijs)}}/{{m.eenheid}}{% if m.biobased %} <span class="pill green">bio</span>{% endif %}</span>
+<input name=hoeveelheid placeholder="{{m.eenheid}}" style="max-width:90px"><select name=bucket style="max-width:130px"><option value=standaard>Standaard</option><option value=isde>30% ISDE</option></select>
+<button class="btn sec">＋</button></form>{% endfor %}
+{% if s.meerwerk %}<p class="muted small" style="margin:8px 0 2px"><b>Bijkomende kosten</b></p>
+{% for m in s.meerwerk %}<form method=post action="{{url_for('maatregel_add', tag=tag)}}" style="display:flex;gap:8px;align-items:center;padding:4px 0">
+<input type=hidden name=code value="{{m.code}}"><span style="flex:1" class=small>{{m.code}} · {{m.omschrijving[:64]}} — €{{'%.2f'|format(m.prijs)}}/{{m.eenheid}}</span>
+<input name=hoeveelheid placeholder="{{m.eenheid}}" style="max-width:90px"><select name=bucket style="max-width:130px"><option value=standaard>Standaard</option><option value=isde>30% ISDE</option></select>
+<button class="btn sec">＋</button></form>{% endfor %}{% endif %}
+</div></details>{% endfor %}</div></details>{% endfor %}</div>
+
 <div class=totalbar><span class=t>Subsidietabel (Standaard)</span><span class=v id=tot>€0</span>
-<div class=spacer></div><button class="btn lg">Door naar VABI-toets →</button></div></form>
+<div class=spacer></div><button class="btn lg" form=mf>Door naar VABI-toets →</button></div>
 <script>
-function recalc(){var tot=0;document.querySelectorAll('.meas-group').forEach(function(g,i){
+var VRIJ={{vrij_tot|int}};
+function recalc(){var tot=VRIJ;document.querySelectorAll('.meas-group').forEach(function(g,i){
 var m2=parseFloat(g.dataset.m2)||0;var sel=g.querySelector('.cm');var pr=parseFloat(sel.selectedOptions[0].dataset.prijs)||0;
 var sub=Math.round(pr*m2);g.querySelector('.sub').textContent='€'+sub.toLocaleString('nl-NL');
 var bk=g.querySelector('.bk').value;if(bk==='standaard')tot+=sub;});
@@ -283,8 +386,19 @@ document.getElementById('mf').addEventListener('change',recalc);recalc();
 VABI = """{{stepper|safe}}<h1>VABI-toets met maatregelen</h1>
 <p class=lead>Genereer de VABI-import mét de gekozen maatregelen, reken in Vabi, en upload de nieuwe export terug.</p>
 <div class=card><h2>1 · Importeer in Vabi EPA-W</h2>
+<form method=get style="margin-bottom:12px"><label>Rekenwaarde Qv10 na maatregelen — renovatiejaar variant (zet de tool op de toekomstige staat; Vabi rekent de infiltratie forfaitair op dit jaar)</label>
+<div class=btn-row><input name=renojaar value="{{renojaar}}" style="max-width:120px"><button class="btn sec">Opnieuw genereren met dit renovatiejaar</button></div></form>
 <p class=muted>De toekomstige staat (maatregelen verwerkt) als 3 bibliotheken. Importeer in EPA-W → <b>Constructies → Objecten → Installaties</b> → Rekenen.</p>
 <ul class=files>{% for f in vabi_files %}<li>{{f}} <a class="btn sec" href="{{url_for('download', tag=tag, filename='vabi_na/'+f)}}">download</a></li>{% endfor %}</ul></div>
+<div class=card><h2>Berekening</h2><div class=kv>
+<dt>Isolatiestandaard (eis)</dt><dd>{{h.standaard if h.standaard is not none else '—'}} kWh/m²·jr</dd>
+<dt>Netto warmtebehoefte (huidig)</dt><dd>{{h.behoefte if h.behoefte is not none else '—'}} kWh/m²·jr</dd>
+<dt>Netto warmtebehoefte (met maatregelen)</dt><dd>{{na.behoefte if na and na.behoefte is not none else '— (upload de export)'}} kWh/m²·jr</dd>
+<dt>Totale kosten (subsidietabel)</dt><dd>€{{'%.2f'|format(st.totaal or 0)}}</dd>
+<dt>Totaal verliesoppervlak</dt><dd>{{'%.2f'|format(verlies)}} m²</dd>
+<dt>Totaal gebruiksoppervlak</dt><dd>{{'%.2f'|format(ag) if ag else '—'}} m²</dd>
+<dt>Compactheid</dt><dd>{{'%.2f'|format(verlies/ag) if ag else '—'}}</dd></div>
+<p class="muted small">Warmtebehoefte-getallen komen uit Vabi (de rekenkern) — de tool rekent ze nooit zelf.</p></div>
 <div class=card><h2>2 · Upload de nieuwe VABI-export</h2>
 <form method=post enctype=multipart/form-data>
 <div class=file-drop>VABI-export ná maatregelen (.xml)<br><input type=file name=export accept=".xml" required></div>
@@ -297,6 +411,11 @@ VABI = """{{stepper|safe}}<h1>VABI-toets met maatregelen</h1>
 
 AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 <p class=lead>Het isolatieplan, het visuele ventilatieplan en de indien-check — klaar voor oplevering.</p>
+<div class=card><h2>Toelichting op advies</h2>
+<p class=muted>Deze persoonlijke toelichting komt in de bijlage bij het plan (met de technische haalbaarheid per maatregel).</p>
+<form method=post action="{{url_for('toelichting', tag=tag)}}">
+<textarea name=toelichting rows=4 placeholder="bv. bewoner wil eerst het dak; spouw is in 2005 al deels gevuld — zie foto's">{{st.toelichting or ''}}</textarea>
+<div class=btn-row><button class=btn>Toelichting opslaan</button></div></form></div>
 <div class=card><h2>Klaar voor indienen? (Beoordelingsformulier)</h2><ul class=check>
 {% for ok, txt in beoord %}<li><span class="mk {{'ok2' if ok else 'no2'}}">{{ '✓' if ok else '○' }}</span>{{txt}}</li>{% endfor %}</ul>
 <p class=muted small>Spiegelt de compleetheidscriteria van de Nij Begun-kwaliteitscommissie.</p></div>
@@ -308,13 +427,14 @@ AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 
 GUIDE = """<h1>Guide — zo maak je een Nij Begun-isolatieplan</h1>
 <p class=lead>De volledige werkwijze, met de eisen van de Nij Begun-kennisbank erin verwerkt.</p>
-<div class=card><h2>De flow in 5 stappen</h2>
+<div class=card><h2>De flow in 6 stappen</h2>
 <div class=stepper>{% for s,l in stappen %}<div class="step done"><div class=bar></div>{{l}}</div>{% endfor %}</div>
-<dl class=kv><dt>1 · Inladen</dt><dd>Upload de <b>kloppende VABI-export</b> (of dossier/CSV). De webapp leest de huidige Standaard. Voeg de verplichte foto's toe: <b>voorkant + huisnummer</b> (moeten met het adres overeenkomen).</dd>
-<dt>2 · Maatregelen</dt><dd>Vink per bouwdeel aan wat je toepast (Nij Begun-catalogus). <b>Standaard-maatregelen</b> → subsidietabel (50/100%); <b>wenselijke extra's</b> → markeer als 30% ISDE.</dd>
-<dt>3 · VABI-toets</dt><dd>Importeer de gegenereerde toekomstige staat in Vabi, reken, en upload de export terug. <b>Voldoet de set aan de Standaard?</b> Zo niet → pakket uitbreiden.</dd>
-<dt>4 · Afronden</dt><dd>Isolatieplan (Word) + <b>visueel ventilatieplan</b> + foto-checklist worden gegenereerd. De <b>indien-check</b> spiegelt het Beoordelingsformulier.</dd>
-<dt>5 · Opleveren</dt><dd>Exporteer de bundel en dien in via leveranciers@nijbegun.nl. De eerste 4 plannen worden 100% gecontroleerd.</dd></dl></div>
+<dl class=kv><dt>1 · Inladen</dt><dd>Upload de <b>MagicPlan-CSV</b>, een dossier of een VABI-export. De webapp leest de huidige staat. Voeg de verplichte foto's toe: <b>voorkant + huisnummer</b> (moeten met het adres overeenkomen).</dd>
+<dt>2 · Opname</dt><dd>Alle opnamegegevens <b>zichtbaar en bewerkbaar</b>: de gebouw-boom per rekenzone (dak/gevels/ramen/vloer met m², Rc/U, begrenzing), installaties en algemene gegevens. Vanaf hier exporteer je ook de <b>huidige staat naar Vabi</b> (0-meting).</dd>
+<dt>3 · Maatregelen</dt><dd>Suggesties per bouwdeel (goedkoopste eerst) óf <b>zelf kiezen uit de volledige catalogus</b> incl. bijkomende kosten. Noteer per maatregel de <b>technische haalbaarheid</b>. Standaard → subsidietabel; extra's → 30% ISDE.</dd>
+<dt>4 · VABI-toets</dt><dd>Genereer de toekomstige staat (met <b>renovatiejaar-variant</b> voor de Qv10), importeer in Vabi, reken, upload de export terug. <b>Voldoet de set aan de Standaard?</b> Zo niet → pakket uitbreiden.</dd>
+<dt>5 · Afronden</dt><dd>Persoonlijke toelichting + isolatieplan (Word) + <b>visueel ventilatieplan</b> + haalbaarheids-bijlage + foto-checklist. De <b>indien-check</b> spiegelt het Beoordelingsformulier.</dd>
+<dt>6 · Opleveren</dt><dd>Exporteer de bundel en dien in via leveranciers@nijbegun.nl. De eerste 4 plannen worden 100% gecontroleerd.</dd></dl></div>
 <details class=acc open><summary>Ventilatie — de Nij Begun-vuistregels (bindend)</summary><div class=acc-body>
 Toevoer <b>0,7 dm³/s·m² per verblijfsgebied</b> (min 7 l/s/leefruimte) via roosters/WTW. Afvoer <b>keuken 21 · bad 14 · toilet 7</b>. Aan-/afvoer in <b>balans</b>.
 Regels o.a.: overstroom max 2 deuren · ≥50% van buiten · géén afvoer in slaapkamer · >15 l/s onder deur → deurrooster · C4c CO₂-sturing woonkamer+hoofdslaapkamer.
@@ -460,11 +580,196 @@ def inladen(tag):
         save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
         st["adres"] = "%s %s, %s" % (dos.identificatie.straat or "", dos.identificatie.huisnummer or "",
                                      dos.identificatie.plaats or "")
-        st["stap"] = "maatregelen"
+        st["stap"] = "opname"
         _save_state(tag, st)
-        return redirect(url_for("maatregelen", tag=tag))
+        return redirect(url_for("opname", tag=tag))
     return page(INLADEN, stepper=stepper("inladen", st), st=st, d=dos, h=st.get("huidig") or {},
                 cfg_naam=_cfg().get("adviseur", {}).get("naam", ""))
+
+
+# ---------------- opname-editor ----------------
+def _f2(v):
+    try:
+        return float(str(v).replace(",", ".")) if str(v).strip() else None
+    except (ValueError, TypeError):
+        return None
+
+
+def _dos_save(tag, st, dos):
+    save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
+
+
+@app.route("/project/<tag>/opname")
+@login_required
+def opname(tag):
+    st = _load_state(tag)
+    dos = _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    orde = {"dak": 0, "gevel": 1, "kozijn": 2, "vloer": 3}
+    elementen = list(enumerate(dos.schil))
+    per_zone = {}
+    for i, s in elementen:
+        per_zone.setdefault(s.rekenzone or 1, []).append((i, s))
+    zones = []
+    for rz in sorted(per_zone):
+        rows = sorted(per_zone[rz], key=lambda t: (orde.get((t[1].type or "").lower(), 9), t[1].id))
+        zones.append((rz, rows))
+    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil if (s.begrenzing or "") != "AVR")
+    ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
+    return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
+                elementen=elementen, zones=zones, verlies=verlies, ag=ag,
+                begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS, koz_opts=KOZ_OPTS, ico=TYPE_ICO)
+
+
+@app.route("/project/<tag>/opname/algemeen", methods=["POST"])
+@login_required
+def opname_algemeen(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    f = request.form
+    dos.identificatie.bag_vboid = f.get("bag_vboid", "").strip()
+    dos.identificatie.woningtype = f.get("woningtype", dos.identificatie.woningtype).strip()
+    dos.identificatie.orientatie_voorgevel = f.get("ori_voor", "").strip()
+    for veld, attr in (("bouwjaar", "bouwjaar"), ("renovatiejaar", "renovatiejaar")):
+        v = f.get(veld, "").strip()
+        if v.isdigit():
+            setattr(dos.identificatie, attr, int(v))
+        elif not v:
+            setattr(dos.identificatie, attr, None)
+    dos.opname.gevelhoogte_m = _f2(f.get("gevelhoogte")) or dos.opname.gevelhoogte_m
+    dos.opname.qv10_waarde = _f2(f.get("qv10"))
+    ag = _f2(f.get("ag"))
+    if ag:
+        dos.geometrie.gebruiksoppervlakte_ag_m2 = ag
+    _dos_save(tag, st, dos)
+    flash("Algemeen opgeslagen.")
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/el/<int:i>", methods=["POST"])
+@login_required
+def opname_el(tag, i):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos or i >= len(dos.schil):
+        abort(404)
+    s, f = dos.schil[i], request.form
+    s.id = f.get("id", s.id).strip() or s.id
+    s.subtype = f.get("subtype", s.subtype).strip()
+    s.oppervlakte_m2 = _f2(f.get("m2")) or 0.0
+    s.orientatie = f.get("orientatie", "").strip()
+    s.begrenzing = f.get("begrenzing", s.begrenzing)
+    s.rekenzone = int(f.get("rekenzone") or 1)
+    s.opmerkingen = f.get("opmerkingen", s.opmerkingen)
+    if (s.type or "").lower() == "kozijn":
+        s.glastype = f.get("glastype", "").strip()
+        s.kozijnmateriaal = f.get("kozijnmateriaal", "").strip()
+        s.u_huidig = _f2(f.get("u"))
+    else:
+        s.rc_huidig = _f2(f.get("rc"))
+        s.isolatie_aanwezig = f.get("isolatie", s.isolatie_aanwezig)
+        s.isolatiedikte_mm = _f2(f.get("dikte"))
+    if (s.type or "").lower() == "dak":
+        s.hellingshoek = _f2(f.get("helling"))
+    _dos_save(tag, st, dos)
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/el/<int:i>/kopie", methods=["POST"])
+@login_required
+def opname_el_kopie(tag, i):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos or i >= len(dos.schil):
+        abort(404)
+    kop = copy.deepcopy(dos.schil[i])
+    kop.id = kop.id + "-kopie"
+    dos.schil.insert(i + 1, kop)
+    _dos_save(tag, st, dos)
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/el/<int:i>/weg", methods=["POST"])
+@login_required
+def opname_el_weg(tag, i):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos or i >= len(dos.schil):
+        abort(404)
+    dos.schil.pop(i)
+    _dos_save(tag, st, dos)
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/el/nieuw", methods=["POST"])
+@login_required
+def opname_el_nieuw(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    from core.dossier import SchilDeel
+    t = request.form.get("type", "gevel")
+    n = sum(1 for s in dos.schil if s.type == t) + 1
+    dos.schil.append(SchilDeel(id="%s-nieuw-%d" % (t, n), type=t,
+                               subtype=("Raam" if t == "kozijn" else ""), begrenzing="Buitenlucht"))
+    _dos_save(tag, st, dos)
+    flash("Vlak toegevoegd — vul de gegevens in.")
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/installaties", methods=["POST"])
+@login_required
+def opname_installaties(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    f = request.form
+    dos.ventilatie.systeem = f.get("vent_systeem", dos.ventilatie.systeem).strip()
+    dos.ventilatie.subsysteem_code = f.get("vent_sub", dos.ventilatie.subsysteem_code).strip()
+    vw = dos.installaties.verwarming
+    vw.type_opwekker = f.get("vw_opwekker", vw.type_opwekker).strip()
+    vw.subtype = f.get("vw_subtype", vw.subtype).strip()
+    vw.afgifte = f.get("vw_afgifte", vw.afgifte).strip()
+    vw.aanvoertemperatuur = f.get("vw_temp", vw.aanvoertemperatuur).strip()
+    tw = dos.installaties.tapwater
+    tw.type_toestel = f.get("tw_toestel", tw.type_toestel).strip()
+    j = f.get("tw_jaar", "").strip()
+    tw.installatiejaar = int(j) if j.isdigit() else tw.installatiejaar
+    _dos_save(tag, st, dos)
+    flash("Installaties opgeslagen.")
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/vabi_huidig")
+@login_required
+def opname_vabi_huidig(tag):
+    """De HUIDIGE staat als 3 VABI-bibliotheken (zip) — voor de 0-meting in Vabi."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    outdir = os.path.join(_pdir(tag), "vabi_huidig")
+    try:
+        generate_all.generate_all(dos, outdir, prefix="huidig")
+    except Exception as e:
+        flash("VABI-export genereren mislukte: %s" % e)
+        return redirect(url_for("opname", tag=tag))
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in glob.glob(os.path.join(outdir, "*")):
+            z.write(p, os.path.basename(p))
+    mem.seek(0)
+    return Response(mem.read(), mimetype="application/zip",
+                    headers={"Content-Disposition": "attachment; filename=vabi_huidig_%s.zip" % tag})
+
+
+@app.route("/project/<tag>/naar_maatregelen")
+@login_required
+def naar_maatregelen(tag):
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    st["stap"] = "maatregelen"
+    _save_state(tag, st)
+    return redirect(url_for("maatregelen", tag=tag))
 
 
 @app.route("/project/<tag>/maatregelen", methods=["GET", "POST"])
@@ -477,26 +782,73 @@ def maatregelen(tag):
     catalog = laad_catalog()
     if request.method == "POST":
         groepen = suggesties(dos, catalog)
-        keuze_std, keuze_isde = [], []
+        keuze_std, keuze_isde, haal = [], [], {}
         for i in range(len(groepen)):
             bucket = request.form.get("bucket_%d" % i, "standaard")
+            h = request.form.get("haal_%d" % i, "").strip()
+            if h:
+                haal[str(i)] = h
             if bucket == "geen":
                 continue
             item = {"code": request.form.get("code_%d" % i), "onderdeel": request.form.get("onderdeel_%d" % i),
                     "m2": float(request.form.get("m2_%d" % i) or 0), "rc_u_doel": request.form.get("doel_%d" % i, ""),
-                    "subposten": []}
+                    "haalbaarheid": h, "subposten": []}
             (keuze_std if bucket == "standaard" else keuze_isde).append(item)
+        # vrije catalogus-keuze (zelf toegevoegd) meenemen
+        for v in st.get("vrij") or []:
+            item = {"code": v["code"], "onderdeel": "", "m2": float(v.get("hoeveelheid") or 0),
+                    "rc_u_doel": "", "haalbaarheid": v.get("haalbaarheid", ""), "subposten": []}
+            (keuze_std if v.get("bucket") == "standaard" else keuze_isde).append(item)
         maatregelen_std, totaal = bouw_maatregelen(catalog, keuze_std)
         maatregelen_isde, _ = bouw_maatregelen(catalog, keuze_isde)
         dos.maatregelen = maatregelen_std
         save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
         st["keuze"] = keuze_std
+        st["haal"] = haal
         st["isde"] = [{"code": m.code, "onderdeel": m.onderdeel, "omschrijving": m.omschrijving} for m in maatregelen_isde]
         st["totaal"] = totaal
         st["stap"] = "vabi"
         _save_state(tag, st)
         return redirect(url_for("vabi", tag=tag))
-    return page(MAATREGELEN, stepper=stepper("maatregelen", st), groepen=suggesties(dos, catalog))
+    vrij = st.get("vrij") or []
+    vrij_tot = round(sum(v.get("kosten", 0) for v in vrij if v.get("bucket") == "standaard"), 2)
+    return page(MAATREGELEN, stepper=stepper("maatregelen", st), groepen=suggesties(dos, catalog),
+                boom=catalogus_boom(catalog), vrij=vrij, vrij_tot=vrij_tot, tag=tag, st=st)
+
+
+@app.route("/project/<tag>/maatregelen/add", methods=["POST"])
+@login_required
+def maatregel_add(tag):
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    m = zoek_maatregel(laad_catalog(), request.form.get("code", ""))
+    if not m:
+        flash("Maatregel niet gevonden in de catalogus.")
+        return redirect(url_for("maatregelen", tag=tag))
+    hoev = _f2(request.form.get("hoeveelheid")) or 1.0
+    prijs = round(m.get("prijs_per_eenheid_incl_btw") or 0, 2)
+    st.setdefault("vrij", []).append({
+        "code": m["code"], "omschrijving": (m.get("omschrijving") or "").strip(),
+        "eenheid": m.get("eenheid") or "m²", "prijs": prijs, "hoeveelheid": hoev,
+        "kosten": round(prijs * hoev, 2), "bucket": request.form.get("bucket", "standaard"),
+        "haalbaarheid": ""})
+    _save_state(tag, st)
+    return redirect(url_for("maatregelen", tag=tag))
+
+
+@app.route("/project/<tag>/maatregelen/del/<int:idx>", methods=["POST"])
+@login_required
+def maatregel_del(tag, idx):
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    vrij = st.get("vrij") or []
+    if 0 <= idx < len(vrij):
+        vrij.pop(idx)
+        st["vrij"] = vrij
+        _save_state(tag, st)
+    return redirect(url_for("maatregelen", tag=tag))
 
 
 @app.route("/project/<tag>/vabi", methods=["GET", "POST"])
@@ -520,14 +872,24 @@ def vabi(tag):
                 st["stap"] = "afronden"
             _save_state(tag, st)
         return redirect(url_for("vabi", tag=tag))
-    # genereer toekomstige-staat-bibliotheken
+    # genereer toekomstige-staat-bibliotheken (Qv10 na maatregelen: renovatiejaar-variant, zoals het portal)
+    renojaar = request.args.get("renojaar", "").strip() or str(st.get("reno_variant") or datetime.date.today().year)
+    if renojaar.isdigit():
+        st["reno_variant"] = int(renojaar)
+        _save_state(tag, st)
     try:
         toekomst = _toekomstige_staat(dos, dos.maatregelen)
+        if st.get("reno_variant"):
+            toekomst.identificatie.renovatiejaar = st["reno_variant"]
+            toekomst.identificatie.renovatiejaar_toelichting = "Nij Begun-maatregelenvariant (Qv10 forfaitair op renovatiejaar)"
         generate_all.generate_all(toekomst, outdir, prefix="na")
     except Exception as e:
         flash("VABI-import genereren mislukte: %s" % e)
     vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(outdir, "*.xml")))
-    return page(VABI, stepper=stepper("vabi", st), tag=tag, vabi_files=vabi_files, na=st.get("na"))
+    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil if (s.begrenzing or "") != "AVR")
+    ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
+    return page(VABI, stepper=stepper("vabi", st), tag=tag, vabi_files=vabi_files, na=st.get("na"),
+                h=st.get("huidig") or {}, st=st, verlies=verlies, ag=ag, renojaar=renojaar)
 
 
 @app.route("/project/<tag>/afronden")
@@ -558,12 +920,37 @@ def afronden(tag):
     svg = ventilatieplan_svg(vres, adres=st.get("adres", ""))
     with open(os.path.join(pdir, "ventilatieplan_%s.svg" % tag), "w", encoding="utf-8") as fh:
         fh.write(svg)
+    # losse bijlage: toelichting + technische haalbaarheid per maatregel (M29-eis Bijlage 1 punt 13)
+    regels = ["TOELICHTING OP ADVIES + TECHNISCHE HAALBAARHEID — %s" % st.get("adres", ""), "=" * 60, ""]
+    if st.get("toelichting"):
+        regels += ["Persoonlijke toelichting:", st["toelichting"], ""]
+    regels.append("Technische haalbaarheid per maatregel (vastgesteld in de woning):")
+    for k in (st.get("keuze") or []):
+        regels.append("  %s — %s" % (k.get("code", ""), (k.get("haalbaarheid") or "geen bijzonderheden genoteerd")))
+    for v in (st.get("vrij") or []):
+        regels.append("  %s — %s (zelf gekozen, %s %s)" % (v.get("code", ""),
+                      v.get("haalbaarheid") or "geen bijzonderheden genoteerd",
+                      v.get("hoeveelheid", ""), v.get("eenheid", "")))
+    with open(os.path.join(pdir, "haalbaarheid_toelichting_%s.txt" % tag), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(regels) + "\n")
     st["stap"] = "klaar"
     _save_state(tag, st)
     files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(pdir, "*"))
                    if os.path.isfile(p) and not p.endswith("project.json"))
-    return page(AFRONDEN, stepper=stepper("afronden", st), tag=tag, vent_svg=svg,
+    return page(AFRONDEN, stepper=stepper("afronden", st), tag=tag, vent_svg=svg, st=st,
                 beoord=_beoordeling(tag, st, dos), files=files)
+
+
+@app.route("/project/<tag>/toelichting", methods=["POST"])
+@login_required
+def toelichting(tag):
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    st["toelichting"] = request.form.get("toelichting", "").strip()
+    _save_state(tag, st)
+    flash("Toelichting opgeslagen — wordt in de bijlage meegenomen.")
+    return redirect(url_for("afronden", tag=tag) + "?regen=1")
 
 
 @app.route("/project/<tag>/export")

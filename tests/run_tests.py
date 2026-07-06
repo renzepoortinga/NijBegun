@@ -942,5 +942,26 @@ try:
 except Exception as _e:
     check("bag: module draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n42. Webapp v2: opname-editor + catalogus-kiezer + varianten")
+try:
+    from dashboard.measures import catalogus_boom as _cb, _schoon_label as _sl, zoek_maatregel as _zm
+    _cat = json.load(open(CATALOG, encoding="utf-8"))
+    _boom = _cb(_cat)
+    check("catalogus-boom: 6 categorieën (V1..V6)", len(_boom) == 6 and _boom[0]["naam"] == "Gevel")
+    _v11 = next(s for c in _boom for s in c["subs"] if s["code"] == "V1-1")
+    check("catalogus-boom: V1-1 heeft kern + bijkomende kosten (X)",
+          len(_v11["kern"]) > 0 and any(r["code"].split("-")[2].startswith("X") for r in _v11["meerwerk"]))
+    check("catalogus-boom: sub-label geschoond (geen bracket)", "m² tot" not in _v11["naam"])
+    check("schoon-label", _sl("Spouwmuurisolatie vlokken 60 mm van 0 m² tot 45 m²") == "Spouwmuurisolatie vlokken")
+    check("zoek-maatregel", (_zm(_cat, "V1-1-A1") or {}).get("code") == "V1-1-A1")
+    import dashboard.app as _WA3
+    _rr = {r.rule for r in _WA3.app.url_map.iter_rules()}
+    check("webapp v2: opname-editor-routes", {"/project/<tag>/opname", "/project/<tag>/opname/el/<int:i>",
+          "/project/<tag>/opname/el/nieuw", "/project/<tag>/opname/vabi_huidig",
+          "/project/<tag>/maatregelen/add", "/project/<tag>/toelichting"} <= _rr)
+    check("webapp v2: stap 'opname' in de stepper", any(s == "opname" for s, _ in _WA3.STAPPEN))
+except Exception as _e:
+    check("webapp v2: modules draaien zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
