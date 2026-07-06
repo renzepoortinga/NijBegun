@@ -29,6 +29,7 @@ from dashboard import leads as leads_mod                                        
 from dashboard import bag as bag_mod                                                  # noqa: E402
 from dashboard import security as sec                                                 # noqa: E402
 from dashboard import ai as ai_mod                                                    # noqa: E402
+from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
 from engine.advies_text import genereer_advies                                        # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken, rapport as vent_rapport    # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
@@ -215,6 +216,9 @@ def _beoordeling(tag, st, dossier):
         (bool(dossier and dossier.berekening.kwh_m2_huidig is not None),
          "Huidige woningstaat (V1–V6 + warmteverlies) ingevuld"),
         (has("ventilatieberekening"), "Ventilatieberekening (tabel) toegevoegd"),
+        (any(f.startswith("isolatieplan") and f.endswith(".pdf") for f in files)
+         and any(f.startswith("isolatieplan") and f.endswith(".json") for f in files),
+         "Leverformaat PDF + JSON gegenereerd (M29-tooleis punt 10a)"),
         (not st.get("kwaco"), "KWACO-validatie zonder bevindingen"
          + ((" — " + " · ".join(st["kwaco"][:3])) if st.get("kwaco") else "")),
     ]
@@ -323,6 +327,9 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <div><label>Qv10 (dm³/s·m²) — alleen indien gemeten</label><input name=qv10 value="{{d.opname.qv10_waarde or ''}}"></div>
 <div><label>Oriëntatie voorgevel</label><select name=ori_voor>{% for o in ori_opts %}<option {{'selected' if o==d.identificatie.orientatie_voorgevel}}>{{o}}</option>{% endfor %}</select></div>
 </div><div class=btn-row><button class=btn>Algemeen opslaan</button></div></form></div>
+
+{% if bj_titel %}<details class=acc><summary>💡 Wat je waarschijnlijk aantreft — {{bj_titel}} (o.b.v. bouwjaar {{d.identificatie.bouwjaar}})</summary>
+<div class=acc-body>{{bj_html|safe}}<p class="muted small">Bron: bouwjaarklasse-opnamegids (algemene NL-bouwpraktijk) — de opname blijft leidend.</p></div></details>{% endif %}
 
 <div class=card><h2>Gebouw <span class="pill gray">{{elementen|length}} vlakken</span></h2>
 {% for rz, els in zones %}<h3 style="margin-top:14px">Rekenzone {{rz}}</h3>
@@ -661,6 +668,39 @@ def _dos_save(tag, st, dos):
     save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
 
 
+def _docx_naar_pdf(docx_pad, pdf_pad):
+    """MS Word (COM, via PowerShell) zet de gevulde template om naar PDF — lay-out blijft 1-op-1."""
+    import subprocess
+    ps = ('$ErrorActionPreference="Stop";$w=New-Object -ComObject Word.Application;$w.Visible=$false;'
+          '$d=$w.Documents.Open("%s");$d.SaveAs("%s",17);$d.Close();$w.Quit()'
+          % (docx_pad.replace('"', ""), pdf_pad.replace('"', "")))
+    subprocess.run(["powershell", "-NoProfile", "-Command", ps], check=True, timeout=120, capture_output=True)
+
+
+def _plan_json(tag, st, dos, vres):
+    """Gestructureerd isolatieplan-JSON (M29 Bijlage 1 punt 10a: JSON + PDF als leverformaat)."""
+    import dataclasses
+    plan = {
+        "formaat": "nijbegun-isolatieplan", "versie": 1,
+        "gegenereerd_op": datetime.date.today().isoformat(),
+        "tool": {"naam": "Poortinga EPA-tool", "rekenkern": "Vabi EPA-W (geattesteerd, NTA 8800)"},
+        "adviseur": dataclasses.asdict(dos.adviseur),
+        "identificatie": dataclasses.asdict(dos.identificatie),
+        "berekening": {"huidig": st.get("huidig"), "na_maatregelen": st.get("na"),
+                       "totaal_subsidietabel_incl_btw": st.get("totaal")},
+        "maatregelen_subsidietabel": [dataclasses.asdict(m) for m in dos.maatregelen],
+        "advies_30pct_isde": st.get("isde") or [],
+        "toelichting": st.get("toelichting", ""),
+        "haalbaarheid": {k.get("code", ""): k.get("haalbaarheid", "") for k in (st.get("keuze") or [])},
+    }
+    try:
+        plan["ventilatie"] = json.loads(json.dumps(vres, default=str))
+    except Exception:
+        pass
+    with open(os.path.join(_pdir(tag), "isolatieplan_%s.json" % tag), "w", encoding="utf-8") as fh:
+        json.dump(plan, fh, ensure_ascii=False, indent=1, default=str)
+
+
 @app.route("/project/<tag>/opname")
 @login_required
 def opname(tag):
@@ -679,8 +719,10 @@ def opname(tag):
         zones.append((rz, rows))
     verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil if (s.begrenzing or "") != "AVR")
     ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
+    bj_titel, bj_html = bouwjaar_mod.hint(dos.identificatie.bouwjaar)
     return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 elementen=elementen, zones=zones, verlies=verlies, ag=ag,
+                bj_titel=bj_titel, bj_html=bj_html,
                 begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS, koz_opts=KOZ_OPTS, ico=TYPE_ICO)
 
 
@@ -969,7 +1011,15 @@ def afronden(tag):
         dos.adviseur.bedrijf = adv.get("bedrijf", ""); dos.adviseur.telefoon = adv.get("telefoon", "")
     if request.args.get("regen") or not glob.glob(os.path.join(pdir, "isolatieplan_*.docx")):
         try:
-            fill_template.fill(dos, TEMPLATE_DOCX, os.path.join(pdir, "isolatieplan_%s.docx" % tag))
+            docx_pad = os.path.join(pdir, "isolatieplan_%s.docx" % tag)
+            fill_template.fill(dos, TEMPLATE_DOCX, docx_pad)
+            # LEVERFORMAAT = PDF (M29 Bijlage 1 punt 10a: JSON en PDF). Word = alleen de vul-motor
+            # (M29-lay-out 1-op-1); MS Word zet 'm om naar PDF (COM). Niet in tests (opent Word).
+            if not app.config.get("TESTING"):
+                try:
+                    _docx_naar_pdf(docx_pad, os.path.join(pdir, "isolatieplan_%s.pdf" % tag))
+                except Exception as e:
+                    flash("PDF maken lukte niet (MS Word vereist op deze machine): %s" % str(e)[:90])
         except Exception as e:
             flash("Isolatieplan genereren mislukte: %s" % e)
         try:
@@ -987,6 +1037,11 @@ def afronden(tag):
             fh.write(vent_rapport(vres))
     except Exception:
         pass
+    # leverformaat JSON (M29 punt 10a) — altijd vers
+    try:
+        _plan_json(tag, st, dos, vres)
+    except Exception as e:
+        flash("Isolatieplan-JSON genereren mislukte: %s" % str(e)[:90])
     # KWACO-validator (maatregelcodes/kruipruimte/Standaard-blockers) -> in de indien-check
     try:
         codes = validator_mod.load_catalog_codes(os.path.join(TOOL_DIR, "catalog", "catalog.json"))

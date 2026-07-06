@@ -1048,5 +1048,33 @@ try:
 except Exception as _e:
     check("vinkje: parser draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n46. Bouwjaar-hints + isolatieplan-JSON (leverformaat M29 punt 10a)")
+try:
+    import dashboard.bouwjaar as _BJ
+    _t75, _h75 = _BJ.hint(1975)
+    check("bouwjaar-hint 1975 -> tijdvak 1975–1982 + html", _t75 is not None and "1975" in _t75
+          and "<h4>" in _h75 and "<li>" in _h75)
+    _t30, _ = _BJ.hint(1930)
+    check("bouwjaar-hint 1930 -> vooroorlogs", _t30 is not None and "1946" in _t30)
+    check("bouwjaar-hint zonder bouwjaar -> None", _BJ.hint(None) == (None, None))
+    import os as _os, io as _io, shutil as _sh, json as _js
+    import dashboard.app as _WA5
+    _WA5.app.config.update(TESTING=True)
+    _c5 = _WA5.app.test_client(); _c5.post("/login", data={"wachtwoord": _WA5._password()})
+    with open(os.path.join(ROOT, "out", "demo_dossier.json"), "rb") as _fh:
+        _r5 = _c5.post("/nieuw", data={"bestand": (_io.BytesIO(_fh.read()), "d.json"), "straat": "T 1",
+                       "plaats": "X", "woningtype": "Tussenwoning"}, content_type="multipart/form-data")
+    _tag5 = _r5.headers["Location"].rstrip("/").split("/")[-2]
+    _c5.get("/project/%s/afronden" % _tag5)
+    _jp = _os.path.join(_WA5._pdir(_tag5), "isolatieplan_%s.json" % _tag5)
+    check("isolatieplan-JSON gegenereerd bij afronden", _os.path.isfile(_jp))
+    _pj = _js.load(open(_jp, encoding="utf-8"))
+    check("plan-JSON: formaat + rekenkern + maatregelen-array",
+          _pj.get("formaat") == "nijbegun-isolatieplan" and "Vabi" in _pj["tool"]["rekenkern"]
+          and isinstance(_pj.get("maatregelen_subsidietabel"), list))
+    _sh.rmtree(_WA5._pdir(_tag5))
+except Exception as _e:
+    check("bouwjaar/plan-json: draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
