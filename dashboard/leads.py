@@ -100,6 +100,11 @@ def add_lead(lead, leads=None):
 
 def adres(lead):
     hn = "%s%s" % (lead.get("huisnummer", ""), (" " + lead["toevoeging"]) if lead.get("toevoeging") else "")
+    if lead.get("straat"):                   # BAG-verrijkt: echte straatnaam + woonplaats
+        s = "%s %s" % (lead["straat"], hn)
+        if lead.get("woonplaats"):
+            s += " in " + lead["woonplaats"]
+        return s
     return ("%s %s" % (lead.get("postcode", ""), hn)).strip()
 
 
@@ -154,8 +159,8 @@ def concept_mail(lead, adviseur=None):
 # ---------------- export ----------------
 def to_csv(leads):
     """CSV voor Excel-NL (puntkomma; utf-8 BOM)."""
-    kol = ["id", "ontvangen", "status", "naam", "postcode", "huisnummer", "toevoeging",
-           "telefoon", "email", "bag_id", "notitie"]
+    kol = ["id", "ontvangen", "status", "naam", "straat", "woonplaats", "postcode", "huisnummer",
+           "toevoeging", "bouwjaar", "oppervlakte_m2", "telefoon", "email", "bag_id", "notitie"]
     esc = lambda v: '"%s"' % str(v if v is not None else "").replace('"', '""')
     rijen = [";".join(kol)]
     for x in leads:

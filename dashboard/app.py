@@ -25,6 +25,7 @@ from vabi.sanity import check as sanity_check                                   
 from vabi import generate_all                                                         # noqa: E402
 from dashboard.measures import laad_catalog, suggesties, bouw_maatregelen             # noqa: E402
 from dashboard import leads as leads_mod                                              # noqa: E402
+from dashboard import bag as bag_mod                                                  # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken                             # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
@@ -607,13 +608,13 @@ De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 {% for l in leads %}<tr>
 <td class=small>{{l.ontvangen}}</td>
 <td><b>{{l.naam}}</b></td>
-<td>{{l.adres}}</td>
+<td>{{l.adres}}{% if l.bouwjaar %}<br><span class="pill blue">{{l.bouwjaar}}</span> <span class="pill gray">{{l.oppervlakte_m2}} m²</span>{% endif %}</td>
 <td class=small>{{l.telefoon}}<br>{{l.email}}</td>
 <td><form method=post action="{{url_for('leads_status', lid=l.id)}}">
 <select name=status onchange="this.form.submit()">
 {% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
 </select></form></td>
-<td><a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a></td></tr>{% endfor %}</table>
+<td style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a></td></tr>{% endfor %}</table>
 <p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
 {% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
 
@@ -667,6 +668,25 @@ def leads_status(lid):
         if r.get("id") == lid and st in leads_mod.STATUSSEN:
             r["status"] = st
     leads_mod.save_leads(rows)
+    return redirect(url_for("leads_pagina"))
+
+
+@app.route("/leads/<int:lid>/bag", methods=["POST"])
+@login_required
+def leads_bag(lid):
+    """Verrijk de lead met openbare BAG-gegevens (straat/woonplaats/bouwjaar/m²) — internet nodig."""
+    rows = leads_mod.load_leads()
+    r = next((x for x in rows if x.get("id") == lid), None)
+    if not r:
+        abort(404)
+    info, fout = bag_mod.bag_info(r.get("postcode", ""), r.get("huisnummer", ""), r.get("toevoeging", ""))
+    if fout:
+        flash(fout)
+    else:
+        for k in ("straat", "woonplaats", "bouwjaar", "oppervlakte_m2", "gebruiksdoel", "verblijfsobject_id"):
+            if info.get(k) not in (None, ""):
+                r[k] = info[k]
+        leads_mod.save_leads(rows)
     return redirect(url_for("leads_pagina"))
 
 

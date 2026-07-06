@@ -908,5 +908,39 @@ try:
 except Exception as _e:
     check("leads: module draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n41. BAG-verrijking (parsers offline; structuur live geverifieerd 26-6)")
+try:
+    import dashboard.bag as _B
+    _ls = {"response": {"docs": [
+        {"weergavenaam": "Teststraat 12a, 9999XX Testdorp", "straatnaam": "Teststraat",
+         "woonplaatsnaam": "Testdorp", "huis_nlt": "12a", "postcode": "9999XX",
+         "nummeraanduiding_id": "0014200099999999", "adresseerbaarobject_id": "0014010099999999",
+         "centroide_rd": "POINT(235729.987 585202.818)"},
+        {"weergavenaam": "Teststraat 12, 9999XX Testdorp", "straatnaam": "Teststraat",
+         "woonplaatsnaam": "Testdorp", "huis_nlt": "12", "postcode": "9999XX",
+         "nummeraanduiding_id": "0014200088888888", "adresseerbaarobject_id": "0014010088888888",
+         "centroide_rd": "POINT(1000.0 2000.0)"}]}}
+    _a = _B.parse_locatieserver(_ls, "12", "a")
+    check("bag: locatieserver-parse kiest exacte huisnummer+toevoeging-match",
+          _a is not None and _a["verblijfsobject_id"] == "0014010099999999"
+          and _a["straat"] == "Teststraat" and _a["x"] == 235729.987)
+    _wfs = {"features": [
+        {"properties": {"identificatie": "0014010077777777", "oppervlakte": 80, "bouwjaar": 1975,
+                        "gebruiksdoel": "woonfunctie", "pandidentificatie": "p1"}},
+        {"properties": {"identificatie": "0014010099999999", "oppervlakte": 109, "bouwjaar": 1982,
+                        "gebruiksdoel": "woonfunctie", "pandidentificatie": "p2"}}]}
+    _v = _B.parse_wfs(_wfs, "0014010099999999")
+    check("bag: wfs-parse matcht op verblijfsobject-id (bbox kan buren bevatten)",
+          _v is not None and _v["bouwjaar"] == 1982 and _v["oppervlakte_m2"] == 109)
+    check("bag: lege respons -> None (geen crash)",
+          _B.parse_locatieserver({}, "1") is None and _B.parse_wfs({}, "x") is None)
+    from dashboard.leads import adres as _adr
+    check("lead-adres met BAG-straat", _adr({"straat": "Teststraat", "huisnummer": "12", "toevoeging": "a",
+          "woonplaats": "Testdorp", "postcode": "9999XX"}) == "Teststraat 12 a in Testdorp")
+    import dashboard.app as _WA2
+    check("webapp: BAG-route geregistreerd", "/leads/<int:lid>/bag" in {r.rule for r in _WA2.app.url_map.iter_rules()})
+except Exception as _e:
+    check("bag: module draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
