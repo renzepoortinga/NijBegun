@@ -87,12 +87,20 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
   in de map "Nij Begun & EPA" (twee templates: Energielabel vs Nij Begun; VABI-getrouw)
 
 ## Status (juni 2026) — 230/230 groen. PRODUCTIE-GEREED. Zie docs/PRODUCTIE-GEREED.md + docs/NTA8800-opname-MASTERPLAN.md.
-ISOLATIEPLAN-WEBAPP v1 (25-6, Apple-HIG, lokaal Flask): `python dashboard/app.py` -> begeleide stappen-flow
-Inladen (VABI-export/dossier/CSV + huidige Standaard + foto voorkant/huisnummer) -> Maatregelen aanvinken
-(dashboard/measures.py: suggesties uit catalog.json, 2 buckets Standaard/30%-ISDE, live totaal) -> VABI-toets
-(toekomstige-staat-libs via generate_all + upload-terug -> Standaard-verdict) -> Afronden (fill_template Word +
-visueel ventilatieplan ventilatie/ventilatieplan_svg.py + Beoordelingsformulier-check + fotochecklist) ->
-Export-zip. Ingebouwde GUIDE (/guide) + per-stap hints met de kennisbank-eisen. End-to-end getest (test-client).
+ISOLATIEPLAN-WEBAPP v2 (6-7, SOBOLT-achtig, lokaal Flask): `python dashboard/app.py` -> 6-stappen-flow:
+Inladen (CSV/dossier/VABI-export + foto's) -> OPNAME-EDITOR (volledige gebouw-boom per rekenzone bewerkbaar:
+dak/gevel/vloer/kozijn m2/Rc/U/orientatie/begrenzing/rekenzone + dupliceren/toevoegen/verwijderen; Algemeen
+BAG-id/Ag/qv10/orientatie-voorgevel; Installaties; verliesopp+Ag+compactheid; export HUIDIGE staat -> VABI-zip
+0-meting) -> Maatregelen (suggesties Standaard/30%-ISDE ÉN zelf kiezen uit volledige catalogus-boom
+measures.catalogus_boom: kern + bijkomende X-kosten + biobased-badge + eigen hoeveelheid; technische-
+haalbaarheid-veld per maatregel = M29 Bijlage 1 punt 13) -> VABI-toets (berekening-blok standaard/warmte-
+behoefte/kosten/verliesopp/compactheid; Qv10-na-maatregelen via RENOVATIEJAAR-variant zoals het portal;
+toekomstige-staat-libs + upload-terug -> verdict) -> Afronden (persoonlijke toelichting -> haalbaarheid_
+toelichting-bijlage; Word + ventilatieplan-SVG + Beoordelingsformulier-check) -> Export-zip. GUIDE bijgewerkt.
+M29-TOOL-EISEN: Downloads/"Bijlage 1 eisen aan de isolatieplantool.pdf" gelezen (26-6) — webapp voldoet aan
+vrijwel alle functionaliteiten; validatie-route (10 ref-woningen) alleen nodig bij distributie/zelf rekenen;
+Vabi-route = "bij voorkeur geaccrediteerde RVO-software" (punt 7c). Licentiemodel: max EUR 50/plan, EUR 15k
+eenmalige ontwikkelvergoeding mogelijk. End-to-end getest (test-client).
 LEADS-MODULE (26-6, /leads): Nij Begun-portal-mail ("AdviseurToegekend", JSON-blok van smarttwin.nl) plakken ->
 lead geparsed (dedupe op BAG-id) -> statusflow (nieuw..afgerond) -> concept-kennismakingsmail (adviseur verstuurt
 ZELF; vraagt bewoner ISSO-bewijslast klaar te leggen) -> CSV-export. Data lokaal in out/leads (AVG). BAG-KNOP:
