@@ -27,6 +27,7 @@ from dashboard.measures import (laad_catalog, suggesties, bouw_maatregelen,     
                                 catalogus_boom, zoek_maatregel)
 from dashboard import leads as leads_mod                                              # noqa: E402
 from dashboard import bag as bag_mod                                                  # noqa: E402
+from dashboard import security as sec                                                 # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken                             # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
@@ -57,7 +58,45 @@ def _password():
             or _cfg().get("dashboard", {}).get("wachtwoord") or DEFAULT_PW)
 
 
-app.secret_key = (_cfg().get("dashboard", {}).get("secret") or secrets.token_hex(16))
+def _secret_key():
+    """Vaste secret key (sessies overleven een herstart): config > persistent bestand > nieuw."""
+    s = _cfg().get("dashboard", {}).get("secret")
+    if s:
+        return s
+    pad = os.path.join(TOOL_DIR, "out", ".secret_key")
+    try:
+        if os.path.isfile(pad):
+            return open(pad, encoding="ascii").read().strip()
+        os.makedirs(os.path.dirname(pad), exist_ok=True)
+        s = secrets.token_hex(32)
+        with open(pad, "w", encoding="ascii") as fh:
+            fh.write(s)
+        return s
+    except OSError:
+        return secrets.token_hex(32)
+
+
+app.secret_key = _secret_key()
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax",
+                  SESSION_COOKIE_SECURE=bool(os.environ.get("NIJBEGUN_HTTPS")),
+                  MAX_CONTENT_LENGTH=50 * 1024 * 1024)
+
+
+@app.after_request
+def _security_headers(resp):
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("Referrer-Policy", "same-origin")
+    return resp
+
+
+@app.before_request
+def _origin_check():
+    """CSRF-bescherming: POST's moeten van onze eigen pagina's komen (Origin/Referer-check)."""
+    if request.method == "POST":
+        bron = request.headers.get("Origin") or request.headers.get("Referer") or ""
+        if bron and not bron.startswith(request.host_url.rstrip("/")):
+            abort(403)
 
 
 def login_required(fn):
@@ -203,8 +242,9 @@ def page(body_tmpl, wrapclass="", **ctx):
 
 
 LOGIN = """<div class=card style="max-width:400px;margin:10vh auto">
-<h1>Inloggen</h1><p class=lead>Je persoonlijke, lokale isolatieplan-werkplek.</p>
+<h1>Inloggen</h1><p class=lead>Je persoonlijke isolatieplan-werkplek.</p>
 <form method=post><label>Wachtwoord</label><input type=password name=wachtwoord autofocus>
+{% if mfa %}<label>Code uit je authenticator-app (MFA)</label><input name=code inputmode=numeric autocomplete=one-time-code placeholder="123 456">{% endif %}
 <div class=btn-row><button class="btn lg">Inloggen</button></div></form></div>"""
 
 HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ingediend Nij Begun-isolatieplan — stap voor stap.</p>
@@ -452,12 +492,15 @@ Inhoud: doeltreffend (haalt de Standaard) · juiste set (uit de opname) · uitvo
 # ---------------- routes ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    dash = _cfg().get("dashboard", {})
     if request.method == "POST":
-        if request.form.get("wachtwoord") == _password():
+        ok, fout = sec.login_check(dash, request.form.get("wachtwoord"), request.form.get("code"),
+                                   request.remote_addr or "?", fallback_pw=_password())
+        if ok:
             session["ingelogd"] = True
             return redirect(url_for("home"))
-        flash("Onjuist wachtwoord.")
-    return page(LOGIN, wrapclass="narrow")
+        flash(fout)
+    return page(LOGIN, wrapclass="narrow", mfa=bool(dash.get("totp_secret")))
 
 
 @app.route("/logout")
@@ -1096,7 +1139,18 @@ def leads_csv():
 
 
 if __name__ == "__main__":
-    print("Nij Begun isolatieplan-webapp -> http://127.0.0.1:5000  (Ctrl+C om te stoppen)")
-    if _password() == DEFAULT_PW:
-        print("  LET OP: default-wachtwoord 'nijbegun' actief. Stel er een in via config.json.")
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    prod = bool(os.environ.get("NIJBEGUN_PROD")) or "--serve" in sys.argv
+    if prod:
+        dash = _cfg().get("dashboard", {})
+        if not dash.get("pw_hash") or not dash.get("totp_secret"):
+            print("GEWEIGERD: productie-modus vereist pw_hash + totp_secret (MFA, M29-eis punt 27).")
+            print("Draai eerst:  python dashboard/security.py --setup")
+            sys.exit(1)
+        from waitress import serve
+        print("Nij Begun isolatieplan-webapp (PRODUCTIE, waitress) -> poort 8000; zet HTTPS via Caddy ervoor.")
+        serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), threads=8)
+    else:
+        print("Nij Begun isolatieplan-webapp -> http://127.0.0.1:5000  (Ctrl+C om te stoppen)")
+        if _password() == DEFAULT_PW:
+            print("  LET OP: default-wachtwoord 'nijbegun' actief. Stel er een in via config.json.")
+        app.run(host="127.0.0.1", port=5000, debug=False)

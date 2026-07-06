@@ -963,5 +963,34 @@ try:
 except Exception as _e:
     check("webapp v2: modules draaien zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n43. Beveiliging (hosting): wachtwoord-hash + TOTP-MFA + rate-limit")
+try:
+    import dashboard.security as _S
+    _h = _S.hash_password("geheim-wachtwoord")
+    check("pw-hash: rondje klopt + fout wachtwoord faalt",
+          _S.check_password("geheim-wachtwoord", _h) and not _S.check_password("fout", _h))
+    # RFC 6238-testvector (secret '12345678901234567890', T=59s, SHA1, 6 cijfers -> 287082)
+    check("totp: RFC 6238-vector", _S.totp_code("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", t=59) == "287082")
+    _sec = _S.nieuw_totp_secret()
+    check("totp: eigen secret verifieert (venster)", _S.check_totp(_sec, _S.totp_code(_sec)))
+    check("totp: foute code faalt", not _S.check_totp(_sec, "000000") or _S.totp_code(_sec) == "000000")
+    _S._pogingen.clear()
+    for _ in range(5):
+        _S.poging_mislukt("1.2.3.4")
+    check("rate-limit: 5 missers -> blok", _S.geblokkeerd("1.2.3.4") and not _S.geblokkeerd("5.6.7.8"))
+    _S._pogingen.clear()
+    _ok, _ = _S.login_check({}, "lokaalpw", "", "9.9.9.9", fallback_pw="lokaalpw")
+    check("login: lokale modus (geen hash) werkt", _ok)
+    _cfg2 = {"pw_hash": _h, "totp_secret": _sec}
+    _ok1, _ = _S.login_check(_cfg2, "geheim-wachtwoord", _S.totp_code(_sec), "9.9.9.8")
+    _ok2, _m2 = _S.login_check(_cfg2, "geheim-wachtwoord", "000000", "9.9.9.7")
+    check("login: hash+MFA goed -> ok; foute code -> geweigerd", _ok1 and not _ok2 and "code" in _m2)
+    import dashboard.app as _WA4
+    check("app: secret key persistent + origin-check geregistreerd",
+          bool(_WA4.app.secret_key) and any(f.__name__ == "_origin_check"
+          for f in _WA4.app.before_request_funcs.get(None, [])))
+except Exception as _e:
+    check("beveiliging: module draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
