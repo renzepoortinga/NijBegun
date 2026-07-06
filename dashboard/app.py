@@ -28,6 +28,8 @@ from dashboard.measures import (laad_catalog, suggesties, bouw_maatregelen,     
 from dashboard import leads as leads_mod                                              # noqa: E402
 from dashboard import bag as bag_mod                                                  # noqa: E402
 from dashboard import security as sec                                                 # noqa: E402
+from dashboard import ai as ai_mod                                                    # noqa: E402
+from engine.advies_text import genereer_advies                                        # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken, rapport as vent_rapport    # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
@@ -467,8 +469,12 @@ AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 <div class=card><h2>Toelichting op advies</h2>
 <p class=muted>Deze persoonlijke toelichting komt in de bijlage bij het plan (met de technische haalbaarheid per maatregel).</p>
 <form method=post action="{{url_for('toelichting', tag=tag)}}">
-<textarea name=toelichting rows=4 placeholder="bv. bewoner wil eerst het dak; spouw is in 2005 al deels gevuld — zie foto's">{{st.toelichting or ''}}</textarea>
-<div class=btn-row><button class=btn>Toelichting opslaan</button></div></form></div>
+<textarea name=toelichting rows=6 placeholder="bv. bewoner wil eerst het dak; spouw is in 2005 al deels gevuld — zie foto's">{{st.toelichting or ''}}</textarea>
+<div class=btn-row><button class=btn>Toelichting opslaan</button>
+<button class="btn sec" formaction="{{url_for('toelichting_assist', tag=tag)}}" name=actie value=voorstel>✨ Tekstvoorstel (offline)</button>
+<button class="btn sec" formaction="{{url_for('toelichting_assist', tag=tag)}}" name=actie value=verbeter>🤖 AI verbeteren</button></div>
+<p class="muted small">Tekstvoorstel = uit je eigen opname/maatregelen (offline). AI verbeteren = Claude-API
+(sleutel in config.json; zet geen naam/adres van de bewoner in de tekst — AVG).</p></form></div>
 <div class=card><h2>Klaar voor indienen? (Beoordelingsformulier)</h2><ul class=check>
 {% for ok, txt in beoord %}<li><span class="mk {{'ok2' if ok else 'no2'}}">{{ '✓' if ok else '○' }}</span>{{txt}}</li>{% endfor %}</ul>
 <p class=muted small>Spiegelt de compleetheidscriteria van de Nij Begun-kwaliteitscommissie.</p></div>
@@ -1023,6 +1029,32 @@ def toelichting(tag):
     _save_state(tag, st)
     flash("Toelichting opgeslagen — wordt in de bijlage meegenomen.")
     return redirect(url_for("afronden", tag=tag) + "?regen=1")
+
+
+@app.route("/project/<tag>/toelichting/assist", methods=["POST"])
+@login_required
+def toelichting_assist(tag):
+    """SOBOLT-achtige assistentie: 'voorstel' = offline adviestekst uit het dossier; 'verbeter' = Claude-API."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    tekst = request.form.get("toelichting", "").strip()
+    if request.form.get("actie") == "voorstel":
+        try:
+            st["toelichting"] = (tekst + "\n\n" if tekst else "") + genereer_advies(dos, dos.maatregelen)
+            flash("Tekstvoorstel gegenereerd (offline, uit je opname + maatregelen) — lees na en pas aan.")
+        except Exception as e:
+            flash("Tekstvoorstel mislukte: %s" % str(e)[:80])
+    else:
+        uit, fout = ai_mod.verbeter_tekst(tekst, _cfg())
+        if fout:
+            st["toelichting"] = tekst
+            flash(fout)
+        else:
+            st["toelichting"] = uit
+            flash("Toelichting verbeterd door Claude — lees na voordat je opslaat.")
+    _save_state(tag, st)
+    return redirect(url_for("afronden", tag=tag))
 
 
 @app.route("/project/<tag>/export")
