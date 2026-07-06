@@ -24,6 +24,7 @@ from vabi.result_reader import read_results                                     
 from vabi.sanity import check as sanity_check                                         # noqa: E402
 from vabi import generate_all                                                         # noqa: E402
 from dashboard.measures import laad_catalog, suggesties, bouw_maatregelen             # noqa: E402
+from dashboard import leads as leads_mod                                              # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken                             # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
@@ -170,7 +171,7 @@ BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
 <title>Nij Begun · isolatieplan</title>
 <link rel="stylesheet" href="{{url_for('static', filename='app.css')}}"></head><body>
 <div class=topbar><span class=brand>🏠 Nij Begun · isolatieplan</span>
-<nav>{% if session.ingelogd %}<a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('guide')}}">Guide</a>
+<nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('guide')}}">Guide</a>
 <a href="{{url_for('logout')}}">Uitloggen</a>{% endif %}</nav></div>
 <div class="wrap {{wrapclass or ''}}">
 {% if default_pw %}<div class=warn>⚠ Geen wachtwoord ingesteld (default actief). Zet <code>"dashboard":{"wachtwoord":"…"}</code> in config.json.</div>{% endif %}
@@ -589,6 +590,102 @@ def download(tag, filename):
     if ".." in filename or not os.path.isdir(pdir):
         abort(404)
     return send_from_directory(pdir, filename, as_attachment=True)
+
+
+# ---------------- leads (Nij Begun-portal-toewijzingen) ----------------
+LEADS = """<h1>Leads</h1>
+<p class=lead>Toegewezen bewoners uit het Nij Begun-portal — plak de mail, volg de status, genereer de kennismakingsmail.</p>
+<div class=card><h2>Nieuwe lead toevoegen</h2>
+<p class=muted>Plak hieronder de <b>hele portal-mail</b> (het JSON-blok wordt eruit gehaald) en klik toevoegen.
+De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
+<form method=post action="{{url_for('leads_add')}}">
+<textarea name=mailtekst rows=4 placeholder='{"BagAdresId":"...","Email":"...","Naam":"..."}'></textarea>
+<div class=btn-row><button class=btn>Lead toevoegen</button>
+<span class=spacer></span><a class="btn sec" href="{{url_for('leads_csv')}}">⬇ Export naar Excel (CSV)</a></div></form></div>
+{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><table>
+<tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th></th></tr>
+{% for l in leads %}<tr>
+<td class=small>{{l.ontvangen}}</td>
+<td><b>{{l.naam}}</b></td>
+<td>{{l.adres}}</td>
+<td class=small>{{l.telefoon}}<br>{{l.email}}</td>
+<td><form method=post action="{{url_for('leads_status', lid=l.id)}}">
+<select name=status onchange="this.form.submit()">
+{% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
+</select></form></td>
+<td><a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a></td></tr>{% endfor %}</table>
+<p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
+{% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
+
+LEAD_MAIL = """<h1>Kennismakingsmail — {{l.naam}}</h1>
+<p class=lead>Concept. Kopieer of open 'm in je mailprogramma, lees 'm even na en <b>verstuur zelf</b>.</p>
+<div class=card><div class=kv><dt>Aan</dt><dd>{{l.email or '—'}}</dd>
+<dt>Onderwerp</dt><dd>{{onderwerp}}</dd><dt>Telefoon</dt><dd>{{l.telefoon or '—'}}</dd></div></div>
+<div class=card><textarea id=mailbody rows=22 style="font-family:inherit">{{tekst}}</textarea>
+<div class=btn-row>
+<a class="btn lg" href="mailto:{{l.email}}?subject={{onderwerp|urlencode}}&body={{tekst|urlencode}}">✉ Open in mailprogramma</a>
+<button class="btn sec" type=button onclick="navigator.clipboard.writeText(document.getElementById('mailbody').value);this.textContent='✓ Gekopieerd'">Kopieer tekst</button>
+<span class=spacer></span>
+<form method=post action="{{url_for('leads_status', lid=l.id)}}"><input type=hidden name=status value="mail gestuurd">
+<button class="btn green">Markeer 'mail gestuurd'</button></form>
+<a class="btn ghost" href="{{url_for('leads_pagina')}}">← terug</a></div></div>
+<div class=hint>De mail vraagt de bewoner alvast klaar te leggen: facturen/tekeningen van eerder isolatiewerk,
+typeplaatje cv-ketel, toegang kruipruimte/zolder en PV-gegevens — precies de bewijslast die ISSO 82.1 bij de
+opname vraagt (isolatie telt alleen mee indien waarneembaar of met factuur/tekening aantoonbaar).</div>"""
+
+
+@app.route("/leads")
+@login_required
+def leads_pagina():
+    rows = leads_mod.load_leads()
+    for r in rows:
+        r["adres"] = leads_mod.adres(r)
+    rows.sort(key=lambda r: (r.get("status") in ("afgerond", "vervallen"), -r.get("id", 0)))
+    return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN)
+
+
+@app.route("/leads/add", methods=["POST"])
+@login_required
+def leads_add():
+    lead = leads_mod.parse_lead(request.form.get("mailtekst", ""))
+    if not lead:
+        flash("Kon geen lead-gegevens vinden in de geplakte tekst — plak de hele portal-mail (met het {...}-blok).")
+        return redirect(url_for("leads_pagina"))
+    rows, nieuw = leads_mod.add_lead(lead)
+    leads_mod.save_leads(rows)
+    if not nieuw:
+        flash("Lead bestaat al (zelfde adres/BAG-id) — niet dubbel toegevoegd.")
+    return redirect(url_for("leads_pagina"))
+
+
+@app.route("/leads/<int:lid>/status", methods=["POST"])
+@login_required
+def leads_status(lid):
+    rows = leads_mod.load_leads()
+    st = request.form.get("status", "")
+    for r in rows:
+        if r.get("id") == lid and st in leads_mod.STATUSSEN:
+            r["status"] = st
+    leads_mod.save_leads(rows)
+    return redirect(url_for("leads_pagina"))
+
+
+@app.route("/leads/<int:lid>/mail")
+@login_required
+def leads_mail(lid):
+    r = next((x for x in leads_mod.load_leads() if x.get("id") == lid), None)
+    if not r:
+        abort(404)
+    onderwerp, tekst = leads_mod.concept_mail(r, _cfg().get("adviseur", {}))
+    return page(LEAD_MAIL, l=r, onderwerp=onderwerp, tekst=tekst)
+
+
+@app.route("/leads/export.csv")
+@login_required
+def leads_csv():
+    csv = leads_mod.to_csv(leads_mod.load_leads())
+    return Response(csv, mimetype="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": "attachment; filename=nijbegun_leads.csv"})
 
 
 if __name__ == "__main__":

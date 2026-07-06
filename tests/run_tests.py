@@ -886,5 +886,27 @@ try:
 except Exception as _e:
     check("installaties-extra: parser draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n40. Leads (Nij Begun-portal): parsen + dedupe + concept-mail + CSV")
+try:
+    import dashboard.leads as _L
+    _mail = ('Contact met adviseur\n{"BagAdresId":"0014200099999999","Email":"piet@test.example",'
+             '"Postcode":"9999XX","Huisnummer":12,"HuisnummerToevoeging":"a","Voornaam":"Piet",'
+             '"Telefoonnummer":"0612345678","Achternaam":"Test","Naam":"Piet Test",'
+             '"WijzigingsType":"AdviseurToegekend","WijzigingsReden":"Adviseur toegekend."}')
+    _ld = _L.parse_lead(_mail)
+    check("lead: JSON uit mail-tekst geparsed", _ld is not None and _ld["naam"] == "Piet Test"
+          and _ld["postcode"] == "9999XX" and _ld["huisnummer"] == "12" and _ld["toevoeging"] == "a")
+    _rows, _n1 = _L.add_lead(_ld, [])
+    _rows, _n2 = _L.add_lead(_ld, _rows)
+    check("lead: dedupe op BAG-id", _n1 and not _n2 and len(_rows) == 1 and _rows[0]["status"] == "nieuw")
+    _ond, _txt = _L.concept_mail(_rows[0], {"naam": "R. Poortinga", "telefoon": "06-1", "email": "a@b.nl"})
+    check("lead: concept-mail met aanhef + voorbereiding + ondertekening",
+          "Beste Piet Test" in _txt and "kruipruimte" in _txt and "R. Poortinga" in _txt and "Nij Begun" in _ond + _txt)
+    _csv = _L.to_csv(_rows)
+    check("lead: CSV Excel-NL (puntkomma + naam erin)", ";" in _csv.splitlines()[0] and "Piet Test" in _csv)
+    check("lead: onzin-tekst -> None (geen crash)", _L.parse_lead("hallo dit is geen lead") is None)
+except Exception as _e:
+    check("leads: module draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
