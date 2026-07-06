@@ -325,6 +325,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # 15=kozijn hout/kunststof 16=glas(raam) 17=orientatie(raam) 18=Type constructie(deur)
     # 19=opp raam in deur 20=glas(deur)
     wall_rows = sec.get("WALL ATTRIBUTES", [])
+    # het 'Deels binnen/deels buiten? (narekenen)'-VINKJE op het wand-element: kolom op NAAM zoeken
+    # in de header (robuust; positie kan schuiven). Vinkje aan = zelfde effect als 'narekenen' in de naam.
+    _kop = wall_rows[0] if wall_rows else []
+    _idx_nareken = next((i for i, h in enumerate(_kop)
+                         if "nareken" in (h or "").lower() or "deels binnen" in (h or "").lower()), None)
     gevel_per = {}      # (orientatie, begrenzing) -> m2 (binnenwerks, zonder openingen)
     gevel_bruto = {}    # idem mét openingen (voor volledigheidscheck)
     orient_naam = {}    # orientatie -> gevel-naam (voor/achter/links/rechts) voor leesbaar label
@@ -347,7 +352,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                           or _orient_afleiden(cur_gevel_naam, orientatie_voorgevel))
             cur_begr = _begrenzing_uit_naam(r[0])   # begrenzing uit de wandnaam (naamconventie)
             cur_isol = _isolatie_uit_naam(r[0])     # per-wand isolatie-override (None = projectdefault)
-            cur_nareken = _narekenen_uit_naam(r[0]) # door adviseur gemarkeerd: handmatig narekenen in Vabi
+            _chk = ((r[_idx_nareken] or "").strip().lower()
+                    if (_idx_nareken is not None and len(r) > _idx_nareken) else "")
+            cur_nareken = (_narekenen_uit_naam(r[0])            # naam-token (blijft werken) ...
+                           or _chk in ("yes", "ja", "true", "1", "aan"))  # ... of het VINKJE op de wand
             cur_rz = _rekenzone_uit_naam(r[0])      # rekenzone uit de naam (default 1)
             if cur_begr == "AVR":      # buurwoning/woningscheidend -> NIET in de schil (ISSO p.66/75)
                 cur_orient = ""        # ramen/deuren in deze wand vallen ook weg

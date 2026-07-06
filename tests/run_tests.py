@@ -1029,5 +1029,24 @@ try:
 except Exception as _e:
     check("deep-dive-fixes: parser draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n45. Parser: 'Deels binnen/buiten'-VINKJE op de wand (kolom op naam, i.p.v. typen)")
+try:
+    import tempfile as _tf6
+    from magicplan.statistics_csv import build_dossier as _bd6
+    _vc = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Vrijstaand\nGevelhoogte (m),5.4\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\nGround Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie,Bron,Deels binnen/deels buiten? (narekenen)\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,Z,,No\n"
+           "Achtergevel,Wall 1,Wall,12,11,5,2.5,1,Wall,,1,N,,Yes\n")
+    _pv6 = _tf6.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _pv6.write(_vc); _pv6.close()
+    _dv6, _nv6 = _bd6(_pv6.name)
+    _gz = [s for s in _dv6.schil if s.type == "gevel" and "kopgevel" not in (s.subtype or "")]
+    check("vinkje: aangevinkte wand -> NAREKENEN-flag (zonder typen)",
+          any("NAREKENEN" in (s.opmerkingen or "") for s in _gz)
+          and any("NAREKENEN" in n and "Achtergevel" in n for n in _nv6))
+    check("vinkje: niet-aangevinkte wand blijft gewoon", any("NAREKENEN" not in (s.opmerkingen or "") for s in _gz))
+except Exception as _e:
+    check("vinkje: parser draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
