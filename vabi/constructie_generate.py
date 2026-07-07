@@ -26,7 +26,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "refs", "standaard_constructies_v120001001.xml")
 
 # dossier-schiltype -> ConstructieType-code (geverifieerd uit de 12.0.1-export)
-TYPE_CODE = {"gevel": "0", "vloer": "7", "dak": "4", "kozijn": "2", "raam": "2", "deur": "3"}
+# 0=Gevel 1=Paneel(in kozijn) 2=Raam/kozijn 3=Deur 4=Dak 7=Vloer
+TYPE_CODE = {"gevel": "0", "paneel": "1", "vloer": "7", "dak": "4", "kozijn": "2", "raam": "2", "deur": "3"}
 # enum-velden die de poort moet bewaken
 GATE_FIELDS = ("ConstructieType", "Glas", "Kozijn", "IsolatieAanwezig", "Bouwjaar",
                "Invoer", "SpouwAanwezig")
@@ -160,7 +161,8 @@ def match_constructies(dos, pool, cb):
         if ctype is None:
             issues.append("schildeel %s: onbekend type %r" % (s.id, s.type))
             continue
-        if kind in ("gevel", "vloer", "dak"):
+        if kind in ("gevel", "vloer", "dak", "paneel"):
+            # paneel-in-kozijn = dichte constructie (ConstructieType=1), zelfde isolatie-beslisschema als een gevel
             tmpl = pool.pick_dicht(ctype, s.isolatie_aanwezig, s.isolatiedikte_mm,
                                    s.spouw_aanwezig, klasse)
         elif kind == "raam":

@@ -255,11 +255,12 @@ def build_tree(dos):
             geo.append(hv)
             if kind == "gevel":
                 gevels.append((hv, naam, orient))
-    # ramen/deuren als deelvlakken: in de gevel met DEZELFDE orientatie (anders round-robin)
+    # ramen/deuren/panelen als deelvlakken: in de gevel met DEZELFDE orientatie (anders round-robin).
+    # Een paneel-in-kozijn is óók een opening in de wand (dichte constructie) -> deelvlak, net als een raam.
     placed = 0
     for s in dos.schil:
         kind = _classify(s)
-        if kind not in ("raam", "deur"):
+        if kind not in ("raam", "deur", "paneel"):
             continue
         m = mapping.get(s.id)
         if m is None or not gevels:

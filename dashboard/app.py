@@ -327,7 +327,7 @@ ORI_OPTS = ["", "N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
 GLAS_OPTS = ["", "Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++",
              "TripleHR", "Vacuümglas", "Onbekend"]
 KOZ_OPTS = ["", "Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (niet thermisch onderbroken)"]
-TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟"}
+TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟", "paneel": "⬜"}
 
 OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <p class=lead>Alle opnamegegevens, bewerkbaar. Laad je MagicPlan-opname in of vul handmatig aan — <b>Vabi blijft de rekenkern</b>.</p>
@@ -383,7 +383,7 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 </div></form></div></details>{% endfor %}{% endfor %}
 <form method=post action="{{url_for('opname_el_nieuw', tag=tag)}}" class=btn-row style="margin-top:14px">
 <select name=type style="max-width:180px"><option value=gevel>Gevel</option><option value=dak>Dak</option>
-<option value=vloer>Vloer</option><option value=kozijn>Raam/deur</option></select>
+<option value=vloer>Vloer</option><option value=kozijn>Raam/deur</option><option value=paneel>Paneel (dicht)</option></select>
 <button class="btn sec">+ Vlak toevoegen</button></form></div>
 
 <div class=card><h2>Ventilatie</h2>
@@ -760,7 +760,7 @@ def opname(tag):
     dos = _dossier(tag)
     if not st or not dos:
         abort(404)
-    orde = {"dak": 0, "gevel": 1, "kozijn": 2, "vloer": 3}
+    orde = {"dak": 0, "gevel": 1, "paneel": 2, "kozijn": 3, "vloer": 4}
     elementen = list(enumerate(dos.schil))
     per_zone = {}
     for i, s in elementen:
@@ -904,8 +904,8 @@ def opname_el_nieuw(tag):
     from core.dossier import SchilDeel
     t = request.form.get("type", "gevel")
     n = sum(1 for s in dos.schil if s.type == t) + 1
-    dos.schil.append(SchilDeel(id="%s-nieuw-%d" % (t, n), type=t,
-                               subtype=("Raam" if t == "kozijn" else ""), begrenzing="Buitenlucht"))
+    _sub = {"kozijn": "Raam", "paneel": "Paneel"}.get(t, "")
+    dos.schil.append(SchilDeel(id="%s-nieuw-%d" % (t, n), type=t, subtype=_sub, begrenzing="Buitenlucht"))
     _dos_save(tag, st, dos)
     flash("Vlak toegevoegd — vul de gegevens in.")
     return redirect(url_for("opname", tag=tag))

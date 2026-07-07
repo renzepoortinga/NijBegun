@@ -330,10 +330,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     _kop = wall_rows[0] if wall_rows else []
     _idx_nareken = next((i for i, h in enumerate(_kop)
                          if "nareken" in (h or "").lower() or "deels binnen" in (h or "").lower()), None)
+    # 'Raam/paneel'-keuze op het venster-element (naam-gebaseerd; kolom kan schuiven). Waarde 'paneel'
+    # -> het is geen glas maar een DICHTE constructie (paneel-in-kozijn). Kolom afwezig -> alles blijft raam.
+    _idx_raampaneel = next((i for i, h in enumerate(_kop)
+                            if "raam/paneel" in (h or "").lower() or (h or "").strip().lower() == "paneel"), None)
     gevel_per = {}      # (orientatie, begrenzing) -> m2 (binnenwerks, zonder openingen)
     gevel_bruto = {}    # idem mét openingen (voor volledigheidscheck)
     orient_naam = {}    # orientatie -> gevel-naam (voor/achter/links/rechts) voor leesbaar label
     kozijnen = []
+    panelen = []          # dichte panelen-in-kozijn (Raam/paneel = paneel): dichte constructie i.p.v. glas
     deuren = []
     cur_orient = ""           # oriëntatie van de huidige (moeder)wand
     cur_begr = "Buitenlucht"  # begrenzing van de moederwand (parent; ramen/deuren erven die)
@@ -373,10 +378,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
             if not orient:   # binnenraam / niet-buitengevel -> niet in thermische schil
                 continue
-            kozijnen.append({"area": _f(r[3]) or 0.0,
-                             "glas": (r[16] or "").strip() if len(r) > 16 else "",
-                             "orient": orient, "begr": cur_begr,
-                             "kozijn_hk": (r[15] or "").strip() if len(r) > 15 else ""})
+            _rp = ((r[_idx_raampaneel] or "").strip().lower()
+                   if (_idx_raampaneel is not None and len(r) > _idx_raampaneel) else "")
+            if "paneel" in _rp:          # dicht paneel-in-kozijn -> dichte constructie (geen glas)
+                panelen.append({"area": _f(r[3]) or 0.0, "orient": orient, "begr": cur_begr})
+            else:
+                kozijnen.append({"area": _f(r[3]) or 0.0,
+                                 "glas": (r[16] or "").strip() if len(r) > 16 else "",
+                                 "orient": orient, "begr": cur_begr,
+                                 "kozijn_hk": (r[15] or "").strip() if len(r) > 15 else ""})
         elif typ == "Door":
             orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
             tc = _undot(r[18]) if len(r) > 18 else ""
@@ -616,6 +626,18 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             glastype=_undot(k["glas"]) or "", kozijnmateriaal=_norm_kozijn_mat(k.get("kozijn_hk", "")),
             opmerkingen=(("klein raam %.2f m2 -> 0,65 m2 (Nij Begun-regel)" % area if klein else "")
                          + ("" if k["glas"] else " GLASTYPE ONTBREEKT")).strip()))
+    # panelen-in-kozijn: dichte constructie (ConstructieType=1), zelfde isolatie-beslisschema als een gevel.
+    # De CSV geeft geen Rc/isolatie voor het venster -> isolatie Onbekend (forfaitair via bouwjaar); de
+    # adviseur verfijnt Rc/isolatie in de webapp-opname of in Vabi.
+    for i, p in enumerate(panelen):
+        schil.append(SchilDeel(
+            id="paneel-%d" % (i + 1), type="paneel", subtype="Paneel",
+            begrenzing=p.get("begr", "Buitenlucht"), orientatie=p["orient"],
+            oppervlakte_m2=p["area"] or 0.0, isolatie_aanwezig="Onbekend",
+            opmerkingen="paneel-in-kozijn (dichte constructie) -> verifieer Rc/isolatie in Vabi"))
+    if panelen:
+        notes.append("%d paneel(en)-in-kozijn herkend (Raam/paneel=paneel) -> dichte constructie; "
+                     "Rc/isolatie onbekend uit de CSV, verfijn in de webapp-opname of Vabi." % len(panelen))
     # deuren: erven begrenzing + oriëntatie van de moederwand
     for i, d in enumerate(deuren):
         met_raam = "raam" in (d["type_constructie"] or "").lower()

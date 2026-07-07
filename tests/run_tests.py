@@ -1182,5 +1182,39 @@ try:
 except Exception as _e:
     check("raam-invoer: draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n49. Paneel-in-kozijn (dichte constructie, ConstructieType=1) end-to-end")
+try:
+    from core.dossier import Dossier as _D9, SchilDeel as _S9, Identificatie as _I9
+    import vabi.constructie_generate as _CG9
+    # (a) TYPE_CODE + classify: paneel -> ConstructieType 1, dichte match (geen glas)
+    check("paneel: TYPE_CODE=1 (Paneel)", _CG9.TYPE_CODE.get("paneel") == "1")
+    check("paneel: _classify blijft 'paneel' (geen kozijn/raam)", _CG9._classify(_S9(id="p", type="paneel")) == "paneel")
+    # (b) generator kiest een ConstructieType-1 constructie voor een paneel (pool+cb intern gebouwd)
+    _dos9 = _D9(identificatie=_I9(postcode="9999ZZ", huisnummer="1", bouwjaar=1975))
+    _dos9.schil = [_S9(id="paneel-1", type="paneel", subtype="Paneel", orientatie="Z",
+                       begrenzing="Buitenlucht", oppervlakte_m2=1.2, isolatie_aanwezig="Nee")]
+    _clones9, _map9, _iss9 = _CG9.resolve_constructies(_dos9)
+    check("paneel: kreeg een passende constructie (geen 'onbekend type')",
+          "paneel-1" in _map9 and not any("onbekend type" in x for x in _iss9))
+    _ct = next((_CG9._t(c, "ConstructieType") for c in _clones9), None)
+    check("paneel: gekozen constructie is ConstructieType=1", _ct == "1")
+    # (c) webapp: paneel toevoegen -> valt in de dichte-branch (Rc/isolatie), niet glas
+    import dashboard.app as _WP9
+    _WP9.app.config.update(TESTING=True)
+    _c9 = _WP9.app.test_client()
+    with _c9.session_transaction() as _s9:
+        _s9["ingelogd"] = True
+    _r9 = _c9.post("/nieuw", data={"straat": "Paneelstraat 1", "postcode": "9999ZP", "plaats": "X", "woningtype": "Tussenwoning"})
+    _tg9 = _r9.headers["Location"].rstrip("/").split("/")[-2]
+    _c9.post("/project/%s/opname/el/nieuw" % _tg9, data={"type": "paneel"})
+    _d9 = _WP9._dossier(_tg9)
+    _pn = next((s for s in _d9.schil if s.type == "paneel"), None)
+    check("webapp: paneel toevoegbaar (type=paneel, subtype=Paneel)", _pn is not None and _pn.subtype == "Paneel")
+    _op9 = _c9.get("/project/%s/opname" % _tg9).get_data(as_text=True)
+    check("webapp: paneel-keuze in de dropdown", "Paneel (dicht)" in _op9)
+    import shutil as _sh9; _sh9.rmtree(_WP9._pdir(_tg9), ignore_errors=True)
+except Exception as _e:
+    check("paneel-in-kozijn: draait zonder fout", False); print("     " + repr(_e)[:180])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
