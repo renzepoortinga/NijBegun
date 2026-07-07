@@ -54,5 +54,16 @@
     {"form_match": "Nij Begun", "name": "Foto vooraanzicht", "required": true},
     {"form_match": "Nij Begun", "name": "Foto huisnummer", "required": true},
     {"form_match": "Nij Begun", "name": "Foto gevel overzicht", "required": true}
+  ],
+  "_doc_ramen": "RAAM-INVOER VERSIMPELEN (7-7): bij een raam hoeft de adviseur alleen 'Type glas' te kiezen. Kozijnmateriaal / Toevoerrooster aanwezig? / Raam-paneel worden NIET-VERPLICHT gemaakt en krijgen hun default-optie vooraan (Hout of kunststof · Nee · Raam). De tool defaultt leeg gelaten velden toch al zo (parser: kozijnmateriaal->Hout of kunststof, venster->subtype Raam, toevoerrooster/paneel worden genegeerd). LET OP: de Raam/paneel-velden zijn een custom-FIELD-groep (element-context), niet een van de 3 project-forms; form_push --live haalt nu custom-forms op -> voor deze groep het custom-fields-endpoint gebruiken (of de defaults 1x in de MagicPlan-veldeditor zetten). set_optional/set_default zijn form_match='Raam' zodat ze de 'Raam/paneel'-groep raken zodra die wordt meegenomen.",
+  "set_optional": [
+    {"form_match": "Raam", "name": "Kozijnmateriaal"},
+    {"form_match": "Raam", "name": "Toevoerrooster aanwezig?"},
+    {"form_match": "Raam", "name": "Raam/paneel"}
+  ],
+  "set_default": [
+    {"form_match": "Raam", "name": "Kozijnmateriaal", "default": "Hout of kunststof"},
+    {"form_match": "Raam", "name": "Toevoerrooster aanwezig?", "default": "Nee"},
+    {"form_match": "Raam", "name": "Raam/paneel", "default": "Raam"}
   ]
 }

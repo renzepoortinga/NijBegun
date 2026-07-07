@@ -1156,5 +1156,31 @@ try:
 except Exception as _e:
     check("Nij Begun-focus: draait zonder fout", False); print("     " + repr(_e)[:180])
 
+print("\n48. Raam-invoer versimpelen (alleen Type glas; kozijn/rooster/paneel defaulten)")
+try:
+    # (a) parser-defaults: leeg kozijnmateriaal -> Hout of kunststof; afwijking blijft werken
+    from magicplan.statistics_csv import _norm_kozijn_mat as _nkm
+    check("raam: leeg kozijnmateriaal -> Hout of kunststof (default)", _nkm("") == "Hout of kunststof")
+    check("raam: 'b' -> Metaal thermisch onderbroken (afwijking werkt nog)", _nkm("b").startswith("Metaal"))
+    # (b) form_push: set_optional + set_default op een nagebootste 'Raam/paneel'-veldgroep
+    import magicplan.form_push as _FP
+    _form = {"name": "Raam/paneel", "context": ["windows"], "children": [
+        {"id": "q1", "type": "question", "name": "Type glas", "dataType": "list", "required": True,
+         "fields": {"options": ["Enkel", "Dubbel", "HR++"]}},
+        {"id": "q2", "type": "question", "name": "Kozijnmateriaal", "dataType": "list", "required": True,
+         "fields": {"options": ["Metaal TO", "Hout of kunststof", "Metaal niet-TO"]}},
+        {"id": "q3", "type": "question", "name": "Raam/paneel", "dataType": "list", "required": True,
+         "fields": {"options": ["Paneel", "Raam"]}}]}
+    _rec, _a48, _rq48, _pb48 = _FP.merge_record({"id": "r48", "form": _form}, _FP.load_additions(), verbose=False)
+    _bn = {c["name"]: c for c in _FP._form_of(_rec)["children"]}
+    check("raam: Type glas blijft VERPLICHT", _bn["Type glas"]["required"] is True)
+    check("raam: Kozijnmateriaal optioneel + 'Hout of kunststof' vooraan",
+          _bn["Kozijnmateriaal"]["required"] is False and _bn["Kozijnmateriaal"]["fields"]["options"][0] == "Hout of kunststof")
+    check("raam: Raam/paneel optioneel + 'Raam' vooraan",
+          _bn["Raam/paneel"]["required"] is False and _bn["Raam/paneel"]["fields"]["options"][0] == "Raam")
+    check("form_push: geen structurele problemen na optioneel/default", _pb48 == [])
+except Exception as _e:
+    check("raam-invoer: draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

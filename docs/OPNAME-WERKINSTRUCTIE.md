@@ -59,8 +59,8 @@ element** en vul de bijbehorende **Field** in — alleen het afwijkende veld:
 |---|---|---|
 | een **muur** | "Gevel per wand" | Oriëntatie · Isolatie aanwezig (+spouw/bouwjaar) · **Begrenzing (anders dan buitenlucht)** · Spouwdikte · **Isolatiedikte (mm)** · **Rc-bron** · Bron · **Rekenzone** |
 | een **vloer** | "Vloer" | **Begrenzing** (kruipruimte/grond/AOR/…) · Isolatie · Isolatiedikte · Rc-bron · **Telt mee voor Ag?** · **Rekenzone** |
-| een **raam/paneel** | "Raam/paneel" | Raam/Paneel · kozijn · glas · Begrenzing · Oriëntatie · Isolatiedikte · Rc-bron · Rekenzone |
-| een **deur** | "Deur" | idem raam/paneel |
+| een **raam/paneel** | "Raam/paneel" | **Alleen Type glas** hoef je te kiezen. Kozijnmateriaal · Toevoerrooster · Raam/paneel laat je leeg → de tool neemt de default: **hout/kunststof · geen toevoerrooster · raam**. Alleen invullen als het afwijkt (bv. metalen kozijn, wél een rooster, of een dicht paneel). Oriëntatie + begrenzing erft het raam van de moederwand. |
+| een **deur** | "Deur" | Type constructie · glas · oppervlakte raam-in-deur; kozijn default hout/kunststof (begrenzing/oriëntatie erft van de wand) |
 
 > **Jouw AOR-vloer uit de vorige opname:** tik op die vloer (of de ruimte erboven) → "Vloer"-Field → **Begrenzing = AOR**.
 > De rest van de begane grond houdt de project-default (`Begrenzing (vloer)` in de Object-form). Twee vloervlakken, klaar.

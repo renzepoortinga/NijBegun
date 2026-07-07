@@ -148,6 +148,47 @@ def apply_required(form, names):
     return done
 
 
+def apply_optional(form, names):
+    """Zet required=False op vragen met een naam uit `names` (spiegelbeeld van apply_required).
+    Zo hoeft de adviseur die velden niet meer in te vullen — de tool defaultt ze (bv. raam: alleen
+    Type glas verplicht; Kozijnmateriaal/Toevoerrooster/Raam-paneel optioneel)."""
+    want = {n.strip().lower() for n in names}
+    done = []
+
+    def rec(nodes):
+        for n in nodes or []:
+            if isinstance(n, dict):
+                if n.get("type") == "question" and (n.get("name", "").strip().lower() in want) and n.get("required"):
+                    n["required"] = False
+                    done.append(n["name"])
+                rec(n.get("children"))
+    rec(_children(form))
+    return done
+
+
+def apply_default_first(form, name_to_default):
+    """Zet de default-optie VOORAAN in de options-lijst van een list-vraag (MagicPlan toont de eerste
+    bovenaan). Veilig: geen onbekende JSON-sleutels — alleen de bestaande options herordenen."""
+    want = {k.strip().lower(): v for k, v in (name_to_default or {}).items()}
+    done = []
+
+    def rec(nodes):
+        for n in nodes or []:
+            if isinstance(n, dict):
+                nm = n.get("name", "").strip().lower()
+                opts = (n.get("fields") or {}).get("options")
+                if n.get("type") == "question" and nm in want and isinstance(opts, list):
+                    dv = want[nm]
+                    hit = next((o for o in opts if str(o).strip().lower() == str(dv).strip().lower()), None)
+                    if hit is not None and opts and opts[0] != hit:
+                        opts.remove(hit)
+                        opts.insert(0, hit)
+                        done.append(n["name"])
+                rec(n.get("children"))
+    rec(_children(form))
+    return done
+
+
 def strip_name_escaped(obj):
     """Verwijder ALLE name_escaped-velden recursief (anders weigert de save-API)."""
     if isinstance(obj, dict):
@@ -216,12 +257,18 @@ def merge_record(record, additions, verbose=True):
                  if r.get("form_match", "").lower() in name.lower()]
     if req_names:
         req_done = apply_required(form, req_names)
+    opt_names = [r["name"] for r in additions.get("set_optional", [])
+                 if r.get("form_match", "").lower() in name.lower()]
+    opt_done = apply_optional(form, opt_names) if opt_names else []
+    defaults = {r["name"]: r["default"] for r in additions.get("set_default", [])
+                if r.get("form_match", "").lower() in name.lower() and r.get("default") is not None}
+    def_done = apply_default_first(form, defaults) if defaults else []
     strip_name_escaped(record)
     normalize_context(form)
     problems = validate(form)
     if verbose:
-        print("  form %-16s | +%d veld(en) %s | required gezet: %s%s" % (
-            name, len(added), added or "", req_done or "-",
+        print("  form %-16s | +%d veld(en) %s | required: %s | optioneel: %s | default-eerst: %s%s" % (
+            name, len(added), added or "", req_done or "-", opt_done or "-", def_done or "-",
             "" if not problems else " | PROBLEMEN: %d" % len(problems)))
     return record, added, req_done, problems
 
