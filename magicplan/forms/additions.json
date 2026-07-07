@@ -66,5 +66,20 @@
     {"form_match": "Raam", "name": "Kozijnmateriaal", "default": "Hout of kunststof"},
     {"form_match": "Raam", "name": "Toevoerrooster aanwezig?", "default": "Nee"},
     {"form_match": "Raam", "name": "Raam/paneel", "default": "Raam"}
+  ],
+  "field_groups": [
+    {
+      "form_match": "Raam",
+      "attach_children": [
+        {"name": "Raam/paneel", "show_when": "Paneel", "children": [
+          {"name": "Paneel - isolatie aanwezig?", "dataType": "list", "required": false,
+           "options": ["Ja", "Nee", "Onbekend"],
+           "help": "Dicht paneel-in-kozijn = dichte constructie (geen glas). Isolatie waarneembaar/aantoonbaar -> Ja + dikte; leeg -> Nee; niet vast te stellen -> Onbekend (bouwjaarklasse)."},
+          {"name": "Paneel - isolatiedikte (mm)", "dataType": "number", "required": false},
+          {"name": "Paneel - Rc-bron", "dataType": "list", "required": false,
+           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"]}
+        ]}
+      ]
+    }
   ]
 }

@@ -1,9 +1,14 @@
 """
-MagicPlan custom-forms bijwerken vanuit code (i.p.v. de wisselvallige web-editor).
+MagicPlan custom-forms EN element-veldgroepen bijwerken vanuit code (i.p.v. de wisselvallige web-editor).
 
-Voegt de velden uit `magicplan/forms/additions.json` toe aan de bestaande forms (NA de juiste sectie),
-zet required-vlaggen, en publiceert. IDEMPOTENT: een veld dat al bestaat (zelfde naam) wordt overgeslagen,
-dus je kunt dit veilig opnieuw draaien.
+Verwerkt uit `magicplan/forms/additions.json`:
+  - forms[]            project-forms (Object/Constructies/Installaties): velden toevoegen NA een sectie
+  - set_required[]     vragen verplicht maken · set_optional[] niet-verplicht · set_default[] default-optie vooraan
+  - field_groups[]     ELEMENT-veldgroepen (Raam/paneel, Gevel per wand, Vloer, Deur; custom-fields):
+                       velden toevoegen én conditionele kinderen aanhangen ONDER een bestaande vraag
+                       (attach_children + show_when = list-conditie, bv. de Paneel-branch bij Raam/paneel=Paneel)
+IDEMPOTENT: een veld/kind dat al bestaat (zelfde naam) wordt overgeslagen — veilig opnieuw te draaien.
+--live haalt zowel /custom-forms/list als /custom-fields/list op; publish-body = rauwe workgroup-id-array.
 
 De merge + validatie zijn PURE functies en worden offline getest (tests/run_tests.py + dit bestand met
 --form-file). De LIVE stappen (fetch/save/publish) draai je zelf met internet + .env:
@@ -72,15 +77,18 @@ def _gen_id(used, prefix="addq"):
 
 
 def _make_node(spec, used, comparison=None):
-    """Bouw één question-node (list/number/bool/text/image) + eventuele conditionele kinderen."""
+    """Bouw één question-node (list/number/bool/text/image) + eventuele conditionele kinderen.
+    Kinderen verschijnen wanneer de OUDER == de trigger: bool-vraag -> 1 (default), list-vraag ->
+    de gekozen optie-waarde via spec['show_when'] (bv. 'Paneel')."""
     node = {"id": _gen_id(used), "name": spec["name"], "type": "question",
             "dataType": spec.get("dataType", "text"),
             "comparisonValue": comparison, "required": bool(spec.get("required", False))}
     if spec.get("options"):
         node["fields"] = {"options": list(spec["options"])}
     kids = spec.get("children")
-    if kids:   # conditioneel: kinderen tonen wanneer deze (bool) vraag waar is (comparisonValue=1)
-        node["children"] = [_make_node(k, used, comparison=1) for k in kids]
+    if kids:
+        trig = spec.get("show_when", 1)
+        node["children"] = [_make_node(k, used, comparison=trig) for k in kids]
     return node
 
 
@@ -143,6 +151,33 @@ def apply_required(form, names):
                 if n.get("type") == "question" and (n.get("name", "").strip().lower() in want) and not n.get("required"):
                     n["required"] = True
                     done.append(n["name"])
+                rec(n.get("children"))
+    rec(_children(form))
+    return done
+
+
+def apply_attach_children(form, specs):
+    """Hang conditionele kinderen ONDER een bestaande vraag (bv. de 'Raam/paneel'-toggle): de kinderen
+    verschijnen wanneer die vraag == show_when (bv. 'Paneel'). Idempotent op kind-naam. -> lijst toegevoegd."""
+    have = _existing_names(form)
+    used = _all_ids(form)
+    want = {s["name"].strip().lower(): s for s in (specs or [])}
+    done = []
+
+    def rec(nodes):
+        for n in nodes or []:
+            if isinstance(n, dict):
+                nm = n.get("name", "").strip().lower()
+                if n.get("type") == "question" and nm in want:
+                    spec = want[nm]
+                    trig = spec.get("show_when", 1)
+                    kids = n.setdefault("children", [])
+                    for k in spec.get("children", []):
+                        if k["name"].strip().lower() in have:
+                            continue
+                        kids.append(_make_node(k, used, comparison=trig))
+                        have.add(k["name"].strip().lower())
+                        done.append(k["name"])
                 rec(n.get("children"))
     rec(_children(form))
     return done
@@ -253,6 +288,16 @@ def merge_record(record, additions, verbose=True):
     added, req_done = [], []
     if form_add:
         _, added = apply_additions(form, form_add)
+    # element-veldgroepen (custom-fields: Raam/paneel, Gevel per wand, ...): add_after_section + attach_children
+    fg = next((f for f in additions.get("field_groups", []) if f.get("form_match", "").lower() in name.lower()), None)
+    attach_done = []
+    if fg:
+        if fg.get("add_after_section"):
+            _, _add2 = apply_additions(form, fg)
+            added += _add2
+        if fg.get("attach_children"):
+            attach_done = apply_attach_children(form, fg["attach_children"])
+    added += attach_done
     req_names = [r["name"] for r in additions.get("set_required", [])
                  if r.get("form_match", "").lower() in name.lower()]
     if req_names:
@@ -299,15 +344,33 @@ def _http(method, url, headers, body=None):
         return json.loads(r.read().decode("utf-8") or "{}")
 
 
+def _records_from_list(payload):
+    """De list-API geeft {data:{forms:[...], publish_to:[...]}} (soms {data:[...]}).
+    -> (records[list], workgroup_ids[list])."""
+    data = (payload or {}).get("data", [])
+    if isinstance(data, dict):
+        recs = data.get("forms", []) or []
+        wg = [w.get("id") for w in (data.get("publish_to") or []) if isinstance(w, dict) and w.get("id")]
+        return recs, wg
+    return (data if isinstance(data, list) else []), []
+
+
 def fetch_forms(env):
-    return _http("GET", BASE_URL + "/custom-forms/list/", _headers(env)).get("data", [])
+    return _records_from_list(_http("GET", BASE_URL + "/custom-forms/list/", _headers(env)))
 
 
-def save_and_publish(env, record):
+def fetch_fields(env):
+    """Element-veldgroepen (Raam/paneel, Gevel per wand, Vloer, Deur) via /custom-fields/list/."""
+    return _records_from_list(_http("GET", BASE_URL + "/custom-fields/list/", _headers(env)))
+
+
+def save_and_publish(env, record, kind="custom-forms", workgroups=None):
+    """Save + publish naar custom-forms OF custom-fields. Publish-body = RAUWE ARRAY van
+    workgroup-id-strings (memory magicplan-form-api). kind bepaalt het endpoint."""
     rec_id = record.get("id") or _form_of(record).get("id")
-    _http("POST", BASE_URL + "/custom-forms/save", _headers(env),
+    _http("POST", "%s/%s/save" % (BASE_URL, kind), _headers(env),
           {"id": rec_id, "form": _form_of(record)})
-    _http("POST", BASE_URL + "/custom-forms/publish/%s" % rec_id, _headers(env))
+    _http("POST", "%s/%s/publish/%s" % (BASE_URL, kind, rec_id), _headers(env), list(workgroups or []))
     return rec_id
 
 
@@ -320,32 +383,37 @@ def main():
     a = ap.parse_args()
     additions = load_additions()
 
+    # kind per record: 'custom-forms' (project-forms) of 'custom-fields' (element-veldgroepen)
+    tagged, wg_forms, wg_fields = [], [], []
     if a.form_file:
         rec = json.load(open(a.form_file, encoding="utf-8"))
-        records = [rec]
+        tagged = [(rec, "custom-forms")]
     elif a.live or a.publish:
         env = _load_env()
         if not env.get("MAGICPLAN_API_KEY"):
             print("Geen MAGICPLAN_API_KEY in .env — kan niet live ophalen."); sys.exit(2)
-        records = fetch_forms(env)
+        forms, wg_forms = fetch_forms(env)
+        fields, wg_fields = fetch_fields(env)
+        tagged = [(r, "custom-forms") for r in forms] + [(r, "custom-fields") for r in fields]
     else:
         print("Geef --form-file <json> (offline) of --live (API). Zie --help."); sys.exit(2)
 
     os.makedirs(a.out, exist_ok=True)
     any_problem = False
-    for rec in records:
+    for rec, kind in tagged:
         rec, added, req_done, problems = merge_record(rec, additions)
         form = _form_of(rec)
         name = (form.get("name") or "form").strip().replace(" ", "_")
-        json.dump(rec, open(os.path.join(a.out, "%s.json" % name), "w", encoding="utf-8"),
+        json.dump(rec, open(os.path.join(a.out, "%s_%s.json" % (kind, name)), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=2)
         if problems:
             any_problem = True
             for pr in problems:
                 print("     ! " + pr)
         if a.publish and not problems:
-            rid = save_and_publish(_load_env(), rec)
-            print("     -> gepubliceerd: %s (%s)" % (name, rid))
+            rid = save_and_publish(_load_env(), rec, kind=kind,
+                                   workgroups=(wg_fields if kind == "custom-fields" else wg_forms))
+            print("     -> gepubliceerd (%s): %s (%s)" % (kind, name, rid))
     print("\nGemergede JSON's in: %s" % a.out)
     if any_problem:
         print("LET OP: er zijn validatieproblemen — NIET publiceren tot ze opgelost zijn.")

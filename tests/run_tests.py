@@ -1216,5 +1216,39 @@ try:
 except Exception as _e:
     check("paneel-in-kozijn: draait zonder fout", False); print("     " + repr(_e)[:180])
 
+print("\n50. form_push: element-veldgroepen (custom-fields) + list-conditie (Paneel-branch)")
+try:
+    import magicplan.form_push as _FP5
+    # (a) robuuste list-extractie: {data:{forms,publish_to}} -> records + workgroup-ids
+    _recs, _wg = _FP5._records_from_list({"data": {"forms": [{"id": "a"}], "publish_to": [{"id": "ws1"}]}})
+    check("list-extractie: forms+publish_to uit dict-shape", _recs == [{"id": "a"}] and _wg == ["ws1"])
+    _recs2, _ = _FP5._records_from_list({"data": [{"id": "b"}]})
+    check("list-extractie: platte list-shape werkt ook", _recs2 == [{"id": "b"}])
+    # (b) 'Raam/paneel'-veldgroep mergen: Paneel-branch aanhangen (list-conditie) + raam-defaults
+    _fg = {"id": "fldRaam", "form": {"id": "q", "name": "Raam/paneel", "context": ["windows"],
+           "type": "custom-form", "children": [
+        {"id": "g1", "type": "question", "name": "Type glas", "dataType": "list", "required": True,
+         "comparisonValue": None, "fields": {"options": ["Enkel", "HR++"]}},
+        {"id": "g2", "type": "question", "name": "Kozijnmateriaal", "dataType": "list", "required": True,
+         "comparisonValue": None, "fields": {"options": ["Metaal TO", "Hout of kunststof"]}},
+        {"id": "g3", "type": "question", "name": "Raam/paneel", "dataType": "list", "required": True,
+         "comparisonValue": None, "fields": {"options": ["Raam", "Paneel"]}, "children": []}]}}
+    _rec5, _add5, _req5, _pb5 = _FP5.merge_record(_fg, _FP5.load_additions(), verbose=False)
+    _bn5 = {c["name"]: c for c in _FP5._form_of(_rec5)["children"]}
+    _kids5 = _bn5["Raam/paneel"].get("children", [])
+    check("field-group: Paneel-branch aangehangen met list-conditie 'Paneel'",
+          any(k["name"].startswith("Paneel - isolatie") and k.get("comparisonValue") == "Paneel" for k in _kids5))
+    check("field-group: Kozijnmateriaal optioneel + 'Hout of kunststof' vooraan",
+          _bn5["Kozijnmateriaal"]["required"] is False and _bn5["Kozijnmateriaal"]["fields"]["options"][0] == "Hout of kunststof")
+    check("field-group: Raam/paneel optioneel + 'Raam' vooraan",
+          _bn5["Raam/paneel"]["required"] is False and _bn5["Raam/paneel"]["fields"]["options"][0] == "Raam")
+    check("field-group: geen structurele validatieproblemen", _pb5 == [])
+    # (c) idempotent: nog eens mergen voegt de Paneel-branch niet dubbel toe
+    _rec5b, _add5b, _, _ = _FP5.merge_record(_FP5._form_of(_rec5), _FP5.load_additions(), verbose=False)
+    _kids5b = {c["name"]: c for c in _FP5._form_of(_rec5b)["children"]}["Raam/paneel"].get("children", [])
+    check("field-group: idempotent (geen dubbele Paneel-velden)", len(_kids5b) == len(_kids5))
+except Exception as _e:
+    check("form_push field-groups: draait zonder fout", False); print("     " + repr(_e)[:180])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
