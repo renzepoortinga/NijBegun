@@ -37,6 +37,18 @@ def save_leads(leads):
         json.dump(leads, fh, ensure_ascii=False, indent=1)
 
 
+def set_project_tag(lid, tag, leads=None):
+    """Koppel een aangemaakt project (tag = postcode_huisnummer) aan de lead. AVG: alleen de
+    tag-link wordt bewaard, geen persoonsgegevens verhuizen mee naar het project."""
+    leads = load_leads() if leads is None else leads
+    for r in leads:
+        if r.get("id") == lid:
+            r["project_tag"] = tag
+            break
+    save_leads(leads)
+    return leads
+
+
 # ---------------- parsen ----------------
 def parse_lead(text):
     """Geplakte mail-tekst -> lead-dict, of None. Pakt het eerste {...}-blok (de mail bevat het
@@ -109,14 +121,15 @@ def adres(lead):
 
 
 # ---------------- concept-kennismakingsmail ----------------
-# Wat de bewoner kan klaarleggen = precies wat de opname nodig heeft (ISSO 82.1: isolatie alleen
-# meenemen indien waarneembaar of met schriftelijk bewijs; installatie-typeplaatjes; toegang schil).
+# Wat de bewoner kan klaarleggen = precies wat de SCHIL-opname nodig heeft. Nij Begun (Maatregel 29)
+# gaat over isolatie + ventilatie; installaties (cv-ketel/warmtepomp/PV) horen bij het ENERGIELABEL en
+# niet bij het isolatieplan — daarom vragen we daar hier bewust NIET naar (ISSO 82.1: isolatie telt
+# alleen mee indien waarneembaar of met schriftelijk bewijs aantoonbaar).
 VOORBEREIDING = [
     "Facturen of offertes van eerder isolatiewerk (dak-, gevel-, spouw- of vloerisolatie), indien aanwezig",
+    "Weet u of de woning eerder is geïsoleerd (dak/gevel/spouw/vloer)? Zo ja: welk jaar en door wie, indien bekend",
     "Bouwtekeningen van de woning of van een verbouwing/aanbouw, indien aanwezig",
-    "Het type en bouwjaar van uw cv-ketel of warmtepomp (foto van het typeplaatje mag ook)",
     "Toegang tot het kruipruimteluik en de zolder (graag even vrij maken)",
-    "Informatie over zonnepanelen (aantal, jaar van plaatsing), indien aanwezig",
 ]
 
 

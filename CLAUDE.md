@@ -86,6 +86,25 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - MagicPlan-opnameschema + bouwgids: ../MagicPlan_Forms_Fields_schema_v0.3.json (+ -bouwgids.md)
   in de map "Nij Begun & EPA" (twee templates: Energielabel vs Nij Begun; VABI-getrouw)
 
+## Status (juli 2026) — 299/299 groen. LIVE GEHOST op nijbegun.poortinga-energieadvies.nl (TransIP VPS 37.97.195.196,
+Docker+Caddy, MFA). NIJ-BEGUN-FOCUS-SLAG (7-7): webapp volledig op Nij Begun (schil+ventilatie) gericht ná parallelle
+audit (6 agents). (1) SCOPE gezuiverd: kennismakingsmail (dashboard/leads.py VOORBEREIDING) vraagt GEEN cv-ketel/
+warmtepomp/PV meer (= energielabel, niet M29); opname 'Installaties'-kaart -> 'Ventilatie' prominent + verwarming/
+tapwater dichtgevouwen 'alleen voor het energielabel' (velden blijven bestaan als sjabloon-fallback voor de VABI-
+installatiebib — alleen ventilatie beïnvloedt de Standaard/warmtebehoefte). (2) FLOW herzien naar SOBOLT-model: leeg
+project (geen upload) -> Opname (MagicPlan-CSV-import + editor + VABI-import) -> Huidige staat (VABI-export terug =
+nulmeting) -> Maatregelen -> VABI-toets -> Afronden (foto's + PDF+JSON) -> Opleveren. Woningtype = dropdown. (3) LEADS
+-> PROJECT: knop op de leadregel (vanaf 'afspraak gepland') maakt idempotent een project met adres/BAG/bouwjaar
+(GEEN persoonsgegevens in dossier — AVG); lead krijgt project_tag + status 'opname gedaan' (routes leads_project/
+_lead_naar_dossier; leads.set_project_tag). (4) MAGICPLAN-FOTO'S: magicplan/photos.py (photo_entries + download_photos
+met injecteerbare fetch, offline getest; live fetch_project_photos via v2-API key+customer -> out/projects/<tag>/fotos/;
+golden rule: alleen directe foto-URL's, id-zonder-URL wordt geflagd; CLI --project-id/--tag; fotos/ mee in export-zip).
+(5) APPLE HIG: dashboard/static/app.css volledig herschreven (design-tokens, prefers-color-scheme DARK MODE + data-theme,
+env(safe-area-inset), 44/46px touch-targets, :focus-visible, breakpoints 700/480px, stepper-inklap, tabellen in
+.table-wrap); viewport-fit=cover; class="muted small" gequote. (6) docs/spouwinspectie-gids.md (endoscopie-werkwijze.md
+opgegaan -> pointer). Bouwjaar-hint per tijdvak was al compleet (7 ERAS matchen de gids-headers). Zie ook 'Fix 403
+achter Caddy' (origin-check host-only + ProxyFix bij NIJBEGUN_HTTPS). Deploy-update: git push -> op VPS `cd /opt/nijbegun
+&& git pull && sudo docker compose -f deploy/docker-compose.yml up -d --build`.
 ## Status (juni 2026) — 230/230 groen. PRODUCTIE-GEREED. Zie docs/PRODUCTIE-GEREED.md + docs/NTA8800-opname-MASTERPLAN.md.
 ISOLATIEPLAN-WEBAPP v2 (6-7, SOBOLT-achtig, lokaal Flask): `python dashboard/app.py` -> 6-stappen-flow:
 Inladen (CSV/dossier/VABI-export + foto's) -> OPNAME-EDITOR (volledige gebouw-boom per rekenzone bewerkbaar:

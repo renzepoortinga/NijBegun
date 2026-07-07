@@ -1097,5 +1097,64 @@ try:
 except Exception as _e:
     check("bouwjaar/plan-json: draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print("\n47. Nij Begun-focus: mail-scope, leads->project, MagicPlan-foto's, HIG-CSS, spouwinspectie")
+try:
+    import os as _o7, tempfile as _tf7, shutil as _sh7
+    # (a) kennismakingsmail is zuiver schil/ventilatie — geen installatie-vragen
+    import dashboard.leads as _LS
+    _blob = " ".join(_LS.VOORBEREIDING).lower()
+    check("mail: geen cv-ketel/warmtepomp/zonnepanelen-vraag (label, niet M29)",
+          "cv-ketel" not in _blob and "warmtepomp" not in _blob and "zonnepanel" not in _blob)
+    check("mail: wel isolatie-bewijslast gevraagd",
+          any(("isolatiewerk" in v.lower()) or ("geïsoleerd" in v.lower()) for v in _LS.VOORBEREIDING))
+    # (b) MagicPlan-foto's: parse + download met injecteerbare fetch (offline)
+    from magicplan import photos as _PH
+    _plan = {"photos": [{"url": "https://x/a.jpg", "bouwdeel": "voorgevel", "tag": "overzicht"},
+                        {"id": "p2", "bouwdeel": "dak"}]}
+    _ents = _PH.photo_entries(_plan)
+    check("photos: entries geparsed (url + id-only)", len(_ents) == 2 and _ents[0]["url"].endswith("a.jpg"))
+    _td = _tf7.mkdtemp()
+    _fotos, _fout = _PH.download_photos(_ents, _td, lambda e: b"JPEGDATA" if e.get("url") else (_ for _ in ()).throw(RuntimeError("geen url")))
+    check("photos: 1 gedownload, 1 geflagd (id zonder url — niet gegokt)", len(_fotos) == 1 and len(_fout) == 1)
+    check("photos: bestand op schijf + Foto.bouwdeel", _o7.path.isfile(_o7.path.join(_td, _fotos[0].bestand)) and _fotos[0].bouwdeel == "voorgevel")
+    _sh7.rmtree(_td, ignore_errors=True)
+    # (c) HIG-CSS: dark mode + safe-area + table-wrap aanwezig
+    _css = open(_o7.path.join(ROOT, "dashboard", "static", "app.css"), encoding="utf-8").read()
+    check("HIG-CSS: dark mode + safe-area + 44px + table-wrap",
+          "prefers-color-scheme: dark" in _css and "safe-area-inset" in _css and ".table-wrap" in _css and "46px" in _css)
+    # (d) spouwinspectie-gids bestaat + endoscopie wijst ernaar
+    check("spouwinspectie-gids aanwezig", _o7.path.isfile(_o7.path.join(ROOT, "docs", "spouwinspectie-gids.md")))
+    check("endoscopie-werkwijze verwijst naar spouwinspectie-gids",
+          "spouwinspectie-gids" in open(_o7.path.join(ROOT, "docs", "endoscopie-werkwijze.md"), encoding="utf-8").read())
+    # (e) leads -> project (geïsoleerd van echte leads.json)
+    import dashboard.app as _WL
+    _WL.app.config.update(TESTING=True)
+    _cl = _WL.app.test_client()
+    with _cl.session_transaction() as _s7:
+        _s7["ingelogd"] = True
+    _od, _of = _LS.LEADS_DIR, _LS.LEADS_FILE
+    _tmp = _tf7.mkdtemp(); _LS.LEADS_DIR = _tmp; _LS.LEADS_FILE = _o7.path.join(_tmp, "leads.json")
+    try:
+        _rows, _ = _LS.add_lead({"bag_id": "TESTBAG1", "naam": "Testpersoon", "postcode": "9999ZZ",
+                                 "huisnummer": "7", "toevoeging": "", "straat": "Teststraat",
+                                 "woonplaats": "Groningen", "bouwjaar": 1975, "woningtype": "Tussenwoning"})
+        _LS.save_leads(_rows); _lid = _rows[-1]["id"]
+        _rp = _cl.post("/leads/%d/project" % _lid)
+        check("leads->project: redirect naar opname", _rp.status_code in (302, 303) and _rp.headers["Location"].endswith("/opname"))
+        _ptag = _rp.headers["Location"].rstrip("/").split("/")[-2]
+        _l2 = next(x for x in _LS.load_leads() if x["id"] == _lid)
+        check("leads->project: tag gekoppeld + status doorgezet", _l2.get("project_tag") == _ptag and _l2["status"] == "opname gedaan")
+        _dos = _WL._dossier(_ptag)
+        check("leads->project: adres/bouwjaar over, GEEN persoonsgegevens in dossier",
+              _dos.identificatie.bouwjaar == 1975 and _dos.identificatie.postcode == "9999ZZ"
+              and "Testpersoon" not in json.dumps(_dos.to_dict()))
+        _rp2 = _cl.post("/leads/%d/project" % _lid)     # idempotent
+        check("leads->project: idempotent (opent bestaand, overschrijft niet)", _rp2.status_code in (302, 303))
+        _sh7.rmtree(_WL._pdir(_ptag), ignore_errors=True)
+    finally:
+        _LS.LEADS_DIR, _LS.LEADS_FILE = _od, _of
+except Exception as _e:
+    check("Nij Begun-focus: draait zonder fout", False); print("     " + repr(_e)[:180])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

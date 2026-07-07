@@ -242,7 +242,7 @@ def _beoordeling(tag, st, dossier):
 
 # ---------------- HTML ----------------
 BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width, initial-scale=1">
+<meta name=viewport content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nij Begun · isolatieplan</title>
 <link rel="stylesheet" href="{{url_for('static', filename='app.css')}}"></head><body>
 <div class=topbar><span class=brand>🏠 Nij Begun · isolatieplan</span>
@@ -294,13 +294,13 @@ HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ing
 <div><label>Woningtype</label><select name=woningtype>{% for w in woningtypes %}<option {{'selected' if w=='Tussenwoning'}}>{{w}}</option>{% endfor %}</select></div></div>
 <div class=btn-row><button class="btn lg">Project starten →</button>
 <a class="btn ghost" href="{{url_for('guide')}}">Eerst de guide lezen</a></div></form></div>
-{% if projects %}<div class=card><h2>Lopende projecten</h2><table>
+{% if projects %}<div class=card><h2>Lopende projecten</h2><div class="table-wrap"><table>
 <tr><th>Adres</th><th>Stap</th><th>Standaard</th><th>Maatregelen</th><th></th></tr>
 {% for p in projects %}<tr><td>{{p.adres}}</td>
 <td><span class="pill gray">{{p.stap}}</span></td>
 <td>{% if p.voldoet is none %}<span class=muted>—</span>{% elif p.voldoet %}<span class="pill green">voldoet</span>{% else %}<span class="pill amber">nog niet</span>{% endif %}</td>
 <td>{{p.n}}{% if p.totaal %} · &euro;{{'%.0f'|format(p.totaal)}}{% endif %}</td>
-<td><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a></td></tr>{% endfor %}</table></div>
+<td><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a></td></tr>{% endfor %}</table></div></div>
 {% endif %}"""
 
 HUIDIG = """{{stepper|safe}}<h1>Huidige staat — nulmeting</h1>
@@ -316,7 +316,7 @@ hier terug — de webapp leest het huidige energielabel en of de woning de Stand
 {% endif %}
 <form method=post enctype=multipart/form-data><div class=card><h2>VABI-export inladen (huidige woning)</h2>
 <div class=file-drop>Sleep hier de VABI-export (.xml) of kies 'm<br><input type=file name=export accept=".xml"></div>
-<p class=muted small>Dit is de <b>0-meting</b>: het label en de Standaard-afstand vóór maatregelen. Klopt er iets niet? Pas het in Vabi aan en upload opnieuw.</p>
+<p class="muted small">Dit is de <b>0-meting</b>: het label en de Standaard-afstand vóór maatregelen. Klopt er iets niet? Pas het in Vabi aan en upload opnieuw.</p>
 <div class=btn-row><button class=btn>Inladen &amp; toetsen</button>
 <span class=spacer></span>
 <a class="btn lg {{ '' if h and h.behoefte is not none else 'ghost' }}" href="{{url_for('naar_maatregelen', tag=tag)}}">Door naar maatregelen →</a></div></div></form>"""
@@ -386,17 +386,24 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <option value=vloer>Vloer</option><option value=kozijn>Raam/deur</option></select>
 <button class="btn sec">+ Vlak toevoegen</button></form></div>
 
-<div class=card><h2>Installaties</h2><form method=post action="{{url_for('opname_installaties', tag=tag)}}"><div class=grid2>
+<div class=card><h2>Ventilatie</h2>
+<p class=muted>Nij Begun rekent met vuistregels: toevoer 0,7 dm³/s·m² per verblijfsgebied (min 7 l/s), afvoer keuken 21 / bad 14 / toilet 7, in balans. Ventilatie is een <b>verplicht</b> onderdeel van het isolatieplan.</p>
+<form method=post action="{{url_for('opname_installaties', tag=tag)}}"><div class=grid2>
 <div><label>Ventilatie (A-E)</label><input name=vent_systeem value="{{d.ventilatie.systeem}}" placeholder="A/B/C/D/E"></div>
 <div><label>Ventilatie subsysteem</label><input name=vent_sub value="{{d.ventilatie.subsysteem_code}}" placeholder="bv. C1"></div>
+</div>
+<details class=acc style="margin-top:14px"><summary>Verwarming &amp; tapwater — <span class=muted>alleen voor het energielabel (optioneel)</span></summary>
+<div class=acc-body><p class="muted small">Deze installaties bepalen het <b>energielabel</b>, niet de Nij Begun-Standaard (netto warmtebehoefte).
+Je vult ze in Vabi in; hier invullen is optioneel en wordt alleen als sjabloon-hint meegegeven aan de VABI-import.</p>
+<div class=grid2>
 <div><label>Verwarming — type opwekker</label><input name=vw_opwekker value="{{d.installaties.verwarming.type_opwekker}}"></div>
 <div><label>Verwarming — subtype (HR-klasse/WP)</label><input name=vw_subtype value="{{d.installaties.verwarming.subtype}}"></div>
 <div><label>Verwarming — afgifte</label><input name=vw_afgifte value="{{d.installaties.verwarming.afgifte}}"></div>
 <div><label>Verwarming — aanvoertemperatuur</label><input name=vw_temp value="{{d.installaties.verwarming.aanvoertemperatuur}}"></div>
 <div><label>Tapwater — toestel</label><input name=tw_toestel value="{{d.installaties.tapwater.type_toestel}}"></div>
 <div><label>Tapwater — installatiejaar</label><input name=tw_jaar value="{{d.installaties.tapwater.installatiejaar or ''}}"></div>
-</div><div class=btn-row><button class=btn>Installaties opslaan</button>
-<span class="muted small">PV/koeling/2e installaties: uit de opname overgenomen; detail-aanpassing in Vabi.</span></div></form></div>
+</div></div></details>
+<div class=btn-row><button class=btn>Ventilatie opslaan</button></div></form></div>
 
 <div class=card><div class=kv>
 <dt>Totaal verliesoppervlak</dt><dd>{{'%.2f'|format(verlies)}} m²</dd>
@@ -423,25 +430,25 @@ Bouwfysisch wenselijke extra's (bv. dakkapel-wangen, deur) adviseer je wél, maa
 <option value=standaard>In subsidietabel (Standaard)</option>
 <option value=isde>Advies (30% ISDE) — buiten tabel</option>
 <option value=geen>Niet opnemen</option></select></div>
-{% if g.note %}<p class=muted small>{{g.note}}</p>{% endif %}
+{% if g.note %}<p class="muted small">{{g.note}}</p>{% endif %}
 <input type=hidden name="onderdeel_{{loop.index0}}" value="{{g.onderdeel}}">
 <input type=hidden name="m2_{{loop.index0}}" value="{{g.m2}}">
 <input type=hidden name="doel_{{loop.index0}}" value="{{g.rc_u_doel}}">
 <label>Maatregel (catalogus)</label>
 <select name="code_{{loop.index0}}" class=cm data-grp="{{loop.index0}}">
 {% for k in g.kandidaten %}<option value="{{k.code}}" data-prijs="{{k.prijs}}" {{'selected' if k.code==g.default_code else ''}}>{{k.code}} · {{k.omschrijving[:70]}} — €{{'%.2f'|format(k.prijs)}}/{{k.eenheid}}</option>{% endfor %}</select>
-<p class=muted small>doelwaarde {{g.rc_u_doel}} · regel-subtotaal <b class=sub data-grp="{{loop.index0}}">€{{'%.0f'|format(g.kandidaten[0].kosten)}}</b></p>
+<p class="muted small">doelwaarde {{g.rc_u_doel}} · regel-subtotaal <b class=sub data-grp="{{loop.index0}}">€{{'%.0f'|format(g.kandidaten[0].kosten)}}</b></p>
 <label>Technische haalbaarheid (per maatregel — komt in de losse bijlage)</label>
 <input name="haal_{{loop.index0}}" placeholder="bv. kruipruimte 60 cm en droog · bereikbaar via luik hal · geen asbest gezien" value="{{(st.haal or {}).get(loop.index0|string, '')}}">
 </div>{% endfor %}</form>
 
 <div class=card><h2>Zelf kiezen uit de catalogus</h2>
 <p class=muted>De volledige Nij Begun-catalogus (zoals het portal): categorie → subcategorie → maatregel of bijkomende kosten. Voeg toe met eigen hoeveelheid.</p>
-{% if vrij %}<table><tr><th>Code</th><th>Omschrijving</th><th>Hoeveelheid</th><th>Kosten</th><th>Bucket</th><th></th></tr>
+{% if vrij %}<div class="table-wrap"><table><tr><th>Code</th><th>Omschrijving</th><th>Hoeveelheid</th><th>Kosten</th><th>Bucket</th><th></th></tr>
 {% for v in vrij %}<tr><td class=small>{{v.code}}</td><td>{{v.omschrijving[:58]}}</td>
 <td>{{v.hoeveelheid}} {{v.eenheid}}</td><td>€{{'%.0f'|format(v.kosten)}}</td>
 <td><span class="pill {{'green' if v.bucket=='standaard' else 'amber'}}">{{'Standaard' if v.bucket=='standaard' else '30% ISDE'}}</span></td>
-<td><form method=post action="{{url_for('maatregel_del', tag=tag, idx=loop.index0)}}"><button class="btn sec">✕</button></form></td></tr>{% endfor %}</table>
+<td><form method=post action="{{url_for('maatregel_del', tag=tag, idx=loop.index0)}}"><button class="btn sec">✕</button></form></td></tr>{% endfor %}</table></div>
 <p class="muted small">Subtotaal catalogus-keuze (Standaard-bucket): <b>€{{'%.0f'|format(vrij_tot)}}</b></p>{% endif %}
 {% for c in boom %}<details class=acc><summary><b>{{c.naam}}</b> <span class="pill gray">{{c.code}}</span></summary><div class=acc-body>
 {% for s in c.subs %}<details class=acc><summary>{{s.naam[:60]}} <span class="pill gray">{{s.code}}</span></summary><div class=acc-body>
@@ -513,7 +520,7 @@ AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 (sleutel in config.json; zet geen naam/adres van de bewoner in de tekst — AVG).</p></form></div>
 <div class=card><h2>Klaar voor indienen? (Beoordelingsformulier)</h2><ul class=check>
 {% for ok, txt in beoord %}<li><span class="mk {{'ok2' if ok else 'no2'}}">{{ '✓' if ok else '○' }}</span>{{txt}}</li>{% endfor %}</ul>
-<p class=muted small>Spiegelt de compleetheidscriteria van de Nij Begun-kwaliteitscommissie.</p></div>
+<p class="muted small">Spiegelt de compleetheidscriteria van de Nij Begun-kwaliteitscommissie.</p></div>
 <div class=card><h2>Ventilatieplan</h2><div class=svgbox>{{vent_svg|safe}}</div></div>
 <div class=card><h2>Gegenereerde bestanden</h2><ul class=files>
 {% for f in files %}<li>{{f}} <a class="btn sec" href="{{url_for('download', tag=tag, filename=f)}}">download</a></li>{% endfor %}</ul></div>
@@ -540,7 +547,7 @@ Per maatregel specifiek (bv. spouw: boorgat+spouw, voegwerk; kruipruimte: diepte
 <details class=acc><summary>Goedkeuring — het Beoordelingsformulier</summary><div class=acc-body>
 Compleetheid: adviseur in open house · lay-out M29 bewaard · geen hiaten · adres+foto kloppen · plan op pagina 6 · huidige staat volledig · samenvatting voor SNN · maatregelcodes correct · bijlage “Waarom ventileren” · ventilatieberekening · fotoblad.
 Inhoud: doeltreffend (haalt de Standaard) · juiste set (uit de opname) · uitvoerbaar (vocht/bereikbaarheid) · toekomstbestendig (bouwfysica).</div></details>
-<p class=muted small>Bron: adviseurs-nijbegun.nl/support. Details in docs/nijbegun-kennisbank-eisen.md.</p>
+<p class="muted small">Bron: adviseurs-nijbegun.nl/support. Details in docs/nijbegun-kennisbank-eisen.md.</p>
 <div class=btn-row><a class="btn" href="{{url_for('home')}}">← naar projecten</a></div>"""
 
 
@@ -1229,6 +1236,9 @@ def export(tag):
                 z.write(p, os.path.basename(p))
         for p in glob.glob(os.path.join(pdir, "vabi_na", "*")):
             z.write(p, os.path.join("vabi_na", os.path.basename(p)))
+        for p in glob.glob(os.path.join(pdir, "fotos", "*")):    # MagicPlan-foto's (fotoblad)
+            if os.path.isfile(p):
+                z.write(p, os.path.join("fotos", os.path.basename(p)))
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
                     headers={"Content-Disposition": "attachment; filename=isolatieplan_%s.zip" % tag})
@@ -1253,7 +1263,7 @@ De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <textarea name=mailtekst rows=4 placeholder='{"BagAdresId":"...","Email":"...","Naam":"..."}'></textarea>
 <div class=btn-row><button class=btn>Lead toevoegen</button>
 <span class=spacer></span><a class="btn sec" href="{{url_for('leads_csv')}}">⬇ Export naar Excel (CSV)</a></div></form></div>
-{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><table>
+{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap"><table>
 <tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th></th></tr>
 {% for l in leads %}<tr>
 <td class=small>{{l.ontvangen}}</td>
@@ -1264,7 +1274,10 @@ De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <select name=status onchange="this.form.submit()">
 {% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
 </select></form></td>
-<td style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a></td></tr>{% endfor %}</table>
+<td style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a>
+{% if l.project_tag %} <a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
+{% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %} <form method=post style="display:inline" action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
+</td></tr>{% endfor %}</table></div>
 <p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
 {% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
 
@@ -1280,9 +1293,10 @@ LEAD_MAIL = """<h1>Kennismakingsmail — {{l.naam}}</h1>
 <form method=post action="{{url_for('leads_status', lid=l.id)}}"><input type=hidden name=status value="mail gestuurd">
 <button class="btn green">Markeer 'mail gestuurd'</button></form>
 <a class="btn ghost" href="{{url_for('leads_pagina')}}">← terug</a></div></div>
-<div class=hint>De mail vraagt de bewoner alvast klaar te leggen: facturen/tekeningen van eerder isolatiewerk,
-typeplaatje cv-ketel, toegang kruipruimte/zolder en PV-gegevens — precies de bewijslast die ISSO 82.1 bij de
-opname vraagt (isolatie telt alleen mee indien waarneembaar of met factuur/tekening aantoonbaar).</div>"""
+<div class=hint>De mail vraagt de bewoner alvast klaar te leggen: facturen/tekeningen van eerder <b>isolatiewerk</b>
+en toegang tot kruipruimte en zolder — de bewijslast voor de <b>isolatie-opname</b> (isolatie telt alleen mee
+indien waarneembaar of met factuur/tekening aantoonbaar). Installaties (cv-ketel/warmtepomp/PV) horen bij het
+energielabel, niet bij het Nij Begun-isolatieplan — daar vragen we bewust niet naar.</div>"""
 
 
 @app.route("/leads")
@@ -1338,6 +1352,65 @@ def leads_bag(lid):
                 r[k] = info[k]
         leads_mod.save_leads(rows)
     return redirect(url_for("leads_pagina"))
+
+
+def _lead_naar_dossier(lead):
+    """Bouw een LEEG dossier uit de lead-identificatie. Draagt alleen adres/BAG-gegevens over;
+    naam/telefoon/e-mail blijven in out/leads (AVG — die horen niet in het projectdossier)."""
+    from core.dossier import Dossier
+    dos = Dossier()
+    i = dos.identificatie
+    hn = str(lead.get("huisnummer", "")).strip()
+    toev = str(lead.get("toevoeging", "")).strip()
+    i.huisnummer = (hn + toev) if toev else hn          # 106B -> unieke tag bij appartementen
+    i.postcode = str(lead.get("postcode", "")).strip().upper().replace(" ", "")
+    if lead.get("straat"):
+        i.straat = lead["straat"]
+    if lead.get("woonplaats"):
+        i.plaats = lead["woonplaats"]
+    if lead.get("bouwjaar"):
+        try:
+            i.bouwjaar = int(lead["bouwjaar"])
+        except (TypeError, ValueError):
+            pass
+    if lead.get("verblijfsobject_id"):
+        i.bag_vboid = str(lead["verblijfsobject_id"])
+    if lead.get("woningtype"):
+        i.woningtype = lead["woningtype"]
+    return dos
+
+
+@app.route("/leads/<int:lid>/project", methods=["POST"])
+@login_required
+def leads_project(lid):
+    """Zet een lead om naar een (leeg) project en spring naar de Opname-stap. Idempotent:
+    bestaat het project (zelfde postcode_huisnummer) al, dan wordt niets overschreven — we linken en openen."""
+    rows = leads_mod.load_leads()
+    lead = next((x for x in rows if x.get("id") == lid), None)
+    if not lead:
+        abort(404)
+    dos = _lead_naar_dossier(lead)
+    tag = _tag(dos)
+    if lead.get("project_tag") == tag or _load_state(tag) is not None:
+        if lead.get("project_tag") != tag:
+            leads_mod.set_project_tag(lid, tag, rows)
+        flash("Project bestond al voor dit adres — geopend (niets overschreven).")
+        return redirect(url_for("opname", tag=tag))
+    os.makedirs(_pdir(tag), exist_ok=True)
+    dfile = "dossier_%s.json" % tag
+    save_json(dos, os.path.join(_pdir(tag), dfile))
+    st = {"tag": tag, "adres": "%s %s, %s" % (dos.identificatie.straat or "", dos.identificatie.huisnummer or "",
+          dos.identificatie.plaats or ""), "stap": "opname", "dossier_file": dfile,
+          "huidig": _verdict(dos, is_dossier=True), "na": None, "foto_voorkant": "", "foto_huisnummer": "",
+          "keuze": [], "totaal": 0, "lead_id": lid}
+    _save_state(tag, st)
+    leads_mod.set_project_tag(lid, tag, rows)
+    for r in rows:                                       # status doorzetten (tenzij al verder)
+        if r.get("id") == lid and r.get("status") in ("nieuw", "mail gestuurd", "gebeld", "afspraak gepland"):
+            r["status"] = "opname gedaan"
+    leads_mod.save_leads(rows)
+    flash("Project aangemaakt vanuit de lead — vul de opname in.")
+    return redirect(url_for("opname", tag=tag))
 
 
 @app.route("/leads/<int:lid>/mail")
