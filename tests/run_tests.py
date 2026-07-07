@@ -763,14 +763,32 @@ try:
     import dashboard.app as _WA
     _WA.app.config.update(TESTING=True)
     _routes = {r.rule for r in _WA.app.url_map.iter_rules()}
-    check("webapp: stappen-routes geregistreerd", {"/project/<tag>/inladen", "/project/<tag>/maatregelen",
-          "/project/<tag>/vabi", "/project/<tag>/afronden", "/project/<tag>/export", "/guide"} <= _routes)
+    check("webapp: stappen-routes geregistreerd", {"/project/<tag>/opname", "/project/<tag>/huidig",
+          "/project/<tag>/maatregelen", "/project/<tag>/vabi", "/project/<tag>/afronden",
+          "/project/<tag>/export", "/guide"} <= _routes)
     _wc = _WA.app.test_client()
     check("webapp: login-pagina laadt", _wc.get("/login").status_code == 200)
     with _wc.session_transaction() as _s:   # direct inloggen (config kan echte pw_hash+MFA bevatten)
         _s["ingelogd"] = True
-    check("webapp: projecten-overzicht (ingelogd)", _wc.get("/").status_code == 200)
+    _home = _wc.get("/")
+    check("webapp: projecten-overzicht (ingelogd)", _home.status_code == 200)
+    check("webapp: woningtype = dropdown (geen vrij tekstveld)",
+          "Twee-onder-een-kap" in _home.get_data(as_text=True) and "<select name=woningtype" in _home.get_data(as_text=True))
     check("webapp: ingebouwde guide", _wc.get("/guide").status_code == 200)
+    # leeg project aanmaken ZONDER bestand -> gaat naar de opname-stap
+    _rn = _wc.post("/nieuw", data={"straat": "Teststraat 9", "postcode": "9999ZZ",
+                   "plaats": "Groningen", "woningtype": "Hoekwoning"})
+    check("webapp: leeg project zonder upload -> opname-stap",
+          _rn.status_code in (302, 303) and _rn.headers["Location"].endswith("/opname"))
+    _ptag = _rn.headers["Location"].rstrip("/").split("/")[-2]
+    _op = _wc.get("/project/%s/opname" % _ptag)
+    check("webapp: opname toont MagicPlan-import + woningtype-dropdown",
+          "MagicPlan-opname inladen" in _op.get_data(as_text=True)
+          and 'selected' in _op.get_data(as_text=True))
+    check("webapp: huidige-staat-stap laadt (VABI-export terug)",
+          _wc.get("/project/%s/huidig" % _ptag).status_code == 200)
+    import shutil as _sh35
+    _sh35.rmtree(_WA._pdir(_ptag), ignore_errors=True)
     _bd = _WA._beoordeling("x", {"foto_voorkant": "", "foto_huisnummer": "", "na": {}}, build_sample())
     check("webapp: Beoordelingscheck spiegelt kennisbank (>=6 punten)", len(_bd) >= 6)
 except Exception as _e:

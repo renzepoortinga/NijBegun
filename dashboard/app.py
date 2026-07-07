@@ -42,8 +42,15 @@ UPLOAD_DIR = os.path.join(TOOL_DIR, "out", "_uploads")
 CONFIG = os.path.join(TOOL_DIR, "config.json")
 TEMPLATE_DOCX = os.path.join(TOOL_DIR, "templates", "isolatieplan_template.docx")
 DEFAULT_PW = "nijbegun"
-STAPPEN = [("inladen", "Inladen"), ("opname", "Opname"), ("maatregelen", "Maatregelen"),
+# Flow (SOBOLT-achtig): leeg project -> Opname (MagicPlan-import + bewerken + VABI-import downloaden) ->
+# Huidige staat (VABI-export terug -> Standaard-nulmeting) -> Maatregelen -> VABI-toets (import mét
+# maatregelen -> Standaard gehaald?) -> Afronden (ventilatieplan + foto's) -> Opleveren (PDF+JSON+zip).
+STAPPEN = [("opname", "Opname"), ("huidig", "Huidige staat"), ("maatregelen", "Maatregelen"),
            ("vabi", "VABI-toets"), ("afronden", "Afronden"), ("klaar", "Opleveren")]
+# Woningtype-keuzes (NTA 8800 / ISSO 82.1-conventie) — dropdown i.p.v. vrije tekst.
+WONINGTYPE_OPTS = ["Vrijstaand", "Twee-onder-een-kap", "Hoekwoning", "Tussenwoning",
+                   "Galerijwoning", "Portiekwoning", "Maisonnette (bovenwoning)",
+                   "Appartement (tussen)", "Appartement (hoek)", "Woning boven bedrijfsruimte"]
 
 app = Flask(__name__)
 
@@ -242,7 +249,6 @@ BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
 <nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('guide')}}">Guide</a>
 <a href="{{url_for('logout')}}">Uitloggen</a>{% endif %}</nav></div>
 <div class="wrap {{wrapclass or ''}}">
-{% if default_pw %}<div class=warn>⚠ Geen wachtwoord ingesteld (default actief). Zet <code>"dashboard":{"wachtwoord":"…"}</code> in config.json.</div>{% endif %}
 {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class=warn>{{m}}</div>{% endfor %}{% endwith %}
 {{ body|safe }}</div></body></html>"""
 
@@ -251,8 +257,12 @@ def stepper(active, st):
     done = set()
     order = [s for s, _ in STAPPEN]
     if st:
+        huidige = st.get("stap", "opname")
+        if huidige not in order:            # legacy-stap (bv. oud 'inladen') -> begin
+            huidige = "opname"
+        idx = order.index(huidige)
         for s in order:
-            if order.index(s) < order.index(st.get("stap", "inladen")):
+            if order.index(s) < idx:
                 done.add(s)
     parts = ['<div class=stepper>']
     for s, lbl in STAPPEN:
@@ -264,8 +274,7 @@ def stepper(active, st):
 
 def page(body_tmpl, wrapclass="", **ctx):
     body = render_template_string(body_tmpl, **ctx)
-    return render_template_string(BASE, body=body, wrapclass=wrapclass,
-                                  default_pw=(_password() == DEFAULT_PW))
+    return render_template_string(BASE, body=body, wrapclass=wrapclass)
 
 
 LOGIN = """<div class=card style="max-width:400px;margin:10vh auto">
@@ -276,14 +285,13 @@ LOGIN = """<div class=card style="max-width:400px;margin:10vh auto">
 
 HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ingediend Nij Begun-isolatieplan — stap voor stap.</p>
 <div class=card><h2>Nieuw project</h2>
-<p class=muted>Upload een <b>VABI-export</b> (.xml — de woning die in Vabi al klopt), een <b>dossier</b> (.json) of een MagicPlan <b>Statistics-CSV</b>.</p>
-<form method=post action="{{url_for('nieuw')}}" enctype=multipart/form-data>
-<div class=file-drop>Sleep hier je bestand of kies het<br><input type=file name=bestand accept=".xml,.json,.csv" required></div>
+<p class=muted>Vul het adres in en start — de <b>MagicPlan-opname laad je in de volgende stap in</b>. Je hoeft hier nog geen bestand te kiezen.</p>
+<form method=post action="{{url_for('nieuw')}}">
 <div class=grid2>
-<div><label>Straat + huisnummer</label><input name=straat placeholder="bv. Oosterkade 23"></div>
+<div><label>Straat + huisnummer</label><input name=straat placeholder="bv. Oosterkade 23" autofocus></div>
+<div><label>Postcode</label><input name=postcode placeholder="bv. 9711RS"></div>
 <div><label>Plaats</label><input name=plaats></div>
-<div><label>Postcode</label><input name=postcode placeholder="(bij CSV)"></div>
-<div><label>Woningtype</label><input name=woningtype value="Tussenwoning"></div></div>
+<div><label>Woningtype</label><select name=woningtype>{% for w in woningtypes %}<option {{'selected' if w=='Tussenwoning'}}>{{w}}</option>{% endfor %}</select></div></div>
 <div class=btn-row><button class="btn lg">Project starten →</button>
 <a class="btn ghost" href="{{url_for('guide')}}">Eerst de guide lezen</a></div></form></div>
 {% if projects %}<div class=card><h2>Lopende projecten</h2><table>
@@ -295,25 +303,23 @@ HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ing
 <td><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a></td></tr>{% endfor %}</table></div>
 {% endif %}"""
 
-INLADEN = """{{stepper|safe}}<h1>Inladen & controleren</h1>
-<p class=lead>Controleer de gegevens en voeg de verplichte foto's toe (voorkant + huisnummer).</p>
+HUIDIG = """{{stepper|safe}}<h1>Huidige staat — nulmeting</h1>
+<p class=lead>Je hebt de opname in Vabi ingelezen en doorgerekend. <b>Exporteer de woning uit Vabi</b> en laad die
+hier terug — de webapp leest het huidige energielabel en of de woning de Standaard al haalt.</p>
+{% if h and h.behoefte is not none %}
 <div class="verdict {{ 'ok' if h.voldoet else 'no' }}"><span class=ico>{{ '✅' if h.voldoet else '🎯' }}</span>
 <div><b>Huidige staat — label {{h.label}}</b><br>
-<span class=muted>energiebehoefte {{h.behoefte if h.behoefte is not none else '—'}} vs Standaard {{h.standaard if h.standaard is not none else '—'}} kWh/m²·jr
-{% if h.voldoet %}→ voldoet al{% elif h.marge is not none %}→ {{h.marge}} kWh/m²·jr te overbruggen{% endif %}</span></div></div>
-<div class=hint>De huidige staat komt uit de VABI-export. Klopt dit niet? Pas het in Vabi aan en upload opnieuw. <b>Vabi blijft de rekenkern.</b></div>
-<form method=post enctype=multipart/form-data><div class=card><h2>Projectgegevens</h2><div class=grid2>
-<div><label>Adres</label><input name=adres value="{{d.identificatie.straat}} {{d.identificatie.huisnummer}}"></div>
-<div><label>Postcode</label><input name=postcode value="{{d.identificatie.postcode}}"></div>
-<div><label>Plaats</label><input name=plaats value="{{d.identificatie.plaats}}"></div>
-<div><label>Woningtype</label><input name=woningtype value="{{d.identificatie.woningtype}}"></div>
-<div><label>Bouwjaar</label><input name=bouwjaar value="{{d.identificatie.bouwjaar or ''}}"></div>
-<div><label>Adviseur</label><input name=adviseur value="{{d.adviseur.naam or cfg_naam}}"></div></div></div>
-<div class=card><h2>Verplichte foto's</h2><div class=grid2>
-<div><label>Foto voorkant woning{% if st.foto_voorkant %} ✓{% endif %}</label><input type=file name=foto_voorkant accept="image/*"></div>
-<div><label>Foto huisnummer{% if st.foto_huisnummer %} ✓{% endif %}</label><input type=file name=foto_huisnummer accept="image/*"></div></div>
-<p class=muted small>Kwaliteitscommissie-eis: adres én foto op de voorkant komen overeen · ≥8 MP · max 5 MB (SNN).</p></div>
-<div class=btn-row><div class=spacer></div><button class="btn lg">Door naar de opname →</button></div></form>"""
+<span class=muted>energiebehoefte {{h.behoefte}} vs Standaard {{h.standaard if h.standaard is not none else '—'}} kWh/m²·jr
+{% if h.voldoet %}→ voldoet al{% elif h.marge is not none %}→ {{h.marge}} kWh/m²·jr te overbruggen met maatregelen{% endif %}</span></div></div>
+{% else %}
+<div class=hint>Nog geen VABI-export ingeladen. Upload hieronder de export van de <b>huidige</b> woning uit Vabi (het monitoring-/resultatenbestand). <b>Vabi blijft de rekenkern.</b></div>
+{% endif %}
+<form method=post enctype=multipart/form-data><div class=card><h2>VABI-export inladen (huidige woning)</h2>
+<div class=file-drop>Sleep hier de VABI-export (.xml) of kies 'm<br><input type=file name=export accept=".xml"></div>
+<p class=muted small>Dit is de <b>0-meting</b>: het label en de Standaard-afstand vóór maatregelen. Klopt er iets niet? Pas het in Vabi aan en upload opnieuw.</p>
+<div class=btn-row><button class=btn>Inladen &amp; toetsen</button>
+<span class=spacer></span>
+<a class="btn lg {{ '' if h and h.behoefte is not none else 'ghost' }}" href="{{url_for('naar_maatregelen', tag=tag)}}">Door naar maatregelen →</a></div></div></form>"""
 
 # --------- opname-editor (SOBOLT-achtig: alle gegevens zichtbaar + bewerkbaar) ---------
 BEGR_OPTS = ["Buitenlucht", "Grond", "Kruipruimte", "AOR", "AOS", "AVR", "Sterk geventileerd", "Water"]
@@ -324,10 +330,16 @@ KOZ_OPTS = ["", "Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (
 TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟"}
 
 OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
-<p class=lead>Alle opnamegegevens, bewerkbaar. Uit MagicPlan/VABI geïmporteerd; pas aan waar nodig — <b>Vabi blijft de rekenkern</b>.</p>
-<div class=card><h2>Algemeen</h2><form method=post action="{{url_for('opname_algemeen', tag=tag)}}"><div class=grid2>
+<p class=lead>Alle opnamegegevens, bewerkbaar. Laad je MagicPlan-opname in of vul handmatig aan — <b>Vabi blijft de rekenkern</b>.</p>
+<div class=card><h2>① MagicPlan-opname inladen</h2>
+<p class=muted>Upload de MagicPlan <b>Statistics-CSV</b> (of een eerder dossier .json). De gebouwboom, installaties en gegevens hieronder worden gevuld; je kunt daarna alles nalopen.</p>
+<form method=post action="{{url_for('opname_magicplan', tag=tag)}}" enctype=multipart/form-data>
+<div class=file-drop>Sleep hier de MagicPlan-CSV of dossier (.csv / .json)<br><input type=file name=bestand accept=".csv,.json"></div>
+<div class=btn-row><button class=btn>Inladen in de opname</button>
+<span class="muted small">Al ingeladen? Loop de gegevens hieronder na en pas aan waar nodig.</span></div></form></div>
+<div class=card><h2>② Algemeen</h2><form method=post action="{{url_for('opname_algemeen', tag=tag)}}"><div class=grid2>
 <div><label>BAG nummeraanduiding-ID</label><input name=bag_vboid value="{{d.identificatie.bag_vboid}}"></div>
-<div><label>Woningtype</label><input name=woningtype value="{{d.identificatie.woningtype}}"></div>
+<div><label>Woningtype</label><select name=woningtype>{% for w in woningtypes %}<option {{'selected' if w==d.identificatie.woningtype}}>{{w}}</option>{% endfor %}{% if d.identificatie.woningtype and d.identificatie.woningtype not in woningtypes %}<option selected>{{d.identificatie.woningtype}}</option>{% endif %}</select></div>
 <div><label>Bouwjaar</label><input name=bouwjaar value="{{d.identificatie.bouwjaar or ''}}"></div>
 <div><label>Renovatiejaar (huidig)</label><input name=renovatiejaar value="{{d.identificatie.renovatiejaar or ''}}"></div>
 <div><label>Gevelhoogte (m)</label><input name=gevelhoogte value="{{d.opname.gevelhoogte_m or ''}}"></div>
@@ -392,8 +404,11 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <dt>Compactheid (verlies/Ag)</dt><dd>{{'%.2f'|format(verlies/ag) if ag else '—'}}</dd></div>
 <p class="muted small">AVR-vlakken tellen niet mee in het verliesoppervlak (adiabatisch).</p></div>
 
-<div class=btn-row><a class="btn sec" href="{{url_for('opname_vabi_huidig', tag=tag)}}">⬇ Exporteer naar VABI (huidige staat)</a>
-<div class=spacer></div><a class="btn lg" href="{{url_for('naar_maatregelen', tag=tag)}}">Door naar maatregelen →</a></div>"""
+<div class=card><h2>③ Exporteer naar Vabi</h2>
+<p class=muted>Genereer de VABI-import (3 bibliotheken) van de <b>huidige</b> woning, importeer die in EPA-W en reken door.
+Exporteer de woning daarna uit Vabi — die laad je in de volgende stap terug als nulmeting.</p>
+<div class=btn-row><a class="btn sec" href="{{url_for('opname_vabi_huidig', tag=tag)}}">⬇ VABI-import (huidige staat)</a>
+<div class=spacer></div><a class="btn lg" href="{{url_for('huidig', tag=tag)}}">Door naar huidige staat →</a></div></div>"""
 
 MAATREGELEN = """{{stepper|safe}}<h1>Maatregelen kiezen</h1>
 <p class=lead>Vink aan wat je toepast. De goedkoopste passende maatregel is voorgeselecteerd; je kunt per bouwdeel wisselen.</p>
@@ -480,7 +495,13 @@ VABI = """{{stepper|safe}}<h1>VABI-toets met maatregelen</h1>
 {% else %}<div class=btn-row><a class="btn sec" href="{{url_for('maatregelen', tag=tag)}}">← pakket uitbreiden</a></div>{% endif %}{% endif %}</div>"""
 
 AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
-<p class=lead>Het isolatieplan, het visuele ventilatieplan en de indien-check — klaar voor oplevering.</p>
+<p class=lead>Foto's, het isolatieplan, het visuele ventilatieplan en de indien-check — klaar voor oplevering.</p>
+<div class=card><h2>Verplichte foto's</h2>
+<p class=muted>Kwaliteitscommissie-eis: het adres én de foto van de voorkant komen overeen. ≥8 MP · max 5 MB (SNN).</p>
+<form method=post action="{{url_for('fotos', tag=tag)}}" enctype=multipart/form-data><div class=grid2>
+<div><label>Foto voorkant woning{% if st.foto_voorkant %} <span class="pill green">✓ toegevoegd</span>{% endif %}</label><input type=file name=foto_voorkant accept="image/*"></div>
+<div><label>Foto huisnummer{% if st.foto_huisnummer %} <span class="pill green">✓ toegevoegd</span>{% endif %}</label><input type=file name=foto_huisnummer accept="image/*"></div></div>
+<div class=btn-row><button class=btn>Foto's opslaan</button></div></form></div>
 <div class=card><h2>Toelichting op advies</h2>
 <p class=muted>Deze persoonlijke toelichting komt in de bijlage bij het plan (met de technische haalbaarheid per maatregel).</p>
 <form method=post action="{{url_for('toelichting', tag=tag)}}">
@@ -503,11 +524,11 @@ GUIDE = """<h1>Guide — zo maak je een Nij Begun-isolatieplan</h1>
 <p class=lead>De volledige werkwijze, met de eisen van de Nij Begun-kennisbank erin verwerkt.</p>
 <div class=card><h2>De flow in 6 stappen</h2>
 <div class=stepper>{% for s,l in stappen %}<div class="step done"><div class=bar></div>{{l}}</div>{% endfor %}</div>
-<dl class=kv><dt>1 · Inladen</dt><dd>Upload de <b>MagicPlan-CSV</b>, een dossier of een VABI-export. De webapp leest de huidige staat. Voeg de verplichte foto's toe: <b>voorkant + huisnummer</b> (moeten met het adres overeenkomen).</dd>
-<dt>2 · Opname</dt><dd>Alle opnamegegevens <b>zichtbaar en bewerkbaar</b>: de gebouw-boom per rekenzone (dak/gevels/ramen/vloer met m², Rc/U, begrenzing), installaties en algemene gegevens. Vanaf hier exporteer je ook de <b>huidige staat naar Vabi</b> (0-meting).</dd>
+<dl class=kv><dt>1 · Opname</dt><dd>Start een <b>leeg project</b> (alleen adres) en laad in deze stap de <b>MagicPlan Statistics-CSV</b> in. Alle opnamegegevens worden <b>zichtbaar en bewerkbaar</b>: de gebouw-boom per rekenzone (dak/gevels/ramen/vloer met m², Rc/U, begrenzing), installaties en algemene gegevens. Onderaan exporteer je de woning naar <b>Vabi</b> (3 bibliotheken), reken je door in EPA-W en exporteer je 'm weer uit Vabi.</dd>
+<dt>2 · Huidige staat</dt><dd>Laad de <b>VABI-export</b> van de huidige woning terug: de webapp leest het <b>label</b> en of de Standaard al gehaald wordt (de 0-meting).</dd>
 <dt>3 · Maatregelen</dt><dd>Suggesties per bouwdeel (goedkoopste eerst) óf <b>zelf kiezen uit de volledige catalogus</b> incl. bijkomende kosten. Noteer per maatregel de <b>technische haalbaarheid</b>. Standaard → subsidietabel; extra's → 30% ISDE.</dd>
 <dt>4 · VABI-toets</dt><dd>Genereer de toekomstige staat (met <b>renovatiejaar-variant</b> voor de Qv10), importeer in Vabi, reken, upload de export terug. <b>Voldoet de set aan de Standaard?</b> Zo niet → pakket uitbreiden.</dd>
-<dt>5 · Afronden</dt><dd>Persoonlijke toelichting + isolatieplan (Word) + <b>visueel ventilatieplan</b> + haalbaarheids-bijlage + foto-checklist. De <b>indien-check</b> spiegelt het Beoordelingsformulier.</dd>
+<dt>5 · Afronden</dt><dd>Verplichte <b>foto's</b> (voorkant + huisnummer) + persoonlijke toelichting + isolatieplan (<b>PDF + JSON</b> leverformaat) + <b>visueel ventilatieplan</b> + haalbaarheids-bijlage + foto-checklist. De <b>indien-check</b> spiegelt het Beoordelingsformulier.</dd>
 <dt>6 · Opleveren</dt><dd>Exporteer de bundel en dien in via leveranciers@nijbegun.nl. De eerste 4 plannen worden 100% gecontroleerd.</dd></dl></div>
 <details class=acc open><summary>Ventilatie — de Nij Begun-vuistregels (bindend)</summary><div class=acc-body>
 Toevoer <b>0,7 dm³/s·m² per verblijfsgebied</b> (min 7 l/s/leefruimte) via roosters/WTW. Afvoer <b>keuken 21 · bad 14 · toilet 7</b>. Aan-/afvoer in <b>balans</b>.
@@ -553,10 +574,10 @@ def home():
             if not st:
                 continue
             na = st.get("na") or {}
-            rows.append({"tag": tag, "adres": st.get("adres", tag), "stap": st.get("stap", "inladen"),
+            rows.append({"tag": tag, "adres": st.get("adres", tag), "stap": st.get("stap", "opname"),
                          "voldoet": na.get("voldoet"), "n": len(st.get("keuze", [])),
                          "totaal": st.get("totaal", 0)})
-    return page(HOME, projects=rows)
+    return page(HOME, projects=rows, woningtypes=WONINGTYPE_OPTS)
 
 
 @app.route("/guide")
@@ -565,40 +586,55 @@ def guide():
     return page(GUIDE, stappen=STAPPEN)
 
 
+def _split_adres(straat_veld, dos):
+    """'Oosterkade 23' -> straat + huisnummer op het dossier."""
+    a = (straat_veld or "").strip()
+    if not a:
+        return
+    parts = a.rsplit(" ", 1)
+    dos.identificatie.straat = parts[0]
+    if len(parts) > 1:
+        dos.identificatie.huisnummer = parts[1]
+
+
 @app.route("/nieuw", methods=["POST"])
 @login_required
 def nieuw():
+    """Maak een LEEG project (geen upload nodig) — de MagicPlan-opname komt in de Opname-stap.
+    Blijft een geüpload bestand (dossier/VABI/CSV) accepteren als iemand dat toch meestuurt."""
+    from core.dossier import Dossier
+    dos, huidig = None, None
     f = request.files.get("bestand")
-    if not f or not f.filename:
-        flash("Geen bestand gekozen."); return redirect(url_for("home"))
-    ext = os.path.splitext(f.filename)[1].lower()
-    if ext not in (".xml", ".json", ".csv"):
-        flash("Alleen .xml (VABI), .json (dossier) of .csv (MagicPlan)."); return redirect(url_for("home"))
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    up = os.path.join(UPLOAD_DIR, "upload" + ext)
-    f.save(up)
-    huidig = None
-    try:
-        if ext == ".xml":
-            dos = parse_monitor(up)[0]
-            try:
-                huidig = _verdict(read_results(up))
-            except Exception:
-                huidig = None
-        elif ext == ".json":
-            dos = load_json(up)
-        else:
-            from magicplan.statistics_csv import build_dossier
-            dos, _ = build_dossier(up, straat=request.form.get("straat", ""),
-                                   postcode=request.form.get("postcode", ""),
-                                   plaats=request.form.get("plaats", ""),
-                                   woningtype=request.form.get("woningtype", ""))
-    except Exception as e:
-        flash("Kon bestand niet lezen: %s" % e); return redirect(url_for("home"))
-    # adres uit formulier overschrijven indien gegeven
-    straat = request.form.get("straat", "").strip()
-    if straat:
-        dos.identificatie.straat = straat
+    if f and f.filename:                       # optioneel: direct een bestand meesturen
+        ext = os.path.splitext(f.filename)[1].lower()
+        if ext not in (".xml", ".json", ".csv"):
+            flash("Alleen .xml (VABI), .json (dossier) of .csv (MagicPlan)."); return redirect(url_for("home"))
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        up = os.path.join(UPLOAD_DIR, "upload" + ext)
+        f.save(up)
+        try:
+            if ext == ".xml":
+                dos = parse_monitor(up)[0]
+                try:
+                    huidig = _verdict(read_results(up))
+                except Exception:
+                    huidig = None
+            elif ext == ".json":
+                dos = load_json(up)
+            else:
+                from magicplan.statistics_csv import build_dossier
+                dos, _ = build_dossier(up, straat=request.form.get("straat", ""),
+                                       postcode=request.form.get("postcode", ""),
+                                       plaats=request.form.get("plaats", ""),
+                                       woningtype=request.form.get("woningtype", ""))
+        except Exception as e:
+            flash("Kon bestand niet lezen: %s" % e); return redirect(url_for("home"))
+    if dos is None:                            # normaal pad: leeg project
+        dos = Dossier()
+    # adres/type uit het formulier
+    _split_adres(request.form.get("straat"), dos)
+    if request.form.get("postcode"):
+        dos.identificatie.postcode = request.form["postcode"].strip().upper().replace(" ", "")
     if request.form.get("plaats"):
         dos.identificatie.plaats = request.form["plaats"].strip()
     if request.form.get("woningtype"):
@@ -610,10 +646,10 @@ def nieuw():
     if huidig is None:
         huidig = _verdict(dos, is_dossier=True)
     st = {"tag": tag, "adres": "%s %s, %s" % (dos.identificatie.straat or "", dos.identificatie.huisnummer or "",
-          dos.identificatie.plaats or ""), "stap": "inladen", "dossier_file": dfile, "huidig": huidig,
+          dos.identificatie.plaats or ""), "stap": "opname", "dossier_file": dfile, "huidig": huidig,
           "na": None, "foto_voorkant": "", "foto_huisnummer": "", "keuze": [], "totaal": 0}
     _save_state(tag, st)
-    return redirect(url_for("inladen", tag=tag))
+    return redirect(url_for("opname", tag=tag))
 
 
 @app.route("/project/<tag>")
@@ -622,46 +658,47 @@ def project(tag):
     st = _load_state(tag)
     if not st:
         abort(404)
-    return redirect(url_for(st.get("stap", "inladen") if st.get("stap") != "klaar" else "afronden", tag=tag))
+    stap = st.get("stap", "opname")
+    doelen = {"opname", "huidig", "maatregelen", "vabi", "afronden"}
+    doel = "afronden" if stap == "klaar" else (stap if stap in doelen else "opname")
+    return redirect(url_for(doel, tag=tag))
 
 
-@app.route("/project/<tag>/inladen", methods=["GET", "POST"])
+@app.route("/project/<tag>/huidig", methods=["GET", "POST"])
 @login_required
-def inladen(tag):
+def huidig(tag):
+    """Huidige staat: laad de VABI-export van de HUIDIGE woning terug -> label + Standaard-nulmeting."""
     st = _load_state(tag)
     dos = _dossier(tag)
     if not st or not dos:
         abort(404)
-    if request.method == "POST":
-        a = request.form.get("adres", "").strip()
-        if a:
-            parts = a.rsplit(" ", 1)
-            dos.identificatie.straat = parts[0]
-            if len(parts) > 1:
-                dos.identificatie.huisnummer = parts[1]
-        dos.identificatie.postcode = request.form.get("postcode", dos.identificatie.postcode)
-        dos.identificatie.plaats = request.form.get("plaats", dos.identificatie.plaats)
-        dos.identificatie.woningtype = request.form.get("woningtype", dos.identificatie.woningtype)
-        bj = request.form.get("bouwjaar", "").strip()
-        if bj.isdigit():
-            dos.identificatie.bouwjaar = int(bj)
-        if request.form.get("adviseur"):
-            dos.adviseur.naam = request.form["adviseur"].strip()
-        for veld in ("foto_voorkant", "foto_huisnummer"):
-            fp = request.files.get(veld)
-            if fp and fp.filename:
-                ext = os.path.splitext(fp.filename)[1].lower() or ".jpg"
-                naam = "%s_%s%s" % (veld, tag, ext)
-                fp.save(os.path.join(_pdir(tag), naam))
-                st[veld] = naam
-        save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
-        st["adres"] = "%s %s, %s" % (dos.identificatie.straat or "", dos.identificatie.huisnummer or "",
-                                     dos.identificatie.plaats or "")
-        st["stap"] = "opname"
+    if st.get("stap") == "opname":            # binnengekomen vanuit de opname -> stap bijwerken
+        st["stap"] = "huidig"
         _save_state(tag, st)
-        return redirect(url_for("opname", tag=tag))
-    return page(INLADEN, stepper=stepper("inladen", st), st=st, d=dos, h=st.get("huidig") or {},
-                cfg_naam=_cfg().get("adviseur", {}).get("naam", ""))
+    if request.method == "POST":
+        ex = request.files.get("export")
+        if ex and ex.filename:
+            p = os.path.join(_pdir(tag), "vabi_export_huidig_%s.xml" % tag)
+            ex.save(p)
+            try:
+                st["huidig"] = _verdict(read_results(p))
+                # het huidige label/energiebehoefte ook in het dossier (voor het isolatieplan V1-V6)
+                try:
+                    b = dos.berekening
+                    b.label_huidig = st["huidig"].get("label") or b.label_huidig
+                    b.kwh_m2_huidig = st["huidig"].get("behoefte")
+                    b.standaard_eis_kwh_m2 = st["huidig"].get("standaard")
+                    save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
+                except Exception:
+                    pass
+                flash("Huidige staat ingeladen: label %s." % st["huidig"].get("label", "—"))
+            except Exception as e:
+                flash("Kon de VABI-export niet lezen: %s" % e)
+            _save_state(tag, st)
+        else:
+            flash("Geen VABI-export gekozen.")
+        return redirect(url_for("huidig", tag=tag))
+    return page(HUIDIG, stepper=stepper("huidig", st), tag=tag, st=st, d=dos, h=st.get("huidig") or {})
 
 
 # ---------------- opname-editor ----------------
@@ -730,8 +767,47 @@ def opname(tag):
     bj_titel, bj_html = bouwjaar_mod.hint(dos.identificatie.bouwjaar)
     return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 elementen=elementen, zones=zones, verlies=verlies, ag=ag,
-                bj_titel=bj_titel, bj_html=bj_html,
+                bj_titel=bj_titel, bj_html=bj_html, woningtypes=WONINGTYPE_OPTS,
                 begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS, koz_opts=KOZ_OPTS, ico=TYPE_ICO)
+
+
+@app.route("/project/<tag>/opname/magicplan", methods=["POST"])
+@login_required
+def opname_magicplan(tag):
+    """Laad een MagicPlan Statistics-CSV (of dossier .json) in het bestaande project — vult de gebouwboom
+    en gegevens, met behoud van het reeds ingevulde adres/woningtype waar het CSV die niet levert."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    f = request.files.get("bestand")
+    if not f or not f.filename:
+        flash("Geen bestand gekozen."); return redirect(url_for("opname", tag=tag))
+    ext = os.path.splitext(f.filename)[1].lower()
+    if ext not in (".csv", ".json"):
+        flash("Alleen een MagicPlan Statistics-CSV of dossier .json."); return redirect(url_for("opname", tag=tag))
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    up = os.path.join(UPLOAD_DIR, "opname_%s%s" % (tag, ext))
+    f.save(up)
+    oud = dos.identificatie
+    try:
+        if ext == ".json":
+            nieuw = load_json(up)
+        else:
+            from magicplan.statistics_csv import build_dossier
+            nieuw, _ = build_dossier(up, straat=oud.straat, postcode=oud.postcode,
+                                     plaats=oud.plaats, woningtype=oud.woningtype)
+    except Exception as e:
+        flash("Kon de opname niet lezen: %s" % e); return redirect(url_for("opname", tag=tag))
+    # behoud eerder ingevulde identificatie waar de import leeg is
+    for attr in ("straat", "huisnummer", "postcode", "plaats", "woningtype"):
+        if not getattr(nieuw.identificatie, attr, "") and getattr(oud, attr, ""):
+            setattr(nieuw.identificatie, attr, getattr(oud, attr))
+    save_json(nieuw, os.path.join(_pdir(tag), st["dossier_file"]))
+    st["adres"] = "%s %s, %s" % (nieuw.identificatie.straat or "", nieuw.identificatie.huisnummer or "",
+                                 nieuw.identificatie.plaats or "")
+    _save_state(tag, st)
+    flash("MagicPlan-opname ingeladen (%d vlakken) — loop de gegevens na." % len(nieuw.schil))
+    return redirect(url_for("opname", tag=tag))
 
 
 @app.route("/project/<tag>/opname/algemeen", methods=["POST"])
@@ -1080,6 +1156,26 @@ def afronden(tag):
                    if os.path.isfile(p) and not p.endswith("project.json"))
     return page(AFRONDEN, stepper=stepper("afronden", st), tag=tag, vent_svg=svg, st=st,
                 beoord=_beoordeling(tag, st, dos), files=files)
+
+
+@app.route("/project/<tag>/fotos", methods=["POST"])
+@login_required
+def fotos(tag):
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    n = 0
+    for veld in ("foto_voorkant", "foto_huisnummer"):
+        fp = request.files.get(veld)
+        if fp and fp.filename:
+            ext = os.path.splitext(fp.filename)[1].lower() or ".jpg"
+            naam = "%s_%s%s" % (veld, tag, ext)
+            fp.save(os.path.join(_pdir(tag), naam))
+            st[veld] = naam
+            n += 1
+    _save_state(tag, st)
+    flash("%d foto('s) opgeslagen." % n if n else "Geen foto gekozen.")
+    return redirect(url_for("afronden", tag=tag) + "?regen=1")
 
 
 @app.route("/project/<tag>/toelichting", methods=["POST"])
