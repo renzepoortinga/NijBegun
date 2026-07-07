@@ -103,12 +103,20 @@ def _security_headers(resp):
     return resp
 
 
+if os.environ.get("NIJBEGUN_HTTPS"):
+    # achter Caddy (reverse proxy): X-Forwarded-Proto/Host respecteren zodat Flask weet dat het https is
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+
 @app.before_request
 def _origin_check():
-    """CSRF-bescherming: POST's moeten van onze eigen pagina's komen (Origin/Referer-check)."""
+    """CSRF-bescherming: POST's moeten van onze eigen HOST komen (scheme-onafhankelijk — achter een
+    reverse proxy ziet Flask http terwijl de browser https meldt; vergelijk daarom alleen de host)."""
     if request.method == "POST":
+        from urllib.parse import urlsplit
         bron = request.headers.get("Origin") or request.headers.get("Referer") or ""
-        if bron and not bron.startswith(request.host_url.rstrip("/")):
+        if bron and urlsplit(bron).netloc and urlsplit(bron).netloc != request.host:
             abort(403)
 
 

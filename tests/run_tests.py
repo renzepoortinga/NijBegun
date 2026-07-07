@@ -767,7 +767,8 @@ try:
           "/project/<tag>/vabi", "/project/<tag>/afronden", "/project/<tag>/export", "/guide"} <= _routes)
     _wc = _WA.app.test_client()
     check("webapp: login-pagina laadt", _wc.get("/login").status_code == 200)
-    _wc.post("/login", data={"wachtwoord": _WA._password()})
+    with _wc.session_transaction() as _s:   # direct inloggen (config kan echte pw_hash+MFA bevatten)
+        _s["ingelogd"] = True
     check("webapp: projecten-overzicht (ingelogd)", _wc.get("/").status_code == 200)
     check("webapp: ingebouwde guide", _wc.get("/guide").status_code == 200)
     _bd = _WA._beoordeling("x", {"foto_voorkant": "", "foto_huisnummer": "", "na": {}}, build_sample())
@@ -1060,7 +1061,9 @@ try:
     import os as _os, io as _io, shutil as _sh, json as _js
     import dashboard.app as _WA5
     _WA5.app.config.update(TESTING=True)
-    _c5 = _WA5.app.test_client(); _c5.post("/login", data={"wachtwoord": _WA5._password()})
+    _c5 = _WA5.app.test_client()
+    with _c5.session_transaction() as _s5:
+        _s5["ingelogd"] = True
     with open(os.path.join(ROOT, "out", "demo_dossier.json"), "rb") as _fh:
         _r5 = _c5.post("/nieuw", data={"bestand": (_io.BytesIO(_fh.read()), "d.json"), "straat": "T 1",
                        "plaats": "X", "woningtype": "Tussenwoning"}, content_type="multipart/form-data")
