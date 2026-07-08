@@ -529,6 +529,9 @@ AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 
 GUIDE = """<h1>Guide — zo maak je een Nij Begun-isolatieplan</h1>
 <p class=lead>De volledige werkwijze, met de eisen van de Nij Begun-kennisbank erin verwerkt.</p>
+<div class=card><h2>Veldgidsen (open ze op je telefoon bij de opname)</h2><ul class=files>
+{% for slug, (titel, _b) in gidsen.items() %}<li>{{titel}} <a class="btn sec" href="{{url_for('gids', slug=slug)}}">openen</a></li>{% endfor %}
+</ul></div>
 <div class=card><h2>De flow in 6 stappen</h2>
 <div class=stepper>{% for s,l in stappen %}<div class="step done"><div class=bar></div>{{l}}</div>{% endfor %}</div>
 <dl class=kv><dt>1 · Opname</dt><dd>Start een <b>leeg project</b> (alleen adres) en laad in deze stap de <b>MagicPlan Statistics-CSV</b> in. Alle opnamegegevens worden <b>zichtbaar en bewerkbaar</b>: de gebouw-boom per rekenzone (dak/gevels/ramen/vloer met m², Rc/U, begrenzing), installaties en algemene gegevens. Onderaan exporteer je de woning naar <b>Vabi</b> (3 bibliotheken), reken je door in EPA-W en exporteer je 'm weer uit Vabi.</dd>
@@ -587,10 +590,38 @@ def home():
     return page(HOME, projects=rows, woningtypes=WONINGTYPE_OPTS)
 
 
+# Veldgidsen — markdown uit docs/ gerenderd in de webapp (mobiel bij de opname te gebruiken)
+GIDSEN = {
+    "opnameformulier": ("📋 Nij Begun opnameformulier (alles per project)", "nijbegun-opnameformulier.md"),
+    "inmeten": ("📐 MagicPlan-inmeetgids (controlematen geometrie)", "magicplan-inmeetgids.md"),
+    "spouwinspectie": ("🧱 Spouwinspectie / endoscopie", "spouwinspectie-gids.md"),
+    "ventilatie": ("💨 Ventilatiesystemen & roosters herkennen", "ventilatie-herkennen-gids.md"),
+    "bouwjaar": ("🏗 Bouwjaarklasse-opnamegids (bouwfysica per tijdvak)", "bouwjaarklasse-opnamegids.md"),
+    "werkinstructie": ("✅ Opname-werkinstructie per kamer", "OPNAME-WERKINSTRUCTIE.md"),
+}
+
+GIDS_TMPL = """<p><a class="btn ghost" href="{{url_for('guide')}}">← alle gidsen</a></p>
+<div class=card><h1 style="font-size:24px">{{titel}}</h1>{{inhoud|safe}}</div>
+<p class="muted small">Bron: docs/{{bestand}} — ook offline in de repo beschikbaar.</p>"""
+
+
+@app.route("/gids/<slug>")
+@login_required
+def gids(slug):
+    if slug not in GIDSEN:
+        abort(404)
+    titel, bestand = GIDSEN[slug]
+    pad = os.path.join(TOOL_DIR, "docs", bestand)
+    if not os.path.isfile(pad):
+        abort(404)
+    md = open(pad, encoding="utf-8").read()
+    return page(GIDS_TMPL, titel=titel, bestand=bestand, inhoud=bouwjaar_mod.md_naar_html(md))
+
+
 @app.route("/guide")
 @login_required
 def guide():
-    return page(GUIDE, stappen=STAPPEN)
+    return page(GUIDE, stappen=STAPPEN, gidsen=GIDSEN)
 
 
 def _split_adres(straat_veld, dos):

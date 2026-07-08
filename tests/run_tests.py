@@ -1250,5 +1250,35 @@ try:
 except Exception as _e:
     check("form_push field-groups: draait zonder fout", False); print("     " + repr(_e)[:180])
 
+print("\n51. Veldgidsen in de webapp (/gids/<slug>) + inmeetgids/opnameformulier")
+try:
+    import dashboard.app as _WG
+    import dashboard.bouwjaar as _BJ2
+    _WG.app.config.update(TESTING=True)
+    _cg = _WG.app.test_client()
+    with _cg.session_transaction() as _sg:
+        _sg["ingelogd"] = True
+    for _slug in _WG.GIDSEN:
+        _rg = _cg.get("/gids/%s" % _slug)
+        if _rg.status_code != 200:
+            check("gids '%s' laadt" % _slug, False)
+            break
+    else:
+        check("alle %d veldgidsen laden in de webapp" % len(_WG.GIDSEN), True)
+    _sp = _cg.get("/gids/spouwinspectie").get_data(as_text=True)
+    check("gids spouwinspectie: inhoud gerenderd (boorlocatie + tabel)",
+          "Boorlocatie" in _sp or "boorlocatie" in _sp)
+    check("gids: markdown-tabel -> html-table in table-wrap", "table-wrap" in _cg.get("/gids/inmeten").get_data(as_text=True))
+    check("gids: onbekende slug -> 404", _cg.get("/gids/bestaatniet").status_code == 404)
+    check("guide-pagina linkt de gidsen", "Veldgidsen" in _cg.get("/guide").get_data(as_text=True))
+    _html = _BJ2.md_naar_html("## Kop\n| A | B |\n|---|---|\n| 1 | 2 |\n- [ ] taak\n**vet**")
+    check("md_naar_html: kop+tabel+checkbox+vet", "<h3>Kop</h3>" in _html and "<th>A</th>" in _html
+          and "<td>1</td>" in _html and "☐ taak" in _html and "<b>vet</b>" in _html)
+    check("docs: inmeetgids + opnameformulier bestaan",
+          os.path.isfile(os.path.join(ROOT, "docs", "magicplan-inmeetgids.md"))
+          and os.path.isfile(os.path.join(ROOT, "docs", "nijbegun-opnameformulier.md")))
+except Exception as _e:
+    check("veldgidsen: draait zonder fout", False); print("     " + repr(_e)[:180])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

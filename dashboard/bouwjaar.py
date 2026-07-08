@@ -26,28 +26,50 @@ def sectie_voor_bouwjaar(bouwjaar):
 
 
 def md_naar_html(md):
-    """Minimale markdown->HTML (koppen/bold/lijsten) voor de hint-weergave."""
-    uit, in_ul = [], False
+    """Minimale markdown->HTML (koppen/bold/lijsten/tabellen/checkboxes) — voor de bouwjaar-hint
+    én de veldgidsen in de webapp (/gids/<naam>)."""
+    uit, in_ul, in_tbl = [], False, False
+
+    def sluit():
+        nonlocal in_ul, in_tbl
+        if in_ul:
+            uit.append("</ul>"); in_ul = False
+        if in_tbl:
+            uit.append("</table></div>"); in_tbl = False
+
     for regel in (md or "").splitlines():
         r = regel.rstrip()
         r = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", r)
-        if r.startswith("### "):
-            if in_ul:
-                uit.append("</ul>"); in_ul = False
-            uit.append("<h4>%s</h4>" % r[4:])
-        elif r.lstrip().startswith(("- ", "• ")):
+        r = re.sub(r"`([^`]+)`", r"<code>\1</code>", r)
+        ls = r.lstrip()
+        if ls.startswith("|"):
+            cellen = [c.strip() for c in ls.strip("|").split("|")]
+            if all(set(c) <= set("-: ") for c in cellen if c):
+                continue                          # separator-rij |---|---|
+            rij = "<tr>" + "".join(("<th>%s</th>" if not in_tbl else "<td>%s</td>") % c
+                                   for c in cellen) + "</tr>"
+            if not in_tbl:
+                sluit(); uit.append('<div class="table-wrap"><table>'); in_tbl = True
+            uit.append(rij)
+        elif r.startswith("### "):
+            sluit(); uit.append("<h4>%s</h4>" % r[4:])
+        elif r.startswith("## ") or r.startswith("# "):
+            sluit(); uit.append("<h3>%s</h3>" % r.lstrip("#").strip())
+        elif ls.startswith(("- [ ] ", "- [x] ", "- [X] ")):
             if not in_ul:
-                uit.append("<ul>"); in_ul = True
-            uit.append("<li>%s</li>" % r.lstrip()[2:])
+                sluit(); uit.append("<ul style='list-style:none;padding-left:4px'>"); in_ul = True
+            uit.append("<li>%s %s</li>" % ("☑" if ls[3].lower() == "x" else "☐", ls[6:]))
+        elif ls.startswith(("- ", "• ")):
+            if not in_ul:
+                sluit(); uit.append("<ul>"); in_ul = True
+            uit.append("<li>%s</li>" % ls[2:])
         elif r.startswith("> "):
-            uit.append("<p class=muted>%s</p>" % r[2:])
-        elif not r.strip():
-            if in_ul:
-                uit.append("</ul>"); in_ul = False
+            sluit(); uit.append("<p class=muted>%s</p>" % r[2:])
+        elif not r.strip() or r.strip() in ("---", "***"):
+            sluit()
         else:
-            uit.append("<p>%s</p>" % r)
-    if in_ul:
-        uit.append("</ul>")
+            sluit(); uit.append("<p>%s</p>" % r)
+    sluit()
     return "\n".join(uit)
 
 
