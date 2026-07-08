@@ -105,6 +105,12 @@ env(safe-area-inset), 44/46px touch-targets, :focus-visible, breakpoints 700/480
 opgegaan -> pointer). Bouwjaar-hint per tijdvak was al compleet (7 ERAS matchen de gids-headers). Zie ook 'Fix 403
 achter Caddy' (origin-check host-only + ProxyFix bij NIJBEGUN_HTTPS). Deploy-update: git push -> op VPS `cd /opt/nijbegun
 && git pull && sudo docker compose -f deploy/docker-compose.yml up -d --build`.
+(8-7): VELDGIDSEN IN DE WEBAPP: /gids/<slug> rendert 6 docs-gidsen (opnameformulier/inmeten/spouwinspectie/
+ventilatie/bouwjaar/werkinstructie) via bouwjaar.md_naar_html (nu met tabellen/checkboxes/##); Guide-pagina
+linkt ze. Nieuw: docs/magicplan-inmeetgids.md (7 controlematen) + docs/nijbegun-opnameformulier.md (A-G).
+WEBSITE-REDESIGN: website/index.html (self-contained Adyen-stijl, interactieve label-/subsidiemockups,
+€375 incl. btw, wachtlijst vervangen door portaal-stappen isolatie.nijbegun.nl) + UPLOAD-INSTRUCTIES.md
+(Cloud86); browser-geverifieerd, Renze uploadt zelf. Zie memory website-poortinga.
 ## Status (juni 2026) — 230/230 groen. PRODUCTIE-GEREED. Zie docs/PRODUCTIE-GEREED.md + docs/NTA8800-opname-MASTERPLAN.md.
 ISOLATIEPLAN-WEBAPP v2 (6-7, SOBOLT-achtig, lokaal Flask): `python dashboard/app.py` -> 6-stappen-flow:
 Inladen (CSV/dossier/VABI-export + foto's) -> OPNAME-EDITOR (volledige gebouw-boom per rekenzone bewerkbaar:

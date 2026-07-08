@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="nl" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Poortinga Energieadvies — Energielabel &amp; gratis Nij Begun isolatieplan | Groningen, Drenthe &amp; Friesland</title>
+<meta name="description" content="Officieel energielabel voor uw woning (€ 375 incl. btw, binnen 48 uur mogelijk) en gratis isolatieplan via Nij Begun met tot € 40.000 subsidie. SKG-IKOB-gecertificeerd energieadviseur, werkgebied Groningen, Drenthe & Friesland.">
+<meta property="og:title" content="Poortinga Energieadvies — Energielabel & Nij Begun isolatieplan">
+<meta property="og:description" content="Gecertificeerd energieadviseur in Groningen, Drenthe & Friesland. Energielabel € 375 incl. btw. Gratis isolatieplan via Nij Begun, tot € 40.000 subsidie.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="nl_NL">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E8345'/%3E%3Cpath d='M32 14 12 32h6v16h12V38h4v10h12V32h6L32 14z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+/* ============ Design tokens ============ */
+:root{
+  --green:#0E8345;
+  --green-dark:#0A6A38;
+  --green-deep:#07502B;
+  --ink:#0B1F16;
+  --ink-soft:#25352C;
+  --muted:#5A6E63;
+  --mint:#E7F4EC;
+  --mint-soft:#F2F9F4;
+  --bg:#FBFDFC;
+  --surface:#FFFFFF;
+  --line:#E3ECE6;
+  --shadow-sm:0 1px 2px rgba(11,31,22,.06),0 2px 8px rgba(11,31,22,.05);
+  --shadow-md:0 4px 14px rgba(11,31,22,.08),0 12px 40px rgba(11,31,22,.08);
+  --shadow-lg:0 8px 24px rgba(11,31,22,.10),0 24px 72px rgba(11,31,22,.14);
+  --radius:20px;
+  --radius-lg:28px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  /* Energielabel-kleuren */
+  --lA:#00963F;--lB:#52AE32;--lC:#A5C712;--lD:#F2D30B;--lE:#F5A623;--lF:#EB6909;--lG:#E2001A;
+}
+
+/* ============ Reset / basis ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+body{
+  font-family:var(--font);
+  color:var(--ink);
+  background:var(--bg);
+  line-height:1.6;
+  font-size:17px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,svg{max-width:100%;display:block}
+a{color:var(--green-dark)}
+ul,ol{list-style:none}
+section{scroll-margin-top:96px}
+
+.container{width:min(1160px,100% - 2.5rem);margin-inline:auto}
+@media (max-width:480px){.container{width:min(1160px,100% - 2rem)}}
+
+.skip-link{
+  position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;
+  padding:.7rem 1.2rem;border-radius:0 0 12px 0;z-index:200;font-weight:600;text-decoration:none;
+}
+.skip-link:focus{left:0}
+
+/* ============ Knoppen ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
+  font-weight:650;font-size:1rem;text-decoration:none;cursor:pointer;
+  border-radius:999px;padding:.95rem 1.7rem;border:1.5px solid transparent;
+  transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s,background .25s,color .25s,border-color .25s;
+  min-height:48px;
+}
+.btn svg{flex:none}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 18px rgba(14,131,69,.32)}
+.btn-primary:hover{background:var(--green-dark);transform:translateY(-2px);box-shadow:0 10px 26px rgba(14,131,69,.4)}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--line);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{border-color:var(--green);color:var(--green-dark);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-ghost{background:transparent;color:var(--green-dark)}
+.btn-ghost:hover{background:var(--mint)}
+.btn-light{background:#fff;color:var(--green-deep);box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.btn-light:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.24)}
+.btn-outline-light{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+.btn-outline-light:hover{border-color:#fff;background:rgba(255,255,255,.1)}
+.btn:focus-visible,a:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:3px solid rgba(14,131,69,.55);outline-offset:2px;border-radius:12px;
+}
+
+/* ============ Navigatie ============ */
+.site-header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(251,253,252,.78);
+  border-bottom:1px solid transparent;
+  transition:box-shadow .3s,border-color .3s,background .3s;
+}
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .site-header{-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px)}
+}
+.site-header.scrolled{border-color:var(--line);box-shadow:0 4px 20px rgba(11,31,22,.06)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:72px}
+.brand{display:inline-flex;align-items:center;gap:.65rem;text-decoration:none;color:var(--ink);font-weight:750;font-size:1.08rem;letter-spacing:-.01em}
+.brand svg{width:38px;height:38px;flex:none}
+.brand span b{color:var(--green)}
+.nav-links{display:flex;align-items:center;gap:.25rem}
+.nav-links a{
+  text-decoration:none;color:var(--ink-soft);font-weight:550;font-size:.98rem;
+  padding:.55rem .9rem;border-radius:999px;transition:background .2s,color .2s;
+  white-space:nowrap;
+}
+.nav-links a:hover{background:var(--mint);color:var(--green-deep)}
+.nav-links .btn{margin-left:.5rem;padding:.6rem 1.25rem;min-height:44px;font-size:.95rem}
+.nav-toggle{
+  display:none;background:none;border:1.5px solid var(--line);border-radius:12px;
+  width:46px;height:46px;cursor:pointer;align-items:center;justify-content:center;color:var(--ink);
+}
+.nav-toggle svg{width:24px;height:24px}
+.nav-toggle .icon-close{display:none}
+@media (max-width:1000px){
+  .nav-toggle{display:inline-flex}
+  .nav-links{
+    position:absolute;top:100%;left:0;right:0;
+    flex-direction:column;align-items:stretch;gap:.25rem;
+    background:var(--surface);border-bottom:1px solid var(--line);
+    padding:1rem 1.25rem 1.35rem;box-shadow:var(--shadow-md);
+    display:none;
+  }
+  .nav-links a{padding:.85rem 1rem;font-size:1.05rem}
+  .nav-links .btn{margin:0.5rem 0 0;justify-content:center}
+  .nav.open .nav-links{display:flex}
+  .nav.open .nav-toggle .icon-open{display:none}
+  .nav.open .nav-toggle .icon-close{display:block}
+}
+
+/* ============ Hero ============ */
+.hero{
+  position:relative;overflow:hidden;
+  padding:clamp(3.5rem,8vw,6.5rem) 0 clamp(3.5rem,7vw,6rem);
+}
+.hero::before,.hero::after{
+  content:"";position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;
+}
+.hero::before{width:640px;height:640px;right:-180px;top:-220px;background:radial-gradient(circle,rgba(14,131,69,.16),transparent 65%)}
+.hero::after{width:520px;height:520px;left:-200px;bottom:-260px;background:radial-gradient(circle,rgba(82,174,50,.13),transparent 65%)}
+.hero-grid{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(2rem,5vw,4.5rem);align-items:center;
+}
+@media (max-width:940px){.hero-grid{grid-template-columns:1fr}}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--mint);color:var(--green-deep);
+  font-weight:650;font-size:.85rem;letter-spacing:.02em;
+  padding:.45rem 1rem;border-radius:999px;margin-bottom:1.4rem;
+}
+.eyebrow svg{width:15px;height:15px}
+h1{
+  font-size:clamp(2.5rem,6vw,4.4rem);
+  line-height:1.04;letter-spacing:-.035em;font-weight:800;
+  margin-bottom:1.35rem;
+}
+h1 .accent{
+  background:linear-gradient(100deg,var(--green) 10%,#3FAE68 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-sub{font-size:clamp(1.05rem,1.6vw,1.25rem);color:var(--muted);max-width:34em;margin-bottom:2.2rem}
+.hero-cta{display:flex;flex-wrap:wrap;gap:.9rem;margin-bottom:2.2rem}
+.trust-row{display:flex;flex-wrap:wrap;gap:1.1rem 1.6rem;color:var(--ink-soft);font-size:.93rem;font-weight:550}
+.trust-row li{display:inline-flex;align-items:center;gap:.45rem}
+.trust-row svg{width:17px;height:17px;color:var(--green);flex:none}
+
+/* --- Hero-mockup: energielabel-widget --- */
+.hero-visual{position:relative;display:flex;justify-content:center}
+.label-card{
+  position:relative;width:min(440px,100%);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);padding:1.75rem;z-index:1;
+}
+.label-card::before{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;z-index:-1;
+  background:linear-gradient(135deg,rgba(14,131,69,.35),rgba(14,131,69,0) 40%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;padding:1px;
+}
+.label-card-top{display:flex;align-items:center;gap:1rem;margin-bottom:1.4rem}
+.house-ico{
+  width:58px;height:58px;flex:none;border-radius:16px;
+  background:linear-gradient(135deg,var(--mint),#D5EDDE);
+  display:flex;align-items:center;justify-content:center;
+}
+.house-ico svg{width:34px;height:34px}
+.label-card-top h3{font-size:1.05rem;letter-spacing:-.01em}
+.label-card-top p{color:var(--muted);font-size:.86rem}
+.chip{
+  display:inline-flex;align-items:center;gap:.35rem;margin-top:.25rem;
+  background:var(--mint);color:var(--green-deep);font-size:.72rem;font-weight:700;
+  padding:.18rem .6rem;border-radius:999px;letter-spacing:.02em;text-transform:uppercase;
+}
+.label-stage{display:flex;align-items:center;gap:1.15rem;margin-bottom:1.5rem}
+.label-badge{
+  width:82px;height:82px;flex:none;border-radius:22px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.6rem;font-weight:800;color:#fff;
+  background:var(--lA);
+  box-shadow:0 10px 26px rgba(11,31,22,.22);
+  transition:background .55s ease,transform .3s ease;
+}
+.label-stage-txt strong{display:block;font-size:1.1rem;letter-spacing:-.01em}
+.label-stage-txt span{color:var(--muted);font-size:.9rem}
+.label-bar-wrap{position:relative;padding-top:34px}
+.label-marker{
+  position:absolute;top:0;left:7.14%;transform:translateX(-50%);
+  width:30px;height:30px;border-radius:50%;
+  background:var(--lA);color:#fff;font-weight:800;font-size:.85rem;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(11,31,22,.28);
+  transition:left .55s cubic-bezier(.4,0,.2,1),background .55s ease;
+}
+.label-bar{display:flex;gap:3px;border-radius:12px;overflow:hidden}
+.label-bar span{
+  flex:1;height:38px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:750;font-size:.92rem;
+  opacity:.45;transition:opacity .4s,transform .4s;
+}
+.label-bar span:nth-child(1){background:var(--lA)}
+.label-bar span:nth-child(2){background:var(--lB)}
+.label-bar span:nth-child(3){background:var(--lC)}
+.label-bar span:nth-child(4){background:var(--lD);color:#5c4d00}
+.label-bar span:nth-child(5){background:var(--lE)}
+.label-bar span:nth-child(6){background:var(--lF)}
+.label-bar span:nth-child(7){background:var(--lG)}
+.label-bar span.active{opacity:1;transform:scaleY(1.12)}
+.label-card-foot{
+  display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;
+  margin-top:1.4rem;padding-top:1.15rem;border-top:1px solid var(--line);
+  color:var(--muted);font-size:.83rem;
+}
+.label-card-foot span{display:inline-flex;align-items:center;gap:.4rem}
+.label-card-foot svg{width:15px;height:15px;color:var(--green)}
+.float-chip{
+  position:absolute;z-index:2;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow-md);padding:.6rem .95rem;
+  display:flex;align-items:center;gap:.55rem;font-size:.85rem;font-weight:650;
+  animation:floaty 5.5s ease-in-out infinite;
+}
+.float-chip svg{width:20px;height:20px;color:var(--green);flex:none}
+.float-chip--tl{top:-16px;left:-8px}
+.float-chip--br{bottom:-14px;right:-6px;animation-delay:-2.7s}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@media (max-width:480px){
+  .float-chip--tl{left:0;top:-14px}
+  .float-chip--br{right:0}
+  .label-badge{width:68px;height:68px;font-size:2.1rem;border-radius:18px}
+}
+
+/* ============ Secties algemeen ============ */
+.section{padding:clamp(3.5rem,7vw,6rem) 0}
+.section-alt{background:linear-gradient(180deg,var(--mint-soft),var(--bg))}
+.section-head{max-width:46em;margin-bottom:clamp(2rem,4vw,3.2rem)}
+.section-head.center{margin-inline:auto;text-align:center}
+.kicker{
+  display:inline-block;color:var(--green);font-weight:750;font-size:.85rem;
+  letter-spacing:.09em;text-transform:uppercase;margin-bottom:.8rem;
+}
+h2{font-size:clamp(1.85rem,3.6vw,2.7rem);letter-spacing:-.03em;line-height:1.12;font-weight:800;margin-bottom:.9rem}
+.section-head p{color:var(--muted);font-size:1.08rem}
+
+/* ============ Diensten ============ */
+.services{display:grid;grid-template-columns:1fr 1fr;gap:1.75rem}
+@media (max-width:860px){.services{grid-template-columns:1fr}}
+.service-card{
+  position:relative;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius-lg);padding:clamp(1.75rem,3vw,2.5rem);
+  box-shadow:var(--shadow-sm);display:flex;flex-direction:column;
+  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,border-color .3s;
+}
+.service-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:#CBE3D4}
+.service-card .card-ico{
+  width:56px;height:56px;border-radius:16px;margin-bottom:1.35rem;
+  background:linear-gradient(135deg,var(--mint),#D5EDDE);
+  display:flex;align-items:center;justify-content:center;
+}
+.service-card .card-ico svg{width:30px;height:30px}
+.service-card h3{font-size:1.45rem;letter-spacing:-.02em;margin-bottom:.4rem}
+.service-card .price{display:flex;align-items:baseline;gap:.6rem;margin:.6rem 0 1.1rem}
+.service-card .price strong{font-size:clamp(2rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.03em;color:var(--green-dark)}
+.service-card .price span{color:var(--muted);font-size:.92rem;font-weight:550}
+.service-card>p{color:var(--muted);margin-bottom:1.2rem}
+.checklist{display:grid;gap:.65rem;margin-bottom:1.8rem}
+.checklist li{display:flex;gap:.65rem;align-items:flex-start;font-size:.99rem}
+.checklist svg{width:20px;height:20px;color:var(--green);flex:none;margin-top:.15rem}
+.service-card .btn{margin-top:auto;align-self:flex-start}
+.ribbon{
+  position:absolute;top:1.4rem;right:1.4rem;
+  background:linear-gradient(120deg,var(--green),#3FAE68);color:#fff;
+  font-size:.75rem;font-weight:750;letter-spacing:.05em;text-transform:uppercase;
+  padding:.34rem .8rem;border-radius:999px;box-shadow:0 4px 12px rgba(14,131,69,.35);
+}
+
+/* ============ Nij Begun / dashboard-mockup ============ */
+.nb-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4.5rem);align-items:center}
+@media (max-width:940px){.nb-grid{grid-template-columns:1fr}}
+.nb-stats{display:flex;flex-wrap:wrap;gap:2rem;margin-top:1.9rem}
+.nb-stats div strong{display:block;font-size:1.7rem;font-weight:800;letter-spacing:-.02em;color:var(--green-dark)}
+.nb-stats div span{color:var(--muted);font-size:.9rem}
+.dash-card{
+  width:min(460px,100%);margin-inline:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);padding:1.6rem;
+}
+.dash-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;margin-bottom:1.2rem}
+.dash-head h3{font-size:1.02rem;display:flex;align-items:center;gap:.55rem}
+.dash-head h3 svg{width:22px;height:22px;color:var(--green)}
+.measures{display:grid;gap:.55rem;margin-bottom:1.25rem}
+.measure{
+  display:flex;align-items:center;gap:.8rem;
+  background:var(--mint-soft);border:1px solid var(--line);border-radius:14px;
+  padding:.7rem .85rem;transition:background .35s,border-color .35s;
+}
+.measure.ticked{background:var(--mint);border-color:#BFE0CC}
+.m-ico{
+  width:36px;height:36px;flex:none;border-radius:10px;background:#fff;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+}
+.m-ico svg{width:20px;height:20px}
+.measure div{flex:1;min-width:0}
+.measure strong{display:block;font-size:.92rem;letter-spacing:-.01em;line-height:1.3}
+.measure small{color:var(--muted);font-size:.78rem}
+.m-check{
+  width:26px;height:26px;flex:none;border-radius:50%;
+  border:2px solid #C9DCD0;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .35s,border-color .35s,transform .35s;
+}
+.m-check svg{width:14px;height:14px;color:#fff;opacity:0;transition:opacity .3s}
+.measure.ticked .m-check{background:var(--green);border-color:var(--green);transform:scale(1.08)}
+.measure.ticked .m-check svg{opacity:1}
+.subsidy{
+  background:linear-gradient(120deg,var(--green-deep),var(--green));
+  border-radius:18px;padding:1.1rem 1.25rem;color:#fff;
+}
+.subsidy .subsidy-row{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:.6rem}
+.subsidy .subsidy-row span{font-size:.85rem;opacity:.92}
+.subsidy .subsidy-row strong{font-size:clamp(1.5rem,3vw,1.85rem);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.subsidy-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}
+.subsidy-bar i{display:block;height:100%;width:100%;background:#fff;border-radius:99px;transition:width .4s ease}
+.subsidy p{font-size:.76rem;opacity:.85;margin-top:.55rem}
+
+/* ============ Stappenplan ============ */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4rem;counter-reset:step}
+@media (max-width:1020px){.steps{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.steps{grid-template-columns:1fr}}
+.step-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.7rem 1.5rem;box-shadow:var(--shadow-sm);position:relative;
+  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;
+}
+.step-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-md)}
+.step-num{
+  width:44px;height:44px;border-radius:14px;margin-bottom:1.1rem;
+  background:linear-gradient(135deg,var(--green),#3FAE68);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:1.15rem;box-shadow:0 6px 14px rgba(14,131,69,.3);
+}
+.step-card h3{font-size:1.08rem;letter-spacing:-.01em;margin-bottom:.5rem;line-height:1.35}
+.step-card p{color:var(--muted);font-size:.93rem}
+.step-card a{font-weight:650}
+.steps-cta{margin-top:2.4rem;text-align:center}
+.steps-cta .hint{color:var(--muted);font-size:.95rem;margin-top:1rem}
+.steps-cta .hint a{font-weight:650}
+
+/* ============ Kwaliteit ============ */
+.quality{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4rem}
+@media (max-width:1020px){.quality{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.quality{grid-template-columns:1fr}}
+.quality-tile{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.7rem 1.5rem;box-shadow:var(--shadow-sm);
+  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;
+}
+.quality-tile:hover{transform:translateY(-5px);box-shadow:var(--shadow-md)}
+.quality-tile .card-ico{
+  width:50px;height:50px;border-radius:14px;margin-bottom:1.05rem;
+  background:linear-gradient(135deg,var(--mint),#D5EDDE);
+  display:flex;align-items:center;justify-content:center;
+}
+.quality-tile .card-ico svg{width:26px;height:26px}
+.quality-tile h3{font-size:1.05rem;margin-bottom:.4rem;letter-spacing:-.01em}
+.quality-tile p{color:var(--muted);font-size:.92rem}
+
+/* ============ FAQ ============ */
+.faq{max-width:760px;margin-inline:auto;display:grid;gap:.9rem}
+.faq details{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);overflow:hidden;transition:box-shadow .3s;
+}
+.faq details[open]{box-shadow:var(--shadow-md)}
+.faq summary{
+  cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1.25rem 1.5rem;font-weight:650;font-size:1.05rem;letter-spacing:-.01em;
+  min-height:56px;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .pl{
+  flex:none;width:28px;height:28px;border-radius:50%;
+  background:var(--mint);color:var(--green-deep);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .3s,background .3s,color .3s;
+}
+.faq summary .pl svg{width:14px;height:14px}
+.faq details[open] summary .pl{transform:rotate(45deg);background:var(--green);color:#fff}
+.faq .faq-body{padding:0 1.5rem 1.35rem;color:var(--muted)}
+.faq .faq-body a{font-weight:600}
+
+/* ============ Contact-CTA ============ */
+.cta-panel{
+  position:relative;overflow:hidden;
+  background:linear-gradient(130deg,var(--ink) 0%,var(--green-deep) 55%,var(--green) 115%);
+  border-radius:var(--radius-lg);color:#fff;
+  padding:clamp(2.6rem,6vw,4.5rem) clamp(1.5rem,5vw,4rem);
+  text-align:center;box-shadow:var(--shadow-lg);
+}
+.cta-panel::before{
+  content:"";position:absolute;width:480px;height:480px;border-radius:50%;
+  right:-160px;top:-220px;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 65%);
+  pointer-events:none;
+}
+.cta-panel h2{color:#fff;margin-bottom:.8rem}
+.cta-panel p{color:rgba(255,255,255,.85);max-width:36em;margin:0 auto 2rem;font-size:1.08rem}
+.cta-panel .hero-cta{justify-content:center;margin-bottom:1.4rem}
+.cta-panel .mail{color:#fff;font-weight:650;font-size:1.02rem;text-decoration:none;border-bottom:1.5px solid rgba(255,255,255,.4)}
+.cta-panel .mail:hover{border-color:#fff}
+
+/* ============ Footer ============ */
+.site-footer{background:var(--ink);color:#B9C9BF;margin-top:clamp(3.5rem,7vw,6rem);padding:3.5rem 0 2rem}
+.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:2.2rem;margin-bottom:2.6rem}
+@media (max-width:860px){.footer-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.footer-grid{grid-template-columns:1fr}}
+.site-footer .brand{color:#fff;margin-bottom:.9rem}
+.site-footer .footer-tag{font-size:.93rem;max-width:26em}
+.site-footer h4{color:#fff;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.9rem}
+.site-footer ul{display:grid;gap:.5rem;font-size:.95rem}
+.site-footer a{color:#B9C9BF;text-decoration:none;transition:color .2s}
+.site-footer a:hover{color:#fff}
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,.12);padding-top:1.6rem;
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:.8rem;font-size:.85rem;color:#8AA192;
+}
+
+/* ============ Scroll-reveal ============ */
+[data-reveal]{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .8s cubic-bezier(.16,1,.3,1);transition-delay:var(--d,0s)}
+[data-reveal].revealed{opacity:1;transform:none}
+html.no-js [data-reveal]{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  [data-reveal]{opacity:1;transform:none}
+  .float-chip{animation:none}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Direct naar de inhoud</a>
+
+<!-- ================= NAVIGATIE ================= -->
+<header class="site-header" id="siteHeader">
+  <div class="container">
+    <nav class="nav" id="mainNav" aria-label="Hoofdnavigatie">
+      <a class="brand" href="#top" aria-label="Poortinga Energieadvies — naar boven">
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect width="64" height="64" rx="14" fill="#0E8345"/>
+          <path d="M32 14 12 32h6v16h12V38h4v10h12V32h6L32 14z" fill="#fff"/>
+        </svg>
+        <span>Poortinga <b>Energieadvies</b></span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks" aria-label="Menu openen of sluiten">
+        <svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="nav-links" id="navLinks">
+        <a href="#diensten">Diensten</a>
+        <a href="#nijbegun">Nij Begun</a>
+        <a href="#aanmelden">Aanmelden</a>
+        <a href="#kwaliteit">Kwaliteit</a>
+        <a href="#faq">Veelgestelde vragen</a>
+        <a class="btn btn-primary" href="mailto:info@poortinga-energieadvies.nl?subject=Afspraak%20maken%20%E2%80%94%20energieadvies">Afspraak maken</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<!-- ================= HERO ================= -->
+<section class="hero" id="top" aria-label="Introductie">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 4.9 5.6.8-4 3.9.9 5.4L12 14.5 7.1 17l.9-5.4-4-3.9 5.6-.8L12 2z"/></svg>
+        Gecertificeerd energieadviseur &middot; Groningen, Drenthe &amp; Friesland
+      </p>
+      <h1>Officieel energielabel <span class="accent">voor uw woning</span></h1>
+      <p class="hero-sub">SKG-IKOB-gecertificeerd energieadvies volgens BRL&nbsp;9500-W en NTA&nbsp;8800. Persoonlijk, betrouwbaar en snel — vaak al binnen 48&nbsp;uur uw geregistreerde energielabel.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="mailto:info@poortinga-energieadvies.nl?subject=Aanvraag%20energielabel">
+          Vraag uw energielabel aan
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-secondary" href="#nijbegun">Gratis isolatieplan via Nij Begun</a>
+      </div>
+      <ul class="trust-row" aria-label="Kernpunten">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Geregistreerd bij EP-Online</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>10 jaar geldig</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Vaste prijs &euro;&nbsp;375 incl. btw</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual" data-reveal style="--d:.15s">
+      <div class="float-chip float-chip--tl" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V7l7-4z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg>
+        SKG-IKOB gecertificeerd
+      </div>
+      <div class="label-card" role="img" aria-label="Voorbeeld: een woning verbetert van energielabel G naar energielabel A">
+        <div class="label-card-top">
+          <div class="house-ico" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M8 22L24 8l16 14" stroke="#0E8345" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 21v17h24V21" stroke="#0B1F16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 38v-9h6v9" stroke="#0E8345" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M33 12V9h4v6" stroke="#0B1F16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Uw woning</h3>
+            <p>Groningen &middot; opname op locatie</p>
+            <span class="chip">EP-Online geregistreerd</span>
+          </div>
+        </div>
+        <div class="label-stage">
+          <div class="label-badge" id="labelBadge">A</div>
+          <div class="label-stage-txt">
+            <strong>Energielabel <span id="labelLetter">A</span></strong>
+            <span>Van label G naar A met de juiste maatregelen</span>
+          </div>
+        </div>
+        <div class="label-bar-wrap">
+          <div class="label-marker" id="labelMarker" aria-hidden="true">A</div>
+          <div class="label-bar" id="labelBar" aria-hidden="true">
+            <span class="active">A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span>
+          </div>
+        </div>
+        <div class="label-card-foot">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Binnen 48 uur mogelijk</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>NTA 8800-methodiek</span>
+        </div>
+      </div>
+      <div class="float-chip float-chip--br" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17c-2 0-4-1.7-4-4 0-2 1.4-3.6 3.2-3.9C6.7 6.7 9 5 11.6 5c3 0 5.5 2.2 5.9 5.1C19.4 10.4 21 12 21 14c0 1.8-1.5 3-3.3 3H7z"/></svg>
+        Tot &euro; 40.000 subsidie
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DIENSTEN ================= -->
+<section class="section" id="diensten" aria-label="Onze diensten">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Onze diensten</span>
+      <h2>Twee manieren om uw woning vooruit te helpen</h2>
+      <p>Een officieel energielabel voor verkoop of verhuur, of een volledig vergoed isolatieplan via de Nij Begun-regeling. Beide met dezelfde zorgvuldige opname op locatie.</p>
+    </div>
+    <div class="services">
+      <article class="service-card" data-reveal>
+        <div class="card-ico" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="8" y="6" width="32" height="36" rx="4" stroke="#0B1F16" stroke-width="3"/>
+            <path d="M15 15h12M15 22h18M15 29h18" stroke="#0E8345" stroke-width="3" stroke-linecap="round"/>
+            <path d="M31 13l3 3 5-6" stroke="#0E8345" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3>Energielabel voor uw woning</h3>
+        <p>Het officiële energielabel dat u nodig heeft bij verkoop of verhuur — opgenomen, berekend en geregistreerd door een gecertificeerd adviseur.</p>
+        <div class="price"><strong>&euro; 375</strong><span>incl. btw &middot; vaste prijs, geen verrassingen</span></div>
+        <ul class="checklist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Officieel geregistreerd bij EP-Online</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>10 jaar geldig</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Opname bij u op locatie</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Snel geleverd — binnen 48 uur mogelijk</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Verplicht bij verkoop en verhuur</li>
+        </ul>
+        <a class="btn btn-primary" href="mailto:info@poortinga-energieadvies.nl?subject=Aanvraag%20energielabel">Plan uw opname</a>
+      </article>
+
+      <article class="service-card" data-reveal style="--d:.12s">
+        <span class="ribbon">100% vergoed</span>
+        <div class="card-ico" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <path d="M8 24L24 10l16 14" stroke="#0B1F16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 23v15h24V23" stroke="#0B1F16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17 31c2.5-4 8-5.5 13-4-1 5-5.5 8.5-10.5 7.5" stroke="#0E8345" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3>Nij Begun isolatieplan</h3>
+        <p>Een persoonlijk isolatieplan voor woningen in Groningen en Noord-Drenthe, met ruime subsidie voor de uitvoering van de maatregelen.</p>
+        <div class="price"><strong>Gratis</strong><span>voor de bewoner &middot; Nij Begun-regeling</span></div>
+        <ul class="checklist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Tot &euro; 40.000 subsidie voor isolatiemaatregelen</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>100% vergoed in het aardbevingsgebied</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>50% vergoed, tot &euro; 20.000, in het overige gebied</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Voor woningen in Groningen &amp; Noord-Drenthe</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Volledige woningopname, van kruipruimte tot zolder</li>
+        </ul>
+        <a class="btn btn-secondary" href="#aanmelden">Zo meldt u zich aan</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NIJ BEGUN + DASHBOARD-MOCKUP ================= -->
+<section class="section section-alt" id="nijbegun" aria-label="Nij Begun isolatieplan">
+  <div class="container nb-grid">
+    <div data-reveal>
+      <span class="kicker">Nij Begun</span>
+      <h2>Gratis isolatieplan, tot &euro;&nbsp;40.000 subsidie</h2>
+      <p style="color:var(--muted);font-size:1.08rem;margin-bottom:1.1rem">Woont u in Groningen of Noord-Drenthe? Dan heeft u via de Nij Begun-regeling recht op een gratis isolatieplan, opgesteld door een gecertificeerd energieadviseur. In het plan staat precies welke isolatiemaatregelen bij uw woning passen — en de uitvoering wordt ruimhartig gesubsidieerd.</p>
+      <p style="color:var(--muted);font-size:1.08rem">Wij verzorgen de complete woningopname, stellen het plan op volgens de officiële eisen en begeleiden u naar de subsidie. U hoeft alleen de deur open te doen.</p>
+      <div class="nb-stats" aria-label="Kerncijfers Nij Begun">
+        <div><strong>&euro; 40.000</strong><span>maximale subsidie</span></div>
+        <div><strong>100%</strong><span>vergoed in het aardbevingsgebied</span></div>
+        <div><strong>&euro; 0</strong><span>kosten voor het isolatieplan</span></div>
+      </div>
+    </div>
+
+    <div data-reveal style="--d:.15s">
+      <div class="dash-card" role="img" aria-label="Voorbeeld van een isolatieplan: vijf maatregelen worden afgevinkt en de subsidieteller loopt op tot 40.000 euro">
+        <div class="dash-head">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+            Uw isolatieplan
+          </h3>
+          <span class="chip">Nij Begun</span>
+        </div>
+        <ul class="measures" id="measureList">
+          <li class="measure ticked">
+            <span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 12h16M12 5v14"/></svg></span>
+            <div><strong>Spouwmuurisolatie</strong><small>Buitengevels &middot; inblazen</small></div>
+            <span class="m-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          </li>
+          <li class="measure ticked">
+            <span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l9-9 9 9"/><path d="M5 12v7h14v-7"/></svg></span>
+            <div><strong>Dakisolatie</strong><small>Hellend dak &middot; binnenzijde</small></div>
+            <span class="m-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          </li>
+          <li class="measure ticked">
+            <span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16h18M3 20h18"/><path d="M6 16V9l6-4 6 4v7"/></svg></span>
+            <div><strong>Vloer- en bodemisolatie</strong><small>Begane grond &middot; kruipruimte</small></div>
+            <span class="m-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          </li>
+          <li class="measure ticked">
+            <span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M12 3v18M5 12h14"/></svg></span>
+            <div><strong>HR++-glas</strong><small>Woonkamer &amp; slaapkamers</small></div>
+            <span class="m-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          </li>
+          <li class="measure ticked">
+            <span class="m-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c3-1 5-3.5 5-7-3.5 0-6 2-7 5M12 12c-3-1-5-3.5-5-7 3.5 0 6 2 7 5M12 12v9"/></svg></span>
+            <div><strong>Ventilatie na isoleren</strong><small>Gezond binnenklimaat</small></div>
+            <span class="m-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          </li>
+        </ul>
+        <div class="subsidy">
+          <div class="subsidy-row">
+            <span>Beschikbare subsidie</span>
+            <strong id="subsidyCounter">&euro; 40.000</strong>
+          </div>
+          <div class="subsidy-bar" aria-hidden="true"><i id="subsidyBar"></i></div>
+          <p>Maximale subsidie in het aardbevingsgebied &middot; voorbeeldweergave</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STAPPENPLAN AANMELDEN ================= -->
+<section class="section" id="aanmelden" aria-label="Aanmelden voor Nij Begun">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Stappenplan</span>
+      <h2>Zo meldt u zich aan voor Nij Begun</h2>
+      <p>Aanmelden verloopt via het officiële portaal van Nij Begun. Daarna nemen wij het van u over — in vier eenvoudige stappen naar uw isolatieplan.</p>
+    </div>
+    <ol class="steps">
+      <li class="step-card" data-reveal>
+        <div class="step-num" aria-hidden="true">1</div>
+        <h3>Check uw postcode &amp; meld u aan</h3>
+        <p>Ga naar het officiële portaal <a href="https://isolatie.nijbegun.nl/" target="_blank" rel="noopener">isolatie.nijbegun.nl</a> en meld uw woning aan. Postcodegebieden worden gefaseerd vrijgegeven — elke maand komen er nieuwe bij, tot en met augustus 2026.</p>
+      </li>
+      <li class="step-card" data-reveal style="--d:.1s">
+        <div class="step-num" aria-hidden="true">2</div>
+        <h3>Kies Poortinga Energieadvies</h3>
+        <p>Kies bij uw aanmelding <strong>Poortinga Energieadvies</strong> als uw adviseur — of wij worden aan u toegekend.</p>
+      </li>
+      <li class="step-card" data-reveal style="--d:.2s">
+        <div class="step-num" aria-hidden="true">3</div>
+        <h3>Wij plannen de woningopname</h3>
+        <p>Wij nemen contact met u op voor een afspraak. De opname duurt ongeveer 1,5 &agrave; 2 uur — we bekijken de hele woning, van kruipruimte tot zolder.</p>
+      </li>
+      <li class="step-card" data-reveal style="--d:.3s">
+        <div class="step-num" aria-hidden="true">4</div>
+        <h3>Uw isolatieplan &amp; subsidie</h3>
+        <p>U ontvangt uw persoonlijke isolatieplan en kunt met subsidie aan de slag: uw woning isoleren, comfortabeler wonen en besparen op energie.</p>
+      </li>
+    </ol>
+    <div class="steps-cta" data-reveal>
+      <a class="btn btn-primary" href="https://isolatie.nijbegun.nl/" target="_blank" rel="noopener">
+        Aanmelden op isolatie.nijbegun.nl
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+      </a>
+      <p class="hint">Hulp nodig bij het aanmelden? <a href="mailto:info@poortinga-energieadvies.nl?subject=Hulp%20bij%20aanmelden%20Nij%20Begun">Mail ons gerust</a> — we denken graag met u mee.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= KWALITEIT ================= -->
+<section class="section section-alt" id="kwaliteit" aria-label="Kwaliteit en certificeringen">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Kwaliteit</span>
+      <h2>Kwaliteit waarop u kunt bouwen</h2>
+      <p>Uw energielabel en isolatieplan worden opgesteld volgens de officiële, wettelijk erkende methodiek — onafhankelijk getoetst en gecertificeerd.</p>
+    </div>
+    <div class="quality">
+      <div class="quality-tile" data-reveal>
+        <div class="card-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V7l7-4z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg>
+        </div>
+        <h3>SKG-IKOB-gecertificeerd</h3>
+        <p>Onafhankelijk getoetst vakmanschap: ons werk wordt periodiek gecontroleerd door certificerende instelling SKG-IKOB.</p>
+      </div>
+      <div class="quality-tile" data-reveal style="--d:.1s">
+        <div class="card-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M12 7v2.5l1.5 1"/><path d="M8.5 14L7 21l5-2.5L17 21l-1.5-7"/></svg>
+        </div>
+        <h3>BRL 9500-W</h3>
+        <p>Gecertificeerd proces voor het bepalen van de energieprestatie van woningen — de wettelijke basis voor uw energielabel.</p>
+      </div>
+      <div class="quality-tile" data-reveal style="--d:.2s">
+        <div class="card-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/><path d="M2 20h2M20 20h2"/></svg>
+        </div>
+        <h3>ISSO 82.1 &amp; NTA 8800</h3>
+        <p>Woningopname en berekening volgens de officiële opnamemethodiek en de landelijke rekennorm voor energieprestatie.</p>
+      </div>
+      <div class="quality-tile" data-reveal style="--d:.3s">
+        <div class="card-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0E8345" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9.5 15.5l1.8 1.8 3.4-3.6"/></svg>
+        </div>
+        <h3>10 jaar geldig</h3>
+        <p>Uw energielabel wordt geregistreerd bij EP-Online en is vanaf dat moment tien jaar geldig.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" id="faq" aria-label="Veelgestelde vragen">
+  <div class="container">
+    <div class="section-head center" data-reveal>
+      <span class="kicker">Veelgestelde vragen</span>
+      <h2>Antwoord op uw vragen</h2>
+    </div>
+    <div class="faq" data-reveal>
+      <details>
+        <summary>Wat kost een energielabel?<span class="pl" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="faq-body"><p>Een officieel energielabel voor uw woning kost bij ons <strong>&euro;&nbsp;375 incl. btw</strong>. Dat is een vaste prijs, inclusief de opname op locatie, de berekening volgens NTA&nbsp;8800 en de registratie bij EP-Online.</p></div>
+      </details>
+      <details>
+        <summary>Hoe snel heb ik mijn energielabel?<span class="pl" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="faq-body"><p>Snel: na de opname op locatie is uw label vaak <strong>binnen 48 uur</strong> berekend en geregistreerd bij EP-Online. Handig als u op korte termijn wilt verkopen of verhuren.</p></div>
+      </details>
+      <details>
+        <summary>Wat is Nij Begun precies?<span class="pl" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="faq-body"><p>Nij Begun is de regeling waarmee woningen in Groningen en Noord-Drenthe verduurzaamd worden. U krijgt een <strong>gratis isolatieplan</strong> van een gecertificeerd adviseur en <strong>tot &euro;&nbsp;40.000 subsidie</strong> voor de uitvoering: 100% vergoed in het aardbevingsgebied, en 50% tot &euro;&nbsp;20.000 in het overige gebied. Aanmelden kan via <a href="https://isolatie.nijbegun.nl/" target="_blank" rel="noopener">isolatie.nijbegun.nl</a>.</p></div>
+      </details>
+      <details>
+        <summary>Kom ik in aanmerking voor Nij Begun?<span class="pl" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="faq-body"><p>De regeling geldt voor woningen in <strong>Groningen en Noord-Drenthe</strong> met bouwjaar vanaf 1945*. De postcodegebieden worden gefaseerd opengesteld: elke maand komen er nieuwe bij, tot en met augustus 2026. Check uw postcode op <a href="https://isolatie.nijbegun.nl/" target="_blank" rel="noopener">isolatie.nijbegun.nl</a>.<br><small>* De exacte voorwaarden vindt u op het officiële portaal.</small></p></div>
+      </details>
+      <details>
+        <summary>Hoe lang duurt de woningopname?<span class="pl" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="faq-body"><p>Reken op ongeveer <strong>1,5 &agrave; 2 uur</strong>. We nemen de hele woning op — van kruipruimte tot zolder — en meten alle relevante onderdelen: gevels, dak, vloer, beglazing, installaties en ventilatie. Zo klopt uw label of isolatieplan tot in detail.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT-CTA ================= -->
+<section class="section" id="contact" aria-label="Afspraak maken">
+  <div class="container">
+    <div class="cta-panel" data-reveal>
+      <h2>Klaar voor een energiezuinige woning?</h2>
+      <p>Mail ons voor een energielabel of vraag naar de mogelijkheden van Nij Begun. U krijgt snel en persoonlijk antwoord — meestal dezelfde werkdag.</p>
+      <div class="hero-cta">
+        <a class="btn btn-light" href="mailto:info@poortinga-energieadvies.nl?subject=Afspraak%20maken%20%E2%80%94%20energieadvies">
+          Maak een afspraak
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-outline-light" href="mailto:info@poortinga-energieadvies.nl?subject=Aanvraag%20energielabel">Vraag uw energielabel aan</a>
+      </div>
+      <a class="mail" href="mailto:info@poortinga-energieadvies.nl">info@poortinga-energieadvies.nl</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="#top" aria-label="Poortinga Energieadvies — naar boven">
+          <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+            <rect width="64" height="64" rx="14" fill="#0E8345"/>
+            <path d="M32 14 12 32h6v16h12V38h4v10h12V32h6L32 14z" fill="#fff"/>
+          </svg>
+          <span>Poortinga <b>Energieadvies</b></span>
+        </a>
+        <p class="footer-tag">Gecertificeerd energieadviseur voor energielabels en Nij Begun-isolatieplannen. Persoonlijk, betrouwbaar en snel.</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:info@poortinga-energieadvies.nl">info@poortinga-energieadvies.nl</a></li>
+          <li><a href="mailto:info@poortinga-energieadvies.nl?subject=Afspraak%20maken%20%E2%80%94%20energieadvies">Afspraak maken</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Werkgebied</h4>
+        <ul>
+          <li>Groningen</li>
+          <li>Drenthe</li>
+          <li>Friesland</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Certificeringen</h4>
+        <ul>
+          <li>SKG-IKOB-gecertificeerd</li>
+          <li>BRL 9500-W</li>
+          <li>NTA 8800 &middot; ISSO 82.1</li>
+          <li><a href="https://isolatie.nijbegun.nl/" target="_blank" rel="noopener">Nij Begun-portaal</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Poortinga Energieadvies. Alle rechten voorbehouden.</span>
+      <span>Energielabels geregistreerd bij EP-Online &middot; 10 jaar geldig</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  document.documentElement.classList.remove('no-js');
+
+  var prefersReduced = false;
+  try {
+    prefersReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { /* negeer */ }
+
+  /* ---------- Navigatie: mobiel menu + scroll-schaduw ---------- */
+  try {
+    var nav = document.getElementById('mainNav');
+    var toggle = document.getElementById('navToggle');
+    var links = document.getElementById('navLinks');
+    if (nav && toggle && links) {
+      toggle.addEventListener('click', function () {
+        var open = nav.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      links.addEventListener('click', function (ev) {
+        var t = ev.target;
+        while (t && t !== links && t.tagName !== 'A') { t = t.parentNode; }
+        if (t && t.tagName === 'A') {
+          nav.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () {
+        if ((window.pageYOffset || 0) > 8) { header.classList.add('scrolled'); }
+        else { header.classList.remove('scrolled'); }
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+  } catch (e) { /* negeer */ }
+
+  /* ---------- Scroll-reveal ---------- */
+  try {
+    var revealEls = document.querySelectorAll('[data-reveal]');
+    if (revealEls.length) {
+      if (!prefersReduced && 'IntersectionObserver' in window) {
+        var ro = new IntersectionObserver(function (entries) {
+          for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) {
+              entries[i].target.classList.add('revealed');
+              ro.unobserve(entries[i].target);
+            }
+          }
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        for (var r = 0; r < revealEls.length; r++) { ro.observe(revealEls[r]); }
+      } else {
+        for (var j = 0; j < revealEls.length; j++) { revealEls[j].classList.add('revealed'); }
+      }
+    }
+  } catch (e) {
+    try {
+      var all = document.querySelectorAll('[data-reveal]');
+      for (var k = 0; k < all.length; k++) { all[k].classList.add('revealed'); }
+    } catch (e2) { /* negeer */ }
+  }
+
+  /* ---------- Hero-mockup: energielabel G -> A ---------- */
+  try {
+    var badge = document.getElementById('labelBadge');
+    var letterEl = document.getElementById('labelLetter');
+    var marker = document.getElementById('labelMarker');
+    var bar = document.getElementById('labelBar');
+    if (badge && marker && bar && !prefersReduced) {
+      var LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+      var COLORS = ['#00963F', '#52AE32', '#A5C712', '#F2D30B', '#F5A623', '#EB6909', '#E2001A'];
+      var segs = bar.children;
+      var setLabel = function (idx) {
+        badge.textContent = LETTERS[idx];
+        badge.style.background = COLORS[idx];
+        marker.textContent = LETTERS[idx];
+        marker.style.background = COLORS[idx];
+        marker.style.left = (((idx + 0.5) / 7) * 100) + '%';
+        if (letterEl) { letterEl.textContent = LETTERS[idx]; }
+        for (var s = 0; s < segs.length; s++) {
+          if (s === idx) { segs[s].classList.add('active'); }
+          else { segs[s].classList.remove('active'); }
+        }
+      };
+      var idx = 6;
+      setLabel(idx);
+      var stepLabel = function () {
+        if (idx > 0) {
+          idx -= 1;
+          setLabel(idx);
+          window.setTimeout(stepLabel, idx === 0 ? 3200 : 900);
+        } else {
+          idx = 6;
+          setLabel(idx);
+          window.setTimeout(stepLabel, 1400);
+        }
+      };
+      window.setTimeout(stepLabel, 1600);
+    }
+  } catch (e) { /* statische weergave (label A) blijft staan */ }
+
+  /* ---------- Dashboard-mockup: checklist + subsidieteller ---------- */
+  try {
+    var list = document.getElementById('measureList');
+    var counter = document.getElementById('subsidyCounter');
+    var barFill = document.getElementById('subsidyBar');
+    var TARGET = 40000;
+
+    var fmt = function (n) {
+      var v = Math.round(n);
+      try { return '€ ' + v.toLocaleString('nl-NL'); }
+      catch (e) { return '€ ' + String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    };
+
+    if (list && counter && barFill && !prefersReduced && 'IntersectionObserver' in window &&
+        typeof window.requestAnimationFrame === 'function') {
+      var items = list.querySelectorAll('.measure');
+      var visible = false;
+      var running = false;
+      var timers = [];
+
+      var clearTimers = function () {
+        for (var t = 0; t < timers.length; t++) { window.clearTimeout(timers[t]); }
+        timers = [];
+      };
+
+      var resetDash = function () {
+        for (var i = 0; i < items.length; i++) { items[i].classList.remove('ticked'); }
+        counter.textContent = fmt(0);
+        barFill.style.width = '0%';
+      };
+
+      var animateCounter = function (duration, done) {
+        var start = null;
+        var frame = function (ts) {
+          if (start === null) { start = ts; }
+          var p = Math.min((ts - start) / duration, 1);
+          var eased = p * p * (3 - 2 * p); /* smoothstep: loopt gelijk op met de vinkjes */
+          counter.textContent = fmt(TARGET * eased);
+          barFill.style.width = (eased * 100) + '%';
+          if (p < 1) { window.requestAnimationFrame(frame); }
+          else if (typeof done === 'function') { done(); }
+        };
+        window.requestAnimationFrame(frame);
+      };
+
+      var runCycle = function () {
+        if (!visible || running) { return; }
+        running = true;
+        clearTimers();
+        resetDash();
+        var tickDelay = 620;
+        for (var i = 0; i < items.length; i++) {
+          (function (el, d) {
+            timers.push(window.setTimeout(function () { el.classList.add('ticked'); }, d));
+          })(items[i], 500 + i * tickDelay);
+        }
+        var total = 500 + items.length * tickDelay + 500;
+        animateCounter(total, function () {
+          timers.push(window.setTimeout(function () {
+            running = false;
+            if (visible) { runCycle(); }
+          }, 3400));
+        });
+      };
+
+      var dashObserver = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          visible = entries[i].isIntersecting;
+          if (visible) { runCycle(); }
+        }
+      }, { threshold: 0.35 });
+      dashObserver.observe(list);
+    } else if (counter && barFill) {
+      /* Fallback: statische eindtoestand */
+      counter.textContent = fmt(TARGET);
+      barFill.style.width = '100%';
+    }
+  } catch (e) { /* statische weergave blijft staan */ }
+})();
+</script>
+</body>
+</html>
