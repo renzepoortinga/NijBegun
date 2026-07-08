@@ -355,6 +355,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             # ECHTE EXPORT (Essenhage 8-7): kolom 0 = KAMERnaam, kolom 1 = WANDnaam ('Wall 0' of door
             # de adviseur hernoemd naar 'Voorgevel' etc.). Tokens zoeken we in wand- én kamernaam.
             _wnaam = "%s %s" % ((r[1] or "") if len(r) > 1 else "", r[0] or "")
+            # TIKBAAR 'Gevelnaam'-veld (8-7, geen typen meer): kolomwaarde bij de naam voegen zodat
+            # de bestaande token-logica (voor/achter/links/rechts + Buurwand AVR) 'm oppakt.
+            _ign = next((i for i, h in enumerate(_kop) if "gevelnaam" in (h or "").lower()), None)
+            if _ign is not None and len(r) > _ign and (r[_ign] or "").strip():
+                _wnaam += " " + _undot(r[_ign])
             cur_gevel_naam = _gevel_naam_uit_naam(_wnaam)
             # oriëntatie: de override-KOLOM op naam zoeken (positie schuift per export); anders
             # kompastoken in de naam; anders afleiden uit gevelnaam + voorgevel-oriëntatie.

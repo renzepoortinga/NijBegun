@@ -1280,5 +1280,37 @@ try:
 except Exception as _e:
     check("veldgidsen: draait zonder fout", False); print("     " + repr(_e)[:180])
 
+print()
+print("52. Tikbaar Gevelnaam-veld (echte export-indeling: kamer,wand,...,Type@8 + Gevelnaam-kolom)")
+try:
+    import tempfile as _tf52, csv as _csv52, os as _os52
+    _rows52 = [
+        ["PLAN ATTRIBUTES"], ["Total living area: m2", "87"], ["", "Nij Begun"],
+        ["Oriëntatie voorgevel", "NW"], ["Woningtype", "Tussenwoning"],
+        [],
+        ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m2", "Surface without openings: m2",
+         "Width: m", "Height: m", "Annotation", "Type", "Type glas", "Raam = Ja | Paneel = Nee",
+         "Gevelnaam (leeg = binnenwand)"],
+        ["Living Room", "Wall 1", "Wall", "12.0", "8.0", "5.0", "2.6", "", "Wall", "", "", "Achtergevel"],
+        ["Living Room", "Wall 1", "Fixed Window", "2.0", "", "1.3", "1.5", "", "Window", "Dubbel", "Ja.raam", ""],
+        ["Living Room", "Wall 0", "Wall", "10.0", "10.0", "4.0", "2.6", "", "Wall", "", "", "Buurwand.AVR"],
+        ["Hall", "Wall 6", "Wall", "9.0", "7.0", "3.5", "2.6", "", "Wall", "", "", "Voorgevel"],
+        ["Hall", "Wall 2", "Wall", "6.0", "6.0", "2.3", "2.6", "", "Wall", "", "", ""],
+    ]
+    with _tf52.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _fh52:
+        _csv52.writer(_fh52).writerows(_rows52)
+        _pad52 = _fh52.name
+    _d52, _n52 = _csvdos(_pad52)
+    _gv = {s2.id: s2.orientatie for s2 in _d52.schil if s2.type == "gevel"}
+    check("tik: Achtergevel -> gevel ZO (afgeleid van voorgevel NW)", _gv.get("gevel-achter") == "ZO")
+    check("tik: Voorgevel -> gevel NW", _gv.get("gevel-voor") == "NW")
+    check("tik: Buurwand (AVR) -> NIET in de schil", not any("avr" in (s2.begrenzing or "").lower() for s2 in _d52.schil))
+    check("tik: naamloze wand blijft binnenwand", len(_gv) == 2)
+    check("tik: raam in getikte gevel blijft behouden (erft ZO)",
+          any(s2.type == "kozijn" and s2.orientatie == "ZO" for s2 in _d52.schil))
+    _os52.unlink(_pad52)
+except Exception as _e:
+    check("gevelnaam-tik: draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

@@ -105,3 +105,13 @@ bouwjaarklasse wordt geflagd in opmerkingen (tool rekent forfaitair op projectbo
 afwijking in Vabi). LET OP default-values: lijstvelden starten leeg in de app; 'default' = optie bovenaan.
 Een échte voorgeselecteerde waarde (bv. raam-toggle op 'Ja (raam)') kan alleen via de editor-UI ("Add a
 default value") — JSON-sleutel nog onbekend; 1x handmatig zetten en dan de JSON harvesten.
+
+## 9-7-2026 (nacht) — TIKBAAR Gevelnaam-veld + kalibratie op echte Essenhage-export (LIVE)
+NIEUW veld bovenaan "Gevel per wand": **"Gevelnaam (leeg = binnenwand)"** — lijst Voorgevel/Achtergevel/
+Linkergevel/Rechtergevel/Buurwand (AVR). GEEN wandnamen meer typen: tik de keuze, de tool leidt de
+oriëntatie af uit 'Oriëntatie voorgevel' en filtert Buurwand (AVR) uit de schil. Parser plakt de
+kolomwaarde bij de wandnaam zodat alle bestaande token-logica werkt (test #52). E2E bewezen op de
+gesimuleerde 'getikte' Essenhage-CSV: 3 gevels + 13 ramen + 2 deuren + 1 paneel(bovenlicht) + 2 dak-
+vlakken + vloer -> 3 VABI-bibliotheken door de codebook-poort + webapp-flow (CSV-import/zip) groen.
+LET OP: python-API vanaf deze machine faalt op TLS-interceptie (certificaat) -> foto's/plan-fetch via
+script is follow-up; browser-route werkt.
