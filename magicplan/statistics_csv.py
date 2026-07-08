@@ -352,19 +352,24 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             continue
         typ = (r[8] or "").strip() if len(r) > 8 else ""
         if typ == "Wall":
-            # oriëntatie: expliciet wint (CSV-oriëntatiekolom of kompastoken in de naam), anders afleiden
-            # uit de gevel-naam (voor/achter/links/rechts) + de voorgevel-oriëntatie.
-            cur_gevel_naam = _gevel_naam_uit_naam(r[0])
-            col_orient = (r[11] or "").strip() if len(r) > 11 else ""
-            cur_orient = (col_orient or _orient_uit_naam(r[0])
+            # ECHTE EXPORT (Essenhage 8-7): kolom 0 = KAMERnaam, kolom 1 = WANDnaam ('Wall 0' of door
+            # de adviseur hernoemd naar 'Voorgevel' etc.). Tokens zoeken we in wand- én kamernaam.
+            _wnaam = "%s %s" % ((r[1] or "") if len(r) > 1 else "", r[0] or "")
+            cur_gevel_naam = _gevel_naam_uit_naam(_wnaam)
+            # oriëntatie: de override-KOLOM op naam zoeken (positie schuift per export); anders
+            # kompastoken in de naam; anders afleiden uit gevelnaam + voorgevel-oriëntatie.
+            _io = next((i for i, h in enumerate(_kop) if "oriëntatie (override)" in (h or "").lower()
+                        or "orientatie (override)" in (h or "").lower()), None)
+            col_orient = ((r[_io] or "").strip() if (_io is not None and len(r) > _io) else "")
+            cur_orient = (_undot(col_orient) or _orient_uit_naam(_wnaam)
                           or _orient_afleiden(cur_gevel_naam, orientatie_voorgevel))
-            cur_begr = _begrenzing_uit_naam(r[0])   # begrenzing uit de wandnaam (naamconventie)
-            cur_isol = _isolatie_uit_naam(r[0])     # per-wand isolatie-override (None = projectdefault)
+            cur_begr = _begrenzing_uit_naam(_wnaam)  # begrenzing uit de wandnaam (naamconventie)
+            cur_isol = _isolatie_uit_naam(_wnaam)    # per-wand isolatie-override (None = projectdefault)
             _chk = ((r[_idx_nareken] or "").strip().lower()
                     if (_idx_nareken is not None and len(r) > _idx_nareken) else "")
-            cur_nareken = (_narekenen_uit_naam(r[0])            # naam-token (blijft werken) ...
+            cur_nareken = (_narekenen_uit_naam(_wnaam)          # naam-token (blijft werken) ...
                            or _chk in ("yes", "ja", "true", "1", "aan"))  # ... of het VINKJE op de wand
-            cur_rz = _rekenzone_uit_naam(r[0])      # rekenzone uit de naam (default 1)
+            cur_rz = _rekenzone_uit_naam(_wnaam)    # rekenzone uit de naam (default 1)
             if cur_begr == "AVR":      # buurwoning/woningscheidend -> NIET in de schil (ISSO p.66/75)
                 cur_orient = ""        # ramen/deuren in deze wand vallen ook weg
                 continue
@@ -376,9 +381,14 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 if cur_gevel_naam and cur_orient not in orient_naam:
                     orient_naam[cur_orient] = cur_gevel_naam
                 if cur_nareken:
-                    nareken_namen.append(r[0].strip())
+                    nareken_namen.append(("%s (%s)" % (r[1] or "wand", r[0] or "")).strip())
         elif typ == "Window":
-            orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
+            def _wn(frag, exact=False):
+                i = next((k for k, h in enumerate(_kop)
+                          if (frag == (h or "").strip().lower().split(" (")[0] if exact
+                              else frag in (h or "").lower())), None)
+                return ((r[i] or "").strip() if (i is not None and len(r) > i) else None)
+            orient = (_undot(_wn("oriëntatie (override)") or "") or cur_orient)
             if not orient:   # binnenraam / niet-buitengevel -> niet in thermische schil
                 continue
             _rp = ((r[_idx_raampaneel] or "").strip().lower()
@@ -392,10 +402,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                 "dikte": _f(_bn("paneel - isolatiedikte")),
                                 "bouwjaarklasse": _bn("paneel - bouwjaarklasse")})
             else:
+                _g = _wn("type glas", exact=True)      # 'Type glas' (raam) — niet '(indien glas in deur)'
                 kozijnen.append({"area": _f(r[3]) or 0.0,
-                                 "glas": (r[16] or "").strip() if len(r) > 16 else "",
+                                 "glas": (_g if _g is not None else ((r[16] or "").strip() if len(r) > 16 else "")),
                                  "orient": orient, "begr": cur_begr,
-                                 "kozijn_hk": (r[15] or "").strip() if len(r) > 15 else ""})
+                                 "kozijn_hk": _wn("kozijnmateriaal", exact=True) or ""})
         elif typ == "Door":
             orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
             # deur-kolommen op NAAM (Deur-groep is 8-7 geherstructureerd: glas-velden conditioneel
