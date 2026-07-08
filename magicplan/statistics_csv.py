@@ -250,8 +250,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         qv10_waarde=_f(G("Qv10-waarde (dm3/s.m2)")),
         qv10_gemeten=qv10_gem,
         gevelhoogte_m=gevelhoogte_m,
-        thermische_massa_wanden=_undot(G("Thermische massa wanden")),
-        thermische_massa_vloeren=_undot(G("Thermische massa vloeren")))
+        thermische_massa_wanden=_undot(G("Gevel - thermische massa") or G("Thermische massa wanden")),
+        thermische_massa_vloeren=_undot(G("Vloer - thermische massa") or G("Thermische massa vloeren")))
 
     # ---- geometrie: ruimtes (Ag) + verdiepingen ----
     geo = Geometrie()
