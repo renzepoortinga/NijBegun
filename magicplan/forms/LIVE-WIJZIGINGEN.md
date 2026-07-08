@@ -95,3 +95,13 @@ isolatie aanwezig (Ja/Nee/Onbekend) + isolatiedikte [parser -> paneel-SchilDeel]
 afwijkend (anders dan hout/kunststof)?" (Nee|Ja -> dan pas de materiaalkeuze) in Deur ÉN Raam/paneel —
 default = hout/kunststof, alleen afwijking invoeren. VABI-65%-vlag alleen bij de 65%-optie ('Deur met raam'
 zet 'm NIET). Parser: naam-gebaseerde kolommen + legacy positioneel fallback; kalibratie op eerstvolgende echte CSV.
+
+## 8-7-2026 (4) — VABI-boom afgemaakt: bouwjaarklasse bij paneel-Onbekend; 'Onbekend' weg bij deur (LIVE)
+Deur: optie "Onbekend" VERWIJDERD (glas in een deur is altijd zichtbaar). Paneel-isolatie "Onbekend" ->
+nieuwe conditionele vraag "Paneel - bouwjaarklasse" (raam-groep) resp. "Bovenlicht-paneel - bouwjaarklasse"
+(deur-groep), met de 12 officiële klassen GEKLOOND uit de Constructies-form (Tot 1965 ... Vanaf 2021
+(Overig)) — zelfde logic als VABI. Parser leest paneel-isolatie/dikte/bouwjaarklasse nu op naam; afwijkende
+bouwjaarklasse wordt geflagd in opmerkingen (tool rekent forfaitair op projectbouwjaar; adviseur zet de
+afwijking in Vabi). LET OP default-values: lijstvelden starten leeg in de app; 'default' = optie bovenaan.
+Een échte voorgeselecteerde waarde (bv. raam-toggle op 'Ja (raam)') kan alleen via de editor-UI ("Add a
+default value") — JSON-sleutel nog onbekend; 1x handmatig zetten en dan de JSON harvesten.

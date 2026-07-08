@@ -384,7 +384,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             _rp = ((r[_idx_raampaneel] or "").strip().lower()
                    if (_idx_raampaneel is not None and len(r) > _idx_raampaneel) else "")
             if "paneel" in _rp:          # dicht paneel-in-kozijn -> dichte constructie (geen glas)
-                panelen.append({"area": _f(r[3]) or 0.0, "orient": orient, "begr": cur_begr})
+                def _bn(frag):
+                    i = next((k for k, h in enumerate(_kop) if frag in (h or "").lower()), None)
+                    return ((r[i] or "").strip() if (i is not None and len(r) > i) else "")
+                panelen.append({"area": _f(r[3]) or 0.0, "orient": orient, "begr": cur_begr,
+                                "isolatie": _undot(_bn("paneel - isolatie aanwezig")) or "Onbekend",
+                                "dikte": _f(_bn("paneel - isolatiedikte")),
+                                "bouwjaarklasse": _bn("paneel - bouwjaarklasse")})
             else:
                 kozijnen.append({"area": _f(r[3]) or 0.0,
                                  "glas": (r[16] or "").strip() if len(r) > 16 else "",
@@ -418,7 +424,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             if _blp:                     # paneel-bovenlicht = dichte paneel-constructie boven de deur
                 panelen.append({"area": _blp, "orient": orient, "begr": cur_begr,
                                 "isolatie": _undot(_byname("bovenlicht-paneel - isolatie aanwezig") or "") or "Onbekend",
-                                "dikte": _f(_byname("bovenlicht-paneel - isolatiedikte"))})
+                                "dikte": _f(_byname("bovenlicht-paneel - isolatiedikte")),
+                                "bouwjaarklasse": _byname("bovenlicht-paneel - bouwjaarklasse") or ""})
             deuren.append({"area": _f(r[3]) or 0.0, "type_constructie": tc, "opp_raam": opp,
                            "glas": glas, "orient": orient, "begr": cur_begr})
 
@@ -660,7 +667,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             begrenzing=p.get("begr", "Buitenlucht"), orientatie=p["orient"],
             oppervlakte_m2=p["area"] or 0.0, isolatie_aanwezig=p.get("isolatie", "Onbekend"),
             isolatiedikte_mm=p.get("dikte"),
-            opmerkingen="paneel-in-kozijn (dichte constructie) -> verifieer Rc/isolatie in Vabi"))
+            opmerkingen=("paneel-in-kozijn (dichte constructie) -> verifieer Rc/isolatie in Vabi"
+                         + (" · bouwjaarklasse afwijkend: %s (zet in Vabi)" % p["bouwjaarklasse"]
+                            if p.get("bouwjaarklasse") else ""))))
     if panelen:
         notes.append("%d paneel(en)-in-kozijn herkend (Raam/paneel=paneel) -> dichte constructie; "
                      "Rc/isolatie onbekend uit de CSV, verfijn in de webapp-opname of Vabi." % len(panelen))
