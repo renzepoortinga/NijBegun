@@ -361,6 +361,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             _io = next((i for i, h in enumerate(_kop) if "oriëntatie (override)" in (h or "").lower()
                         or "orientatie (override)" in (h or "").lower()), None)
             col_orient = ((r[_io] or "").strip() if (_io is not None and len(r) > _io) else "")
+            if not col_orient and _io is None and len(r) > 11:
+                _c11 = (r[11] or "").strip()          # LEGACY-export: kolom 11 was de oriëntatie
+                col_orient = _c11 if _norm_kompas(_c11) else ""
             cur_orient = (_undot(col_orient) or _orient_uit_naam(_wnaam)
                           or _orient_afleiden(cur_gevel_naam, orientatie_voorgevel))
             cur_begr = _begrenzing_uit_naam(_wnaam)  # begrenzing uit de wandnaam (naamconventie)
@@ -388,7 +391,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                           if (frag == (h or "").strip().lower().split(" (")[0] if exact
                               else frag in (h or "").lower())), None)
                 return ((r[i] or "").strip() if (i is not None and len(r) > i) else None)
-            orient = (_undot(_wn("oriëntatie (override)") or "") or cur_orient)
+            orient = _undot(_wn("oriëntatie (override)") or "")
+            if not orient and len(r) > 17 and _norm_kompas((r[17] or "").strip()):
+                orient = (r[17] or "").strip()        # LEGACY-export: kolom 17 was raam-oriëntatie
+            orient = orient or cur_orient
             if not orient:   # binnenraam / niet-buitengevel -> niet in thermische schil
                 continue
             _rp = ((r[_idx_raampaneel] or "").strip().lower()
@@ -406,7 +412,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 kozijnen.append({"area": _f(r[3]) or 0.0,
                                  "glas": (_g if _g is not None else ((r[16] or "").strip() if len(r) > 16 else "")),
                                  "orient": orient, "begr": cur_begr,
-                                 "kozijn_hk": _wn("kozijnmateriaal", exact=True) or ""})
+                                 "kozijn_hk": (_wn("kozijnmateriaal", exact=True)
+                                               or ((r[15] or "").strip() if len(r) > 15 else ""))})
         elif typ == "Door":
             orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
             # deur-kolommen op NAAM (Deur-groep is 8-7 geherstructureerd: glas-velden conditioneel
