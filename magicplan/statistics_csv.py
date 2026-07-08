@@ -392,13 +392,21 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                  "kozijn_hk": (r[15] or "").strip() if len(r) > 15 else ""})
         elif typ == "Door":
             orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
-            tc = _undot(r[18]) if len(r) > 18 else ""
+            # deur-kolommen op NAAM (Deur-groep is 8-7 geherstructureerd: glas-velden conditioneel
+            # onder 'Type constructie (deur)' + nieuwe 'Glas >= 65%'-vraag) — positioneel als fallback
+            def _kol(frag, fb):
+                return next((i for i, h in enumerate(_kop) if frag in (h or "").lower()), fb)
+            _ix = {"tc": _kol("type constructie", 18), "glas": _kol("type glas (indien", 20),
+                   "opp": _kol("oppervlakte raam in deur", 19), "g65": _kol("65%", None)}
+            tc = _undot(r[_ix["tc"]]) if len(r) > _ix["tc"] else ""
             if not orient and not tc:   # binnendeur -> niet in thermische schil
                 continue
+            g65 = ((r[_ix["g65"]] or "").strip().lower()
+                   if (_ix["g65"] is not None and len(r) > _ix["g65"]) else "")
             deuren.append({"area": _f(r[3]) or 0.0, "type_constructie": tc,
-                           "opp_raam": _f(r[19]) if len(r) > 19 else None,
-                           "glas": (r[20] or "").strip() if len(r) > 20 else "",
-                           "orient": orient, "begr": cur_begr})
+                           "opp_raam": _f(r[_ix["opp"]]) if len(r) > _ix["opp"] else None,
+                           "glas": (r[_ix["glas"]] or "").strip() if len(r) > _ix["glas"] else "",
+                           "glas65": g65.startswith("ja"), "orient": orient, "begr": cur_begr})
 
     # ---- schil opbouwen ----
     schil = []
@@ -641,9 +649,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     if panelen:
         notes.append("%d paneel(en)-in-kozijn herkend (Raam/paneel=paneel) -> dichte constructie; "
                      "Rc/isolatie onbekend uit de CSV, verfijn in de webapp-opname of Vabi." % len(panelen))
-    # deuren: erven begrenzing + oriëntatie van de moederwand
+    # deuren: erven begrenzing + oriëntatie van de moederwand. De VABI 'deur met raam >=65%'-vlag komt
+    # uit de nieuwe 'Glas >= 65% van de deur?'-vraag; legacy-opnames vallen terug op de optienaam.
     for i, d in enumerate(deuren):
-        met_raam = "raam" in (d["type_constructie"] or "").lower()
+        tc_l = (d["type_constructie"] or "").lower()
+        met_raam = bool(d.get("glas65")) or "65" in tc_l or "raam" in tc_l
         schil.append(SchilDeel(
             id="deur-%d" % (i + 1), type="kozijn", subtype="Deur",
             begrenzing=d.get("begr", "Buitenlucht"),

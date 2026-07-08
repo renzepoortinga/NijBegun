@@ -77,3 +77,11 @@ plus de exacte project-veld-kolomnamen (MagicPlan kan ze net iets anders schrijv
 - Parser-let-op: de CSV-kolom heet "Raam = Ja | Paneel = Nee" → matcher in statistics_csv aangepast
   (herkent raam+paneel in de kolomnaam); waarde "Nee (dicht paneel)" → paneel-SchilDeel. De nieuwe
   `Paneel - *`-detailkolommen kalibreren we bij de eerstvolgende echte Statistics-CSV (posities kunnen schuiven).
+
+## 8-7-2026 (2) — Deur-groep VABI-conditioneel (LIVE gepubliceerd)
+"Type constructie (deur)" opties versimpeld naar **Dichte deur | Deur met glas | Onbekend** (openslaand=
+geometrie; bovenlicht=deur met glas + klein oppervlak; bovenpaneel=dichte deur). Glas-velden zijn nu
+CONDITIONELE kinderen @ "Deur met glas": `Type glas (indien glas in deur)` + `Oppervlakte raam in deur (m²)`
++ NIEUW `Glas ≥ 65% van de deur?` (Nee|Ja = de VABI deur-met-raam≥65%-vlag). Dichte deur = geen extra
+velden. Ids van bestaande velden behouden. Parser: deur-kolommen nu op NAAM (type constructie / type glas
+(indien / oppervlakte raam in deur / 65%) met positioneel fallback; glas65-vlag uit de nieuwe vraag.
