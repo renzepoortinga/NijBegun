@@ -341,7 +341,18 @@ def _http(method, url, headers, body=None):
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=60) as r:
-        return json.loads(r.read().decode("utf-8") or "{}")
+        raw = r.read().decode("utf-8", "replace")
+    try:
+        return json.loads(raw or "{}")
+    except json.JSONDecodeError:
+        # LIVE BEVESTIGD 8-7-2026: de forms-editor-API (/api/custom-forms|fields/*) accepteert de
+        # app-sleutel (key+customer) NIET — hij geeft de login-HTML terug. Alleen browser-login
+        # (cookie + X-CSRF-Token) werkt; zie memory magicplan-form-api. Duidelijk melden i.p.v. crashen.
+        raise SystemExit(
+            "\nMagicPlan gaf geen JSON terug op %s (waarschijnlijk de loginpagina).\n"
+            "De forms-editor-API werkt alleen met BROWSER-login (cookie+CSRF), niet met de .env-sleutel.\n"
+            "-> Gebruik de browser-route: log in op cloud.magicplan.app en laat Claude de merge via de\n"
+            "   browserconsole pushen (bewezen werkwijze, zie magicplan/forms/LIVE-WIJZIGINGEN.md)." % url)
 
 
 def _records_from_list(payload):
