@@ -330,10 +330,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     _kop = wall_rows[0] if wall_rows else []
     _idx_nareken = next((i for i, h in enumerate(_kop)
                          if "nareken" in (h or "").lower() or "deels binnen" in (h or "").lower()), None)
-    # 'Raam/paneel'-keuze op het venster-element (naam-gebaseerd; kolom kan schuiven). Waarde 'paneel'
-    # -> het is geen glas maar een DICHTE constructie (paneel-in-kozijn). Kolom afwezig -> alles blijft raam.
+    # 'Raam/paneel'-keuze op het venster-element (naam-gebaseerd; kolom kan schuiven). Het LIVE veld heet
+    # "Raam = Ja | Paneel = Nee" (opties "Ja (raam)" / "Nee (dicht paneel)"). Waarde met 'paneel' erin
+    # -> geen glas maar een DICHTE constructie (paneel-in-kozijn). Kolom afwezig -> alles blijft raam.
     _idx_raampaneel = next((i for i, h in enumerate(_kop)
-                            if "raam/paneel" in (h or "").lower() or (h or "").strip().lower() == "paneel"), None)
+                            if "raam/paneel" in (h or "").lower()
+                            or ("raam" in (h or "").lower() and "paneel" in (h or "").lower())
+                            or (h or "").strip().lower() == "paneel"), None)
     gevel_per = {}      # (orientatie, begrenzing) -> m2 (binnenwerks, zonder openingen)
     gevel_bruto = {}    # idem mét openingen (voor volledigheidscheck)
     orient_naam = {}    # orientatie -> gevel-naam (voor/achter/links/rechts) voor leesbaar label

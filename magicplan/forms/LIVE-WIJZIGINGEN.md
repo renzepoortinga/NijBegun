@@ -61,3 +61,19 @@ De **element-overrides** (per-wand/vloer invoer-boom: `Gevel/Vloer - invoer/isol
 WALL/FLOOR-attribuutkolommen; die kolomnamen/-posities ken ik pas uit een echte export. De parser leest de per-wand
 override nu nog via de naamconventie + positionele kolommen — dat verfijn ik 1-op-1 zodra Renze één CSV exporteert,
 plus de exacte project-veld-kolomnamen (MagicPlan kan ze net iets anders schrijven dan de form-labels).
+
+## 8-7-2026 — Raam/paneel + Installaties LIVE bijgewerkt (browserconsole-route, geverifieerd + gepubliceerd)
+- **Raam/paneel-veldgroep** (custom-fields, rec da2af963): "Toevoerrooster aanwezig?" opties nu **Nee|Ja**
+  (default Nee vooraan); onder de toggle "Raam = Ja | Paneel = Nee" hangen nu 3 conditionele velden bij
+  keuze **"Nee (dicht paneel)"**: `Paneel - isolatie aanwezig?` (Ja/Nee/Onbekend) · `Paneel - isolatiedikte
+  (mm)` · `Paneel - Rc-bron`. Alle raam-velden waren al niet-verplicht + Hout of kunststof stond al vooraan.
+- **Installaties-form** (custom-forms, rec 0c386069): `Meerdere PV-systemen?` (bool → 6 PV-2-velden) na
+  sectie Zonne-energie + `Tweede opwekker (hybride)?` (bool → 3 Verwarming 2-velden) na sectie Verwarming.
+  Form telt nu 31 top-level velden. → additions.json "NOG TE PUSHEN" is hiermee AFGEHANDELD.
+- Werkwijze: in-page fetch + X-CSRF-Token; backups in localStorage `__fields_backup_2026-07-08` +
+  `__forms_backup_2026-07-08`; save→verify (verse GET)→publish (rauwe workgroup-array, 200 success).
+- **BEVESTIGD**: de .env-app-sleutel werkt NIET op /api/custom-forms|fields (login-HTML terug) — de
+  browserconsole blijft dé route; form_push.py geeft daar nu een nette melding over.
+- Parser-let-op: de CSV-kolom heet "Raam = Ja | Paneel = Nee" → matcher in statistics_csv aangepast
+  (herkent raam+paneel in de kolomnaam); waarde "Nee (dicht paneel)" → paneel-SchilDeel. De nieuwe
+  `Paneel - *`-detailkolommen kalibreren we bij de eerstvolgende echte Statistics-CSV (posities kunnen schuiven).
