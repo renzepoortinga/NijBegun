@@ -85,3 +85,13 @@ CONDITIONELE kinderen @ "Deur met glas": `Type glas (indien glas in deur)` + `Op
 + NIEUW `Glas ≥ 65% van de deur?` (Nee|Ja = de VABI deur-met-raam≥65%-vlag). Dichte deur = geen extra
 velden. Ids van bestaande velden behouden. Parser: deur-kolommen nu op NAAM (type constructie / type glas
 (indien / oppervlakte raam in deur / 65%) met positioneel fallback; glas65-vlag uit de nieuwe vraag.
+
+## 8-7-2026 (3) — Deur uitgebreid + kozijn-default-logic (LIVE gepubliceerd)
+Deur: opties nu **Dichte deur | Deur met raam | Deur met 65% glas | Onbekend**; glas-velden conditioneel
+per optie (raam: Type glas + Oppervlakte raam in deur; 65%: Type glas (65%-glasdeur) + Oppervlakte glas
+65%-glasdeur). NIEUW **"Bovenlicht boven de deur?"** (Nee | Ja, met glas | Ja, met dicht paneel) bij ELKE
+deur: glas-bovenlicht -> oppervlak (m²) [parser telt op bij glas-in-deur]; paneel-bovenlicht -> oppervlak +
+isolatie aanwezig (Ja/Nee/Onbekend) + isolatiedikte [parser -> paneel-SchilDeel]. KOZIJN: "Kozijnmateriaal
+afwijkend (anders dan hout/kunststof)?" (Nee|Ja -> dan pas de materiaalkeuze) in Deur ÉN Raam/paneel —
+default = hout/kunststof, alleen afwijking invoeren. VABI-65%-vlag alleen bij de 65%-optie ('Deur met raam'
+zet 'm NIET). Parser: naam-gebaseerde kolommen + legacy positioneel fallback; kalibratie op eerstvolgende echte CSV.
