@@ -629,9 +629,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     top_fp = _niet_kelder[-1] if _niet_kelder else (bg_floor_area or 0.0)
     dak_done = False
     _force9 = False
+    _dak_kappen = []          # (dak_nr, type, hoofdorientatie) voor dubbele-kap-detectie
     for _dn in (1, 2, 3):
         Pd = "Dak %d" % _dn
-        t_n = _undot(G(Pd + " - type (leeg = geen dak %d)" % _dn) or G(Pd + " - type"))
+        # type-veld op PREFIX zoeken: de suffix is live al 2x hernoemd (leeg = .../HELE dak/EXTRA dak)
+        _tkey = next((k for k in plan if (k or "").startswith(Pd + " - type")), None)
+        t_n = _undot(plan.get(_tkey, "") if _tkey else (G(Pd + " - type") or ""))
         if not t_n:
             continue
         tn = t_n.lower()
@@ -702,6 +705,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 rc_bron=b_n["rc_bron"] or dak_rc,
                 opmerkingen="dak %d (%s) auto-berekend uit type-invoer" % (_dn, t_n)))
             dak_done = True
+        if vlakken_n:
+            _dak_kappen.append((_dn, tn, next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")))
         # dakkapel(len) op dit dak (ISSO 82.1 §8.2.1): voorvlak + 2 wangen = gevel, plat dakje = plat
         # dak; het gat in het schuine dakvlak wordt AFGETROKKEN (dakkapel_vlakken). Erft oriëntatie +
         # isolatie/begrenzing van dak N. Aantal leeg/0 -> geen dakkapel.
@@ -763,6 +768,17 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                  "(of laat MagicPlan de kamer op de 1,5m-lijn meten)." % (_weg, kn_z or 0.0, h_z or 0))
             except Exception:
                 pass
+    _zadels = [(n2, o2) for n2, t2, o2 in _dak_kappen if "zadel" in t2]
+    if len(_zadels) >= 2:
+        _c8i = {"N": 0, "NO": 1, "O": 2, "ZO": 3, "Z": 4, "ZW": 5, "W": 6, "NW": 7}
+        for _i in range(len(_zadels) - 1):
+            _o1, _o2 = _zadels[_i][1].upper(), _zadels[_i + 1][1].upper()
+            if _o1 in _c8i and _o2 in _c8i and (_c8i[_o1] + 4) % 8 == _c8i[_o2]:
+                notes.append("LET OP dak %d + dak %d: BEIDE 'Zadeldak' met tegenovergestelde oriëntaties "
+                             "(%s/%s) - dit is vrijwel zeker één zadeldak dat DUBBEL is ingevoerd. "
+                             "Eén zadeldak = 1 dak (de tool maakt beide vlakken + kopgevels zelf): "
+                             "verwijder dak %d in MagicPlan, anders telt het dak 2x mee!"
+                             % (_zadels[_i][0], _zadels[_i + 1][0], _o1, _o2, _zadels[_i + 1][0]))
     tl = type_dak.lower()
     dakvlakken = []
     # SOBOLT-stijl: DIRECT ingevoerde m² per dakvlak WINT van de auto-berekening (adviseur weet het beste).
