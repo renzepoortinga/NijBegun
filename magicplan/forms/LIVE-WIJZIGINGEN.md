@@ -115,3 +115,20 @@ gesimuleerde 'getikte' Essenhage-CSV: 3 gevels + 13 ramen + 2 deuren + 1 paneel(
 vlakken + vloer -> 3 VABI-bibliotheken door de codebook-poort + webapp-flow (CSV-import/zip) groen.
 LET OP: python-API vanaf deze machine faalt op TLS-interceptie (certificaat) -> foto's/plan-fetch via
 script is follow-up; browser-route werkt.
+
+## 11-7-2026 (deep dive dak+bouwjaar) — LIVE + EPA-import bewezen
+- **EPA-IMPORT GEVERIFIEERD** (computer-use, EPA 12.0.1): Constructiebibliotheek (6 constructies) + Objecten-
+  bibliotheek (1 object, Eengezinswoning/Hellend dak) uit de Essenhage-tap-CSV importeren BEIDE foutloos
+  ("Import succesvol"). De nieuwe dak-geometrie geeft geen enum-mismatch.
+- **DAK-HERONTWERP**: Constructies-form DAK-sectie = per dak (1..3) type-master (Plat/Zadel/Schild/Lessenaar/
+  Afwijkend) met alleen de type-eigen velden conditioneel. Parser rekent per type (core/geometry): zadel 2
+  vlakken + kopgevels auto op +/-90; schild 4 vlakken; lessenaar 1 vlak + hoge-zijde-note; plat=top-floor
+  footprint of override; afwijkend=9 vakjes. Isolatieboom+begrenzing per Dakvlak 1/2/3.
+- **Object-form**: Bouwjaar (verplicht) toegevoegd (ontbrak). **Gevel per wand**: 'Grenst aan buiten (m)'
+  onder het narekenen-vinkje -> parser splitst zelf (meters x wandhoogte = gevel, rest buiten schil).
+- **DEFAULT-VALUES**: fields.defaultValue geprobeerd (save 400 -> door node-property, ook 400). Opgelost via
+  ZELFDOCUMENTERENDE veldnamen: "(leeg = raam/geen/hout-kunststof/1/buitenlucht)" suffixen live gezet.
+- **GIDSEN** (webonderzoek + ISSO + bouwfysica): docs/bouwjaarklasse-eisen-gids.md (Rc-historie per klasse
+  + aansluitdetails), spouwmuur-herkennen-gids.md (4 inline SVG's, metselverband/muurdikte), rekenwijze-gids.md
+  (hoe de tool elk oppervlak berekent), dak-rekenmodel.md (formules per type), dak-invoer-marktonderzoek.md
+  (INBRIX/SOBOLT/Vabi). Alle in de webapp-Guide (/gids/<slug>); md_naar_html laat nu inline SVG verbatim door.

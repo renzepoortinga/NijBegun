@@ -377,6 +377,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     if (_idx_nareken is not None and len(r) > _idx_nareken) else "")
             cur_nareken = (_narekenen_uit_naam(_wnaam)          # naam-token (blijft werken) ...
                            or _chk in ("yes", "ja", "true", "1", "aan"))  # ... of het VINKJE op de wand
+            # "Grenst aan buiten (m)"-veld (metertje-idee): bij een narekenen-wand met ingevulde
+            # buitenlengte splitst de tool ZELF: buitendeel = meters x wandhoogte telt als gevel,
+            # de rest valt buiten de schil (binnen/AVR) -> geen handmatig naberekenen meer nodig.
+            _ibm = next((i for i, h in enumerate(_kop) if "grenst aan buiten (m)" in (h or "").lower()), None)
+            _bm = _f(r[_ibm]) if (_ibm is not None and len(r) > _ibm) else None
+            _ih = next((i for i, h in enumerate(_kop) if (h or "").strip().lower().startswith("height")), 6)
+            _wh = _f(r[_ih]) if len(r) > _ih else None
             cur_rz = _rekenzone_uit_naam(_wnaam)    # rekenzone uit de naam (default 1)
             if cur_begr == "AVR":      # buurwoning/woningscheidend -> NIET in de schil (ISSO p.66/75)
                 cur_orient = ""        # ramen/deuren in deze wand vallen ook weg
@@ -384,7 +391,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             if cur_orient:  # oriëntatie bekend (ingevuld of afgeleid) = buitengevel (telt mee)
                 n_wall_ext += 1
                 k = (cur_orient, cur_begr, cur_isol or "", cur_nareken, cur_rz)
-                gevel_per[k] = round(gevel_per.get(k, 0.0) + (_f(r[4]) or 0.0), 2)
+                _bijdrage = _f(r[4]) or 0.0
+                if cur_nareken and _bm and _wh:
+                    _buiten_m2 = round(min(_bm * _wh, _bijdrage or (_bm * _wh)), 2)
+                    notes.append("Wand '%s': gesplitst via 'Grenst aan buiten (m)' = %.2f m x %.2f m hoogte "
+                                 "-> %.2f m2 als gevel geteld (rest binnen/AVR, niet in de schil)."
+                                 % (_wnaam.strip(), _bm, _wh, _buiten_m2))
+                    _bijdrage = _buiten_m2
+                    k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
+                gevel_per[k] = round(gevel_per.get(k, 0.0) + _bijdrage, 2)
                 gevel_bruto[k] = round(gevel_bruto.get(k, 0.0) + (_f(r[3]) or 0.0), 2)
                 if cur_gevel_naam and cur_orient not in orient_naam:
                     orient_naam[cur_orient] = cur_gevel_naam

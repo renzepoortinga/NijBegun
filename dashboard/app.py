@@ -600,7 +600,11 @@ def home():
 GIDSEN = {
     "opnameformulier": ("📋 Nij Begun opnameformulier (alles per project)", "nijbegun-opnameformulier.md"),
     "inmeten": ("📐 MagicPlan-inmeetgids (controlematen geometrie)", "magicplan-inmeetgids.md"),
-    "spouwinspectie": ("🧱 Spouwinspectie / endoscopie", "spouwinspectie-gids.md"),
+    "dak": ("⛰ Dak invoeren — types, geometrie & rekenmodel", "dak-rekenmodel.md"),
+    "rekenwijze": ("🧮 Rekenwijze — hoe de tool alles berekent", "rekenwijze-gids.md"),
+    "bouwjaar-eisen": ("📜 Eisen & herkenning per bouwjaarklasse (Rc-historie)", "bouwjaarklasse-eisen-gids.md"),
+    "spouwmuur": ("🧱 Spouwmuur herkennen (visueel, met tekeningen)", "spouwmuur-herkennen-gids.md"),
+    "spouwinspectie": ("🔎 Spouwinspectie / endoscopie", "spouwinspectie-gids.md"),
     "ventilatie": ("💨 Ventilatiesystemen & roosters herkennen", "ventilatie-herkennen-gids.md"),
     "bouwjaar": ("🏗 Bouwjaarklasse-opnamegids (bouwfysica per tijdvak)", "bouwjaarklasse-opnamegids.md"),
     "werkinstructie": ("✅ Opname-werkinstructie per kamer", "OPNAME-WERKINSTRUCTIE.md"),

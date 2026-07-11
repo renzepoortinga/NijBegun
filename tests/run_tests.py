@@ -1312,5 +1312,54 @@ try:
 except Exception as _e:
     check("gevelnaam-tik: draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print()
+print("53. Dakmodel per type (Dak N - type) + 'Grenst aan buiten (m)'-splitsing")
+try:
+    import tempfile as _tf53, csv as _csv53, os as _os53
+    def _csv53maak(extra_plan, wall_extra_kop, wall_extra):
+        rows = [["PLAN ATTRIBUTES"], ["Total living area: m2", "90"], ["", "Nij Begun"],
+                ["Oriëntatie voorgevel", "Z"], ["Woningtype", "Tussenwoning"], ["Bouwjaar", "1980"]]
+        rows += extra_plan
+        rows += [[], ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Volume: m³",
+                 "Ground perimeter: m", "Ceiling perimeter: m", "Walls with openings: m²",
+                 "Walls without openings: m²", "Ground surface with all walls: m²",
+                 "Ground surface with interior walls: m²", "Ceiling Height"],
+                 ["Ground Floor", "50", "130", "28", "28", "90", "80", "56", "50", "2.60 m"],
+                 ["1st Floor", "48", "120", "27", "27", "85", "78", "54", "48", "2.50 m"], []]
+        rows += [["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                  "Width: m", "Height: m", "Annotation", "Type", "Gevelnaam (leeg = binnenwand)"] + wall_extra_kop]
+        rows += wall_extra
+        with _tf53.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as fh:
+            _csv53.writer(fh).writerows(rows); return fh.name
+    # (a) schilddak -> 4 dakvlakken, GEEN kopgevels
+    _p = _csv53maak([["Dak 1 - type (leeg = geen dak 1)", "Schilddak"],
+                     ["Dak 1 schild - hellingshoek lange vlakken (°)", "40"],
+                     ["Dak 1 schild - oriëntatie lang dakvlak 1", "Z"]], [], [])
+    _d, _n = _csvdos(_p); _os53.unlink(_p)
+    _dak = [s2 for s2 in _d.schil if s2.type == "dak"]
+    _kop = [s2 for s2 in _d.schil if s2.type == "gevel" and "dak" in s2.id]
+    check("schilddak: 4 dakvlakken", len(_dak) == 4)
+    check("schilddak: GEEN kopgevel-driehoeken", len(_kop) == 0)
+    # (b) lessenaarsdak -> 1 vlak + note over hoge-zijde-strook
+    _p = _csv53maak([["Dak 1 - type (leeg = geen dak 1)", "Lessenaarsdak"],
+                     ["Dak 1 lessenaar - oriëntatie dakvlak (afwaterend naar)", "Z"],
+                     ["Dak 1 lessenaar - hoogte lage zijde boven vloer (m)", "2.5"],
+                     ["Dak 1 lessenaar - hoogte hoge zijde boven vloer (m)", "3.8"],
+                     ["Dak 1 lessenaar - hellingshoek (°, leeg = berekend)", "20"]], [], [])
+    _d, _n = _csvdos(_p); _os53.unlink(_p)
+    check("lessenaar: 1 dakvlak", sum(1 for s2 in _d.schil if s2.type == "dak") == 1)
+    check("lessenaar: note over hoge-zijde-strook -> Vabi", any("hoge kant" in str(x) or "hoge-zijde" in str(x) for x in _n))
+    # (c) 'Grenst aan buiten (m)'-splitsing bij narekenen-wand
+    _p = _csv53maak([["Dak 1 - type (leeg = geen dak 1)", "Plat dak"]],
+                    ["Deels binnen/deels buiten? (narekenen)", "Grenst aan buiten (m) — meet de buitenlengte"],
+                    [["Woonkamer", "Wall 5", "Wall", "10.0", "10.0", "4.0", "2.5", "", "Wall", "Voorgevel", "Yes", "3.0"]])
+    _d, _n = _csvdos(_p); _os53.unlink(_p)
+    check("buiten-splitsing: 3m x 2.5m = 7.5 m2 als gevel geteld",
+          any("7.5" in str(x) and "gevel geteld" in str(x) for x in _n))
+    check("plat dak: footprint bovenste verdieping (48) gebruikt",
+          any(s2.type == "dak" and abs((s2.oppervlakte_m2 or 0) - 48) < 0.1 for s2 in _d.schil))
+except Exception as _e:
+    check("dakmodel/buiten-splitsing: draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

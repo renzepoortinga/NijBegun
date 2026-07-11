@@ -28,7 +28,7 @@ def sectie_voor_bouwjaar(bouwjaar):
 def md_naar_html(md):
     """Minimale markdown->HTML (koppen/bold/lijsten/tabellen/checkboxes) — voor de bouwjaar-hint
     én de veldgidsen in de webapp (/gids/<naam>)."""
-    uit, in_ul, in_tbl = [], False, False
+    uit, in_ul, in_tbl, in_svg = [], False, False, False
 
     def sluit():
         nonlocal in_ul, in_tbl
@@ -39,6 +39,16 @@ def md_naar_html(md):
 
     for regel in (md or "").splitlines():
         r = regel.rstrip()
+        # raw HTML/SVG-blok (bv. inline illustraties) verbatim doorlaten — anders wikkelt de renderer
+        # elke regel in <p> en breekt de SVG. Blok start bij een regel met <svg en eindigt bij </svg>.
+        if in_svg or r.lstrip().startswith("<svg"):
+            sluit()
+            uit.append(regel)
+            if "</svg>" in r:
+                in_svg = False
+            elif not in_svg:
+                in_svg = True
+            continue
         r = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", r)
         r = re.sub(r"`([^`]+)`", r"<code>\1</code>", r)
         ls = r.lstrip()
