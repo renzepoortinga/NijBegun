@@ -86,6 +86,23 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - MagicPlan-opnameschema + bouwgids: ../MagicPlan_Forms_Fields_schema_v0.3.json (+ -bouwgids.md)
   in de map "Nij Begun & EPA" (twee templates: Energielabel vs Nij Begun; VABI-getrouw)
 
+## Status (11-7-2026) — 340/340 groen. DAK+BOUWJAAR DEEP DIVE + EPA-IMPORT BEWEZEN.
+MagicPlan-invoer is nu VOLLEDIG conditioneel/VABI-getrouw + zelfdocumenterend ("(leeg = ...)"-suffixen; defaultValue
+werkt niet via de API — save 400). DAK herontworpen: per dak (1-3) een type-master (Plat/Zadel/Schild/Lessenaar/
+Afwijkend) met alleen de type-eigen velden conditioneel; parser rekent per type via core/geometry (zadel: 2 vlakken +
+kopgevels auto op +/-90; schild: 4 vlakken; lessenaar: 1 vlak + hoge-zijde-note; plat: top-floor footprint of override;
+afwijkend: 9 vakjes). DAKKAPEL (ISSO 8.2.1): per dak aantal/B/H/D -> voorvlak+2 wangen=gevel, dakje=plat, gat in schuin
+vlak afgetrokken. Deur volledig conditioneel (dicht/raam/65%/bovenlicht glas of paneel). Raam: alleen Type glas; rest
+defaultt. Paneel-in-kozijn = dichte constructie (ConstructieType 1) + bouwjaarklasse bij Onbekend. Object-form: Bouwjaar
+(verplicht) toegevoegd. Gevelnaam-veld (tikbaar: Voor/Achter/Links/Rechts/Buurwand-AVR) -> oriëntatie afgeleid, geen
+typen. 'Grenst aan buiten (m)' bij narekenen -> tool splitst zelf. Webapp: 'Zelf doen in Vabi'-actiekaart na upload
+(KV-flags/narekenen/multi-zone). PARSER gekalibreerd op 1e echte export (Essenhage 32): kolom0=kamer/kolom1=wand,
+raam/deur-velden op naam + legacy positioneel fallback. EPA 12.0.1 (computer-use): Constructie- (6) EN Objecten-
+bibliotheek (Eengezinswoning/Hellend dak) importeren FOUTLOOS uit de tap-CSV — geen enum-mismatch. NIEUWE GIDSEN (web +
+ISSO + bouwfysica, in de webapp-Guide /gids/<slug>): bouwjaarklasse-eisen (Rc-historie per klasse), spouwmuur-herkennen
+(4 inline SVG's), rekenwijze (hoe elk oppervlak berekend wordt), dak-rekenmodel (formules), dak-invoer-marktonderzoek
+(INBRIX/SOBOLT). md_naar_html laat inline SVG verbatim door. RENZE OPEN: git push + VPS-update (mail-fix/design/gidsen);
+website upload Cloud86; in het echte project gevels tikken + Living Room-hoogte (0.46->2.62) fixen; nieuwe CSV -> EPA.
 ## Status (juli 2026) — 299/299 groen. LIVE GEHOST op nijbegun.poortinga-energieadvies.nl (TransIP VPS 37.97.195.196,
 Docker+Caddy, MFA). NIJ-BEGUN-FOCUS-SLAG (7-7): webapp volledig op Nij Begun (schil+ventilatie) gericht ná parallelle
 audit (6 agents). (1) SCOPE gezuiverd: kennismakingsmail (dashboard/leads.py VOORBEREIDING) vraagt GEEN cv-ketel/
