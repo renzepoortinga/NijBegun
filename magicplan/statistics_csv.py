@@ -475,11 +475,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # "Kwaliteitsverklaring" -> de tool VLAGT het (adviseur zet Invoer zelf in VABI; golden rule: niet gokken).
     # Valt terug op de oude platte velden (Rc-bron <deel> / Isolatie aanwezig) zodat oudere exports blijven werken.
     def _bouwdeel(prefix, oud_rcveld="", oud_isolveld="", oud_begrveld=""):
-        gv = lambda *names: next((v for v in (_undot(G(n)) for n in names) if v), "")
+        # 11-7: de dak-boomvelden heten live "Dak N - ..." (was "Dakvlak N - ..."); probeer beide
+        _alt = prefix.replace("Dakvlak", "Dak") if "Dakvlak" in prefix else None
+        def gv(*names):
+            alle = list(names) + ([n.replace(prefix, _alt) for n in names] if _alt else [])
+            return next((v for v in (_undot(G(n)) for n in alle) if v), "")
         invoer = gv(prefix + " - invoer", prefix + " - invoer (override)")
         iso = gv(prefix + " - isolatie aanwezig?")
         dikte_onb = gv(prefix + " - isolatiedikte onbekend?").lower() in ("ja", "yes", "true")
-        dikte = _f(G(prefix + " - isolatiedikte (mm)"))
+        dikte = _f(G(prefix + " - isolatiedikte (mm)")) or (_f(G(_alt + " - isolatiedikte (mm)")) if _alt else None)
         bouwjaar = gv(prefix + " - bouwjaar", prefix + " - bouwjaar (onbekend)")
         spouw_s = gv(prefix + " - spouw aanwezig?", prefix + " - spouw aanwezig (indien <40mm)?")
         begr = gv(prefix + " - begrenzing")
@@ -644,10 +648,19 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             br_z = _f(G(Pd + " zadel - vloerbreedte tussen de kopgevels (m)"))
             nok_z = _f(G(Pd + " zadel - nokhoogte boven zoldervloer (m)"))
             kn_z = _f(G(Pd + " zadel - knieschothoogte (m, leeg = 0)")) or 0.0
+            kn_z2 = _f(G(Pd + " zadel - knieschothoogte vlak 2 (m, leeg = zelfde)"))
             h_z = _f(G(Pd + " zadel - hellingshoek (°, leeg = berekend uit nok/breedte)"))                 or hellingshoek_uit_nok(br_z, nok_z, kn_z)
+            h_z2 = _f(G(Pd + " zadel - hellingshoek vlak 2 (°, leeg = zelfde)"))                 or ((hellingshoek_uit_nok(br_z, nok_z, kn_z2) or h_z) if kn_z2 else h_z)
             if h_z and o_z:
                 vlakken_n = dak_vlakken_zadeldak(top_fp, br_z or 0.0, h_z,
                                                  orient_schuin=(o_z, _opp8(o_z)), orient_kopgevel=_zij8(o_z))
+                if h_z2 and h_z2 != h_z:   # asymmetrisch: vlak 2 met eigen helling op de halve footprint
+                    for v in vlakken_n:
+                        if v.get("kind") == "dak" and v.get("orientatie") == _opp8(o_z):
+                            v["m2"] = round((top_fp / 2.0) / max(0.087, __import__("math").cos(__import__("math").radians(h_z2))), 2)
+                            v["hellingshoek"] = h_z2
+                    notes.append("Dak %d (zadel): ASYMMETRISCH (%g°/%g°) -> vlakken per halve footprint "
+                                 "berekend en kopgevels op vlak-1-helling benaderd; verifieer de m² in Vabi." % (_dn, h_z, h_z2))
             else:
                 notes.append("Dak %d (zadel): hellingshoek (of nok/breedte) en/of oriëntatie ontbreekt -> "
                              "vul aan; dak overgeslagen." % _dn)
@@ -717,6 +730,39 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     _gr = max(_schuin, key=lambda s2: s2.oppervlakte_m2 or 0)
                     _gr.oppervlakte_m2 = round(max((_gr.oppervlakte_m2 or 0) - _gat_tot, 0.0), 2)
             notes.append("Dak %d: %dx %s" % (_dn, _n_kap, dk["flag"]))
+        # dakramen in de hellende vlakken van dit dak: apart kozijn (subtype Dakraam) op de vlak-oriëntatie;
+        # het glas-oppervlak gaat van het grootste schuine vlak af (netto hoofdvlak + deelvlak, zoals gevels)
+        _rwn = _f(G(Pd + " - dakramen aantal (leeg = geen)"))
+        _rwm = _f(G(Pd + " - dakramen totaal oppervlak (m²)"))
+        _rwg = _undot(G(Pd + " - dakramen type glas"))
+        if _rwn and _rwm:
+            _ror = next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")
+            _rh = next((v.get("hellingshoek") for v in vlakken_n if v.get("hellingshoek")), None)
+            schil.append(SchilDeel(id="dak%d-dakraam" % _dn, type="kozijn", subtype="Dakraam",
+                begrenzing="Buitenlucht", orientatie=_ror, oppervlakte_m2=_rwm,
+                glastype=_rwg or "", kozijnmateriaal="Hout of kunststof", hellingshoek=_rh,
+                opmerkingen="dakraam/-ramen (%dx) in hellend dakvlak%s — in Vabi als raam op het DAKvlak"
+                            % (int(_rwn), (" @%g°" % _rh) if _rh else "")))
+            _schuin2 = [s2 for s2 in schil if s2.id.startswith("dak%d-" % _dn) and s2.type == "dak"
+                        and (s2.hellingshoek or 0) > 0]
+            if _schuin2:
+                _gr2 = max(_schuin2, key=lambda s2: s2.oppervlakte_m2 or 0)
+                _gr2.oppervlakte_m2 = round(max((_gr2.oppervlakte_m2 or 0) - _rwm, 0.0), 2)
+            if _rwm / max(_rwn, 1) < 0.65:
+                notes.append("Dak %d: dakramen gemiddeld < 0,65 m²/stuk -> Nij Begun rekent kleine "
+                             "ruiten als 0,65 m²; check het totaal." % _dn)
+        # Ag-zolder-check: schuin dak met laag/geen knieschot en geen 'Ag-aftrek zolder' ingevuld ->
+        # suggereer de 1,5m-lijn-aftrek (NEN 2580); we passen 'm NIET automatisch toe (Ag = heilig)
+        if "zadel" in tn and (kn_z or 0) < 1.5 and not ag_aftrek and br_z and top_fp:
+            try:
+                from core.geometry import ag_onder_schuin_dak
+                _agz, _weg = ag_onder_schuin_dak(top_fp, top_fp / br_z, h_z or 45.0, kn_z or 0.0)
+                if _weg > 0.5:
+                    notes.append("Zolder onder schuin dak: 'Ag-aftrek zolder' is leeg, maar de 1,5m-lijn "
+                                 "kost hier ~%.1f m² (knieschot %.2f m, helling %g°). Vul de aftrek in "
+                                 "(of laat MagicPlan de kamer op de 1,5m-lijn meten)." % (_weg, kn_z or 0.0, h_z or 0))
+            except Exception:
+                pass
     tl = type_dak.lower()
     dakvlakken = []
     # SOBOLT-stijl: DIRECT ingevoerde m² per dakvlak WINT van de auto-berekening (adviseur weet het beste).

@@ -1375,5 +1375,44 @@ try:
 except Exception as _e:
     check("dakkapel: draait zonder fout", False); print("     " + repr(_e)[:150])
 
+print()
+print("55. Dakramen in hellend vlak + asymmetrisch zadeldak + Dak N-prefix isolatieboom")
+try:
+    import tempfile as _tf55, csv as _csv55, os as _os55
+    _rows55 = [["PLAN ATTRIBUTES"], ["Total living area: m2", "90"], ["", "Nij Begun"],
+        ["Oriëntatie voorgevel", "Z"], ["Woningtype", "Tussenwoning"], ["Bouwjaar", "1980"],
+        ["Dak 1 - type (leeg = geen dak 1)", "Zadeldak"],
+        ["Dak 1 zadel - oriëntatie dakvlak 1", "Z"],
+        ["Dak 1 zadel - vloerbreedte tussen de kopgevels (m)", "6.0"],
+        ["Dak 1 zadel - nokhoogte boven zoldervloer (m)", "3.0"],
+        ["Dak 1 zadel - hellingshoek vlak 2 (°, leeg = zelfde)", "25"],
+        ["Dak 1 - dakramen aantal (leeg = geen)", "2"],
+        ["Dak 1 - dakramen totaal oppervlak (m²)", "1.8"],
+        ["Dak 1 - dakramen type glas", "HR++"],
+        ["Dak 1 - isolatie aanwezig?", "Ja"],
+        ["Dak 1 - isolatiedikte (mm)", "100"],
+        [],
+        ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Volume: m³", "Ground perimeter: m",
+         "Ceiling perimeter: m", "Walls with openings: m²", "Walls without openings: m²",
+         "Ground surface with all walls: m²", "Ground surface with interior walls: m²", "Ceiling Height"],
+        ["Ground Floor", "50", "130", "28", "28", "90", "80", "56", "50", "2.60 m"], []]
+    with _tf55.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _fh:
+        _csv55.writer(_fh).writerows(_rows55); _p55 = _fh.name
+    _d55, _n55 = _csvdos(_p55); _os55.unlink(_p55)
+    _rw = next((s2 for s2 in _d55.schil if (s2.subtype or "") == "Dakraam"), None)
+    check("dakraam: kozijn subtype Dakraam, 1.8 m2, HR++, op dakvlak-orientatie Z",
+          _rw is not None and abs(_rw.oppervlakte_m2 - 1.8) < 0.01 and _rw.glastype == "HR++" and _rw.orientatie == "Z")
+    _dks = [s2 for s2 in _d55.schil if s2.type == "dak"]
+    _zuid = next((s2 for s2 in _dks if s2.orientatie == "Z"), None)
+    _noord = next((s2 for s2 in _dks if s2.orientatie == "N"), None)
+    check("asymmetrisch: vlak 2 (N) heeft eigen helling 25", _noord is not None and _noord.hellingshoek == 25)
+    check("asymmetrisch: note over benaderde vlakverdeling", any("ASYMMETRISCH" in str(x) for x in _n55))
+    check("dakraam: 1.8 m2 van het grootste schuine vlak afgetrokken (35.36 -> 33.56)",
+          any(abs((s2.oppervlakte_m2 or 0) - 33.56) < 0.3 for s2 in _dks))
+    check("Dak 1-prefix isolatieboom gelezen (Ja + 100mm)",
+          _zuid is not None and _zuid.isolatie_aanwezig == "Ja" and _zuid.isolatiedikte_mm == 100)
+except Exception as _e:
+    check("dakramen/asymmetrie: draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

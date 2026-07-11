@@ -214,6 +214,7 @@ def build_tree(dos):
     # vloer-perimeter (randverlies) alleen bij grond/kruipruimte/(onverwarmde) kelder (ISSO 8.3)
     _PERIM_BEGR = ("grond", "kruip", "kelder")
     gevels = []   # (hoofdvlak_el, naam, orientatie) voor deelvlak-toewijzing
+    daken = []    # idem: dak-hoofdvlakken (voor DAKRAMEN als deelvlak in het dakvlak)
     for s in dos.schil:
         kind = _classify(s)
         m = mapping.get(s.id)
@@ -255,6 +256,8 @@ def build_tree(dos):
             geo.append(hv)
             if kind == "gevel":
                 gevels.append((hv, naam, orient))
+            elif kind == "dak":
+                daken.append((hv, naam, orient))
     # ramen/deuren/panelen als deelvlakken: in de gevel met DEZELFDE orientatie (anders round-robin).
     # Een paneel-in-kozijn is óók een opening in de wand (dichte constructie) -> deelvlak, net als een raam.
     placed = 0
@@ -263,15 +266,20 @@ def build_tree(dos):
         if kind not in ("raam", "deur", "paneel"):
             continue
         m = mapping.get(s.id)
-        if m is None or not gevels:
-            if not gevels:
-                issues.append("geen gevel om %s in te plaatsen" % s.id)
+        _is_dakraam = "dakraam" in (getattr(s, "subtype", "") or "").lower()
+        doelen = daken if (_is_dakraam and daken) else gevels
+        if _is_dakraam and not daken:
+            issues.append("dakraam %s: geen dak-hoofdvlak om in te plaatsen -> in gevel geplaatst; "
+                          "verplaats in Vabi naar het dakvlak" % s.id)
+        if m is None or not doelen:
+            if not doelen:
+                issues.append("geen hoofdvlak om %s in te plaatsen" % s.id)
             continue
         so = (getattr(s, "orientatie", "") or "").strip().lower()
-        match = next(((hv, naam) for hv, naam, go in gevels
+        match = next(((hv, naam) for hv, naam, go in doelen
                       if so and (go or "").strip().lower() == so), None)
         if match is None:
-            hv, naam, _go = gevels[placed % len(gevels)]
+            hv, naam, _go = doelen[placed % len(doelen)]
         else:
             hv, naam = match
         area = float(getattr(s, "oppervlakte_m2", 0) or 0)
