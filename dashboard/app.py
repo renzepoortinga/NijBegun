@@ -337,6 +337,12 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <div class=file-drop>Sleep hier de MagicPlan-CSV of dossier (.csv / .json)<br><input type=file name=bestand accept=".csv,.json"></div>
 <div class=btn-row><button class=btn>Inladen in de opname</button>
 <span class="muted small">Al ingeladen? Loop de gegevens hieronder na en pas aan waar nodig.</span></div></form></div>
+{% if st.vabi_acties %}<div class=card style="border:2px solid var(--warn-line);background:var(--warn-bg)">
+<h2>📋 Zelf doen in Vabi — {{st.vabi_acties|length}} actiepunt(en)</h2>
+<ul class=check>{% for a in st.vabi_acties %}<li><span class="mk no2">→</span>{{a}}</li>{% endfor %}</ul>
+<p class="muted small">Automatisch verzameld bij je MagicPlan-upload: narekenen-wanden, kwaliteitsverklaringen
+(zet in Vabi Invoer=Kwaliteitsverklaring + vul zelf de BCRG-code), multi-zone en ontbrekende gegevens.
+Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij de VABI-export.</p></div>{% endif %}
 <div class=card><h2>② Algemeen</h2><form method=post action="{{url_for('opname_algemeen', tag=tag)}}"><div class=grid2>
 <div><label>BAG nummeraanduiding-ID</label><input name=bag_vboid value="{{d.identificatie.bag_vboid}}"></div>
 <div><label>Woningtype</label><select name=woningtype>{% for w in woningtypes %}<option {{'selected' if w==d.identificatie.woningtype}}>{{w}}</option>{% endfor %}{% if d.identificatie.woningtype and d.identificatie.woningtype not in woningtypes %}<option selected>{{d.identificatie.woningtype}}</option>{% endif %}</select></div>
@@ -827,15 +833,26 @@ def opname_magicplan(tag):
     up = os.path.join(UPLOAD_DIR, "opname_%s%s" % (tag, ext))
     f.save(up)
     oud = dos.identificatie
+    notes = []
     try:
         if ext == ".json":
             nieuw = load_json(up)
         else:
             from magicplan.statistics_csv import build_dossier
-            nieuw, _ = build_dossier(up, straat=oud.straat, postcode=oud.postcode,
-                                     plaats=oud.plaats, woningtype=oud.woningtype)
+            nieuw, notes = build_dossier(up, straat=oud.straat, postcode=oud.postcode,
+                                         plaats=oud.plaats, woningtype=oud.woningtype)
     except Exception as e:
         flash("Kon de opname niet lezen: %s" % e); return redirect(url_for("opname", tag=tag))
+    # "ZELF DOEN IN VABI"-lijst: parser-notes (narekenen/KV/multi-zone/ontbrekend) + generator-flags
+    # (kwaliteitsverklaring -> Invoer+BCRG-code handmatig; onbekende types) direct bij de upload tonen.
+    acties = [str(n) for n in (notes or [])]
+    try:
+        from vabi.constructie_generate import resolve_constructies
+        _, _, _issues = resolve_constructies(nieuw)
+        acties += [str(i) for i in _issues if str(i) not in acties]
+    except Exception as e:
+        acties.append("VABI-voorcontrole kon niet draaien: %s" % str(e)[:90])
+    st["vabi_acties"] = acties
     # behoud eerder ingevulde identificatie waar de import leeg is
     for attr in ("straat", "huisnummer", "postcode", "plaats", "woningtype"):
         if not getattr(nieuw.identificatie, attr, "") and getattr(oud, attr, ""):
@@ -844,7 +861,8 @@ def opname_magicplan(tag):
     st["adres"] = "%s %s, %s" % (nieuw.identificatie.straat or "", nieuw.identificatie.huisnummer or "",
                                  nieuw.identificatie.plaats or "")
     _save_state(tag, st)
-    flash("MagicPlan-opname ingeladen (%d vlakken) — loop de gegevens na." % len(nieuw.schil))
+    flash("MagicPlan-opname ingeladen (%d vlakken)%s — loop de gegevens na." % (len(nieuw.schil),
+          (" · %d actiepunt(en) voor Vabi — zie de gele kaart" % len(acties)) if acties else ""))
     return redirect(url_for("opname", tag=tag))
 
 
