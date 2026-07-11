@@ -1361,5 +1361,19 @@ try:
 except Exception as _e:
     check("dakmodel/buiten-splitsing: draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print()
+print("54. Dakkapel (ISSO 8.2.1): voorvlak+wangen=gevel, dakje=plat, gat afgetrokken")
+try:
+    from core.geometry import dakkapel_vlakken as _dkv
+    _dk = _dkv(2.0, 1.3, 1.0, 45.0)
+    check("dakkapel: gevel = B*H + 2*D*H", abs(_dk["gevel_m2"] - 5.2) < 0.01)
+    check("dakkapel: dakje = B*D", abs(_dk["dak_m2"] - 2.0) < 0.01)
+    check("dakkapel: gat = B*D/cos(a) (~2.83)", abs(_dk["gat_schuin_dak_m2"] - 2.83) < 0.05)
+    _dk0 = _dkv(2.0, 1.3, 1.0, None)
+    check("dakkapel: zonder helling -> gat 0 + flag 'niet afgetrokken'",
+          _dk0["gat_schuin_dak_m2"] == 0.0 and "NIET afgetrokken" in _dk0["flag"])
+except Exception as _e:
+    check("dakkapel: draait zonder fout", False); print("     " + repr(_e)[:150])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

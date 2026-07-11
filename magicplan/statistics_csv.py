@@ -18,7 +18,7 @@ from core.dossier import (Dossier, Identificatie, Opname, Geometrie, Ruimte, Vlo
                           Koeling, Tapwater, ZonneEnergieSysteem)
 from core.geometry import (woningscheidende_wand_toeslag_m2, aantal_woningscheidende_wanden,
                            hellingshoek_uit_nok, dak_vlakken_zadeldak, dak_vlakken_lessenaar,
-                           dak_vlakken_schilddak)
+                           dak_vlakken_schilddak, dakkapel_vlakken)
 
 
 def _f(v):
@@ -689,6 +689,34 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 rc_bron=b_n["rc_bron"] or dak_rc,
                 opmerkingen="dak %d (%s) auto-berekend uit type-invoer" % (_dn, t_n)))
             dak_done = True
+        # dakkapel(len) op dit dak (ISSO 82.1 §8.2.1): voorvlak + 2 wangen = gevel, plat dakje = plat
+        # dak; het gat in het schuine dakvlak wordt AFGETROKKEN (dakkapel_vlakken). Erft oriëntatie +
+        # isolatie/begrenzing van dak N. Aantal leeg/0 -> geen dakkapel.
+        _ka = _f(G(Pd + " - aantal dakkapellen (leeg = geen)"))
+        _kb = _f(G(Pd + " - dakkapel breedte (m)"))
+        _kh = _f(G(Pd + " - dakkapel hoogte voorvlak (m)"))
+        _kd = _f(G(Pd + " - dakkapel diepte (m)"))
+        if _ka and _kb and _kh and _kd:
+            _hvlak = next((v.get("hellingshoek") for v in vlakken_n if v.get("hellingshoek")), None)
+            _kor = next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")
+            dk = dakkapel_vlakken(_kb, _kh, _kd, _hvlak)
+            _n_kap = int(_ka)
+            schil.append(SchilDeel(id="dak%d-kapel-gevel" % _dn, type="gevel", subtype="dakkapel",
+                begrenzing="Buitenlucht", orientatie=_kor, oppervlakte_m2=round(dk["gevel_m2"] * _n_kap, 2),
+                isolatie_aanwezig=b_n["isolatie"], rekenzone=1, isolatiedikte_mm=b_n["dikte_mm"], rc_bron=b_n["rc_bron"] or dak_rc,
+                opmerkingen="dakkapel voorvlak+2 wangen (%dx) — raam apart als kozijn opnemen" % _n_kap))
+            schil.append(SchilDeel(id="dak%d-kapel-plat" % _dn, type="dak", subtype="plat (dakkapel)",
+                begrenzing="Buitenlucht", orientatie="", oppervlakte_m2=round(dk["dak_m2"] * _n_kap, 2), hellingshoek=0,
+                isolatie_aanwezig=b_n["isolatie"], rekenzone=1, isolatiedikte_mm=b_n["dikte_mm"], rc_bron=b_n["rc_bron"] or dak_rc,
+                opmerkingen="dakkapel plat dakje (%dx)" % _n_kap))
+            # gat aftrekken van het grootste schuine dakvlak van dit dak
+            _gat_tot = round(dk["gat_schuin_dak_m2"] * _n_kap, 2)
+            if _gat_tot:
+                _schuin = [s2 for s2 in schil if s2.id.startswith("dak%d-" % _dn) and (s2.hellingshoek or 0) > 0]
+                if _schuin:
+                    _gr = max(_schuin, key=lambda s2: s2.oppervlakte_m2 or 0)
+                    _gr.oppervlakte_m2 = round(max((_gr.oppervlakte_m2 or 0) - _gat_tot, 0.0), 2)
+            notes.append("Dak %d: %dx %s" % (_dn, _n_kap, dk["flag"]))
     tl = type_dak.lower()
     dakvlakken = []
     # SOBOLT-stijl: DIRECT ingevoerde m² per dakvlak WINT van de auto-berekening (adviseur weet het beste).

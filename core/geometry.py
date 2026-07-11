@@ -90,13 +90,23 @@ def oppervlak_vorm(vorm, a=0.0, b=0.0):
     return round(a * b, 2)
 
 
-def dakkapel_vlakken(breedte_m, hoogte_m, diepte_m):
-    """Een (plat) dakkapel voegt vlakken toe: voorgevel + 2 zijgevels (gevel) + plat dakje (dak).
-    -> dict {gevel_m2, dak_m2}. De hoek in het schuine dak die de kapel inneemt verwaarlozen we
-    (de adviseur verifieert in Vabi); netto telt de kapel als extra gevel + plat dak."""
+def dakkapel_vlakken(breedte_m, hoogte_m, diepte_m, hellingshoek_dakvlak_graden=None):
+    """ISSO 82.1 §8.2.1: een (plat) dakkapel voegt vlakken toe aan de thermische schil:
+      - voorvlak  = breedte × hoogte  -> GEVEL (het raam erin voer je apart op als kozijn)
+      - 2 wangen  = 2 × diepte × hoogte -> GEVEL (oriëntaties ±90° t.o.v. het voorvlak)
+      - plat dakje = breedte × diepte  -> PLAT DAK
+    En het GAT dat de kapel in het schuine dakvlak maakt = (breedte × diepte)/cos(a) moet je
+    van dat schuine dakvlak AFTREKKEN (anders dubbeltelling). Zonder hellingshoek slaan we de
+    gat-aftrek over en flaggen we dat. -> dict {gevel_m2, dak_m2, gat_schuin_dak_m2, flag}."""
     gevel = breedte_m * hoogte_m + 2.0 * (diepte_m * hoogte_m)
     dak = breedte_m * diepte_m
-    return {"gevel_m2": round(gevel, 2), "dak_m2": round(dak, 2)}
+    if hellingshoek_dakvlak_graden and 0 < hellingshoek_dakvlak_graden < 90:
+        gat = round((breedte_m * diepte_m) / _cos(hellingshoek_dakvlak_graden), 2)
+        flag = "dakkapel: voorvlak+2 wangen = gevel, dakje = plat dak; gat %.2f m2 van het schuine dakvlak afgetrokken." % gat
+    else:
+        gat = 0.0
+        flag = "dakkapel: voorvlak+2 wangen = gevel, dakje = plat dak; GAT in het schuine dak NIET afgetrokken (hellingshoek onbekend) -> verifieer in Vabi."
+    return {"gevel_m2": round(gevel, 2), "dak_m2": round(dak, 2), "gat_schuin_dak_m2": gat, "flag": flag}
 
 
 def ag_onder_schuin_dak(footprint_m2, eave_lengte_m, hellingshoek_graden,
