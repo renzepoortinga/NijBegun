@@ -594,7 +594,86 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     k2 = _undot(G("Dak - kopgevel oriëntatie 2") or G("Dak - kopgevel orientatie 2") or G("Kopgevel orientatie 2") or G("Kopgevel oriëntatie 2"))
     plat_m2 = _f(G("Plat dak m2")) or _f(G("Plat dak m²"))   # legacy; plat dak nu als dakvlak met daktype 'Plat dak'
     plat_or = _undot(G("Plat dak orientatie")) or _undot(G("Plat dak oriëntatie"))
+    # ---- NIEUW DAKMODEL (8-7): "Dak N - type" per DAK (kap) -> vlakken automatisch per type ----
+    # Plat = footprint bovenste verdieping (of override) · Zadel = 2 schuine vlakken + 2 kopgevel-
+    # driehoeken (auto, orientatie +/-90) · Schild = 4 vlakken zonder kopgevels · Lessenaar = 1 vlak
+    # (hoge-zijde-gevel handmatig) · Afwijkend = de 9 m2-vakjes. Isolatie/begrenzing per dak N komt uit
+    # de "Dakvlak N - invoer"-boom. Wordt de geometrie complex -> Afwijkend (zelf invoeren).
+    _C8 = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
+    def _opp8(o):
+        o = (o or "").upper()
+        return _C8[(_C8.index(o) + 4) % 8] if o in _C8 else ""
+    def _zij8(o):
+        o = (o or "").upper()
+        return (_C8[(_C8.index(o) + 2) % 8], _C8[(_C8.index(o) - 2) % 8]) if o in _C8 else ("", "")
+    _niet_kelder = [v for n2, v in floor_footprint.items() if not _is_kelder(n2)]
+    top_fp = _niet_kelder[-1] if _niet_kelder else (bg_floor_area or 0.0)
     dak_done = False
+    _force9 = False
+    for _dn in (1, 2, 3):
+        Pd = "Dak %d" % _dn
+        t_n = _undot(G(Pd + " - type (leeg = geen dak %d)" % _dn) or G(Pd + " - type"))
+        if not t_n:
+            continue
+        tn = t_n.lower()
+        b_n = _bouwdeel("Dakvlak %d" % _dn, "Rc-bron dak")
+        vlakken_n = []
+        if "plat" in tn:
+            m2p = _f(G(Pd + " plat - oppervlak (m², leeg = footprint bovenste verdieping)")) or top_fp
+            vlakken_n = [{"kind": "dak", "type": "plat", "orientatie": "", "m2": m2p or 0.0, "hellingshoek": 0}]
+            if _dn > 1 and not _f(G(Pd + " plat - oppervlak (m², leeg = footprint bovenste verdieping)")):
+                notes.append("Dak %d (plat): geen m² ingevuld -> footprint bovenste verdieping gebruikt "
+                             "(%.1f m²) - klopt dat voor dit dakdeel? Zo niet: vul het oppervlak in." % (_dn, top_fp or 0))
+        elif "zadel" in tn:
+            o_z = _undot(G(Pd + " zadel - oriëntatie dakvlak 1"))
+            br_z = _f(G(Pd + " zadel - vloerbreedte tussen de kopgevels (m)"))
+            nok_z = _f(G(Pd + " zadel - nokhoogte boven zoldervloer (m)"))
+            kn_z = _f(G(Pd + " zadel - knieschothoogte (m, leeg = 0)")) or 0.0
+            h_z = _f(G(Pd + " zadel - hellingshoek (°, leeg = berekend uit nok/breedte)"))                 or hellingshoek_uit_nok(br_z, nok_z, kn_z)
+            if h_z and o_z:
+                vlakken_n = dak_vlakken_zadeldak(top_fp, br_z or 0.0, h_z,
+                                                 orient_schuin=(o_z, _opp8(o_z)), orient_kopgevel=_zij8(o_z))
+            else:
+                notes.append("Dak %d (zadel): hellingshoek (of nok/breedte) en/of oriëntatie ontbreekt -> "
+                             "vul aan; dak overgeslagen." % _dn)
+        elif "schild" in tn or "tent" in tn:
+            h_s = _f(G(Pd + " schild - hellingshoek lange vlakken (°)"))
+            h_k = _f(G(Pd + " schild - hellingshoek kopschilden (°, leeg = zelfde)"))
+            o_s = _undot(G(Pd + " schild - oriëntatie lang dakvlak 1"))
+            if h_s and o_s:
+                zij = _zij8(o_s)
+                vlakken_n = dak_vlakken_schilddak(top_fp, h_s, (o_s, _opp8(o_s), zij[0], zij[1]))
+                if h_k and h_k != h_s:
+                    notes.append("Dak %d (schild): kopschilden %g° wijken af van de lange vlakken %g° -> "
+                                 "verfijn de vlakverdeling in Vabi." % (_dn, h_k, h_s))
+            else:
+                notes.append("Dak %d (schild): hellingshoek en/of oriëntatie ontbreekt -> vul aan; dak overgeslagen." % _dn)
+        elif "lessenaar" in tn:
+            o_l = _undot(G(Pd + " lessenaar - oriëntatie dakvlak (afwaterend naar)"))
+            hl_ = _f(G(Pd + " lessenaar - hoogte lage zijde boven vloer (m)"))
+            hh_ = _f(G(Pd + " lessenaar - hoogte hoge zijde boven vloer (m)"))
+            h_l = _f(G(Pd + " lessenaar - hellingshoek (°, leeg = berekend)"))
+            if h_l and o_l:
+                vlakken_n = dak_vlakken_lessenaar(top_fp, h_l, o_l)
+                if hh_ and hl_ is not None:
+                    notes.append("Dak %d (lessenaar): hoge-zijde-opstand (%.2f m hoogteverschil) hoort bij de "
+                                 "GEVEL aan de hoge kant -> reken die strook (hoogteverschil x gevelbreedte) "
+                                 "handmatig na in Vabi." % (_dn, (hh_ - (hl_ or 0.0))))
+            else:
+                notes.append("Dak %d (lessenaar): hellingshoek en/of oriëntatie ontbreekt -> vul aan; dak overgeslagen." % _dn)
+        elif "afwijkend" in tn or "anders" in tn:
+            _force9 = True
+            notes.append("Dak %d: type Afwijkend -> vul de 9 'Dak m² <oriëntatie>'-vakjes in (zelf gemeten)." % _dn)
+        for v in vlakken_n:
+            schil.append(SchilDeel(
+                id="dak%d-%s-%s" % (_dn, (v.get("type") or "")[:5], v["orientatie"] or "x"),
+                type=v["kind"], subtype=v.get("type", ""),
+                begrenzing=(b_n["begrenzing"] or "Buitenlucht"),
+                orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
+                isolatie_aanwezig=b_n["isolatie"], rekenzone=1, isolatiedikte_mm=b_n["dikte_mm"],
+                rc_bron=b_n["rc_bron"] or dak_rc,
+                opmerkingen="dak %d (%s) auto-berekend uit type-invoer" % (_dn, t_n)))
+            dak_done = True
     tl = type_dak.lower()
     dakvlakken = []
     # SOBOLT-stijl: DIRECT ingevoerde m² per dakvlak WINT van de auto-berekening (adviseur weet het beste).
@@ -651,7 +730,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
                                opmerkingen="plat dak (bv. erker)"))
         dak_done = True
-    if not dak_done:   # type 'Anders'/complex dak: 9 m²-vakjes per oriëntatie (N..NW + Horizontaal)
+    if (not dak_done) or _force9:   # type 'Anders'/'Afwijkend': 9 m²-vakjes per oriëntatie (N..NW + Horizontaal)
         for _o in ("N", "NO", "O", "ZO", "Z", "ZW", "W", "NW", "Horizontaal"):
             _m = _f(G("Dak m² " + _o))
             if _m:
