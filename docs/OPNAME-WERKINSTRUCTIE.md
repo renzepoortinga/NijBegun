@@ -1,5 +1,50 @@
 # Opname-werkinstructie — MagicPlan, kamer voor kamer 🏠
 
+## HET STAPPENPLAN (definitief — 11-7-2026, gelijk aan de live MagicPlan-forms)
+
+### Vooraf op kantoor (5 min)
+1. Webapp: lead -> **[+ Project]** (adres/BAG/bouwjaar komen mee). Noteer de **BAG-Ag** (eindcheck straks).
+2. MagicPlan: nieuw project (adres als naam, meters als eenheid).
+
+### In de woning — de 3 project-forms (1x invullen, ~5 min)
+3. **Object**: Bouwjaar (verplicht) · Woningtype · **Orientatie voorgevel** · Gevelhoogte (laser buiten) ·
+   Renovatiejaar (alleen bij ingrijpende renovatie) · Qv10 (ALLEEN indien gemeten) · Ag-aftrek zolder (mag later) ·
+   **foto vooraanzicht + huisnummer** (verplicht).
+4. **Constructies**: GEVEL-beslisboom (invoer -> isolatie Ja/Nee/Onbekend -> dikte of bouwjaarklasse -> spouw) +
+   thermische massa + begrenzing-default · VLOER-boom · **DAK: per dak het type tikken** — een zadeldak is
+   **1 dak** (de tool maakt beide vlakken + kopgevels zelf); Dak 2/3 alleen voor een écht extra dak
+   (aanbouw/berging). Per dak: maten van dat type + evt. dakkapel (aantal/B/H/D) + evt. dakramen
+   (aantal/m2/glas) + de dak-isolatieboom ("Dak N - invoer"). Kwaliteitsverklaring alléén kiezen als je
+   een factuur/verklaring hebt (anders Beslisschema!).
+5. **Installaties**: Ventilatie A-E + subsysteem (zakkaart in de ventilatie-gids). Verwarming/tapwater/PV =
+   energielabel, mag je overslaan voor Nij Begun.
+
+### Per kamer (de scan-loop, herhaal per ruimte)
+6. **Scan** de kamer -> **laser-check** de langste wand (verschil >2% = opnieuw scannen).
+7. **Benoem de kamer** (Woonkamer/Keuken/Badkamer/... — stuurt de ventilatieberekening).
+8. Tik de **buitenwand(en)** aan -> **Gevelnaam** kiezen: Voorgevel / Achtergevel / Linkergevel /
+   Rechtergevel / Buurwand (AVR). Leeg = binnenwand. GEEN namen typen.
+9. **Ramen/deuren plaatsen** + B x H meten (identiek raam: kopieer). Per raam: **alleen Type glas** — de
+   rest is default (hout/kunststof · geen rooster · raam); alleen afwijkingen aanraken (paneel! metaal! rooster!).
+   Per deur: Type constructie (dicht / met raam / 65% glas) + evt. **bovenlicht** (glas of dicht paneel).
+10. **Afwijkingen** per element: begrenzing (AOR/kruipruimte/...), isolatie-override, rekenzone, of
+    **narekenen-vinkje + "Grenst aan buiten (m)"** (meet de buitenlengte — de tool splitst zelf).
+
+### Bewijslast (tijdens de ronde)
+11. **Spouwinspectie** per te isoleren gevel (boorgat in de voeg + endoscoop; zie spouwinspectie-gids) ·
+    **kruipruimte-foto met rolmaat** (hoogte!) · dak-isolatie met duimstok · ventilatie-unit + typeplaatje ·
+    overzichtsfoto per bouwdeel.
+
+### Eindcheck op de bank (5 min — zie inmeetgids)
+12. Elke buitenwand een gevelnaam? · elk raam een glastype? · **1 zadeldak = 1 dak** (geen dubbel!) ·
+    verdiepingshoogtes reëel (geen 0,46 m-kamers) · Ag ≈ BAG (±5%) · foto's compleet.
+
+### Thuis (10 min)
+13. Exporteer de **Statistics-CSV** (NIET de PDF — daar zitten de form-antwoorden niet in!).
+14. Webapp: project -> Opname -> CSV inladen -> **actiekaart "Zelf doen in Vabi" afwerken** -> gegevens
+    nalopen -> VABI-import downloaden -> EPA: 3 tegels importeren -> rekenen -> export terug (nulmeting) ->
+    maatregelen -> VABI-toets -> afronden (PDF+JSON) -> indienen.
+
 > Doel: **snel en zonder klungelen** een woning opnemen, zó dat de tool er thuis automatisch
 > de VABI-invoer + het Nij Begun-isolatieplan van maakt. Print dit of zet het op je iPad.
 
