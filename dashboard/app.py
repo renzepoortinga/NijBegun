@@ -849,7 +849,10 @@ def opname_magicplan(tag):
         flash("Kon de opname niet lezen: %s" % e); return redirect(url_for("opname", tag=tag))
     # "ZELF DOEN IN VABI"-lijst: parser-notes (narekenen/KV/multi-zone/ontbrekend) + generator-flags
     # (kwaliteitsverklaring -> Invoer+BCRG-code handmatig; onbekende types) direct bij de upload tonen.
-    acties = [str(n) for n in (notes or [])]
+    acties = ["VÓÓR het importeren in Vabi: Algemeen invullen met Objecttype=Woning, "
+              "Bouwfase=Bestaande bouw, Opname=Basisopname. Laat je die leeg, dan weigert "
+              "EPA de Objecten-import ('komen niet overeen')."]
+    acties += [str(n) for n in (notes or [])]
     try:
         from vabi.constructie_generate import resolve_constructies
         _, _, _issues = resolve_constructies(nieuw)

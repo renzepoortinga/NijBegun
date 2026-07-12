@@ -31,10 +31,13 @@ def generate_all(dos, outdir, prefix=""):
     readme = os.path.join(outdir, "IMPORTEREN.txt")
     with open(readme, "w", encoding="utf-8") as fh:
         fh.write("VABI-import (EPA 12.x) - importvolgorde:\n")
+        fh.write("  0. EERST Algemeen invullen: Objecttype=Woning, Bouwfase=Bestaande bouw,\n")
+        fh.write("     Opname=Basisopname. Laat je Bouwfase/Opname leeg, dan WEIGERT EPA de\n")
+        fh.write("     objecten-import ('komen niet overeen met de waarden van de objecten').\n")
         fh.write("  1. Constructies > Importeren  -> %sConstructiebibliotheek.xml\n" % p)
         fh.write("  2. Objecten     > Importeren  -> %sObjectenbibliotheek.xml\n" % p)
         fh.write("  3. Installaties > Importeren  -> %sInstallatiebibliotheek.xml\n" % p)
-        fh.write("Daarna: Algemeen invullen (bouwfase/opname/adres) -> Rekenen.\n")
+        fh.write("Daarna: Algemeen aanvullen (adres/opdrachtgever) -> Rekenen.\n")
     res["readme"] = readme
     return res
 
