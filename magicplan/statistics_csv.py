@@ -311,33 +311,41 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     floor_footprint[naam] = fp
     if dos.opname.gevelhoogte_m is None and floor_hoogtes:
         dos.opname.gevelhoogte_m = round(sum(floor_hoogtes), 2)  # som verdiepingshoogtes ~ gevelhoogte
-    # GEBOUWHOOGTE (tot de nok) ≠ gevelhoogte (tot de goot). Eigen veld wint; anders gevelhoogte +
-    # nokhoogte (zadel/schild); plat dak -> gebouwhoogte = gevelhoogte.
-    gbh = _f(G("Gebouwhoogte (m)")) or _f(G("Gebouwhoogte (m, leeg = gevelhoogte + nokhoogte)"))
-    nok = (_f(G("Dak - nokhoogte (m, optioneel)")) or _f(G("Dak nokhoogte"))
-           or _f(G("Dak zadel - nokhoogte boven zoldervloer (m)")))
+    # GEBOUWHOOGTE (tot de nok) ≠ gevelhoogte (tot de goot). UITSLUITEND handmatige invoer via het
+    # MagicPlan-veld (eis Renze 12-7: geen berekende fallback — dit is opname-invoer). Ontbreekt het
+    # veld -> geen waarde + LUIDE note; de generator schrijft dan 0 (nooit een sjabloonwaarde).
+    gbh = (_f(G("Gebouwhoogte (m)")) or _f(G("Gebouwhoogte tot de nok (m)"))
+           or _f(G("Gebouwhoogte (m, leeg = gevelhoogte + nokhoogte)")))
     if gbh:
         dos.opname.gebouwhoogte_m = gbh
-    elif dos.opname.gevelhoogte_m and nok:
-        dos.opname.gebouwhoogte_m = round(float(dos.opname.gevelhoogte_m) + float(nok), 2)
-        notes.append("Gebouwhoogte %.2f m = gevelhoogte %.2f + nokhoogte %.2f (controleer; eigen "
-                     "Gebouwhoogte-veld in MagicPlan wint)." % (dos.opname.gebouwhoogte_m,
-                                                                dos.opname.gevelhoogte_m, nok))
+    else:
+        notes.append("GEBOUWHOOGTE ONTBREEKT: vul het veld 'Gebouwhoogte tot de nok (m)' in het "
+                     "MagicPlan-Object-form in (handmatige invoer). In Vabi komt nu 0 te staan.")
     # PER-VERDIEPING Ag: de gemeten MagicPlan-vloeroppervlakken ("Ground surface without walls"
-    # per verdieping) dragen we mee -> VABI Verdiepingen krijgt de ECHTE waarden per bouwlaag
-    # (niet Ag gelijk verdeeld). Wijkt de som af van MagicPlans "Total living area" (bv. berging/
-    # garage of lage zolderstrook meegeteld), dan flaggen we dat luid: de adviseur beslist.
+    # per verdieping) zijn DE meting -> VABI Verdiepingen krijgt die echte waarden per bouwlaag,
+    # en Ag = de som daarvan (eis Renze 12-7: de gemeten 122,06 is juist, niet MagicPlans
+    # "woonoppervlak"-heuristiek 87,13 die op kamertype filtert). De Ag-aftrek-zolder (handmatig
+    # gemeten strook <1,5 m) gaat van de BOVENSTE verdieping af, zodat som == Ag blijft.
     for fnaam, fopp in floor_footprint.items():
         vi = next((v for v in geo.vloeren if v.naam == fnaam), None)
         if vi is not None:
             vi.oppervlakte_m2 = fopp
         else:
             geo.vloeren.append(VloerInfo(naam=fnaam, oppervlakte_m2=fopp))
-    _vsom = round(sum(v.oppervlakte_m2 or 0 for v in geo.vloeren), 2)
-    if _vsom and geo.gebruiksoppervlakte_ag_m2 and abs(_vsom - geo.gebruiksoppervlakte_ag_m2) > 0.02 * _vsom:
-        notes.append("LET OP Ag: som verdiepingen %.2f m² ≠ MagicPlan-woonoppervlak %.2f m². "
-                     "Mogelijk telt een berging/garage of zolderstrook <1,5 m mee — corrigeer de "
-                     "verdieping-m² in de webapp of in Vabi (Ag is heilig)." % (_vsom, geo.gebruiksoppervlakte_ag_m2))
+    _gemeten = [v for v in geo.vloeren if (v.oppervlakte_m2 or 0) > 0]
+    if _gemeten:
+        if ag_aftrek:
+            bovenste = _gemeten[-1]        # CSV-volgorde: Ground -> 1st -> 2nd (zolder = laatste)
+            bovenste.oppervlakte_m2 = round(max(0.0, bovenste.oppervlakte_m2 - ag_aftrek), 2)
+            notes.append("Verdieping '%s': %.2f m² afgetrokken (opgegeven zolderstrook <1,5 m)."
+                         % (bovenste.naam, ag_aftrek))
+        _vsom = round(sum(v.oppervlakte_m2 for v in _gemeten), 2)
+        _mp_woon = geo.gebruiksoppervlakte_ag_m2
+        geo.gebruiksoppervlakte_ag_m2 = _vsom      # Ag = som van de gemeten verdiepingen
+        if _mp_woon and abs(_vsom - _mp_woon) > 0.02 * _vsom:
+            notes.append("Ag = %.2f m² (som gemeten verdiepingen). MagicPlans eigen 'woonoppervlak' "
+                         "was %.2f m² (kamertype-heuristiek, niet gebruikt) — check bij groot "
+                         "verschil of alle ruimtes in de rekenzone horen." % (_vsom, _mp_woon))
     # begane-grond-footprint: verdieping met 'ground/grond/begane' in de naam, anders grootste
     # niet-kelder-vloer (kelder = 'basement/kelder'); fallback grootste overall.
     def _is_bg(n): return any(k in n.lower() for k in ("ground", "grond", "begane"))

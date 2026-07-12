@@ -401,20 +401,19 @@ def build_tree(dos):
             else:
                 issues.append("Ag=%.1f m2 over %d bouwlagen GELIJK verdeeld (geen per-verdieping-meting "
                               "in het dossier) — corrigeer de verdieping-m² in Vabi." % (ag, n_lagen))
-    # 3b) Gebouw-niveau: Gebouwhoogte = hoogte tot de NOK (gebouwhoogte_m), niet de gevelhoogte
-    # (tot de goot) — gevelhoogte als Gebouwhoogte gaf 5.24 i.p.v. ~8.2 (live gezien 12-7).
+    # 3b) Gebouw-niveau: Gebouwhoogte = HANDMATIGE opname-invoer (gebouwhoogte_m, tot de nok).
+    # GEEN fallback op gevelhoogte of berekening (eis Renze 12-7) en NOOIT de sjabloonwaarde laten
+    # staan (sjabloon-lek): ontbreekt de invoer -> 0 + luide actie.
     # Gebouwtype/Ligging zijn ENUMS zonder bevestigde codes -> niet gokken (golden rule), flaggen.
-    _opn2 = getattr(dos, "opname", None)
-    gh = getattr(_opn2, "gebouwhoogte_m", None)
-    if not gh:
-        gh = getattr(_opn2, "gevelhoogte_m", None)
-        if gh:
-            issues.append("Gebouwhoogte: geen nok-/gebouwhoogte in de opname -> gevelhoogte %.2f m "
-                          "gezet; bij een hellend dak is het gebouw hoger — corrigeer in Vabi." % float(gh))
-    if gh and float(gh) > 0:
-        gh_node = next((e for e in root.iter() if _local(e.tag) == "Gebouwhoogte"), None)
-        if gh_node is not None:
+    gh = getattr(getattr(dos, "opname", None), "gebouwhoogte_m", None)
+    gh_node = next((e for e in root.iter() if _local(e.tag) == "Gebouwhoogte"), None)
+    if gh_node is not None:
+        if gh and float(gh) > 0:
             gh_node.text = "%.2f" % float(gh)
+        else:
+            gh_node.text = "0"
+            issues.append("GEBOUWHOOGTE ONTBREEKT -> 0 gezet: meet/vul de gebouwhoogte tot de nok "
+                          "in (MagicPlan-veld 'Gebouwhoogte tot de nok (m)') of zet hem in Vabi.")
     wt = getattr(getattr(dos, "identificatie", None), "woningtype", "")
     td = getattr(getattr(dos, "identificatie", None), "type_dak", "") or \
          getattr(getattr(dos, "opname", None), "type_dak", "")

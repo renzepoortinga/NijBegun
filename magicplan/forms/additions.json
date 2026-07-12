@@ -33,10 +33,10 @@
       "help": "Kwaliteitsverklaring -> tool vlagt het; je zet Invoer + Rc/U zelf in VABI."
      },
      {
-      "name": "Gebouwhoogte (m, leeg = gevelhoogte + nokhoogte)",
+      "name": "Gebouwhoogte tot de nok (m)",
       "dataType": "number",
-      "required": false,
-      "help": "Hoogte tot de NOK (VABI Gebouwhoogte). Leeg laten mag: de tool rekent dan gevelhoogte + nokhoogte. Gevelhoogte = vloer tot dakvoet/goot en blijft apart."
+      "required": true,
+      "help": "Hoogte van maaiveld tot het HOOGSTE punt (de nok). HANDMATIGE invoer, verplicht — de tool berekent dit bewust niet. Gevelhoogte (tot de goot/dakvoet) is het aparte veld hierboven."
      }
     ],
     "Vloer & Dak": [

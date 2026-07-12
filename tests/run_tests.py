@@ -488,9 +488,14 @@ _dakhv = {(h.findtext("Naam") or ""): h.findtext("Hellingshoek") for h in _objbu
 check("obj-gen: plat dakvlak -> Hellingshoek 6", _dakhv.get("Dak dakplat") == "6")
 check("obj-gen: hellend dakvlak -> Hellingshoek 3", _dakhv.get("Dak dakhel") == "3")
 
-# Gebouwhoogte uit opname (vrije float; gevelhoogte_m=5.4 uit agcsv)
+# Gebouwhoogte = HANDMATIGE invoer (12-7): zonder gebouwhoogte_m -> 0 (geen gevelhoogte-fallback,
+# geen sjabloon-lek); met gebouwhoogte_m -> die waarde.
+_gh0 = next((e for e in _objbuild(_ad)[0].iter() if e.tag.rsplit("}", 1)[-1] == "Gebouwhoogte"), None)
+check("obj-gen: geen gebouwhoogte-invoer -> 0 (geen gevelhoogte 5.40 als gebouwhoogte)",
+      _gh0 is not None and _gh0.text == "0")
+_ad.opname.gebouwhoogte_m = 8.40
 _gh = next((e for e in _objbuild(_ad)[0].iter() if e.tag.rsplit("}", 1)[-1] == "Gebouwhoogte"), None)
-check("obj-gen: Gebouwhoogte uit opname (5.40)", _gh is not None and _gh.text == "5.40")
+check("obj-gen: Gebouwhoogte uit handmatige opname-invoer (8.40)", _gh is not None and _gh.text == "8.40")
 # perimeter-guard: vloer Buitenlucht -> GEEN perimeter-override (ISSO 8.3 alleen grond/kruip/kelder)
 for _s in _ad.schil:
     if _s.type == "vloer":
@@ -608,9 +613,9 @@ check("token: ruimtenaam 'grond' -> apart vloerdeel met begrenzing Grond",
       any(s.begrenzing == "Grond" and abs((s.oppervlakte_m2 or 0) - 20.0) < 0.1 for s in _tvl))
 check("token: hoofdvloer verlaagd met het grond-deel (60-20=40)",
       any(s.subtype == "Begane grondvloer" and abs((s.oppervlakte_m2 or 0) - 40.0) < 0.1 for s in _tvl))
-check("token: Ag-aftrek zolder 8 m² toegepast (100-8=92)",
-      abs((_td.geometrie.gebruiksoppervlakte_ag_m2 or 0) - 92.0) < 0.1)
-check("token: Ag-aftrek gemeld in notes", any("Ag verlaagd" in n for n in _tn))
+check("token: Ag = gemeten verdieping - zolderaftrek (60-8=52; MagicPlan-woonopp 100 NIET gebruikt)",
+      abs((_td.geometrie.gebruiksoppervlakte_ag_m2 or 0) - 52.0) < 0.1)
+check("token: Ag-aftrek gemeld in notes", any("Ag verlaagd" in n or "afgetrokken" in n for n in _tn))
 
 print("\n30. Objecten<->constructies: gedeelde (deterministische) GUIDs — EPA enum-mismatch-fix")
 from vabi.constructie_generate import resolve_constructies as _rc
@@ -1606,8 +1611,16 @@ try:
     check("objecten: verdiepingen = gemeten m2 (55.56/44.35/22.15), niet gelijk verdeeld",
           all(("<Gebruiksoppervlakte>%s</Gebruiksoppervlakte>" % w) in _x58
               for w in ("55.56", "44.35", "22.15")) and "29.04" not in _x58)
-    check("objecten: Gebouwhoogte = nok-hoogte (8.21), niet gevelhoogte",
+    check("objecten: Gebouwhoogte = handmatige invoer (8.21), niet gevelhoogte",
           "<Gebouwhoogte>8.21</Gebouwhoogte>" in _x58)
+    # gebouwhoogte ONTBREEKT -> 0 + luide actie (nooit sjabloon-lek 7.60, nooit gevelhoogte-fallback)
+    _d.opname.gebouwhoogte_m = None
+    _rootg, _, _issg, _ = _OG58.build_tree(_d)
+    _xg = _ET58.tostring(_rootg, encoding="unicode")
+    check("objecten: gebouwhoogte ontbreekt -> 0 + actie (geen 7.60-sjabloonlek, geen 5.24-fallback)",
+          "<Gebouwhoogte>0</Gebouwhoogte>" in _xg and "7.60" not in _xg and "5.24" not in _xg
+          and any("GEBOUWHOOGTE ONTBREEKT" in str(i) for i in _issg))
+    _d.opname.gebouwhoogte_m = 8.21
     _locs = {}
     for _el in _root58.iter():
         if _el.tag.endswith("Hoofdvlak") and (_el.findtext("Naam") or "").strip():
@@ -1616,10 +1629,11 @@ try:
           _locs.get("Gevel gevel-voor") == "2" and _locs.get("Gevel gevel-achter") == "3"
           and _locs.get("Gevel gevel-kopg-ZW") == "5" and _locs.get("Vloer vloer") == "0"
           and _locs.get("Dak dak-schu-NW") == "1")
-    # (d) parser: gebouwhoogte uit gevelhoogte+nok + verdieping-m2 + Ag-afwijkings-note
+    # (d) parser: gebouwhoogte = HANDMATIG veld + verdieping-m2 + Ag = som gemeten verdiepingen
     from magicplan.statistics_csv import build_dossier as _bd58
     _rows58 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "87.13"], ["Floors", "3"],
                ["Nij Begun"], ["Woningtype", "Tussenwoning"], ["Gevelhoogte (m)", "5.24"],
+               ["Gebouwhoogte tot de nok (m)", "8.21"],
                ["Dak - nokhoogte (m, optioneel)", "2.97"], ["Oriëntatie voorgevel", "NW"],
                ["Gevel - bouwjaar (onbekend)", "Van.1975.t.m.1982"], [],
                ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Volume: m³",
@@ -1631,12 +1645,22 @@ try:
         _p58 = _f58.name
     _d2, _n2 = _bd58(_p58)
     _o58.unlink(_p58)
-    check("parser: gebouwhoogte = 5.24 + 2.97 = 8.21", _d2.opname.gebouwhoogte_m == 8.21)
+    check("parser: gebouwhoogte = handmatig veld (8.21), NOOIT berekend", _d2.opname.gebouwhoogte_m == 8.21)
     check("parser: verdieping-m2 gelezen (55.56 + 44.35)",
           sorted(round(v.oppervlakte_m2, 2) for v in _d2.geometrie.vloeren) == [44.35, 55.56])
-    check("parser: Ag-afwijking geflagd (som 99.91 vs woonopp 87.13)",
-          any("LET OP Ag" in str(n) for n in _n2))
+    check("parser: Ag = som gemeten verdiepingen (99.91), NIET MagicPlan-woonoppervlak (87.13)",
+          abs(_d2.geometrie.gebruiksoppervlakte_ag_m2 - 99.91) < 0.01
+          and any("niet gebruikt" in str(n) for n in _n2))
     check("parser: bouwjaar-ontbreekt-note", any("BOUWJAAR ONTBREEKT" in str(n) for n in _n2))
+    # (e) gebouwhoogte-veld ontbreekt -> GEEN berekening uit gevel+nok, wel luide note
+    _rows58b = [r for r in _rows58 if not (r and r[0].startswith("Gebouwhoogte"))]
+    with _t58.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f58b:
+        _c58.writer(_f58b).writerows(_rows58b)
+        _p58b = _f58b.name
+    _d3, _n3 = _bd58(_p58b)
+    _o58.unlink(_p58b)
+    check("parser: veld ontbreekt -> gebouwhoogte LEEG + GEBOUWHOOGTE-note (geen 5.24+2.97-gok)",
+          _d3.opname.gebouwhoogte_m is None and any("GEBOUWHOOGTE ONTBREEKT" in str(n) for n in _n3))
 except Exception as _e:
     check("VABI-import-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
 
