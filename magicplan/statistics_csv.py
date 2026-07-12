@@ -707,55 +707,77 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             dak_done = True
         if vlakken_n:
             _dak_kappen.append((_dn, tn, next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")))
-        # dakkapel(len) op dit dak (ISSO 82.1 §8.2.1): voorvlak + 2 wangen = gevel, plat dakje = plat
-        # dak; het gat in het schuine dakvlak wordt AFGETROKKEN (dakkapel_vlakken). Erft oriëntatie +
-        # isolatie/begrenzing van dak N. Aantal leeg/0 -> geen dakkapel.
-        _ka = _f(G(Pd + " - aantal dakkapellen (leeg = geen)"))
-        _kb = _f(G(Pd + " - dakkapel breedte (m)"))
-        _kh = _f(G(Pd + " - dakkapel hoogte voorvlak (m)"))
-        _kd = _f(G(Pd + " - dakkapel diepte (m)"))
-        if _ka and _kb and _kh and _kd:
-            _hvlak = next((v.get("hellingshoek") for v in vlakken_n if v.get("hellingshoek")), None)
-            _kor = next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")
-            dk = dakkapel_vlakken(_kb, _kh, _kd, _hvlak)
+        # --- dakkapellen + dakramen: PER DAKVLAK en PER GROEP (A/B) — 12-7 herontwerp na veldfeedback:
+        # een zadeldak heeft dakramen/kapellen in voor- EN achtervlak, vaak met verschillend glas/maten.
+        _hoofd_or = next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")
+        _hoofd_h = next((v.get("hellingshoek") for v in vlakken_n if v.get("hellingshoek")), None)
+        def _Gp(pre):
+            _k = next((k for k in plan if (k or "").startswith(pre)), None)
+            return plan.get(_k, "") if _k else ""
+        def _kies_vlak(waarde):
+            w = _undot(waarde or "").lower()
+            return _opp8(_hoofd_or) if ("2" in w or "tegenover" in w) else _hoofd_or
+        def _trek_af(orient, m2):
+            _kand = [s2 for s2 in schil if s2.id.startswith("dak%d-" % _dn) and s2.type == "dak"
+                     and (s2.hellingshoek or 0) > 0]
+            _hit = (next((s2 for s2 in _kand if (s2.orientatie or "") == orient), None)
+                    or (max(_kand, key=lambda s2: s2.oppervlakte_m2 or 0) if _kand else None))
+            if _hit:
+                _hit.oppervlakte_m2 = round(max((_hit.oppervlakte_m2 or 0) - m2, 0.0), 2)
+        # dakkapellen A/B (ISSO 82.1 par. 8.2.1: voorvlak+2 wangen=gevel, dakje=plat dak, gat afgetrokken)
+        for _g, _v in (("A", (" - aantal dakkapellen (leeg = geen)", " - dakkapel breedte (m)",
+                              " - dakkapel hoogte voorvlak (m)", " - dakkapel diepte (m)",
+                              " - dakkapel A: dakvlak")),
+                       ("B", (" - dakkapel B: aantal", " - dakkapel B: breedte (m)",
+                              " - dakkapel B: hoogte voorvlak (m)", " - dakkapel B: diepte (m)",
+                              " - dakkapel B: dakvlak"))):
+            _ka, _kb = _f(_Gp(Pd + _v[0])), _f(_Gp(Pd + _v[1]))
+            _kh, _kd = _f(_Gp(Pd + _v[2])), _f(_Gp(Pd + _v[3]))
+            if not (_ka and _kb and _kh and _kd):
+                continue
+            _kor = _kies_vlak(_Gp(Pd + _v[4]))
+            dk = dakkapel_vlakken(_kb, _kh, _kd, _hoofd_h)
             _n_kap = int(_ka)
-            schil.append(SchilDeel(id="dak%d-kapel-gevel" % _dn, type="gevel", subtype="dakkapel",
+            _sfx = "-" + _g.lower()
+            schil.append(SchilDeel(id="dak%d-kapel%s-gevel" % (_dn, _sfx), type="gevel", subtype="dakkapel",
                 begrenzing="Buitenlucht", orientatie=_kor, oppervlakte_m2=round(dk["gevel_m2"] * _n_kap, 2),
-                isolatie_aanwezig=b_n["isolatie"], rekenzone=1, isolatiedikte_mm=b_n["dikte_mm"], rc_bron=b_n["rc_bron"] or dak_rc,
-                opmerkingen="dakkapel voorvlak+2 wangen (%dx) — raam apart als kozijn opnemen" % _n_kap))
-            schil.append(SchilDeel(id="dak%d-kapel-plat" % _dn, type="dak", subtype="plat (dakkapel)",
-                begrenzing="Buitenlucht", orientatie="", oppervlakte_m2=round(dk["dak_m2"] * _n_kap, 2), hellingshoek=0,
-                isolatie_aanwezig=b_n["isolatie"], rekenzone=1, isolatiedikte_mm=b_n["dikte_mm"], rc_bron=b_n["rc_bron"] or dak_rc,
-                opmerkingen="dakkapel plat dakje (%dx)" % _n_kap))
-            # gat aftrekken van het grootste schuine dakvlak van dit dak
+                isolatie_aanwezig=b_n["isolatie"], rekenzone=1, isolatiedikte_mm=b_n["dikte_mm"],
+                rc_bron=b_n["rc_bron"] or dak_rc,
+                opmerkingen="dakkapel %s voorvlak+2 wangen (%dx, vlak %s) — raam apart als kozijn opnemen"
+                            % (_g, _n_kap, _kor or "?")))
+            schil.append(SchilDeel(id="dak%d-kapel%s-plat" % (_dn, _sfx), type="dak", subtype="plat (dakkapel)",
+                begrenzing="Buitenlucht", orientatie="", oppervlakte_m2=round(dk["dak_m2"] * _n_kap, 2),
+                hellingshoek=0, isolatie_aanwezig=b_n["isolatie"], rekenzone=1,
+                isolatiedikte_mm=b_n["dikte_mm"], rc_bron=b_n["rc_bron"] or dak_rc,
+                opmerkingen="dakkapel %s plat dakje (%dx)" % (_g, _n_kap)))
             _gat_tot = round(dk["gat_schuin_dak_m2"] * _n_kap, 2)
             if _gat_tot:
-                _schuin = [s2 for s2 in schil if s2.id.startswith("dak%d-" % _dn) and (s2.hellingshoek or 0) > 0]
-                if _schuin:
-                    _gr = max(_schuin, key=lambda s2: s2.oppervlakte_m2 or 0)
-                    _gr.oppervlakte_m2 = round(max((_gr.oppervlakte_m2 or 0) - _gat_tot, 0.0), 2)
-            notes.append("Dak %d: %dx %s" % (_dn, _n_kap, dk["flag"]))
-        # dakramen in de hellende vlakken van dit dak: apart kozijn (subtype Dakraam) op de vlak-oriëntatie;
-        # het glas-oppervlak gaat van het grootste schuine vlak af (netto hoofdvlak + deelvlak, zoals gevels)
-        _rwn = _f(G(Pd + " - dakramen aantal (leeg = geen)"))
-        _rwm = _f(G(Pd + " - dakramen totaal oppervlak (m²)"))
-        _rwg = _undot(G(Pd + " - dakramen type glas"))
-        if _rwn and _rwm:
-            _ror = next((v["orientatie"] for v in vlakken_n if v.get("orientatie")), "")
-            _rh = next((v.get("hellingshoek") for v in vlakken_n if v.get("hellingshoek")), None)
-            schil.append(SchilDeel(id="dak%d-dakraam" % _dn, type="kozijn", subtype="Dakraam",
-                begrenzing="Buitenlucht", orientatie=_ror, oppervlakte_m2=_rwm,
-                glastype=_rwg or "", kozijnmateriaal="Hout of kunststof", hellingshoek=_rh,
-                opmerkingen="dakraam/-ramen (%dx) in hellend dakvlak%s — in Vabi als raam op het DAKvlak"
-                            % (int(_rwn), (" @%g°" % _rh) if _rh else "")))
-            _schuin2 = [s2 for s2 in schil if s2.id.startswith("dak%d-" % _dn) and s2.type == "dak"
-                        and (s2.hellingshoek or 0) > 0]
-            if _schuin2:
-                _gr2 = max(_schuin2, key=lambda s2: s2.oppervlakte_m2 or 0)
-                _gr2.oppervlakte_m2 = round(max((_gr2.oppervlakte_m2 or 0) - _rwm, 0.0), 2)
+                _trek_af(_kor, _gat_tot)
+            notes.append("Dak %d kapel %s (%dx, vlak %s): %s" % (_dn, _g, _n_kap, _kor or "?", dk["flag"]))
+        # dakramen A/B: per groep eigen dakvlak + eigen glastype; legacy enkelvoudige velden als fallback
+        _rw_groepen = []
+        for _g in ("A", "B"):
+            _rwn = _f(_Gp(Pd + " - dakramen %s: aantal" % _g))
+            _rwm = _f(_Gp(Pd + " - dakramen %s: totaal oppervlak" % _g))
+            if _rwn and _rwm:
+                _rw_groepen.append((_g, _rwn, _rwm, _undot(_Gp(Pd + " - dakramen %s: type glas" % _g)),
+                                    _kies_vlak(_Gp(Pd + " - dakramen %s: dakvlak" % _g))))
+        if not _rw_groepen:
+            _rwn = _f(G(Pd + " - dakramen aantal (leeg = geen)"))
+            _rwm = _f(_Gp(Pd + " - dakramen totaal oppervlak"))
+            if _rwn and _rwm:
+                _rw_groepen.append(("", _rwn, _rwm, _undot(G(Pd + " - dakramen type glas")), _hoofd_or))
+        for _g, _rwn, _rwm, _rwg, _ror in _rw_groepen:
+            schil.append(SchilDeel(id="dak%d-dakraam%s" % (_dn, ("-" + _g.lower()) if _g else ""),
+                type="kozijn", subtype="Dakraam", begrenzing="Buitenlucht", orientatie=_ror,
+                oppervlakte_m2=_rwm, glastype=_rwg or "", kozijnmateriaal="Hout of kunststof",
+                hellingshoek=_hoofd_h,
+                opmerkingen="dakraam/-ramen (%dx) in dakvlak %s — in Vabi als raam op het DAKvlak"
+                            % (int(_rwn), _ror or "?")))
+            _trek_af(_ror, _rwm)
             if _rwm / max(_rwn, 1) < 0.65:
-                notes.append("Dak %d: dakramen gemiddeld < 0,65 m²/stuk -> Nij Begun rekent kleine "
-                             "ruiten als 0,65 m²; check het totaal." % _dn)
+                notes.append("Dak %d dakramen %s: gemiddeld < 0,65 m2/stuk -> Nij Begun rekent kleine "
+                             "ruiten als 0,65 m2; check het totaal." % (_dn, _g or "-"))
         # Ag-zolder-check: schuin dak met laag/geen knieschot en geen 'Ag-aftrek zolder' ingevuld ->
         # suggereer de 1,5m-lijn-aftrek (NEN 2580); we passen 'm NIET automatisch toe (Ag = heilig)
         if "zadel" in tn and (kn_z or 0) < 1.5 and not ag_aftrek and br_z and top_fp:

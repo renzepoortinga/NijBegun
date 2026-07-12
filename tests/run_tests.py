@@ -1414,5 +1414,39 @@ try:
 except Exception as _e:
     check("dakramen/asymmetrie: draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print()
+print("56. Dakramen/dakkapel PER DAKVLAK (A/B-groepen, eigen glastype) — herontwerp 12-7")
+try:
+    import tempfile as _t6, csv as _c6, os as _o6
+    _r6 = [["PLAN ATTRIBUTES"], ["Total living area: m2", "90"], ["", "Nij Begun"],
+        ["Oriëntatie voorgevel", "Z"], ["Woningtype", "Tussenwoning"], ["Bouwjaar", "1980"],
+        ["Dak 1 - type (het HELE dak)", "Zadeldak"],
+        ["Dak 1 zadel - oriëntatie dakvlak 1", "Z"],
+        ["Dak 1 zadel - vloerbreedte tussen de kopgevels (m)", "6.0"],
+        ["Dak 1 zadel - nokhoogte boven zoldervloer (m)", "3.0"],
+        ["Dak 1 - dakramen A: dakvlak (leeg = dakvlak 1)", "Dakvlak.1"],
+        ["Dak 1 - dakramen A: aantal", "2"], ["Dak 1 - dakramen A: totaal oppervlak (m2)", "1.6"],
+        ["Dak 1 - dakramen A: type glas", "Dubbel"],
+        ["Dak 1 - dakramen B: dakvlak (leeg = dakvlak 1)", "Dakvlak.2.tegenoverliggend"],
+        ["Dak 1 - dakramen B: aantal", "1"], ["Dak 1 - dakramen B: totaal oppervlak (m2)", "0.8"],
+        ["Dak 1 - dakramen B: type glas", "Enkel"],
+        [],
+        ["FLOOR ATTRIBUTES", "Ground surface without walls: m2", "V", "G", "C", "W1", "W2",
+         "Ground surface with all walls: m2", "Gi", "Ceiling Height"],
+        ["Ground Floor", "50", "130", "28", "28", "90", "80", "56", "50", "2.60 m"], []]
+    with _t6.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f6:
+        _c6.writer(_f6).writerows(_r6); _p6 = _f6.name
+    _d6, _n6 = _csvdos(_p6); _o6.unlink(_p6)
+    _ra = next((x for x in _d6.schil if x.id == "dak1-dakraam-a"), None)
+    _rb = next((x for x in _d6.schil if x.id == "dak1-dakraam-b"), None)
+    check("A/B: dakraam A op VOORvlak Z met Dubbel", _ra is not None and _ra.orientatie == "Z" and _ra.glastype == "Dubbel")
+    check("A/B: dakraam B op ACHTERvlak N met Enkel", _rb is not None and _rb.orientatie == "N" and _rb.glastype == "Enkel")
+    _z = next((x for x in _d6.schil if x.id == "dak1-schui-Z"), None)
+    _n = next((x for x in _d6.schil if x.id == "dak1-schui-N"), None)
+    check("A/B: aftrek van het JUISTE vlak (Z -1.6, N -0.8)",
+          _z is not None and _n is not None and abs(_z.oppervlakte_m2 - 33.76) < 0.1 and abs(_n.oppervlakte_m2 - 34.56) < 0.1)
+except Exception as _e:
+    check("dakramen A/B: draait zonder fout", False); print("     " + repr(_e)[:170])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
