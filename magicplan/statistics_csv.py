@@ -657,6 +657,18 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             if h_z and o_z:
                 vlakken_n = dak_vlakken_zadeldak(top_fp, br_z or 0.0, h_z,
                                                  orient_schuin=(o_z, _opp8(o_z)), orient_kopgevel=_zij8(o_z))
+                # KOPGEVELS zijn bij een TUSSENWONING vrijwel altijd BUURWANDEN (nok evenwijdig aan de
+                # straat) -> niet in de schil. Deterministisch: alleen kopgevels meenemen op zijden
+                # waar de adviseur ook echt een buitengevel heeft getikt (voor/achter/links/rechts).
+                _buiten_orients = {o for (o, _b, _i, _nr, _rz) in gevel_per if o}
+                _weg_kop = [v for v in vlakken_n if v.get("kind") == "gevel"
+                            and v.get("orientatie") and v["orientatie"] not in _buiten_orients]
+                if _weg_kop:
+                    vlakken_n = [v for v in vlakken_n if v not in _weg_kop]
+                    notes.append("Dak %d (zadel): kopgevel(s) %s WEGGELATEN — op die zijde(n) is geen "
+                                 "buitengevel getikt (buurwand/tussenwoning). Is een kopgevel tóch buiten "
+                                 "(bv. nok haaks op de straat)? Tik die zijgevel dan als gevel, dan telt "
+                                 "de driehoek automatisch mee." % (_dn, "/".join(v["orientatie"] for v in _weg_kop)))
                 if h_z2 and h_z2 != h_z:   # asymmetrisch: vlak 2 met eigen helling op de halve footprint
                     for v in vlakken_n:
                         if v.get("kind") == "dak" and v.get("orientatie") == _opp8(o_z):
