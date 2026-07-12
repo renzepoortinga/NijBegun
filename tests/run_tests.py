@@ -694,7 +694,8 @@ _frec = {"id": "rec1", "form": _fform}
 _fadd = _fp.load_additions()
 _frec, _fadded, _freq, _fprobs = _fp.merge_record(_frec, _fadd, verbose=False)
 check("form_push: 'Oriëntatie voorgevel' toegevoegd", "Oriëntatie voorgevel" in _fadded)
-check("form_push: Rc-bron gevel/vloer/dak toegevoegd (4 velden totaal)", len(_fadded) == 4)
+check("form_push: Rc-bron gevel/vloer/dak + Gebouwhoogte toegevoegd (5 velden totaal)",
+      len(_fadded) == 5 and any("Gebouwhoogte" in a for a in _fadded))
 check("form_push: geen validatieproblemen", _fprobs == [])
 check("form_push: nieuw veld na de juiste sectie (Gevels)",
       any(c.get("name") == "Oriëntatie voorgevel" for c in _fp._form_of(_frec)["children"]))
@@ -1556,6 +1557,88 @@ try:
         _L57.LEADS_DIR, _L57.LEADS_FILE = _od57, _of57
 except Exception as _e:
     check("leads-workflow: draait zonder fout", False); print("     " + repr(_e)[:180])
+
+print()
+print("58. VABI-import-fixes 12-7 (1e echte import): bouwjaar-lek, verdiepingen, gebouwhoogte, klasse, Locatie")
+try:
+    import re as _re58, tempfile as _t58, os as _o58, csv as _c58
+    import xml.etree.ElementTree as _ET58
+    from core.dossier import Dossier as _D58, SchilDeel as _S58, VloerInfo as _V58
+    from vabi.constructie_generate import _jaar_uit_klassetekst as _jk, resolve_constructies as _rc58
+    from vabi import objecten_generate as _OG58
+    # (a) klassetekst -> representatief jaar (ook ge-dot)
+    check("klassetekst: 'Van 1975 t/m 1982' -> 1978", _jk("Van 1975 t/m 1982") == 1978)
+    check("klassetekst: dotted + Tot/Vanaf", _jk("Van.1975.t.m.1982") == 1978
+          and _jk("Tot 1965") == 1964 and _jk("Vanaf 2014") == 2015 and _jk("") is None)
+    # (b) dossier: gevel met per-bouwdeel klasse (project-bouwjaar LEEG) -> constructie 1975-1982
+    _d = _D58()
+    _d.identificatie.bouwjaar = None
+    _d.identificatie.orientatie_voorgevel = "NW"
+    _d.opname.gevelhoogte_m = 5.24
+    _d.opname.gebouwhoogte_m = 8.21
+    _d.geometrie.vloeren = [_V58(naam="Ground Floor", oppervlakte_m2=55.56),
+                            _V58(naam="1st Floor", oppervlakte_m2=44.35),
+                            _V58(naam="2nd Floor", oppervlakte_m2=22.15)]
+    _d.geometrie.gebruiksoppervlakte_ag_m2 = 87.13
+    _d.schil = [
+        _S58(id="gevel-voor", type="gevel", orientatie="NW", oppervlakte_m2=48.0,
+             isolatie_aanwezig="Onbekend", bouwjaarklasse="Van 1975 t/m 1982", begrenzing="Buitenlucht"),
+        _S58(id="gevel-achter", type="gevel", orientatie="ZO", oppervlakte_m2=24.0,
+             isolatie_aanwezig="Onbekend", bouwjaarklasse="Van 1975 t/m 1982", begrenzing="Buitenlucht"),
+        _S58(id="gevel-kopg-ZW", type="gevel", orientatie="ZW", oppervlakte_m2=8.0,
+             isolatie_aanwezig="Onbekend", bouwjaarklasse="Van 1975 t/m 1982", begrenzing="Buitenlucht"),
+        _S58(id="vloer", type="vloer", oppervlakte_m2=55.0, isolatie_aanwezig="Onbekend",
+             begrenzing="Kruipruimte"),
+        _S58(id="dak-schu-NW", type="dak", orientatie="NW", oppervlakte_m2=40.0,
+             isolatie_aanwezig="Onbekend", hellingshoek=35.0, begrenzing="Buitenlucht"),
+    ]
+    _cons, _map58, _iss58 = _rc58(_d)
+    _namen = " | ".join(sorted({m["naam"] for m in _map58.values()}))
+    check("constructie: per-bouwdeel klasse wint (gevel 1975-1982, GEEN <1965)", "1975-1982" in _namen)
+    check("constructie: onbekend ZONDER klasse -> luide issue (vloer/dak)",
+          any("ZONDER bouwjaar" in str(i) for i in _iss58))
+    # (c) objecten-XML: bouwjaar-lek dicht + echte verdiepingen + gebouwhoogte + Locatie-tabs
+    _root58, _m2, _iss2, _st2 = _OG58.build_tree(_d)
+    _x58 = _ET58.tostring(_root58, encoding="unicode")
+    check("objecten: bouwjaar ontbreekt -> 0 (GEEN sjabloon-1994-lek) + actie",
+          "<Bouwjaar>0</Bouwjaar>" in _x58
+          and any("BOUWJAAR ONTBREEKT" in str(i) for i in _iss2))
+    check("objecten: verdiepingen = gemeten m2 (55.56/44.35/22.15), niet gelijk verdeeld",
+          all(("<Gebruiksoppervlakte>%s</Gebruiksoppervlakte>" % w) in _x58
+              for w in ("55.56", "44.35", "22.15")) and "29.04" not in _x58)
+    check("objecten: Gebouwhoogte = nok-hoogte (8.21), niet gevelhoogte",
+          "<Gebouwhoogte>8.21</Gebouwhoogte>" in _x58)
+    _locs = {}
+    for _el in _root58.iter():
+        if _el.tag.endswith("Hoofdvlak") and (_el.findtext("Naam") or "").strip():
+            _locs[_el.findtext("Naam")] = _el.findtext("Locatie")
+    check("objecten: Locatie-tabs voor=2/achter=3/kopgevel-ZW(rechts)=5/vloer=0/dak=1",
+          _locs.get("Gevel gevel-voor") == "2" and _locs.get("Gevel gevel-achter") == "3"
+          and _locs.get("Gevel gevel-kopg-ZW") == "5" and _locs.get("Vloer vloer") == "0"
+          and _locs.get("Dak dak-schu-NW") == "1")
+    # (d) parser: gebouwhoogte uit gevelhoogte+nok + verdieping-m2 + Ag-afwijkings-note
+    from magicplan.statistics_csv import build_dossier as _bd58
+    _rows58 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "87.13"], ["Floors", "3"],
+               ["Nij Begun"], ["Woningtype", "Tussenwoning"], ["Gevelhoogte (m)", "5.24"],
+               ["Dak - nokhoogte (m, optioneel)", "2.97"], ["Oriëntatie voorgevel", "NW"],
+               ["Gevel - bouwjaar (onbekend)", "Van.1975.t.m.1982"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Volume: m³",
+                "Ground perimeter: m", "Ceiling perimeter: m", "W1", "W2", "Ceiling Height"],
+               ["Ground Floor", "55.56", "67", "59", "68", "1", "2", "2.60 m"],
+               ["1st Floor", "44.35", "105", "56", "62", "1", "2", "2.60 m"], []]
+    with _t58.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f58:
+        _c58.writer(_f58).writerows(_rows58)
+        _p58 = _f58.name
+    _d2, _n2 = _bd58(_p58)
+    _o58.unlink(_p58)
+    check("parser: gebouwhoogte = 5.24 + 2.97 = 8.21", _d2.opname.gebouwhoogte_m == 8.21)
+    check("parser: verdieping-m2 gelezen (55.56 + 44.35)",
+          sorted(round(v.oppervlakte_m2, 2) for v in _d2.geometrie.vloeren) == [44.35, 55.56])
+    check("parser: Ag-afwijking geflagd (som 99.91 vs woonopp 87.13)",
+          any("LET OP Ag" in str(n) for n in _n2))
+    check("parser: bouwjaar-ontbreekt-note", any("BOUWJAAR ONTBREEKT" in str(n) for n in _n2))
+except Exception as _e:
+    check("VABI-import-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

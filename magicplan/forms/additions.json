@@ -1,85 +1,253 @@
 {
-  "_doc": "Velden die de tool verwacht maar nog niet (overal) in de MagicPlan-forms staan. form_push.py voegt ontbrekende velden toe NA de genoemde sectie (case-insensitief) en zet required-vlaggen; veld bestaat al (zelfde naam) -> overslaan (idempotent). LIVE-STAND 25-6-2026 (geverifieerd): de forms zijn Object / Constructies / Installaties (78 velden). Compleet + gepubliceerd: oriëntatie voorgevel, dak-types incl. Schilddak+Lessenaarsdak, rekenzone per installatie, 7 foto's, alle PV-detailvelden, element-overrides op de wand (Rekenzone/Rc-bron/Isolatiedikte/begrenzing/spouw/bron). NOG TE PUSHEN (alleen de 'Installaties'-entry hieronder): 'Meerdere PV-systemen?' (multi-PV) + 'Tweede opwekker (hybride)?'. Draai magicplan/push_forms.bat om ze live te publiceren. De 'Nij Begun'-entry + set_required hieronder zijn LEGACY (van vóór de 3-form-splitsing): die velden staan al live, dus form_push slaat ze over / matcht geen form -> no-op.",
-  "forms": [
-    {
-      "form_match": "Nij Begun",
-      "add_after_section": {
-        "Gevels": [
-          {"name": "Oriëntatie voorgevel", "dataType": "list", "required": true,
-           "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"],
-           "help": "Richting waar de VOORGEVEL op wijst. De tool leidt de andere gevels hieruit af (benoem muren voorgevel/achtergevel/linkergevel/rechtergevel)."},
-          {"name": "Rc-bron gevel", "dataType": "list", "required": false,
-           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"],
-           "help": "Kwaliteitsverklaring -> tool vlagt het; je zet Invoer + Rc/U zelf in VABI."}
-        ],
-        "Vloer & Dak": [
-          {"name": "Rc-bron vloer", "dataType": "list", "required": false,
-           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"]},
-          {"name": "Rc-bron dak", "dataType": "list", "required": false,
-           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"]}
-        ]
-      }
-    },
-    {
-      "form_match": "Installaties",
-      "add_after_section": {
-        "Zonne-energie": [
-          {"name": "Meerdere PV-systemen?", "dataType": "bool", "required": false,
-           "children": [
-             {"name": "PV-2 - paneeltype", "dataType": "list",
-              "options": ["Monokristallijn", "Polykristallijn", "Dunne film", "Onbekend"]},
-             {"name": "PV-2 - fabricagejaar", "dataType": "list",
-              "options": ["Voor 2001", "2001-2010", "2011-2014", "2015-2017", "Vanaf 2018", "Onbekend"]},
-             {"name": "PV-2 - orientatie", "dataType": "list",
-              "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]},
-             {"name": "PV-2 - hellingshoek (graden)", "dataType": "number"},
-             {"name": "PV-2 - aantal panelen", "dataType": "number"},
-             {"name": "PV-2 - oppervlak per paneel (m2)", "dataType": "number"}
-           ]}
-        ],
-        "Verwarming": [
-          {"name": "Tweede opwekker (hybride)?", "dataType": "bool", "required": false,
-           "children": [
-             {"name": "Verwarming 2 - type opwekker", "dataType": "list",
-              "options": ["Gasgestookte ketel", "Warmtepomp elektrisch", "Biomassaketel", "WKK", "Anders"]},
-             {"name": "Verwarming 2 - HR-klasse", "dataType": "list",
-              "options": ["CR", "VR", "HR100", "HR104", "HR107"]},
-             {"name": "Verwarming 2 - installatiejaar", "dataType": "number"}
-           ]}
-        ]
-      }
-    }
-  ],
-  "set_required": [
-    {"form_match": "Nij Begun", "name": "Foto vooraanzicht", "required": true},
-    {"form_match": "Nij Begun", "name": "Foto huisnummer", "required": true},
-    {"form_match": "Nij Begun", "name": "Foto gevel overzicht", "required": true}
-  ],
-  "_doc_paneel": "PANEEL-IN-KOZIJN (7-7): een dicht/geïsoleerd paneel in een kozijnopening is in VABI een DICHTE constructie (ConstructieType=1), met de isolatie-beslisschema (isolatie aanwezig/dikte/bouwjaar/Rc), NIET glas. TOOL-KANT is nu compleet: dossier type 'paneel' -> constructie_generate pick_dicht(ConstructieType=1) -> objecten-deelvlak; webapp-opname-editor heeft 'Paneel (dicht)' als vlaktype (dichte velden Rc/isolatie); parser leest een 'Raam/paneel'=paneel-kolom (indien aanwezig) -> paneel-SchilDeel. NOG TE DOEN in MagicPlan (element-field-groep 'Raam/paneel'): de Raam/paneel-toggle moet bij keuze 'Paneel' de isolatie-beslisschema-velden tonen (isolatie aanwezig Ja/Nee/Onbekend -> dikte onbekend -> bouwjaar OF dikte mm -> Rc-bron), i.p.v. de glas-velden. Dat is een custom-FIELD-conditional op een list-waarde ('Paneel'); form_push kan nu alleen bool-conditionals + doet custom-forms (niet -fields). Tot dat gepusht is: voer een paneel in via de webapp-opname-editor ('+ Vlak toevoegen' -> Paneel). ",
-  "_doc_ramen": "RAAM-INVOER VERSIMPELEN (7-7): bij een raam hoeft de adviseur alleen 'Type glas' te kiezen. Kozijnmateriaal / Toevoerrooster aanwezig? / Raam-paneel worden NIET-VERPLICHT gemaakt en krijgen hun default-optie vooraan (Hout of kunststof · Nee · Raam). De tool defaultt leeg gelaten velden toch al zo (parser: kozijnmateriaal->Hout of kunststof, venster->subtype Raam, toevoerrooster/paneel worden genegeerd). LET OP: de Raam/paneel-velden zijn een custom-FIELD-groep (element-context), niet een van de 3 project-forms; form_push --live haalt nu custom-forms op -> voor deze groep het custom-fields-endpoint gebruiken (of de defaults 1x in de MagicPlan-veldeditor zetten). set_optional/set_default zijn form_match='Raam' zodat ze de 'Raam/paneel'-groep raken zodra die wordt meegenomen.",
-  "set_optional": [
-    {"form_match": "Raam", "name": "Kozijnmateriaal"},
-    {"form_match": "Raam", "name": "Toevoerrooster aanwezig?"},
-    {"form_match": "Raam", "name": "Raam/paneel"}
-  ],
-  "set_default": [
-    {"form_match": "Raam", "name": "Kozijnmateriaal", "default": "Hout of kunststof"},
-    {"form_match": "Raam", "name": "Toevoerrooster aanwezig?", "default": "Nee"},
-    {"form_match": "Raam", "name": "Raam/paneel", "default": "Raam"}
-  ],
-  "field_groups": [
-    {
-      "form_match": "Raam",
-      "attach_children": [
-        {"name": "Raam/paneel", "show_when": "Paneel", "children": [
-          {"name": "Paneel - isolatie aanwezig?", "dataType": "list", "required": false,
-           "options": ["Ja", "Nee", "Onbekend"],
-           "help": "Dicht paneel-in-kozijn = dichte constructie (geen glas). Isolatie waarneembaar/aantoonbaar -> Ja + dikte; leeg -> Nee; niet vast te stellen -> Onbekend (bouwjaarklasse)."},
-          {"name": "Paneel - isolatiedikte (mm)", "dataType": "number", "required": false},
-          {"name": "Paneel - Rc-bron", "dataType": "list", "required": false,
-           "options": ["Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring"]}
-        ]}
+ "_doc": "Velden die de tool verwacht maar nog niet (overal) in de MagicPlan-forms staan. form_push.py voegt ontbrekende velden toe NA de genoemde sectie (case-insensitief) en zet required-vlaggen; veld bestaat al (zelfde naam) -> overslaan (idempotent). LIVE-STAND 25-6-2026 (geverifieerd): de forms zijn Object / Constructies / Installaties (78 velden). Compleet + gepubliceerd: oriëntatie voorgevel, dak-types incl. Schilddak+Lessenaarsdak, rekenzone per installatie, 7 foto's, alle PV-detailvelden, element-overrides op de wand (Rekenzone/Rc-bron/Isolatiedikte/begrenzing/spouw/bron). NOG TE PUSHEN (alleen de 'Installaties'-entry hieronder): 'Meerdere PV-systemen?' (multi-PV) + 'Tweede opwekker (hybride)?'. Draai magicplan/push_forms.bat om ze live te publiceren. De 'Nij Begun'-entry + set_required hieronder zijn LEGACY (van vóór de 3-form-splitsing): die velden staan al live, dus form_push slaat ze over / matcht geen form -> no-op.",
+ "forms": [
+  {
+   "form_match": "Nij Begun",
+   "add_after_section": {
+    "Gevels": [
+     {
+      "name": "Oriëntatie voorgevel",
+      "dataType": "list",
+      "required": true,
+      "options": [
+       "N",
+       "NO",
+       "O",
+       "ZO",
+       "Z",
+       "ZW",
+       "W",
+       "NW"
+      ],
+      "help": "Richting waar de VOORGEVEL op wijst. De tool leidt de andere gevels hieruit af (benoem muren voorgevel/achtergevel/linkergevel/rechtergevel)."
+     },
+     {
+      "name": "Rc-bron gevel",
+      "dataType": "list",
+      "required": false,
+      "options": [
+       "Opgemeten dikte",
+       "Dikte onbekend",
+       "Kwaliteitsverklaring"
+      ],
+      "help": "Kwaliteitsverklaring -> tool vlagt het; je zet Invoer + Rc/U zelf in VABI."
+     },
+     {
+      "name": "Gebouwhoogte (m, leeg = gevelhoogte + nokhoogte)",
+      "dataType": "number",
+      "required": false,
+      "help": "Hoogte tot de NOK (VABI Gebouwhoogte). Leeg laten mag: de tool rekent dan gevelhoogte + nokhoogte. Gevelhoogte = vloer tot dakvoet/goot en blijft apart."
+     }
+    ],
+    "Vloer & Dak": [
+     {
+      "name": "Rc-bron vloer",
+      "dataType": "list",
+      "required": false,
+      "options": [
+       "Opgemeten dikte",
+       "Dikte onbekend",
+       "Kwaliteitsverklaring"
       ]
+     },
+     {
+      "name": "Rc-bron dak",
+      "dataType": "list",
+      "required": false,
+      "options": [
+       "Opgemeten dikte",
+       "Dikte onbekend",
+       "Kwaliteitsverklaring"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "form_match": "Installaties",
+   "add_after_section": {
+    "Zonne-energie": [
+     {
+      "name": "Meerdere PV-systemen?",
+      "dataType": "bool",
+      "required": false,
+      "children": [
+       {
+        "name": "PV-2 - paneeltype",
+        "dataType": "list",
+        "options": [
+         "Monokristallijn",
+         "Polykristallijn",
+         "Dunne film",
+         "Onbekend"
+        ]
+       },
+       {
+        "name": "PV-2 - fabricagejaar",
+        "dataType": "list",
+        "options": [
+         "Voor 2001",
+         "2001-2010",
+         "2011-2014",
+         "2015-2017",
+         "Vanaf 2018",
+         "Onbekend"
+        ]
+       },
+       {
+        "name": "PV-2 - orientatie",
+        "dataType": "list",
+        "options": [
+         "N",
+         "NO",
+         "O",
+         "ZO",
+         "Z",
+         "ZW",
+         "W",
+         "NW"
+        ]
+       },
+       {
+        "name": "PV-2 - hellingshoek (graden)",
+        "dataType": "number"
+       },
+       {
+        "name": "PV-2 - aantal panelen",
+        "dataType": "number"
+       },
+       {
+        "name": "PV-2 - oppervlak per paneel (m2)",
+        "dataType": "number"
+       }
+      ]
+     }
+    ],
+    "Verwarming": [
+     {
+      "name": "Tweede opwekker (hybride)?",
+      "dataType": "bool",
+      "required": false,
+      "children": [
+       {
+        "name": "Verwarming 2 - type opwekker",
+        "dataType": "list",
+        "options": [
+         "Gasgestookte ketel",
+         "Warmtepomp elektrisch",
+         "Biomassaketel",
+         "WKK",
+         "Anders"
+        ]
+       },
+       {
+        "name": "Verwarming 2 - HR-klasse",
+        "dataType": "list",
+        "options": [
+         "CR",
+         "VR",
+         "HR100",
+         "HR104",
+         "HR107"
+        ]
+       },
+       {
+        "name": "Verwarming 2 - installatiejaar",
+        "dataType": "number"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "set_required": [
+  {
+   "form_match": "Nij Begun",
+   "name": "Foto vooraanzicht",
+   "required": true
+  },
+  {
+   "form_match": "Nij Begun",
+   "name": "Foto huisnummer",
+   "required": true
+  },
+  {
+   "form_match": "Nij Begun",
+   "name": "Foto gevel overzicht",
+   "required": true
+  }
+ ],
+ "_doc_paneel": "PANEEL-IN-KOZIJN (7-7): een dicht/geïsoleerd paneel in een kozijnopening is in VABI een DICHTE constructie (ConstructieType=1), met de isolatie-beslisschema (isolatie aanwezig/dikte/bouwjaar/Rc), NIET glas. TOOL-KANT is nu compleet: dossier type 'paneel' -> constructie_generate pick_dicht(ConstructieType=1) -> objecten-deelvlak; webapp-opname-editor heeft 'Paneel (dicht)' als vlaktype (dichte velden Rc/isolatie); parser leest een 'Raam/paneel'=paneel-kolom (indien aanwezig) -> paneel-SchilDeel. NOG TE DOEN in MagicPlan (element-field-groep 'Raam/paneel'): de Raam/paneel-toggle moet bij keuze 'Paneel' de isolatie-beslisschema-velden tonen (isolatie aanwezig Ja/Nee/Onbekend -> dikte onbekend -> bouwjaar OF dikte mm -> Rc-bron), i.p.v. de glas-velden. Dat is een custom-FIELD-conditional op een list-waarde ('Paneel'); form_push kan nu alleen bool-conditionals + doet custom-forms (niet -fields). Tot dat gepusht is: voer een paneel in via de webapp-opname-editor ('+ Vlak toevoegen' -> Paneel). ",
+ "_doc_ramen": "RAAM-INVOER VERSIMPELEN (7-7): bij een raam hoeft de adviseur alleen 'Type glas' te kiezen. Kozijnmateriaal / Toevoerrooster aanwezig? / Raam-paneel worden NIET-VERPLICHT gemaakt en krijgen hun default-optie vooraan (Hout of kunststof · Nee · Raam). De tool defaultt leeg gelaten velden toch al zo (parser: kozijnmateriaal->Hout of kunststof, venster->subtype Raam, toevoerrooster/paneel worden genegeerd). LET OP: de Raam/paneel-velden zijn een custom-FIELD-groep (element-context), niet een van de 3 project-forms; form_push --live haalt nu custom-forms op -> voor deze groep het custom-fields-endpoint gebruiken (of de defaults 1x in de MagicPlan-veldeditor zetten). set_optional/set_default zijn form_match='Raam' zodat ze de 'Raam/paneel'-groep raken zodra die wordt meegenomen.",
+ "set_optional": [
+  {
+   "form_match": "Raam",
+   "name": "Kozijnmateriaal"
+  },
+  {
+   "form_match": "Raam",
+   "name": "Toevoerrooster aanwezig?"
+  },
+  {
+   "form_match": "Raam",
+   "name": "Raam/paneel"
+  }
+ ],
+ "set_default": [
+  {
+   "form_match": "Raam",
+   "name": "Kozijnmateriaal",
+   "default": "Hout of kunststof"
+  },
+  {
+   "form_match": "Raam",
+   "name": "Toevoerrooster aanwezig?",
+   "default": "Nee"
+  },
+  {
+   "form_match": "Raam",
+   "name": "Raam/paneel",
+   "default": "Raam"
+  }
+ ],
+ "field_groups": [
+  {
+   "form_match": "Raam",
+   "attach_children": [
+    {
+     "name": "Raam/paneel",
+     "show_when": "Paneel",
+     "children": [
+      {
+       "name": "Paneel - isolatie aanwezig?",
+       "dataType": "list",
+       "required": false,
+       "options": [
+        "Ja",
+        "Nee",
+        "Onbekend"
+       ],
+       "help": "Dicht paneel-in-kozijn = dichte constructie (geen glas). Isolatie waarneembaar/aantoonbaar -> Ja + dikte; leeg -> Nee; niet vast te stellen -> Onbekend (bouwjaarklasse)."
+      },
+      {
+       "name": "Paneel - isolatiedikte (mm)",
+       "dataType": "number",
+       "required": false
+      },
+      {
+       "name": "Paneel - Rc-bron",
+       "dataType": "list",
+       "required": false,
+       "options": [
+        "Opgemeten dikte",
+        "Dikte onbekend",
+        "Kwaliteitsverklaring"
+       ]
+      }
+     ]
     }
-  ]
+   ]
+  }
+ ]
 }

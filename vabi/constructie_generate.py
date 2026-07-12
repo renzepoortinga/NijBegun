@@ -16,7 +16,7 @@ types die de woning nodig heeft, plus een mapping schildeel->constructienaam voo
 Harde validatie-poort: vóór schrijven controleert de tool dat elke enum-waarde in de door-VABI-
 bekende set zit (codebook). Zo niet -> "NIET klaar voor import: ..." en GEEN bestand.
 """
-import os, sys, copy, uuid, argparse
+import os, re, sys, copy, uuid, argparse
 import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json            # noqa: E402
@@ -150,6 +150,21 @@ def _classify(s):
     return t
 
 
+def _jaar_uit_klassetekst(tekst):
+    """Bouwjaarklasse-TEKST uit het MagicPlan-form ('Van 1975 t/m 1982', 'Tot 1965', 'Vanaf 2014',
+    ook ge-dot 'Van.1975.t.m.1982') -> representatief jaar BINNEN die klasse, of None. De klassen in
+    het form zijn 1-op-1 de beslisschema-klassen, dus het middenjaar valt gegarandeerd in de juiste."""
+    jaren = [int(j) for j in re.findall(r"(19\d\d|20\d\d)", tekst or "")]
+    if not jaren:
+        return None
+    t = (tekst or "").lower()
+    if len(jaren) >= 2:
+        return (jaren[0] + jaren[1]) // 2
+    if "tot" in t or "voor" in t or "t/m" in t or "t.m" in t:
+        return jaren[0] - 1
+    return jaren[0] + 1          # 'vanaf X' / 'X en later'
+
+
 def match_constructies(dos, pool, cb):
     """-> (gekozen_templates[list of unieke ET], mapping schil_id->naam, issues[list])."""
     bouwjaar = getattr(dos.identificatie, "bouwjaar", None)
@@ -163,8 +178,16 @@ def match_constructies(dos, pool, cb):
             continue
         if kind in ("gevel", "vloer", "dak", "paneel"):
             # paneel-in-kozijn = dichte constructie (ConstructieType=1), zelfde isolatie-beslisschema als een gevel
+            # per-BOUWDEEL bouwjaarklasse (form-antwoord) wint van het project-bouwjaar
+            s_klasse = klasse
+            kj = _jaar_uit_klassetekst(getattr(s, "bouwjaarklasse", ""))
+            if kj:
+                s_klasse = cb.bouwjaarklasse_code(kj)
             tmpl = pool.pick_dicht(ctype, s.isolatie_aanwezig, s.isolatiedikte_mm,
-                                   s.spouw_aanwezig, klasse)
+                                   s.spouw_aanwezig, s_klasse)
+            if kind != "paneel" and s_klasse is None and (s.isolatie_aanwezig or "").lower() == "onbekend":
+                issues.append("schildeel %s: isolatie onbekend ZONDER bouwjaar(klasse) -> beslisschema "
+                              "viel terug op de oudste klasse; vul bouwjaar of de klasse per bouwdeel in." % s.id)
         elif kind == "raam":
             tmpl = pool.pick_raam(cb, s.glastype, s.kozijnmateriaal)
             if "vacu" in (s.glastype or "").lower():

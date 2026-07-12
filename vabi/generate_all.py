@@ -38,6 +38,16 @@ def generate_all(dos, outdir, prefix=""):
         fh.write("  2. Objecten     > Importeren  -> %sObjectenbibliotheek.xml\n" % p)
         fh.write("  3. Installaties > Importeren  -> %sInstallatiebibliotheek.xml\n" % p)
         fh.write("Daarna: Algemeen aanvullen (adres/opdrachtgever) -> Rekenen.\n")
+        # alle generator-flags mee het bestand in: dit is de ZELF-DOEN-IN-VABI-lijst
+        alle_flags = []
+        for _k in ("constructies", "objecten", "installaties"):
+            _t = res.get(_k)
+            if _t and _t[-1]:
+                alle_flags += [str(x) for x in _t[-1]]
+        if alle_flags:
+            fh.write("\nZELF DOEN IN VABI (%d actiepunten):\n" % len(alle_flags))
+            for a in alle_flags:
+                fh.write("  - %s\n" % a)
     res["readme"] = readme
     return res
 

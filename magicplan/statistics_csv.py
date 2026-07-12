@@ -311,6 +311,33 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     floor_footprint[naam] = fp
     if dos.opname.gevelhoogte_m is None and floor_hoogtes:
         dos.opname.gevelhoogte_m = round(sum(floor_hoogtes), 2)  # som verdiepingshoogtes ~ gevelhoogte
+    # GEBOUWHOOGTE (tot de nok) ≠ gevelhoogte (tot de goot). Eigen veld wint; anders gevelhoogte +
+    # nokhoogte (zadel/schild); plat dak -> gebouwhoogte = gevelhoogte.
+    gbh = _f(G("Gebouwhoogte (m)")) or _f(G("Gebouwhoogte (m, leeg = gevelhoogte + nokhoogte)"))
+    nok = (_f(G("Dak - nokhoogte (m, optioneel)")) or _f(G("Dak nokhoogte"))
+           or _f(G("Dak zadel - nokhoogte boven zoldervloer (m)")))
+    if gbh:
+        dos.opname.gebouwhoogte_m = gbh
+    elif dos.opname.gevelhoogte_m and nok:
+        dos.opname.gebouwhoogte_m = round(float(dos.opname.gevelhoogte_m) + float(nok), 2)
+        notes.append("Gebouwhoogte %.2f m = gevelhoogte %.2f + nokhoogte %.2f (controleer; eigen "
+                     "Gebouwhoogte-veld in MagicPlan wint)." % (dos.opname.gebouwhoogte_m,
+                                                                dos.opname.gevelhoogte_m, nok))
+    # PER-VERDIEPING Ag: de gemeten MagicPlan-vloeroppervlakken ("Ground surface without walls"
+    # per verdieping) dragen we mee -> VABI Verdiepingen krijgt de ECHTE waarden per bouwlaag
+    # (niet Ag gelijk verdeeld). Wijkt de som af van MagicPlans "Total living area" (bv. berging/
+    # garage of lage zolderstrook meegeteld), dan flaggen we dat luid: de adviseur beslist.
+    for fnaam, fopp in floor_footprint.items():
+        vi = next((v for v in geo.vloeren if v.naam == fnaam), None)
+        if vi is not None:
+            vi.oppervlakte_m2 = fopp
+        else:
+            geo.vloeren.append(VloerInfo(naam=fnaam, oppervlakte_m2=fopp))
+    _vsom = round(sum(v.oppervlakte_m2 or 0 for v in geo.vloeren), 2)
+    if _vsom and geo.gebruiksoppervlakte_ag_m2 and abs(_vsom - geo.gebruiksoppervlakte_ag_m2) > 0.02 * _vsom:
+        notes.append("LET OP Ag: som verdiepingen %.2f m² ≠ MagicPlan-woonoppervlak %.2f m². "
+                     "Mogelijk telt een berging/garage of zolderstrook <1,5 m mee — corrigeer de "
+                     "verdieping-m² in de webapp of in Vabi (Ag is heilig)." % (_vsom, geo.gebruiksoppervlakte_ag_m2))
     # begane-grond-footprint: verdieping met 'ground/grond/begane' in de naam, anders grootste
     # niet-kelder-vloer (kelder = 'basement/kelder'); fallback grootste overall.
     def _is_bg(n): return any(k in n.lower() for k in ("ground", "grond", "begane"))
@@ -972,7 +999,20 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             orientatie=d["orient"], oppervlakte_m2=d["area"],
             glastype=_undot(d["glas"]) or "", kozijnmateriaal="Hout of kunststof",
             deur_met_raam_glas65=met_raam))
+    # per-bouwdeel BOUWJAARKLASSE (beslisschema): het form-antwoord ("Gevel - bouwjaar (onbekend)"
+    # = bv. 'Van 1975 t/m 1982') moet de constructie-keuze sturen — zonder dit viel de keuze terug
+    # op het project-bouwjaar (en bij een lege export op 'Tot 1965': live gezien, 12-7).
+    _klasse_per_type = {"gevel": g_b["bouwjaar"], "vloer": v_b["bouwjaar"], "dak": d_b["bouwjaar"]}
+    for s in schil:
+        if not getattr(s, "bouwjaarklasse", ""):
+            k = _klasse_per_type.get(s.type, "")
+            if k:
+                s.bouwjaarklasse = k
     dos.schil = schil
+    if not dos.identificatie.bouwjaar:
+        notes.append("BOUWJAAR ONTBREEKT in de export (Object-form 'Bouwjaar' — oudere formversie? "
+                     "Herstart de MagicPlan-app en exporteer opnieuw, of vul het bouwjaar in de webapp "
+                     "in). Zonder bouwjaar kan Vabi niet forfaitair rekenen.")
 
     # ---- installaties ----
     vsys = _undot(G("Ventilatiesysteem (A-E)"))      # 'A Natuurlijke ventilatie'

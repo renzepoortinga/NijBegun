@@ -91,6 +91,36 @@ _DETAIL_CODE = {
 _AVR = {"avr", "aangrenzende verwarmde ruimte", "buurwoning", "aangrenzende woning"}
 
 
+_KOMPAS8 = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
+
+
+def _locatie_code(kind, s, orientatie_voorgevel):
+    """EPA Geometrie-tabblad per hoofdvlak: 0=Vloeren 1=Daken 2=Voorgevel 3=Achtergevel
+    4=Linkergevel 5=Rechtergevel (uit echte export; ordening, geen rekensemantiek). Gevel: eerst
+    het naam-token (voor/achter/links/rechts), anders oriëntatie t.o.v. de voorgevel (links=+90,
+    rechts=-90 — zelfde conventie als de parser). Onbepaald -> None (sjabloonwaarde blijft)."""
+    if kind == "vloer":
+        return "0"
+    if kind == "dak":
+        return "1"
+    if kind != "gevel":
+        return None
+    naam_l = ("%s %s" % (getattr(s, "gevel_naam", "") or "", s.id or "")).lower()
+    if "achter" in naam_l:
+        return "3"
+    if "link" in naam_l:
+        return "4"
+    if "recht" in naam_l:
+        return "5"
+    if "voor" in naam_l and "kopg" not in naam_l:
+        return "2"
+    vo, so = (orientatie_voorgevel or "").upper(), (getattr(s, "orientatie", "") or "").upper()
+    if vo in _KOMPAS8 and so in _KOMPAS8:
+        d = (_KOMPAS8.index(so) - _KOMPAS8.index(vo)) % 8
+        return {0: "2", 4: "3", 2: "4", 6: "5"}.get(d)
+    return None
+
+
 def _grenst_aan_code(begrenzing, basis=True):
     """Begrenzing-string -> VABI GrenstAan-code. basis=True (basisopname): AOR/AOS/sterk-geventileerd
     tellen als buitenlucht (0); detail -> eigen code 4/5/6. AVR=8 (adiabatisch, meestal al uitgesloten)."""
@@ -253,6 +283,13 @@ def build_tree(dos):
             naam = "%s %s" % (kind.capitalize(), s.id)
             _set(hv, "Naam", naam)
             _set(hv, "AutoNaam", "0")
+            # Locatie = het EPA-Geometrie-TABBLAD (puur ordening, geen rekensemantiek):
+            # 0=Vloeren 1=Daken 2=Voorgevel 3=Achtergevel 4=Linkergevel 5=Rechtergevel.
+            # Codes afgeleid uit de echte sjabloon-export + live bevestigd (alles-op-Voorgevel
+            # bleek de kloon-default Locatie=2, 12-7). Zonder dit belandt elke gevel op één tab.
+            loc = _locatie_code(kind, s, getattr(dos.identificatie, "orientatie_voorgevel", ""))
+            if loc is not None:
+                _set(hv, "Locatie", loc)
             geo.append(hv)
             if kind == "gevel":
                 gevels.append((hv, naam, orient))
@@ -295,6 +332,12 @@ def build_tree(dos):
         rj = getattr(dos.identificatie, "renovatiejaar", None)
         if bj:
             _set(alg, "Bouwjaar", bj)
+        else:
+            # NOOIT het sjabloon-bouwjaar laten staan (kloon van een echte export -> stil fout jaar,
+            # live gezien 12-7: '1994' lekte mee). Zet 0 = zichtbaar leeg + luide actie.
+            _set(alg, "Bouwjaar", "0")
+            issues.append("BOUWJAAR ONTBREEKT -> 0 gezet in Objecten>Algemeen: vul het echte bouwjaar "
+                          "in Vabi in (anders bleef het sjabloon-jaar staan).")
         if rj:
             _set(alg, "Renovatiejaar", rj)
         # qv10 alleen schrijven als GEMETEN (ISSO 7.1.5); anders forfaitair laten (Qv10Gemeten=0 ->
@@ -325,8 +368,12 @@ def build_tree(dos):
         # 23-6, zie vabi/refs/grenstaan_mapping.md). Daarom NIET zetten: sjabloon-default behouden.
         geom = getattr(dos, "geometrie", None)
         ag = float(getattr(geom, "gebruiksoppervlakte_ag_m2", 0) or 0)
-        if ag > 0:
-            n_lagen = max(len(getattr(geom, "vloeren", []) or []), 1)
+        # per-verdieping: de ECHTE gemeten MagicPlan-oppervlakken (VloerInfo.oppervlakte_m2)
+        # als die er zijn; alleen als fallback Ag gelijk verdelen (met flag). Gelijk verdelen
+        # terwijl de meting er wél is gaf 3x29.04 i.p.v. 55.6/44.4/22.2 (live gezien 12-7).
+        vlagen = [v for v in (getattr(geom, "vloeren", None) or []) if float(getattr(v, "oppervlakte_m2", 0) or 0) > 0]
+        if ag > 0 or vlagen:
+            n_lagen = max(len(getattr(geom, "vloeren", []) or []), len(vlagen), 1)
             _set(alg, "AantalBouwlagenRekenzone", str(n_lagen))
             verd = alg.find("Verdiepingen")
             if verd is not None:
@@ -336,17 +383,34 @@ def build_tree(dos):
                     if ch is not vg:
                         verd.remove(ch)
                 if tmpl_v is not None:
-                    per_laag = round(ag / n_lagen, 2)
-                    for i in range(n_lagen):
+                    if vlagen:
+                        waarden = [float(v.oppervlakte_m2) for v in vlagen]
+                    else:
+                        waarden = [round(ag / n_lagen, 2)] * n_lagen
+                    for i, w in enumerate(waarden):
                         v = copy.deepcopy(tmpl_v)
                         v.set("Index", str(i))
                         _new_guid(v)
-                        _set(v, "Gebruiksoppervlakte", "%.2f" % per_laag)
+                        _set(v, "Gebruiksoppervlakte", "%.2f" % w)
                         verd.append(v)
-            issues.append("Ag=%.1f m2 + %d bouwlaag/lagen gezet (per-laag verdeeld; totaal exact)" % (ag, n_lagen))
-    # 3b) Gebouw-niveau: Gebouwhoogte (vrije float, geen enum-risico) uit de opname; Gebouwtype/Daktype
-    # zijn ENUMS waarvan de codes nog in EPA bevestigd moeten worden -> NIET gokken (golden rule), flaggen.
-    gh = getattr(getattr(dos, "opname", None), "gevelhoogte_m", None)
+            if vlagen:
+                issues.append("Verdiepingen: gemeten m² per bouwlaag gezet (%s; som %.2f) — controleer "
+                              "of berging/zolderstrook <1,5 m niet meetellen (Ag is heilig)."
+                              % ("/".join("%.1f" % float(v.oppervlakte_m2) for v in vlagen),
+                                 sum(float(v.oppervlakte_m2) for v in vlagen)))
+            else:
+                issues.append("Ag=%.1f m2 over %d bouwlagen GELIJK verdeeld (geen per-verdieping-meting "
+                              "in het dossier) — corrigeer de verdieping-m² in Vabi." % (ag, n_lagen))
+    # 3b) Gebouw-niveau: Gebouwhoogte = hoogte tot de NOK (gebouwhoogte_m), niet de gevelhoogte
+    # (tot de goot) — gevelhoogte als Gebouwhoogte gaf 5.24 i.p.v. ~8.2 (live gezien 12-7).
+    # Gebouwtype/Ligging zijn ENUMS zonder bevestigde codes -> niet gokken (golden rule), flaggen.
+    _opn2 = getattr(dos, "opname", None)
+    gh = getattr(_opn2, "gebouwhoogte_m", None)
+    if not gh:
+        gh = getattr(_opn2, "gevelhoogte_m", None)
+        if gh:
+            issues.append("Gebouwhoogte: geen nok-/gebouwhoogte in de opname -> gevelhoogte %.2f m "
+                          "gezet; bij een hellend dak is het gebouw hoger — corrigeer in Vabi." % float(gh))
     if gh and float(gh) > 0:
         gh_node = next((e for e in root.iter() if _local(e.tag) == "Gebouwhoogte"), None)
         if gh_node is not None:

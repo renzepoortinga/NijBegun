@@ -46,7 +46,8 @@ class Opname:
     qv10_gemeten: bool = False
     qv10_waarde: Optional[float] = None
     bewijslast: str = "Geen"      # Geen | Facturen | Tekeningen | Beide
-    gevelhoogte_m: Optional[float] = None          # gebouwhoogte gevel; nodig voor hart-op-hart-gevel-toeslag (ISSO 8.2)
+    gevelhoogte_m: Optional[float] = None          # hoogte GEVEL (vloer tot dakvoet/goot); voor hart-op-hart-toeslag (ISSO 8.2)
+    gebouwhoogte_m: Optional[float] = None         # hoogte GEBOUW (tot de nok); VABI Gebouwhoogte. Leeg -> gevelhoogte + nokhoogte
     gevel_tot_hartmaat_gemeten: bool = False       # True = gevel al tot hartmaat gemeten -> geen toeslag.
                                                    # False (MagicPlan = binnenwerks) -> tool telt +0,11 m/buurwand
                                                    #        (voor+achtergevel) bij de gevel; woningtype stuurt ook de infiltratie
@@ -93,6 +94,7 @@ class SchilDeel:
     glastype: str = ""            # Enkel | Dubbel | HR | HR+ | HR++ | Triple | ...
     kozijnmateriaal: str = ""     # Hout | Kunststof | Metaal | MTO | Aluminium
     rc_bron: str = ""             # Opgemeten dikte | Dikte onbekend | Kwaliteitsverklaring | Forfaitair (bouwjaar/renovatiejaar)
+    bouwjaarklasse: str = ""      # per-bouwdeel klasse voor het beslisschema (bv. "Van 1975 t/m 1982"); wint van project-bouwjaar
     hellingshoek: Optional[float] = None          # dak: graden (bepaalt het schuine dakoppervlak)
     oppervlak_handmatig: Optional[float] = None   # dak: handmatig gemeten m2 (override op de berekening)
     rekenzone: int = 1                             # rekenzone-nummer (default 1; >1 bij meerdere zones)

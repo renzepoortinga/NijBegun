@@ -860,8 +860,9 @@ def opname_magicplan(tag):
     except Exception as e:
         acties.append("VABI-voorcontrole kon niet draaien: %s" % str(e)[:90])
     st["vabi_acties"] = acties
-    # behoud eerder ingevulde identificatie waar de import leeg is
-    for attr in ("straat", "huisnummer", "postcode", "plaats", "woningtype"):
+    # behoud eerder ingevulde identificatie waar de import leeg is (bouwjaar: BAG/lead-waarde
+    # mag niet weggevaagd worden door een CSV zonder Bouwjaar-veld)
+    for attr in ("straat", "huisnummer", "postcode", "plaats", "woningtype", "bouwjaar", "bag_vboid"):
         if not getattr(nieuw.identificatie, attr, "") and getattr(oud, attr, ""):
             setattr(nieuw.identificatie, attr, getattr(oud, attr))
     save_json(nieuw, os.path.join(_pdir(tag), st["dossier_file"]))
