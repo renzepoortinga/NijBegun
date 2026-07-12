@@ -631,14 +631,20 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     _force9 = False
     _dak_kappen = []          # (dak_nr, type, hoofdorientatie) voor dubbele-kap-detectie
     for _dn in (1, 2, 3):
-        Pd = "Dak %d" % _dn
+        # 13-7: live hernoemd naar 'Dak' / 'Extra dak A' / 'Extra dak B' (Dak 1/2/3 = legacy)
+        _kand_pre = (("Dak", "Dak 1"), ("Extra dak A", "Dak 2"), ("Extra dak B", "Dak 3"))[_dn - 1]
+        Pd = next((c for c in _kand_pre
+                   if any((k or "").startswith(c + " - type") or (k or "").startswith(c + " zadel")
+                          or (k or "").startswith(c + " plat") for k in plan)), "Dak %d" % _dn)
         # type-veld op PREFIX zoeken: de suffix is live al 2x hernoemd (leeg = .../HELE dak/EXTRA dak)
         _tkey = next((k for k in plan if (k or "").startswith(Pd + " - type")), None)
         t_n = _undot(plan.get(_tkey, "") if _tkey else (G(Pd + " - type") or ""))
         if not t_n:
             continue
         tn = t_n.lower()
-        b_n = _bouwdeel("Dakvlak %d" % _dn, "Rc-bron dak")
+        b_n = _bouwdeel(Pd, "Rc-bron dak")
+        if not (b_n["isolatie"] or b_n["dikte_mm"] or b_n["rc_bron"]):
+            b_n = _bouwdeel("Dakvlak %d" % _dn, "Rc-bron dak")
         vlakken_n = []
         if "plat" in tn:
             m2p = _f(G(Pd + " plat - oppervlak (m², leeg = footprint bovenste verdieping)")) or top_fp
@@ -920,8 +926,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             else:
                 notes.append("Dakramen %s (%s, %.1f m2): geen dakvlak met die orientatie gevonden -> "
                              "m2 NIET afgetrokken; controleer het dak in Vabi." % (_ori, _gt, _m))
-        if _an:
-            pass  # aantal is documentatie (fotoblad); telt niet in de geometrie
+        _rr = _f(G("Dakramen %s - met ventilatierooster (aantal, leeg = geen)" % _ori))
+        if _rr:
+            notes.append("Dakramen %s: %d met VENTILATIEROOSTER -> telt als toevoervoorziening; "
+                         "neem mee in het ventilatieplan/Vabi." % (_ori, int(_rr)))
 
     # kozijnen (ramen): erven begrenzing + oriëntatie van de moederwand (parent/child); kozijn A/B/C
     for i, k in enumerate(kozijnen):
