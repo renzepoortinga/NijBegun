@@ -899,6 +899,30 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("Dak: geen hellingshoek/dakvlakken in de opname -> footprint-fallback. Voeg dak-velden toe "
                      "(Dak vloerbreedte/nokhoogte/knieschothoogte of Hellingshoek dak + oriëntaties schuine zijden).")
 
+    # DAKRAMEN-sectie (13-7, losgekoppeld van de daken): per ORIENTATIE (9) x glastype -> kozijn
+    # subtype Dakraam; glas-m2 wordt afgetrokken van het dakvlak met die orientatie (anders note).
+    for _ori in ("N", "NO", "O", "ZO", "Z", "ZW", "W", "NW", "Horizontaal"):
+        _o = "" if _ori == "Horizontaal" else _ori
+        _an = _f(G("Dakramen %s - aantal (optioneel)" % _ori))
+        for _gt in ("Enkel", "Dubbel", "HR", "HR+", "HR++", "TripleHR", "Onbekend"):
+            _m = _f(G("Dakramen %s - %s (m²)" % (_ori, _gt)) or G("Dakramen %s - %s (m2)" % (_ori, _gt)))
+            if not _m:
+                continue
+            _vlak = next((s2 for s2 in schil if s2.type == "dak" and (s2.orientatie or "") == _o
+                          and (s2.oppervlakte_m2 or 0) > 0), None)
+            schil.append(SchilDeel(id="dakraam-%s-%s" % (_ori.lower()[:4], _gt.lower().replace("+", "p")),
+                type="kozijn", subtype="Dakraam", begrenzing="Buitenlucht", orientatie=_o,
+                oppervlakte_m2=_m, glastype=_gt, kozijnmateriaal="Hout of kunststof",
+                hellingshoek=(_vlak.hellingshoek if _vlak else None),
+                opmerkingen="dakraam (%s, %s) — in Vabi als raam op het dakvlak" % (_ori, _gt)))
+            if _vlak:
+                _vlak.oppervlakte_m2 = round(max((_vlak.oppervlakte_m2 or 0) - _m, 0.0), 2)
+            else:
+                notes.append("Dakramen %s (%s, %.1f m2): geen dakvlak met die orientatie gevonden -> "
+                             "m2 NIET afgetrokken; controleer het dak in Vabi." % (_ori, _gt, _m))
+        if _an:
+            pass  # aantal is documentatie (fotoblad); telt niet in de geometrie
+
     # kozijnen (ramen): erven begrenzing + oriëntatie van de moederwand (parent/child); kozijn A/B/C
     for i, k in enumerate(kozijnen):
         # Nij Begun opname-handleiding: kleine ruiten < 0,65 m2 ALTIJD rekenen als 0,65 m2
