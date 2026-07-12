@@ -169,10 +169,108 @@ def concept_mail(lead, adviseur=None):
     return onderwerp, re.sub(r"\n{3,}", "\n\n", tekst).strip() + "\n"
 
 
+def parse_leads_bulk(text):
+    """Meerdere geplakte portal-mails in één keer -> lijst leads (elk {...}-blok apart geparsed)."""
+    blokken = re.findall(r"\{[^{}]*\}", text or "", re.S)
+    uit = []
+    for b in blokken:
+        ld = parse_lead(b)
+        if ld:
+            uit.append(ld)
+    if not uit:                      # fallback: hele tekst als één lead proberen
+        ld = parse_lead(text)
+        if ld:
+            uit.append(ld)
+    return uit
+
+
+def set_afspraak(lid, wanneer, leads=None):
+    """Afspraakdatum/-tijd (ISO 'YYYY-MM-DDTHH:MM') op de lead zetten."""
+    leads = load_leads() if leads is None else leads
+    for r in leads:
+        if r.get("id") == lid:
+            r["afspraak"] = (wanneer or "").strip()
+            break
+    save_leads(leads)
+    return leads
+
+
+def _afspraak_nl(iso):
+    """'2026-07-15T14:30' -> 'woensdag 15 juli 2026 om 14:30'."""
+    try:
+        d = datetime.datetime.fromisoformat(iso)
+        dagen = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag", "zondag"]
+        maanden = ["januari", "februari", "maart", "april", "mei", "juni", "juli",
+                   "augustus", "september", "oktober", "november", "december"]
+        return "%s %d %s %d om %02d:%02d" % (dagen[d.weekday()], d.day, maanden[d.month - 1],
+                                             d.year, d.hour, d.minute)
+    except Exception:
+        return iso or "nader te bepalen"
+
+
+def bevestiging_mail(lead, adviseur=None):
+    """Afspraak-bevestigingsmail: datum/tijd + voorbereiding + Nij Begun-verwachtingsmanagement.
+    De adviseur verstuurt ZELF (tool mailt niet)."""
+    adviseur = adviseur or {}
+    onderwerp = "Bevestiging afspraak woningopname — %s" % _afspraak_nl(lead.get("afspraak", ""))
+    regels = [
+        ("Beste %s," % (lead.get("naam") or "bewoner")).strip(), "",
+        "Hierbij bevestig ik onze afspraak voor de woningopname aan %s:" % adres(lead), "",
+        "    📅  %s" % _afspraak_nl(lead.get("afspraak", "")),
+        "    ⏱  De opname duurt ongeveer 1,5 tot 2 uur; ik bekijk de hele woning, van kruipruimte tot zolder.", "",
+        "Wilt u ter voorbereiding alvast het volgende regelen?",
+        "  •  Het kruipruimteluik bereikbaar maken (eventuele spullen er even af/omheen weg).",
+        "  •  Raambekleding (gordijnen, rolgordijnen, plissés) opzij of omhoog, zodat alle ramen en",
+        "     kozijnen goed zichtbaar zijn — ik fotografeer en beoordeel elk raam.",
+        "  •  Toegang tot de zolder (trap/luik vrij).",
+        "  •  Facturen of offertes van eerder isolatiewerk klaarleggen, indien aanwezig.", "",
+        "Goed om te weten: tijdens de opname maak ik foto's in alle ruimtes — dat is verplicht voor het",
+        "subsidiedossier. Persoonlijke spullen mag u uiteraard opzij leggen; er komen geen personen in beeld.", "",
+        "Wat u van het Nij Begun-isolatieplan kunt verwachten:",
+        "  •  De regeling vergoedt ISOLATIEmaatregelen die nodig zijn om de warmtevraag-norm (de",
+        "     'Standaard') te halen: bijvoorbeeld spouwmuur-, dak-, vloerisolatie en beter glas, plus een",
+        "     passend ventilatie-advies.",
+        "  •  Niet alles valt binnen de regeling: bijvoorbeeld complete kozijnvervanging (zoals triple glas",
+        "     in nieuwe kunststof kozijnen) wordt doorgaans niet 100% vergoed. Voor zulke wensen kijk ik",
+        "     met u naar alternatieven (zoals 30% ISDE-subsidie), zodat u vooraf precies weet waar u aan",
+        "     toe bent.", "",
+        "Mocht de afspraak onverhoopt niet uitkomen, laat het mij dan even weten.", "",
+        "Met vriendelijke groet,", "",
+        adviseur.get("naam", ""), adviseur.get("bedrijf", ""),
+        ("Telefoon: %s" % adviseur["telefoon"]) if adviseur.get("telefoon") else "",
+        ("E-mail: %s" % adviseur["email"]) if adviseur.get("email") else "",
+    ]
+    tekst = "\n".join(r for r in regels if r is not None)
+    return onderwerp, re.sub(r"\n{3,}", "\n\n", tekst).strip() + "\n"
+
+
+def ontvangst_mail(adviseur=None):
+    """Generieke ontvangstbevestiging (bulk, BCC): aanvraag ontvangen, drukte, wachtlijst-volgorde."""
+    adviseur = adviseur or {}
+    onderwerp = "Uw Nij Begun-aanvraag is in goede orde ontvangen"
+    regels = [
+        "Beste bewoner,", "",
+        "Via het Nij Begun-portaal bent u aan mij toegewezen als isolatieadviseur. Uw aanvraag is in",
+        "goede orde ontvangen — hartelijk dank voor uw aanmelding.", "",
+        "In verband met de ongelofelijke drukte rond de regeling is de wachttijd op dit moment langer",
+        "dan ik zou willen. Ik streef ernaar iedereen zo spoedig mogelijk in te plannen voor de",
+        "woningopname en werk de lijst op volgorde van aanmelding af. U staat op de lijst — u hoeft",
+        "verder niets te doen.", "",
+        "Zodra u aan de beurt bent, neem ik persoonlijk contact met u op om een afspraak te maken.",
+        "Heeft u in de tussentijd vragen? Mail gerust.", "",
+        "Met vriendelijke groet,", "",
+        adviseur.get("naam", ""), adviseur.get("bedrijf", ""),
+        ("Telefoon: %s" % adviseur["telefoon"]) if adviseur.get("telefoon") else "",
+        ("E-mail: %s" % adviseur["email"]) if adviseur.get("email") else "",
+    ]
+    tekst = "\n".join(r for r in regels if r is not None)
+    return onderwerp, re.sub(r"\n{3,}", "\n\n", tekst).strip() + "\n"
+
+
 # ---------------- export ----------------
 def to_csv(leads):
     """CSV voor Excel-NL (puntkomma; utf-8 BOM)."""
-    kol = ["id", "ontvangen", "status", "naam", "straat", "woonplaats", "postcode", "huisnummer",
+    kol = ["id", "ontvangen", "status", "afspraak", "naam", "straat", "woonplaats", "postcode", "huisnummer",
            "toevoeging", "bouwjaar", "oppervlakte_m2", "telefoon", "email", "bag_id", "notitie"]
     esc = lambda v: '"%s"' % str(v if v is not None else "").replace('"', '""')
     rijen = [";".join(kol)]

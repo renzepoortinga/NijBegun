@@ -1448,5 +1448,64 @@ try:
 except Exception as _e:
     check("dakramen A/B: draait zonder fout", False); print("     " + repr(_e)[:170])
 
+print()
+print("57. Leads-workflow: bulk-plak + afspraak (auto-project) + bevestigings-/ontvangstmail")
+try:
+    import tempfile as _t57, shutil as _s57, os as _o57
+    import dashboard.leads as _L57
+    import dashboard.app as _W57
+    # (a) bulk-parse: 3 portal-mails in één plak -> 3 leads
+    _blob = " ".join('{"BagAdresId":"BULK%d","Naam":"Bulk %d","Email":"b%d@x.nl","Postcode":"888%dYY",'
+                     '"Huisnummer":%d}' % (i, i, i, i, i) for i in (1, 2, 3))
+    check("bulk: parse_leads_bulk vindt 3 blokken", len(_L57.parse_leads_bulk(_blob)) == 3)
+    check("bulk: enkel blok blijft werken", len(_L57.parse_leads_bulk('{"Naam":"Solo","Postcode":"1111AA"}')) == 1)
+    # (b) mails: NL-datum + voorbereidings-/verwachtings-punten + drukte-tekst
+    _lead = {"naam": "Bulk 1", "postcode": "8881YY", "huisnummer": "1", "toevoeging": "",
+             "afspraak": "2026-07-20T14:30", "email": "b1@x.nl"}
+    _ow, _tx = _L57.bevestiging_mail(_lead, {"naam": "Renze", "bedrijf": "Poortinga"})
+    check("bevestiging: NL-datum + tijd in de mail", "maandag 20 juli 2026 om 14:30" in _tx)
+    check("bevestiging: raambekleding + kruipruimteluik + foto's-in-alle-ruimtes",
+          "aambekleding" in _tx and "kruipruimteluik" in _tx and "alle ruimtes" in _tx)
+    check("bevestiging: verwachtingsmanagement (triple/kozijn niet vergoed)", "triple glas" in _tx.lower())
+    _ow2, _tx2 = _L57.ontvangst_mail({"naam": "Renze"})
+    check("ontvangst: drukte + wachttijd + 'op de lijst'", "drukte" in _tx2 and "wachttijd" in _tx2 and "lijst" in _tx2)
+    # (c) routes: afspraak zetten -> status 'afspraak gepland' + AUTO-project; ontvangst-bulk
+    _W57.app.config.update(TESTING=True)
+    _c57 = _W57.app.test_client()
+    with _c57.session_transaction() as _ss:
+        _ss["ingelogd"] = True
+    _od57, _of57 = _L57.LEADS_DIR, _L57.LEADS_FILE
+    _tmp57 = _t57.mkdtemp(); _L57.LEADS_DIR = _tmp57; _L57.LEADS_FILE = _o57.path.join(_tmp57, "leads.json")
+    try:
+        _rows57 = []
+        for _ld in _L57.parse_leads_bulk(_blob):
+            _rows57, _ = _L57.add_lead(_ld, _rows57)
+        _L57.save_leads(_rows57)
+        _lid57 = _rows57[0]["id"]
+        _c57.post("/leads/%d/afspraak" % _lid57, data={"wanneer": "2026-07-21T10:00"})
+        _r57 = next(x for x in _L57.load_leads() if x["id"] == _lid57)
+        check("afspraak-route: datum + status + AUTO-project", _r57.get("afspraak") == "2026-07-21T10:00"
+              and _r57.get("status") == "afspraak gepland" and bool(_r57.get("project_tag")))
+        _bev = _c57.get("/leads/%d/mail?soort=bevestiging" % _lid57).get_data(as_text=True)
+        check("bevestiging-route: mail met afspraakdatum", "21 juli 2026 om 10:00" in _bev)
+        # status-dropdown op 'afspraak gepland' -> ook auto-project (lead 2)
+        _lid2b = _rows57[1]["id"]
+        _c57.post("/leads/%d/status" % _lid2b, data={"status": "afspraak gepland"})
+        _r2b = next(x for x in _L57.load_leads() if x["id"] == _lid2b)
+        check("status 'afspraak gepland': AUTO-project aangemaakt", bool(_r2b.get("project_tag")))
+        # ontvangst: alleen 'nieuw'-leads in BCC (lead 3), daarna allen gemarkeerd
+        _ont = _c57.get("/leads/ontvangst").get_data(as_text=True)
+        check("ontvangst-route: alleen nieuwe leads in BCC", "b3@x.nl" in _ont and "b2@x.nl" not in _ont)
+        _c57.post("/leads/ontvangst/verstuurd")
+        check("ontvangst 'verstuurd': alle nieuwe -> mail gestuurd",
+              all(x["status"] != "nieuw" for x in _L57.load_leads()))
+        for _x in _L57.load_leads():
+            if _x.get("project_tag"):
+                _s57.rmtree(_W57._pdir(_x["project_tag"]), ignore_errors=True)
+    finally:
+        _L57.LEADS_DIR, _L57.LEADS_FILE = _od57, _of57
+except Exception as _e:
+    check("leads-workflow: draait zonder fout", False); print("     " + repr(_e)[:180])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

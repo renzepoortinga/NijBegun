@@ -1314,8 +1314,11 @@ LEADS = """<h1>Leads</h1>
 De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <form method=post action="{{url_for('leads_add')}}">
 <textarea name=mailtekst rows=4 placeholder='{"BagAdresId":"...","Email":"...","Naam":"..."}'></textarea>
-<div class=btn-row><button class=btn>Lead toevoegen</button>
-<span class=spacer></span><a class="btn sec" href="{{url_for('leads_csv')}}">⬇ Export naar Excel (CSV)</a></div></form></div>
+<div class=btn-row><button class=btn>Lead(s) toevoegen</button>
+<span class="muted small">Bulk? Plak gerust 60 portal-mails tegelijk — elk {...}-blok wordt een lead.</span>
+<span class=spacer></span>
+<a class="btn sec" href="{{url_for('leads_ontvangst')}}">✉ Ontvangstmail (alle nieuwe, BCC)</a>
+<a class="btn sec" href="{{url_for('leads_csv')}}">⬇ CSV</a></div></form></div>
 {% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap"><table>
 <tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th></th></tr>
 {% for l in leads %}<tr>
@@ -1326,13 +1329,30 @@ De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <td><form method=post action="{{url_for('leads_status', lid=l.id)}}">
 <select name=status onchange="this.form.submit()">
 {% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
-</select></form></td>
+</select></form>
+<form method=post action="{{url_for('leads_afspraak', lid=l.id)}}" style="display:flex;gap:4px;margin-top:6px">
+<input type=datetime-local name=wanneer value="{{l.afspraak or ''}}" style="min-height:38px;font-size:13px">
+<button class="btn sec" title="Afspraak opslaan (+ project aanmaken)">📅</button></form></td>
 <td style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a>
+{% if l.afspraak %} <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging" title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ bevestiging</a>{% endif %}
 {% if l.project_tag %} <a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
 {% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %} <form method=post style="display:inline" action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
 </td></tr>{% endfor %}</table></div>
 <p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
 {% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
+
+LEADS_ONTVANGST = """<h1>Ontvangstbevestiging — bulk</h1>
+<p class=lead>{{n}} lead(s) met status <b>nieuw</b>. Maak in je mailprogramma één mail: plak de adressen in het
+<b>BCC</b>-veld (nooit Aan/CC — AVG!), jezelf in Aan, en plak onderwerp + tekst. Verstuur zelf.</p>
+<div class=card><h2>BCC-adressen ({{n}})</h2><textarea rows=4 id=bcc readonly>{{bcc}}</textarea>
+<div class=btn-row><button class="btn sec" type=button onclick="navigator.clipboard.writeText(document.getElementById('bcc').value);this.textContent='✓ Gekopieerd'">Kopieer adressen</button></div></div>
+<div class=card><h2>Onderwerp</h2><input readonly value="{{onderwerp}}">
+<h2 style="margin-top:14px">Tekst</h2><textarea rows=14 id=body readonly>{{tekst}}</textarea>
+<div class=btn-row><button class="btn sec" type=button onclick="navigator.clipboard.writeText(document.getElementById('body').value);this.textContent='✓ Gekopieerd'">Kopieer tekst</button>
+<span class=spacer></span>
+<form method=post action="{{url_for('leads_ontvangst_verstuurd')}}" onsubmit="return confirm('Alle {{n}} nieuwe leads markeren als mail gestuurd?')">
+<button class="btn green">✓ Verstuurd — markeer allen</button></form>
+<a class="btn ghost" href="{{url_for('leads_pagina')}}">← terug</a></div></div>"""
 
 LEAD_MAIL = """<h1>Kennismakingsmail — {{l.naam}}</h1>
 <p class=lead>Concept. Kopieer of open 'm in je mailprogramma, lees 'm even na en <b>verstuur zelf</b>.</p>
@@ -1365,14 +1385,18 @@ def leads_pagina():
 @app.route("/leads/add", methods=["POST"])
 @login_required
 def leads_add():
-    lead = leads_mod.parse_lead(request.form.get("mailtekst", ""))
-    if not lead:
-        flash("Kon geen lead-gegevens vinden in de geplakte tekst — plak de hele portal-mail (met het {...}-blok).")
+    gevonden = leads_mod.parse_leads_bulk(request.form.get("mailtekst", ""))
+    if not gevonden:
+        flash("Kon geen lead-gegevens vinden in de geplakte tekst — plak de portal-mail(s) (met {...}-blok).")
         return redirect(url_for("leads_pagina"))
-    rows, nieuw = leads_mod.add_lead(lead)
+    rows = leads_mod.load_leads()
+    n_nieuw = n_dubbel = 0
+    for lead in gevonden:                    # BULK: plak gerust 60 mails in één keer
+        rows, nieuw = leads_mod.add_lead(lead, rows)
+        n_nieuw += 1 if nieuw else 0
+        n_dubbel += 0 if nieuw else 1
     leads_mod.save_leads(rows)
-    if not nieuw:
-        flash("Lead bestaat al (zelfde adres/BAG-id) — niet dubbel toegevoegd.")
+    flash("%d lead(s) toegevoegd%s." % (n_nieuw, (" · %d dubbel overgeslagen" % n_dubbel) if n_dubbel else ""))
     return redirect(url_for("leads_pagina"))
 
 
@@ -1385,6 +1409,12 @@ def leads_status(lid):
         if r.get("id") == lid and st in leads_mod.STATUSSEN:
             r["status"] = st
     leads_mod.save_leads(rows)
+    # AUTOMATISCH project aanmaken zodra de afspraak gepland is (idempotent)
+    if st == "afspraak gepland":
+        tag, bestond = _project_uit_lead(lid, rows, status_door=False)
+        if tag and not bestond:
+            flash("Afspraak gepland → project %s automatisch aangemaakt. Zet ook de afspraakdatum (📅) "
+                  "en verstuur de bevestigingsmail." % tag)
     return redirect(url_for("leads_pagina"))
 
 
@@ -1433,22 +1463,18 @@ def _lead_naar_dossier(lead):
     return dos
 
 
-@app.route("/leads/<int:lid>/project", methods=["POST"])
-@login_required
-def leads_project(lid):
-    """Zet een lead om naar een (leeg) project en spring naar de Opname-stap. Idempotent:
-    bestaat het project (zelfde postcode_huisnummer) al, dan wordt niets overschreven — we linken en openen."""
-    rows = leads_mod.load_leads()
+def _project_uit_lead(lid, rows, status_door=True):
+    """Maak (idempotent) een project uit een lead. -> (tag, bestond_al). Persoonsgegevens blijven
+    in out/leads (AVG); alleen adres/BAG gaat het dossier in."""
     lead = next((x for x in rows if x.get("id") == lid), None)
     if not lead:
-        abort(404)
+        return None, False
     dos = _lead_naar_dossier(lead)
     tag = _tag(dos)
     if lead.get("project_tag") == tag or _load_state(tag) is not None:
         if lead.get("project_tag") != tag:
             leads_mod.set_project_tag(lid, tag, rows)
-        flash("Project bestond al voor dit adres — geopend (niets overschreven).")
-        return redirect(url_for("opname", tag=tag))
+        return tag, True
     os.makedirs(_pdir(tag), exist_ok=True)
     dfile = "dossier_%s.json" % tag
     save_json(dos, os.path.join(_pdir(tag), dfile))
@@ -1458,12 +1484,71 @@ def leads_project(lid):
           "keuze": [], "totaal": 0, "lead_id": lid}
     _save_state(tag, st)
     leads_mod.set_project_tag(lid, tag, rows)
-    for r in rows:                                       # status doorzetten (tenzij al verder)
-        if r.get("id") == lid and r.get("status") in ("nieuw", "mail gestuurd", "gebeld", "afspraak gepland"):
-            r["status"] = "opname gedaan"
+    if status_door:                     # handmatige 📂-knop = opname (bijna) gedaan; auto-routes laten
+        for r in rows:                  # de status op 'afspraak gepland' staan (status_door=False)
+            if r.get("id") == lid and r.get("status") in ("nieuw", "mail gestuurd", "gebeld", "afspraak gepland"):
+                r["status"] = "opname gedaan"
     leads_mod.save_leads(rows)
-    flash("Project aangemaakt vanuit de lead — vul de opname in.")
+    return tag, False
+
+
+@app.route("/leads/<int:lid>/project", methods=["POST"])
+@login_required
+def leads_project(lid):
+    """Handmatig: lead -> project + naar de Opname-stap (idempotent)."""
+    rows = leads_mod.load_leads()
+    tag, bestond = _project_uit_lead(lid, rows)
+    if not tag:
+        abort(404)
+    flash("Project bestond al — geopend (niets overschreven)." if bestond
+          else "Project aangemaakt vanuit de lead — vul de opname in.")
     return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/leads/<int:lid>/afspraak", methods=["POST"])
+@login_required
+def leads_afspraak(lid):
+    """Afspraakdatum/-tijd op de lead + status 'afspraak gepland' + AUTOMATISCH project aanmaken."""
+    rows = leads_mod.load_leads()
+    lead = next((x for x in rows if x.get("id") == lid), None)
+    if not lead:
+        abort(404)
+    wanneer = request.form.get("wanneer", "").strip()
+    leads_mod.set_afspraak(lid, wanneer, rows)
+    if wanneer:
+        for r in rows:
+            if r.get("id") == lid and r.get("status") in ("nieuw", "mail gestuurd", "gebeld"):
+                r["status"] = "afspraak gepland"
+        leads_mod.save_leads(rows)
+        tag, bestond = _project_uit_lead(lid, rows, status_door=False)
+        flash("Afspraak opgeslagen%s — verstuur nu de bevestigingsmail (✉ bevestiging)."
+              % ("" if bestond else " + project %s aangemaakt" % tag))
+    else:
+        flash("Afspraak leeggemaakt.")
+    return redirect(url_for("leads_pagina"))
+
+
+@app.route("/leads/ontvangst")
+@login_required
+def leads_ontvangst():
+    """Bulk-ontvangstbevestiging: BCC-lijst van alle 'nieuw'-leads + concepttekst (drukte/wachtlijst)."""
+    rows = [r for r in leads_mod.load_leads() if r.get("status") == "nieuw" and r.get("email")]
+    onderwerp, tekst = leads_mod.ontvangst_mail(_cfg().get("adviseur", {}))
+    bcc = "; ".join(r["email"] for r in rows)
+    return page(LEADS_ONTVANGST, n=len(rows), bcc=bcc, onderwerp=onderwerp, tekst=tekst)
+
+
+@app.route("/leads/ontvangst/verstuurd", methods=["POST"])
+@login_required
+def leads_ontvangst_verstuurd():
+    rows = leads_mod.load_leads()
+    n = 0
+    for r in rows:
+        if r.get("status") == "nieuw":
+            r["status"] = "mail gestuurd"; n += 1
+    leads_mod.save_leads(rows)
+    flash("%d lead(s) gemarkeerd als 'mail gestuurd'." % n)
+    return redirect(url_for("leads_pagina"))
 
 
 @app.route("/leads/<int:lid>/mail")
@@ -1472,7 +1557,10 @@ def leads_mail(lid):
     r = next((x for x in leads_mod.load_leads() if x.get("id") == lid), None)
     if not r:
         abort(404)
-    onderwerp, tekst = leads_mod.concept_mail(r, _cfg().get("adviseur", {}))
+    if request.args.get("soort") == "bevestiging":
+        onderwerp, tekst = leads_mod.bevestiging_mail(r, _cfg().get("adviseur", {}))
+    else:
+        onderwerp, tekst = leads_mod.concept_mail(r, _cfg().get("adviseur", {}))
     return page(LEAD_MAIL, l=r, onderwerp=onderwerp, tekst=tekst)
 
 
