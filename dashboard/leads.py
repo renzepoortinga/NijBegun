@@ -249,8 +249,8 @@ def bevestiging_mail(lead, adviseur=None):
     regels = [
         ("Beste %s," % (lead.get("naam") or "bewoner")).strip(), "",
         "Hierbij bevestig ik onze afspraak voor de woningopname aan %s:" % adres(lead), "",
-        "    📅  %s" % _afspraak_nl(lead.get("afspraak", "")),
-        "    ⏱  De opname duurt ongeveer 1,5 tot 2 uur; ik bekijk de hele woning, van kruipruimte tot zolder.", "",
+        "    %s" % _afspraak_nl(lead.get("afspraak", "")),
+        "    De opname duurt ongeveer 1,5 tot 2 uur; ik bekijk de hele woning, van kruipruimte tot zolder.", "",
         "Wilt u ter voorbereiding alvast het volgende regelen?",
         "  •  Het kruipruimteluik bereikbaar maken (eventuele spullen er even af/omheen weg).",
         "  •  Raambekleding (gordijnen, rolgordijnen, plissés) opzij of omhoog, zodat alle ramen en",

@@ -1490,6 +1490,7 @@ try:
     _ow3, _tx3 = _L57.concept_mail(_lead, {"naam": "Renze"})
     _alle_mail = "".join((_ow, _tx, _ow2, _tx2, _ow3, _tx3))
     check("mails: geen em/en-dash in onderwerp of tekst", "—" not in _alle_mail and "–" not in _alle_mail)
+    check("mails: geen emoji (alles onder U+2500; opsommingsteken mag)", all(ord(c) < 0x2500 for c in _alle_mail))
     # (c) routes: afspraak zetten -> status 'afspraak gepland' + AUTO-project; ontvangst-bulk
     _W57.app.config.update(TESTING=True)
     _c57 = _W57.app.test_client()
