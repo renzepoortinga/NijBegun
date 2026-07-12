@@ -141,7 +141,7 @@ def concept_mail(lead, adviseur=None):
     a_tel = adviseur.get("telefoon", "")
     a_mail = adviseur.get("email", "")
     aanhef = ("Beste %s," % (lead.get("naam") or "bewoner")).strip()
-    onderwerp = "Uw isolatieadvies via Nij Begun — kennismaking en afspraak"
+    onderwerp = "Uw isolatieadvies via Nij Begun: kennismaking en afspraak"
     regels = [
         aanhef, "",
         "Goed nieuws: via het Nij Begun-programma ben ik als isolatieadviseur aan uw woning "
@@ -158,7 +158,7 @@ def concept_mail(lead, adviseur=None):
     regels += [
         "",
         "Heeft u vragen, of belt/mailt u liever zelf voor het maken van de afspraak? Dat kan "
-        "natuurlijk ook — mijn gegevens staan hieronder.",
+        "natuurlijk ook. Mijn gegevens staan hieronder.",
         "",
         "Met vriendelijke groet,", "",
         a_naam or "", a_bedrijf or "",
@@ -245,7 +245,7 @@ def bevestiging_mail(lead, adviseur=None):
     """Afspraak-bevestigingsmail: datum/tijd + voorbereiding + Nij Begun-verwachtingsmanagement.
     De adviseur verstuurt ZELF (tool mailt niet)."""
     adviseur = adviseur or {}
-    onderwerp = "Bevestiging afspraak woningopname — %s" % _afspraak_nl(lead.get("afspraak", ""))
+    onderwerp = "Bevestiging afspraak woningopname op %s" % _afspraak_nl(lead.get("afspraak", ""))
     regels = [
         ("Beste %s," % (lead.get("naam") or "bewoner")).strip(), "",
         "Hierbij bevestig ik onze afspraak voor de woningopname aan %s:" % adres(lead), "",
@@ -254,10 +254,10 @@ def bevestiging_mail(lead, adviseur=None):
         "Wilt u ter voorbereiding alvast het volgende regelen?",
         "  •  Het kruipruimteluik bereikbaar maken (eventuele spullen er even af/omheen weg).",
         "  •  Raambekleding (gordijnen, rolgordijnen, plissés) opzij of omhoog, zodat alle ramen en",
-        "     kozijnen goed zichtbaar zijn — ik fotografeer en beoordeel elk raam.",
+        "     kozijnen goed zichtbaar zijn. Ik fotografeer en beoordeel elk raam.",
         "  •  Toegang tot de zolder (trap/luik vrij).",
         "  •  Facturen of offertes van eerder isolatiewerk klaarleggen, indien aanwezig.", "",
-        "Goed om te weten: tijdens de opname maak ik foto's in alle ruimtes — dat is verplicht voor het",
+        "Goed om te weten: tijdens de opname maak ik foto's in alle ruimtes. Dat is verplicht voor het",
         "subsidiedossier. Persoonlijke spullen mag u uiteraard opzij leggen; er komen geen personen in beeld.", "",
         "Wat u van het Nij Begun-isolatieplan kunt verwachten:",
         "  •  De regeling vergoedt ISOLATIEmaatregelen die nodig zijn om de warmtevraag-norm (de",
@@ -284,10 +284,10 @@ def ontvangst_mail(adviseur=None):
     regels = [
         "Beste bewoner,", "",
         "Via het Nij Begun-portaal bent u aan mij toegewezen als isolatieadviseur. Uw aanvraag is in",
-        "goede orde ontvangen — hartelijk dank voor uw aanmelding.", "",
+        "goede orde ontvangen, hartelijk dank voor uw aanmelding.", "",
         "In verband met de ongelofelijke drukte rond de regeling is de wachttijd op dit moment langer",
         "dan ik zou willen. Ik streef ernaar iedereen zo spoedig mogelijk in te plannen voor de",
-        "woningopname en werk de lijst op volgorde van aanmelding af. U staat op de lijst — u hoeft",
+        "woningopname en werk de lijst op volgorde van aanmelding af. U staat op de lijst en hoeft",
         "verder niets te doen.", "",
         "Zodra u aan de beurt bent, neem ik persoonlijk contact met u op om een afspraak te maken.",
         "Heeft u in de tussentijd vragen? Mail gerust.", "",

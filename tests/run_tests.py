@@ -1486,6 +1486,10 @@ try:
     check("bevestiging: verwachtingsmanagement (triple/kozijn niet vergoed)", "triple glas" in _tx.lower())
     _ow2, _tx2 = _L57.ontvangst_mail({"naam": "Renze"})
     check("ontvangst: drukte + wachttijd + 'op de lijst'", "drukte" in _tx2 and "wachttijd" in _tx2 and "lijst" in _tx2)
+    # GEEN lange streepjes (em/en-dash) in klantmails: leest als AI-geschreven (eis Renze 12-7)
+    _ow3, _tx3 = _L57.concept_mail(_lead, {"naam": "Renze"})
+    _alle_mail = "".join((_ow, _tx, _ow2, _tx2, _ow3, _tx3))
+    check("mails: geen em/en-dash in onderwerp of tekst", "—" not in _alle_mail and "–" not in _alle_mail)
     # (c) routes: afspraak zetten -> status 'afspraak gepland' + AUTO-project; ontvangst-bulk
     _W57.app.config.update(TESTING=True)
     _c57 = _W57.app.test_client()
