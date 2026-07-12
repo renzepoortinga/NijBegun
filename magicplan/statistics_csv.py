@@ -754,9 +754,21 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             if _gat_tot:
                 _trek_af(_kor, _gat_tot)
             notes.append("Dak %d kapel %s (%dx, vlak %s): %s" % (_dn, _g, _n_kap, _kor or "?", dk["flag"]))
-        # dakramen A/B: per groep eigen dakvlak + eigen glastype; legacy enkelvoudige velden als fallback
+        # dakramen-MATRIX (12-7, na veldfeedback "soms 10-20 dakramen, alle glastypes door elkaar"):
+        # per dakvlak (1 = gekozen orientatie, 2 = tegenover) een m2-veld PER GLASTYPE -> onbeperkt
+        # combineerbaar. A/B-groepen + enkelvoudige velden blijven legacy-fallback.
         _rw_groepen = []
-        for _g in ("A", "B"):
+        for _vl in (1, 2):
+            _vor = _hoofd_or if _vl == 1 else _opp8(_hoofd_or)
+            _vn = _f(_Gp(Pd + " dakramen vlak %d - aantal" % _vl))
+            for _gt in ("Enkel", "Dubbel", "HR", "HR+", "HR++", "TripleHR", "Onbekend"):
+                _gm = _f(G(Pd + " dakramen vlak %d - %s (m²)" % (_vl, _gt)) or
+                         G(Pd + " dakramen vlak %d - %s (m2)" % (_vl, _gt)))
+                if _gm:
+                    _rw_groepen.append(("v%d-%s" % (_vl, _gt.lower().replace("+", "p")),
+                                        _vn or 0, _gm, _gt, _vor))
+        if not _rw_groepen:
+         for _g in ("A", "B"):
             _rwn = _f(_Gp(Pd + " - dakramen %s: aantal" % _g))
             _rwm = _f(_Gp(Pd + " - dakramen %s: totaal oppervlak" % _g))
             if _rwn and _rwm:
@@ -775,7 +787,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 opmerkingen="dakraam/-ramen (%dx) in dakvlak %s — in Vabi als raam op het DAKvlak"
                             % (int(_rwn), _ror or "?")))
             _trek_af(_ror, _rwm)
-            if _rwm / max(_rwn, 1) < 0.65:
+            if _rwn and _rwm / max(_rwn, 1) < 0.65:
                 notes.append("Dak %d dakramen %s: gemiddeld < 0,65 m2/stuk -> Nij Begun rekent kleine "
                              "ruiten als 0,65 m2; check het totaal." % (_dn, _g or "-"))
         # Ag-zolder-check: schuin dak met laag/geen knieschot en geen 'Ag-aftrek zolder' ingevuld ->
