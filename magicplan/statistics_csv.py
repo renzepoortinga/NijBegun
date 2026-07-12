@@ -637,7 +637,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                    if any((k or "").startswith(c + " - type") or (k or "").startswith(c + " zadel")
                           or (k or "").startswith(c + " plat") for k in plan)), "Dak %d" % _dn)
         # type-veld op PREFIX zoeken: de suffix is live al 2x hernoemd (leeg = .../HELE dak/EXTRA dak)
-        _tkey = next((k for k in plan if (k or "").startswith(Pd + " - type")), None)
+        _tkey = next((k for k in plan if (k or "").startswith(Pd + " - type")
+                      or (_dn == 1 and (k or "").startswith("Type dak"))), None)
         t_n = _undot(plan.get(_tkey, "") if _tkey else (G(Pd + " - type") or ""))
         if not t_n:
             continue
