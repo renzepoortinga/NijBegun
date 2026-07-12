@@ -347,7 +347,7 @@ def build_sample() -> Dossier:
         postcode="9501TP", plaats="Stadskanaal", bouwjaar=1979,
         woningtype="Tussenwoning", aantal_bouwlagen=2)
     d.adviseur = Adviseur(naam="Renze Poortinga", bedrijf="Poortinga Energieadvies",
-                          telefoon="0616691927", email="renze@poortinga.org")
+                          telefoon="0616691927", email="info@poortinga-energieadvies.nl")
     d.opname = Opname(opnamedatum="2026-02-24", rapportagedatum="2026-03-10",
                       type_advies="Basis", qv10_gemeten=False, bewijslast="Geen")
     d.geometrie = Geometrie(gebruiksoppervlakte_ag_m2=57.70, verwarmd_volume_m3=198.59,
