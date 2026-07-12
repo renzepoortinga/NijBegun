@@ -43,7 +43,9 @@ def generate_all(dos, outdir, prefix=""):
         for _k in ("constructies", "objecten", "installaties"):
             _t = res.get(_k)
             if _t and _t[-1]:
-                alle_flags += [str(x) for x in _t[-1]]
+                for x in _t[-1]:            # ontdubbel (resolve_constructies draait 2x)
+                    if str(x) not in alle_flags:
+                        alle_flags.append(str(x))
         if alle_flags:
             fh.write("\nZELF DOEN IN VABI (%d actiepunten):\n" % len(alle_flags))
             for a in alle_flags:
