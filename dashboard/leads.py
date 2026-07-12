@@ -184,6 +184,39 @@ def parse_leads_bulk(text):
     return uit
 
 
+def tekst_uit_eml(data):
+    """Ruwe .eml-bytes (uit Outlook gesleepte mail) -> leesbare tekst voor parse_leads_bulk.
+    De MIME-decoder is nodig: portal-mails zijn vaak quoted-printable of base64 gecodeerd,
+    waardoor het JSON-blok in de ruwe bytes onherkenbaar is. Voorkeur text/plain; alleen-HTML
+    wordt van tags ontdaan."""
+    import email, email.policy
+    from html import unescape
+    try:
+        msg = email.message_from_bytes(data, policy=email.policy.default)
+    except Exception:
+        return ""
+    delen = []
+    for part in msg.walk():
+        if part.get_content_maintype() == "multipart":
+            continue
+        ct = part.get_content_type()
+        if ct not in ("text/plain", "text/html"):
+            continue
+        try:
+            inhoud = part.get_content()
+        except Exception:
+            continue
+        if ct == "text/html":
+            inhoud = unescape(re.sub(r"<[^>]+>", " ", inhoud))
+        delen.append((0 if ct == "text/plain" else 1, inhoud))
+    if not delen:
+        return ""
+    delen.sort(key=lambda x: x[0])
+    if any(p == 0 for p, _ in delen):            # text/plain aanwezig -> alleen die
+        return "\n".join(t for p, t in delen if p == 0)
+    return "\n".join(t for _, t in delen)
+
+
 def set_afspraak(lid, wanneer, leads=None):
     """Afspraakdatum/-tijd (ISO 'YYYY-MM-DDTHH:MM') op de lead zetten."""
     leads = load_leads() if leads is None else leads

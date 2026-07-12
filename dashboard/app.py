@@ -1310,12 +1310,15 @@ def download(tag, filename):
 LEADS = """<h1>Leads</h1>
 <p class=lead>Toegewezen bewoners uit het Nij Begun-portal — plak de mail, volg de status, genereer de kennismakingsmail.</p>
 <div class=card><h2>Nieuwe lead toevoegen</h2>
-<p class=muted>Plak hieronder de <b>hele portal-mail</b> (het JSON-blok wordt eruit gehaald) en klik toevoegen.
-De gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
-<form method=post action="{{url_for('leads_add')}}">
+<p class=muted>Plak de <b>portal-mail(s)</b> in het vak, óf <b>selecteer de mails in Outlook en sleep ze naar een map</b>
+(worden .eml-bestanden) en kies ze hieronder — mag met 60 tegelijk. Het JSON-blok wordt eruit gehaald;
+de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
+<form method=post action="{{url_for('leads_add')}}" enctype="multipart/form-data">
 <textarea name=mailtekst rows=4 placeholder='{"BagAdresId":"...","Email":"...","Naam":"..."}'></textarea>
+<label class="muted small" style="display:block;margin-top:8px">Of upload gesleepte Outlook-mails (.eml, meerdere tegelijk):
+<input type=file name=emls multiple accept=".eml,.txt" style="margin-top:4px"></label>
 <div class=btn-row><button class=btn>Lead(s) toevoegen</button>
-<span class="muted small">Bulk? Plak gerust 60 portal-mails tegelijk — elk {...}-blok wordt een lead.</span>
+<span class="muted small">Plakken en uploaden mag door elkaar — elk {...}-blok wordt een lead, dubbelen worden overgeslagen.</span>
 <span class=spacer></span>
 <a class="btn sec" href="{{url_for('leads_ontvangst')}}">✉ Ontvangstmail (alle nieuwe, BCC)</a>
 <a class="btn sec" href="{{url_for('leads_csv')}}">⬇ CSV</a></div></form></div>
@@ -1385,9 +1388,23 @@ def leads_pagina():
 @app.route("/leads/add", methods=["POST"])
 @login_required
 def leads_add():
-    gevonden = leads_mod.parse_leads_bulk(request.form.get("mailtekst", ""))
+    tekst = request.form.get("mailtekst", "")
+    n_msg = 0
+    for f in request.files.getlist("emls"):       # gesleepte Outlook-mails (.eml) — mag met 60 tegelijk
+        naam = (f.filename or "").lower()
+        if naam.endswith(".msg"):
+            n_msg += 1                            # klassiek-Outlook-formaat (OLE-binair) — kunnen we niet lezen
+            continue
+        if naam.endswith(".eml"):
+            tekst += "\n" + leads_mod.tekst_uit_eml(f.read())
+        elif naam.endswith(".txt"):
+            tekst += "\n" + f.read().decode("utf-8", errors="replace")
+    if n_msg:
+        flash("%d .msg-bestand(en) overgeslagen — dat is het klassieke Outlook-formaat. Sleep de mails "
+              "vanuit de NIEUWE Outlook (geeft .eml), of plak de tekst." % n_msg)
+    gevonden = leads_mod.parse_leads_bulk(tekst)
     if not gevonden:
-        flash("Kon geen lead-gegevens vinden in de geplakte tekst — plak de portal-mail(s) (met {...}-blok).")
+        flash("Kon geen lead-gegevens vinden — plak de portal-mail(s) of sleep .eml-bestanden (met {...}-blok).")
         return redirect(url_for("leads_pagina"))
     rows = leads_mod.load_leads()
     n_nieuw = n_dubbel = 0

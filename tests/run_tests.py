@@ -1459,6 +1459,23 @@ try:
                      '"Huisnummer":%d}' % (i, i, i, i, i) for i in (1, 2, 3))
     check("bulk: parse_leads_bulk vindt 3 blokken", len(_L57.parse_leads_bulk(_blob)) == 3)
     check("bulk: enkel blok blijft werken", len(_L57.parse_leads_bulk('{"Naam":"Solo","Postcode":"1111AA"}')) == 1)
+    # (a2) .eml-upload: quoted-printable (JSON over 2 regels gebroken met soft break) + base64-HTML
+    _qp = (b"From: portal@smarttwin.nl\r\nSubject: Contact met adviseur\r\nMIME-Version: 1.0\r\n"
+           b"Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+           b'Beste adviseur,\r\n{"BagAdresId":"EML1","Naam":"Eml Testpersoon","Postcode":"7777X=\r\nX",'
+           b'"Huisnummer":9}\r\n')
+    import base64 as _b64
+    _html = '<html><body><p>{"BagAdresId":"EML2","Naam":"Html Persoon","Postcode":"6666WW","Huisnummer":4}</p></body></html>'
+    _b = (b"From: portal@smarttwin.nl\r\nSubject: Contact\r\nMIME-Version: 1.0\r\n"
+          b"Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
+          + _b64.encodebytes(_html.encode("utf-8")))
+    _t1 = _L57.tekst_uit_eml(_qp)
+    _t2 = _L57.tekst_uit_eml(_b)
+    check("eml: quoted-printable gedecodeerd (soft break geheeld)", '"Postcode":"7777XX"' in _t1.replace(" ", ""))
+    check("eml: base64-HTML gedecodeerd + tags gestript",
+          "BagAdresId" in _t2 and "<p>" not in _t2 and len(_L57.parse_leads_bulk(_t2)) == 1)
+    _rot = _L57.tekst_uit_eml(b"\x00\xff geen mail")
+    check("eml: kapotte bytes -> geen crash, geen leads", isinstance(_rot, str) and _L57.parse_leads_bulk(_rot) == [])
     # (b) mails: NL-datum + voorbereidings-/verwachtings-punten + drukte-tekst
     _lead = {"naam": "Bulk 1", "postcode": "8881YY", "huisnummer": "1", "toevoeging": "",
              "afspraak": "2026-07-20T14:30", "email": "b1@x.nl"}
@@ -1477,6 +1494,18 @@ try:
     _od57, _of57 = _L57.LEADS_DIR, _L57.LEADS_FILE
     _tmp57 = _t57.mkdtemp(); _L57.LEADS_DIR = _tmp57; _L57.LEADS_FILE = _o57.path.join(_tmp57, "leads.json")
     try:
+        # upload-route: 2 .eml's + 1 .msg (overgeslagen met melding) in één POST
+        import io as _io57
+        _rr = _c57.post("/leads/add", data={
+            "mailtekst": "",
+            "emls": [(_io57.BytesIO(_qp), "mail1.eml"), (_io57.BytesIO(_b), "mail2.eml"),
+                     (_io57.BytesIO(b"OLE"), "oud.msg")]},
+            content_type="multipart/form-data", follow_redirects=True)
+        _up = _L57.load_leads()
+        check("upload-route: 2 .eml's -> 2 leads, .msg overgeslagen + melding",
+              len(_up) == 2 and {x["bag_id"] for x in _up} == {"EML1", "EML2"}
+              and ".msg-bestand" in _rr.get_data(as_text=True))
+        _L57.save_leads([])
         _rows57 = []
         for _ld in _L57.parse_leads_bulk(_blob):
             _rows57, _ = _L57.add_lead(_ld, _rows57)
