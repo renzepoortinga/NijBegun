@@ -1487,10 +1487,26 @@ try:
     _ow2, _tx2 = _L57.ontvangst_mail({"naam": "Renze"})
     check("ontvangst: drukte + wachttijd + 'op de lijst'", "drukte" in _tx2 and "wachttijd" in _tx2 and "lijst" in _tx2)
     # GEEN lange streepjes (em/en-dash) in klantmails: leest als AI-geschreven (eis Renze 12-7)
-    _ow3, _tx3 = _L57.concept_mail(_lead, {"naam": "Renze"})
+    _adv57 = {"naam": "Renze Poortinga", "bedrijf": "Poortinga Energieadvies",
+              "telefoon": "06-99999999", "email": "renze@poortinga.org"}
+    _ow3, _tx3 = _L57.concept_mail(_lead, _adv57)
     _alle_mail = "".join((_ow, _tx, _ow2, _tx2, _ow3, _tx3))
     check("mails: geen em/en-dash in onderwerp of tekst", "—" not in _alle_mail and "–" not in _alle_mail)
     check("mails: geen emoji (alles onder U+2500; opsommingsteken mag)", all(ord(c) < 0x2500 for c in _alle_mail))
+    # WIJ-vorm (bedrijf), geen telefoonnummer, wel e-mailvoorkeur (eis Renze 12-7)
+    check("mails: wij-vorm, geen ik-vorm", " ik " not in _alle_mail.lower() and "Wij " in _alle_mail)
+    check("mails: telefoonnummer eruit + e-mailvoorkeur benoemd",
+          "Telefoon" not in _alle_mail and "06-99999999" not in _alle_mail and "per e-mail" in _alle_mail)
+    check("mails: bedrijfsnaam als afzender in ontvangst + kennismaking",
+          _L57.ontvangst_mail(_adv57)[1].count("Poortinga Energieadvies") >= 2
+          and _tx3.count("Poortinga Energieadvies") >= 2)
+    # Kennismakingsmail: bewonerswensen (30% ISDE) + bouwfysische klachten (vocht/schimmel/tocht)
+    # conform kennisbank-eisen + opnameformulier (schimmel/vochtklachten = vast opname-onderdeel)
+    check("kennismaking: vraagt naar bewonerswensen (30% ISDE)", "wensen" in _tx3 and "30% ISDE" in _tx3)
+    check("kennismaking: vraagt naar vocht/schimmel/tocht-klachten",
+          "vocht" in _tx3 and "schimmel" in _tx3 and "tocht" in _tx3)
+    check("kennismaking: geen uitnodiging om zelf te bellen (wij nemen contact op)",
+          "belt" not in _tx3 and "Wij nemen binnenkort contact" in _tx3)
     # (c) routes: afspraak zetten -> status 'afspraak gepland' + AUTO-project; ontvangst-bulk
     _W57.app.config.update(TESTING=True)
     _c57 = _W57.app.test_client()

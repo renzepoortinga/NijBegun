@@ -133,38 +133,48 @@ VOORBEREIDING = [
 ]
 
 
+def _ondertekening(adviseur):
+    """Bedrijfsmatige ondertekening: naam + bedrijf + e-mail. BEWUST zonder telefoonnummer
+    (Renze wil per e-mail communiceren en neemt zelf contact op)."""
+    return ["Met vriendelijke groet,", "",
+            adviseur.get("naam", ""), adviseur.get("bedrijf", ""),
+            ("E-mail: %s" % adviseur["email"]) if adviseur.get("email") else ""]
+
+
 def concept_mail(lead, adviseur=None):
     """-> (onderwerp, tekst). De adviseur kopieert/verstuurt dit ZELF (tool mailt niet)."""
     adviseur = adviseur or {}
-    a_naam = adviseur.get("naam", "")
-    a_bedrijf = adviseur.get("bedrijf", "")
-    a_tel = adviseur.get("telefoon", "")
-    a_mail = adviseur.get("email", "")
+    bedrijf = adviseur.get("bedrijf") or adviseur.get("naam") or "ons bedrijf"
     aanhef = ("Beste %s," % (lead.get("naam") or "bewoner")).strip()
     onderwerp = "Uw isolatieadvies via Nij Begun: kennismaking en afspraak"
     regels = [
         aanhef, "",
-        "Goed nieuws: via het Nij Begun-programma ben ik als isolatieadviseur aan uw woning "
-        "(%s) gekoppeld. Ik help u met een persoonlijk isolatieplan, zodat u gebruik kunt maken "
-        "van de subsidieregeling." % adres(lead),
+        "Goed nieuws: via het Nij Begun-programma is %s als isolatieadviseur aan uw woning "
+        "(%s) gekoppeld. Wij helpen u met een persoonlijk isolatieplan, zodat u gebruik kunt maken "
+        "van de subsidieregeling." % (bedrijf, adres(lead)),
         "",
-        "Ik bel u binnenkort op %s om een afspraak te maken voor de woningopname. De opname duurt "
-        "ongeveer 1,5 tot 2 uur; ik kom daarvoor bij u thuis en bekijk de hele woning (van kruipruimte "
-        "tot zolder)." % (lead.get("telefoon") or "het bij Nij Begun bekende nummer"),
+        "Wij nemen binnenkort contact met u op om een afspraak te maken voor de woningopname. De "
+        "opname duurt ongeveer 1,5 tot 2 uur; wij komen daarvoor bij u thuis en bekijken de hele "
+        "woning (van kruipruimte tot zolder).",
         "",
         "Het helpt enorm als u alvast het volgende klaarlegt (alleen wat u heeft):",
     ]
     regels += ["  •  " + v for v in VOORBEREIDING]
     regels += [
         "",
-        "Heeft u vragen, of belt/mailt u liever zelf voor het maken van de afspraak? Dat kan "
-        "natuurlijk ook. Mijn gegevens staan hieronder.",
+        # Nij Begun-kennisbank: bewonerswensen buiten de Standaard adviseren we wel (30% ISDE);
+        # schimmel-/vochtklachten zijn een vast onderdeel van het opnameformulier.
+        "Denkt u daarnaast alvast na over deze twee vragen? Die nemen wij mee in het isolatieplan:",
+        "  •  Heeft u zelf wensen voor de woning, bijvoorbeeld ander glas, een dakkapel of het",
+        "     vervangen van een deur? Ook wensen die buiten de Nij Begun-vergoeding vallen nemen",
+        "     wij mee in het advies, vaak met 30% ISDE-subsidie.",
+        "  •  Heeft u ergens in huis last van vocht, schimmel, tocht of koude ruimtes? Zulke klachten",
+        "     noteren wij tijdens de opname; een goed isolatieplan pakt eerst de oorzaak aan voordat",
+        "     er geïsoleerd wordt.",
         "",
-        "Met vriendelijke groet,", "",
-        a_naam or "", a_bedrijf or "",
-        ("Telefoon: %s" % a_tel) if a_tel else "",
-        ("E-mail: %s" % a_mail) if a_mail else "",
-    ]
+        "Heeft u in de tussentijd vragen? Wij zijn het beste per e-mail bereikbaar.",
+        "",
+    ] + _ondertekening(adviseur)
     tekst = "\n".join(r for r in regels if r is not None)
     return onderwerp, re.sub(r"\n{3,}", "\n\n", tekst).strip() + "\n"
 
@@ -248,31 +258,27 @@ def bevestiging_mail(lead, adviseur=None):
     onderwerp = "Bevestiging afspraak woningopname op %s" % _afspraak_nl(lead.get("afspraak", ""))
     regels = [
         ("Beste %s," % (lead.get("naam") or "bewoner")).strip(), "",
-        "Hierbij bevestig ik onze afspraak voor de woningopname aan %s:" % adres(lead), "",
+        "Hierbij bevestigen wij onze afspraak voor de woningopname aan %s:" % adres(lead), "",
         "    %s" % _afspraak_nl(lead.get("afspraak", "")),
-        "    De opname duurt ongeveer 1,5 tot 2 uur; ik bekijk de hele woning, van kruipruimte tot zolder.", "",
+        "    De opname duurt ongeveer 1,5 tot 2 uur; wij bekijken de hele woning, van kruipruimte tot zolder.", "",
         "Wilt u ter voorbereiding alvast het volgende regelen?",
         "  •  Het kruipruimteluik bereikbaar maken (eventuele spullen er even af/omheen weg).",
         "  •  Raambekleding (gordijnen, rolgordijnen, plissés) opzij of omhoog, zodat alle ramen en",
-        "     kozijnen goed zichtbaar zijn. Ik fotografeer en beoordeel elk raam.",
+        "     kozijnen goed zichtbaar zijn. Wij fotograferen en beoordelen elk raam.",
         "  •  Toegang tot de zolder (trap/luik vrij).",
         "  •  Facturen of offertes van eerder isolatiewerk klaarleggen, indien aanwezig.", "",
-        "Goed om te weten: tijdens de opname maak ik foto's in alle ruimtes. Dat is verplicht voor het",
+        "Goed om te weten: tijdens de opname maken wij foto's in alle ruimtes. Dat is verplicht voor het",
         "subsidiedossier. Persoonlijke spullen mag u uiteraard opzij leggen; er komen geen personen in beeld.", "",
         "Wat u van het Nij Begun-isolatieplan kunt verwachten:",
         "  •  De regeling vergoedt ISOLATIEmaatregelen die nodig zijn om de warmtevraag-norm (de",
         "     'Standaard') te halen: bijvoorbeeld spouwmuur-, dak-, vloerisolatie en beter glas, plus een",
         "     passend ventilatie-advies.",
         "  •  Niet alles valt binnen de regeling: bijvoorbeeld complete kozijnvervanging (zoals triple glas",
-        "     in nieuwe kunststof kozijnen) wordt doorgaans niet 100% vergoed. Voor zulke wensen kijk ik",
+        "     in nieuwe kunststof kozijnen) wordt doorgaans niet 100% vergoed. Voor zulke wensen kijken wij",
         "     met u naar alternatieven (zoals 30% ISDE-subsidie), zodat u vooraf precies weet waar u aan",
         "     toe bent.", "",
-        "Mocht de afspraak onverhoopt niet uitkomen, laat het mij dan even weten.", "",
-        "Met vriendelijke groet,", "",
-        adviseur.get("naam", ""), adviseur.get("bedrijf", ""),
-        ("Telefoon: %s" % adviseur["telefoon"]) if adviseur.get("telefoon") else "",
-        ("E-mail: %s" % adviseur["email"]) if adviseur.get("email") else "",
-    ]
+        "Mocht de afspraak onverhoopt niet uitkomen, laat het ons dan per e-mail weten.", "",
+    ] + _ondertekening(adviseur)
     tekst = "\n".join(r for r in regels if r is not None)
     return onderwerp, re.sub(r"\n{3,}", "\n\n", tekst).strip() + "\n"
 
@@ -280,22 +286,19 @@ def bevestiging_mail(lead, adviseur=None):
 def ontvangst_mail(adviseur=None):
     """Generieke ontvangstbevestiging (bulk, BCC): aanvraag ontvangen, drukte, wachtlijst-volgorde."""
     adviseur = adviseur or {}
+    bedrijf = adviseur.get("bedrijf") or adviseur.get("naam") or "ons bedrijf"
     onderwerp = "Uw Nij Begun-aanvraag is in goede orde ontvangen"
     regels = [
         "Beste bewoner,", "",
-        "Via het Nij Begun-portaal bent u aan mij toegewezen als isolatieadviseur. Uw aanvraag is in",
-        "goede orde ontvangen, hartelijk dank voor uw aanmelding.", "",
+        "Via het Nij Begun-portaal bent u aan %s toegewezen voor het isolatieadvies aan uw woning." % bedrijf,
+        "Uw aanvraag is in goede orde ontvangen, hartelijk dank voor uw aanmelding.", "",
         "In verband met de ongelofelijke drukte rond de regeling is de wachttijd op dit moment langer",
-        "dan ik zou willen. Ik streef ernaar iedereen zo spoedig mogelijk in te plannen voor de",
-        "woningopname en werk de lijst op volgorde van aanmelding af. U staat op de lijst en hoeft",
+        "dan wij zouden willen. Wij streven ernaar iedereen zo spoedig mogelijk in te plannen voor de",
+        "woningopname en werken de lijst op volgorde van aanmelding af. U staat op de lijst en hoeft",
         "verder niets te doen.", "",
-        "Zodra u aan de beurt bent, neem ik persoonlijk contact met u op om een afspraak te maken.",
-        "Heeft u in de tussentijd vragen? Mail gerust.", "",
-        "Met vriendelijke groet,", "",
-        adviseur.get("naam", ""), adviseur.get("bedrijf", ""),
-        ("Telefoon: %s" % adviseur["telefoon"]) if adviseur.get("telefoon") else "",
-        ("E-mail: %s" % adviseur["email"]) if adviseur.get("email") else "",
-    ]
+        "Zodra u aan de beurt bent, nemen wij persoonlijk contact met u op om een afspraak te maken.",
+        "Heeft u in de tussentijd vragen? Wij zijn het beste per e-mail bereikbaar.", "",
+    ] + _ondertekening(adviseur)
     tekst = "\n".join(r for r in regels if r is not None)
     return onderwerp, re.sub(r"\n{3,}", "\n\n", tekst).strip() + "\n"
 
