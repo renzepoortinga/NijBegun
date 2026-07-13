@@ -188,6 +188,12 @@ def _build_hoofdvlak(gt, kind, area, naam_constructie, constructie_guid, orienta
         # randverlies (vloer): handmatige perimeter -> AutoPerimeter uit
         _set(hv, "Perimeter", "%.2f" % float(perimeter))
         _set(hv, "AutoPerimeter", "0")
+    elif kind == "vloer":
+        # SJABLOON-LEK dichten (audit 12-7): het gekloonde vloer-sjabloon draagt de HANDMATIGE
+        # perimeter van de sjabloonwoning (28.14 m, AutoPerimeter=0). Zonder eigen meting zetten
+        # we 0 + AutoPerimeter aan (VABI rekent zelf) — nooit andermans randverlies.
+        _set(hv, "Perimeter", "0.00")
+        _set(hv, "AutoPerimeter", "1")
     # leeg de deelvlakken (worden hieronder per raam/deur gevuld)
     dvl = hv.find("DeelvlakList")
     if dvl is not None:
@@ -266,9 +272,6 @@ def build_tree(dos):
             per = (getattr(s, "perimeter_m", None)
                    if kind == "vloer" and any(k in begr.lower() for k in _PERIM_BEGR) else None)
             gc = _grenst_aan_code(begr, basis=is_basis)
-            if begr and gc is None:
-                issues.append("%s %s: begrenzing %r nog niet in GrenstAan-mapping (5/6/woning) -> "
-                              "sjabloon-default, verifieer in Vabi" % (kind, s.id, begr))
             # dak: Hellingshoek-enum expliciet zetten (plat=6, hellend=3) zodat een plat dakvlak niet
             # de hellend-sjabloonwaarde (3) erft. Gevels houden de sjabloon-default (6).
             hc = None
@@ -278,6 +281,18 @@ def build_tree(dos):
                     hc = "6"
                 elif h_deg is not None and float(h_deg) > 0:
                     hc = "3"
+            if gc is None:
+                # audit 12-7: OOK een LEGE begrenzing flaggen — de kloon houdt anders stil de
+                # sjabloon-GrenstAan (vloer-sjabloon = 3/kruipruimte!) zonder dat iemand het ziet.
+                issues.append("%s %s: begrenzing %s -> sjabloon-GrenstAan blijft staan; zet de "
+                              "juiste begrenzing in Vabi" % (kind, s.id,
+                              ("%r nog niet in de mapping" % begr) if begr else "ONTBREEKT"))
+            if area <= 0:
+                issues.append("%s %s: OPPERVLAKTE 0 m2 weggeschreven — meting ontbreekt; vul de "
+                              "echte m2 in de webapp of in Vabi in." % (kind, s.id))
+            if per is None and kind == "vloer" and any(k in begr.lower() for k in _PERIM_BEGR):
+                issues.append("vloer %s: perimeter (randverlies) ONTBREEKT -> AutoPerimeter aan "
+                              "gezet; controleer de omtrek in Vabi." % s.id)
             hv = _build_hoofdvlak(gt, kind, area, m["naam"], m["guid"], orientatie_code=oc,
                                   perimeter=per, grenst_aan_code=gc, hellingshoek_code=hc)
             naam = "%s %s" % (kind.capitalize(), s.id)
@@ -313,15 +328,46 @@ def build_tree(dos):
                 issues.append("geen hoofdvlak om %s in te plaatsen" % s.id)
             continue
         so = (getattr(s, "orientatie", "") or "").strip().lower()
-        match = next(((hv, naam) for hv, naam, go in doelen
-                      if so and (go or "").strip().lower() == so), None)
-        if match is None:
+        kandidaten = [(hv, naam) for hv, naam, go in doelen if so and (go or "").strip().lower() == so]
+        if not kandidaten:
             hv, naam, _go = doelen[placed % len(doelen)]
+            issues.append("%s %s (orientatie %r): geen hoofdvlak met die orientatie -> in '%s' "
+                          "geplaatst; controleer/verplaats in Vabi." % (kind, s.id,
+                          getattr(s, "orientatie", ""), naam))
         else:
-            hv, naam = match
+            hv, naam = kandidaten[0]
+            if len(kandidaten) > 1:
+                # audit 12-7: meerdere vlakken met dezelfde orientatie (bv. hoofdgevel + kopgevel)
+                # -> plaatsing in het EERSTE is een keuze, geen meting: flaggen.
+                issues.append("%s %s: %d vlakken met orientatie %r -> in '%s' geplaatst; controleer "
+                              "of hij daar hoort (Vabi: deelvlak verslepen)." % (kind, s.id,
+                              len(kandidaten), getattr(s, "orientatie", ""), naam))
         area = float(getattr(s, "oppervlakte_m2", 0) or 0)
+        if area <= 0:
+            issues.append("%s %s: OPPERVLAKTE 0 m2 als deelvlak weggeschreven — vul de echte m2 in." % (kind, s.id))
         if _add_deelvlak(gt, hv, area, m["naam"], m["guid"], naam):
             placed += 1
+        else:
+            # audit 12-7: mislukte plaatsing verdween geruisloos (raam/deur ONTBRAK dan in de import)
+            issues.append("%s %s: kon NIET als deelvlak geplaatst worden (sjabloon mist deelvlak-"
+                          "structuur) — voeg het element handmatig toe in Vabi!" % (kind, s.id))
+    # NETTO herrekenen (audit 12-7, geverifieerd in de echte export): NettoOppervlakte =
+    # BrutoOppervlakte - som(deelvlakken). Wij schreven netto=bruto en voegden daarna deelvlakken
+    # toe; het echte exportgedrag trekt ze af.
+    for hv in geo:
+        if _local(hv.tag) != "Hoofdvlak":
+            continue
+        dvl = hv.find("DeelvlakList")
+        som_dv = sum(float(c.findtext("Oppervlakte") or 0)
+                     for c in (list(dvl) if dvl is not None else []) if _local(c.tag) == "Deelvlak")
+        if som_dv > 0:
+            bruto = float(hv.findtext("BrutoOppervlakte") or 0)
+            netto = bruto - som_dv
+            if netto < 0:
+                issues.append("%s: deelvlakken (%.2f m2) GROTER dan het vlak (%.2f m2) -> netto op 0; "
+                              "controleer de maten." % (hv.findtext("Naam") or "?", som_dv, bruto))
+                netto = 0.0
+            _set(hv, "NettoOppervlakte", "%.2f" % netto)
     # 3) Algemeen: bouwjaar/renovatiejaar/qv10. LET OP: er zijn twee <Algemeen>-knopen — de
     # project-Algemeen (alleen Projectgegevens) staat vóór de REKENZONE-Algemeen (met Bouwjaar/
     # Qv10/Gebruiksoppervlakte). Selecteer expliciet de rekenzone-knoop (die met Bouwjaar).
@@ -338,8 +384,9 @@ def build_tree(dos):
             _set(alg, "Bouwjaar", "0")
             issues.append("BOUWJAAR ONTBREEKT -> 0 gezet in Objecten>Algemeen: vul het echte bouwjaar "
                           "in Vabi in (anders bleef het sjabloon-jaar staan).")
-        if rj:
-            _set(alg, "Renovatiejaar", rj)
+        # Renovatiejaar ALTIJD expliciet schrijven (audit 12-7: zelfde patroon als het bouwjaar-lek;
+        # bij leeg = 0 = 'geen renovatie opgegeven' — nooit op de sjabloonwaarde vertrouwen).
+        _set(alg, "Renovatiejaar", rj if rj else "0")
         # qv10 alleen schrijven als GEMETEN (ISSO 7.1.5); anders forfaitair laten (Qv10Gemeten=0 ->
         # VABI rekent op bouwjaar/renovatiejaar). Een ingevulde-maar-niet-gemeten waarde negeren we.
         _opn = getattr(dos, "opname", None)
@@ -371,36 +418,51 @@ def build_tree(dos):
         # per-verdieping: de ECHTE gemeten MagicPlan-oppervlakken (VloerInfo.oppervlakte_m2)
         # als die er zijn; alleen als fallback Ag gelijk verdelen (met flag). Gelijk verdelen
         # terwijl de meting er wél is gaf 3x29.04 i.p.v. 55.6/44.4/22.2 (live gezien 12-7).
-        vlagen = [v for v in (getattr(geom, "vloeren", None) or []) if float(getattr(v, "oppervlakte_m2", 0) or 0) > 0]
-        if ag > 0 or vlagen:
-            n_lagen = max(len(getattr(geom, "vloeren", []) or []), len(vlagen), 1)
-            _set(alg, "AantalBouwlagenRekenzone", str(n_lagen))
-            verd = alg.find("Verdiepingen")
-            if verd is not None:
-                vg = verd.find("Guid")
-                tmpl_v = next((c for c in verd if _local(c.tag) == "Verdieping"), None)
-                for ch in list(verd):
-                    if ch is not vg:
-                        verd.remove(ch)
-                if tmpl_v is not None:
-                    if vlagen:
-                        waarden = [float(v.oppervlakte_m2) for v in vlagen]
-                    else:
-                        waarden = [round(ag / n_lagen, 2)] * n_lagen
-                    for i, w in enumerate(waarden):
-                        v = copy.deepcopy(tmpl_v)
-                        v.set("Index", str(i))
-                        _new_guid(v)
-                        _set(v, "Gebruiksoppervlakte", "%.2f" % w)
-                        verd.append(v)
-            if vlagen:
-                issues.append("Verdiepingen: gemeten m² per bouwlaag gezet (%s; som %.2f) — controleer "
-                              "of berging/zolderstrook <1,5 m niet meetellen (Ag is heilig)."
-                              % ("/".join("%.1f" % float(v.oppervlakte_m2) for v in vlagen),
-                                 sum(float(v.oppervlakte_m2) for v in vlagen)))
-            else:
-                issues.append("Ag=%.1f m2 over %d bouwlagen GELIJK verdeeld (geen per-verdieping-meting "
-                              "in het dossier) — corrigeer de verdieping-m² in Vabi." % (ag, n_lagen))
+        alle_vloeren = list(getattr(geom, "vloeren", None) or [])
+        vlagen = [v for v in alle_vloeren if float(getattr(v, "oppervlakte_m2", 0) or 0) > 0]
+        for v in alle_vloeren:
+            if float(getattr(v, "oppervlakte_m2", 0) or 0) <= 0 and vlagen:
+                # audit 12-7: een verdieping ZONDER m2 telde wel mee in AantalBouwlagen maar kreeg
+                # geen Verdieping-knoop -> aantal en som liepen uiteen. Nu: niet meetellen + flag.
+                issues.append("verdieping '%s': geen gemeten m2 -> NIET meegeteld; vul de m2 in "
+                              "Vabi aan (Verdiepingen)." % (getattr(v, "naam", "") or "?"))
+        # aantal lagen = het aantal LAGEN DAT WE SCHRIJVEN (met meting), anders de vloerenlijst
+        n_lagen = len(vlagen) if vlagen else max(len(alle_vloeren), 1)
+        verd = alg.find("Verdiepingen")
+        if verd is not None:
+            vg = verd.find("Guid")
+            tmpl_v = next((c for c in verd if _local(c.tag) == "Verdieping"), None)
+            for ch in list(verd):
+                if ch is not vg:
+                    verd.remove(ch)
+            if tmpl_v is not None:
+                if vlagen:
+                    waarden = [float(v.oppervlakte_m2) for v in vlagen]
+                elif ag > 0:
+                    waarden = [round(ag / n_lagen, 2)] * n_lagen
+                else:
+                    # audit 12-7 (HOOG): zonder Ag én zonder metingen bleven de SJABLOON-verdiepingen
+                    # (3 lagen, ~185 m2 van de sjabloonwoning) stil staan. Nu: 1 lege laag + luide actie.
+                    waarden = [0.0]
+                    n_lagen = 1
+                for i, w in enumerate(waarden):
+                    v = copy.deepcopy(tmpl_v)
+                    v.set("Index", str(i))
+                    _new_guid(v)
+                    _set(v, "Gebruiksoppervlakte", "%.2f" % w)
+                    verd.append(v)
+        _set(alg, "AantalBouwlagenRekenzone", str(n_lagen))
+        if vlagen:
+            issues.append("Verdiepingen: gemeten m² per bouwlaag gezet (%s; som %.2f) — controleer "
+                          "of berging/zolderstrook <1,5 m niet meetellen (Ag is heilig)."
+                          % ("/".join("%.1f" % float(v.oppervlakte_m2) for v in vlagen),
+                             sum(float(v.oppervlakte_m2) for v in vlagen)))
+        elif ag > 0:
+            issues.append("Ag=%.1f m2 over %d bouwlagen GELIJK verdeeld (geen per-verdieping-meting "
+                          "in het dossier) — corrigeer de verdieping-m² in Vabi." % (ag, n_lagen))
+        else:
+            issues.append("AG/VERDIEPINGEN ONTBREKEN -> 1 bouwlaag met 0 m2 gezet: vul de echte "
+                          "m² per verdieping in Vabi in (anders bleven de sjabloon-verdiepingen staan).")
     # 3b) Gebouw-niveau: Gebouwhoogte = HANDMATIGE opname-invoer (gebouwhoogte_m, tot de nok).
     # GEEN fallback op gevelhoogte of berekening (eis Renze 12-7) en NOOIT de sjabloonwaarde laten
     # staan (sjabloon-lek): ontbreekt de invoer -> 0 + luide actie.

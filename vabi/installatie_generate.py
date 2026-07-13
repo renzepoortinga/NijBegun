@@ -47,6 +47,9 @@ def _pv_paneeltype(s):
 def _pv_fabricagejaar(s):
     s = (s or "").lower()
     if "voor 2001" in s or "<2001" in s: return "0"
+    # audit 12-7: 'Voor 2018' (form-vocab) matchte op de substring '2018' -> code 4 = VANAF 2018 (fout).
+    # 'Voor 2018' dekt meerdere EPA-brackets -> niet gokken: Onbekend + flag (in _wire_pv).
+    if "voor 2018" in s or "<2018" in s: return "5"
     if "2001" in s: return "1"
     if "2011" in s: return "2"
     if "2015" in s or "2016" in s or "2017" in s: return "3"
@@ -91,12 +94,19 @@ def _wire_pv(node, pv, flags):
     if sys_code == "0":  # PV-panelen: paneeltype/fabricagejaar/bouwintegratie
         _set(node, "PiekvermogenPVPanelen", _pv_paneeltype(getattr(pv, "pv_type", "")))
         _set(node, "FabricagejaarPVPanelen", _pv_fabricagejaar(getattr(pv, "fabricagejaar", "")))
+        if "voor 2018" in (getattr(pv, "fabricagejaar", "") or "").lower():
+            flags.append("PV-fabricagejaar 'Voor 2018' dekt meerdere EPA-klassen -> Onbekend gezet; "
+                         "kies de juiste klasse in Vabi.")
         bw = _pv_bouwintegratie(getattr(pv, "bouwintegratie", ""))
         if bw is not None:
             _set(node, "Bouwintegratie", bw)
     aant = getattr(pv, "aantal", None)
     if aant:
         _set(node, "AantalPanelen", int(aant))
+    else:
+        flags.append("PV: aantal panelen ontbreekt -> sjabloonwaarde blijft staan; zet het aantal in Vabi.")
+    if not (getattr(pv, "orientatie", "") or "").strip():
+        flags.append("PV: oriëntatie ontbreekt -> sjabloonwaarde (Zuid) blijft staan; zet hem in Vabi.")
     opp = getattr(pv, "oppervlak_per_paneel_m2", None)
     if opp:
         _set(node, "OppervlakPaneel", "%.2f" % float(opp))
@@ -147,6 +157,14 @@ def build_tree(dos):
         sub = getattr(vent, "subsysteem_code", "") or ""
         if sub:
             flags.append("ventilatiesysteem '%s' uit sjabloon overgenomen; verifieer in Vabi" % sub)
+        if not (getattr(vent, "systeem", "") or "").strip():
+            # audit 12-7: ventilatie is het ENIGE installatiedeel dat de Standaard beinvloedt —
+            # leeg systeem mag nooit stil op de sjabloon-ventilatie blijven staan.
+            flags.append("VENTILATIESYSTEEM ONTBREEKT in de opname -> sjabloon-ventilatie blijft "
+                         "staan; zet het systeem (A-E) in Vabi (dit stuurt de Standaard!).")
+    elif vnode is not None:
+        flags.append("VENTILATIE ONTBREEKT volledig in het dossier -> sjabloon-ventilatie blijft "
+                     "staan; vul de ventilatie in Vabi in (dit stuurt de Standaard!).")
 
     # --- Verwarming-opwekker: vrije tekst overschrijven indien dossier ze heeft ---
     verw = getattr(inst, "verwarming", None) if inst is not None else None
@@ -166,6 +184,12 @@ def build_tree(dos):
         elif to:
             flags.append("verwarming-opwekkertype '%s' (warmtepomp/WKK/biomassa/...) niet auto-gecodeerd "
                          "-> in Vabi zetten" % getattr(verw, "type_opwekker", ""))
+        else:
+            flags.append("verwarming-opwekkertype ONTBREEKT -> sjabloon (HR107-gasketel) blijft staan; "
+                         "controleer in Vabi.")
+        if not getattr(verw, "installatiejaar", None):
+            flags.append("verwarming-installatiejaar ONTBREEKT -> sjabloonjaar blijft staan; zet het "
+                         "echte jaar in Vabi.")
         st = (getattr(verw, "subtype", "") or "").lower().replace(" ", "")
         if st in VERW_SUBTYPE:
             _set(op, "SubType", VERW_SUBTYPE[st])
@@ -180,6 +204,9 @@ def build_tree(dos):
         elif afg:
             flags.append("afgiftesysteem '%s' nog niet auto-gecodeerd (alleen luchtverwarming bevestigd) "
                          "-> in Vabi zetten" % getattr(verw, "afgifte", ""))
+        else:
+            flags.append("AFGIFTESYSTEEM ONTBREEKT -> sjabloon-afgifte (LUCHTVERWARMING!) blijft staan; "
+                         "zet het echte afgiftesysteem (radiatoren/vloer/...) in Vabi.")
         if not getattr(verw, "merk", "") and not getattr(verw, "type", ""):
             flags.append("verwarming uit sjabloon (geen dossier-data); adviseur vult aan in Vabi")
 
@@ -193,6 +220,12 @@ def build_tree(dos):
             _set(top, "Type", tap.type)
         if getattr(tap, "installatiejaar", None):
             _set(top, "Installatiejaar", tap.installatiejaar)
+            # audit 12-7: het échte jaarveld in de TapwaterOpwekker-node heet 'Jaar'
+            # ('Installatiejaar' is daar een ongebruikt element) -> beide zetten.
+            _set(top, "Jaar", tap.installatiejaar)
+        else:
+            flags.append("tapwater-installatiejaar ONTBREEKT -> sjabloonjaar blijft staan; zet het "
+                         "echte jaar in Vabi.")
         # bevestigde codes
         ti = (getattr(tap, "type_installatie", "") or "").lower()
         if "individueel" in ti:
@@ -234,6 +267,24 @@ def build_tree(dos):
         if n_extra:
             flags.append("%d extra installatie(s) in het dossier (hybride/2e toestel): alleen exemplaar 1 is "
                          "gewired -> voeg de extra opwekker(s) handmatig in Vabi toe." % n_extra)
+
+    # KOELING (audit 12-7): de primaire koeling werd volledig genegeerd (geen write, geen flag).
+    # Codes niet allemaal bevestigd -> niet gokken, wel LUID flaggen zodat de adviseur hem zet.
+    koel = getattr(inst, "koeling", None) if inst is not None else None
+    if koel is not None and (getattr(koel, "aanwezig", False) or (getattr(koel, "type_opwekker", "") or "").strip()):
+        flags.append("KOELING aanwezig in de opname (%s) maar niet auto-gewired -> zet de koeling "
+                     "handmatig in Vabi." % (getattr(koel, "type_opwekker", "") or "type onbekend"))
+
+    # SJABLOON-VRIJE-TEKSTEN wissen (audit 12-7): opmerkingen van de sjabloonwoning ('Kelder behoort
+    # tot thermische zone...', 'Wel MV box maar geen ventiel...') horen niet in andermans dossier.
+    for e in root.iter():
+        if _local(e.tag).endswith("Opmerkingen") and (e.text or "").strip():
+            e.text = ""
+
+    # vaste disclaimer: wat NIET uit het dossier komt, draagt sjabloonwaarden (energielabel-scope)
+    flags.append("Installatie-details die de opname niet levert (merk/type/jaren/kwaliteits-"
+                 "verklaringen/hulpenergie) dragen SJABLOONWAARDEN — voor Nij Begun telt alleen "
+                 "de ventilatie; bij een energielabel ALLES nalopen in Vabi.")
 
     # installatie-naam
     inode = _find(root, "Installatie")

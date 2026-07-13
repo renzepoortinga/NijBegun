@@ -117,6 +117,14 @@ def build_dossier(p, kozijnen, plan):
             kozijnmateriaal=koz.get("kozijnmateriaal") or "Hout of kunststof",  # 80%-default; alleen afwijking invoeren
             opmerkingen="locatie: " + (w.get("room", "") or "")))
     dos.schil = schil
+    # AUDIT 12-7: deze API-route bevat BENADERINGEN die de Statistics-CSV-route niet heeft
+    # (gevel-m² = 4*sqrt(footprint)*1.15, footprint-proxy voor vloer/dak, geen dakgeometrie/
+    # kopgevels, ramen op volgorde gekoppeld, Ag = MagicPlan-woonoppervlak-heuristiek).
+    # Niet stil laten passeren: luide issue in het dossier zelf.
+    dos.validatie.issues.append(
+        "LET OP: dossier via de API-route (benaderingen: gevel-m², footprint-proxy, Ag-heuristiek, "
+        "geen dakgeometrie). Gebruik voor de VABI-export de Statistics-CSV-route en verifieer "
+        "ALLE oppervlakken in Vabi.")
     return dos
 
 

@@ -475,7 +475,7 @@ for _s in _ad.schil:
     if _s.type == "vloer":
         _s.begrenzing = "Iets onbekends xyz"
 check("obj-gen: onbekende begrenzing geflagd (niet gegokt)",
-      any("GrenstAan-mapping" in i for i in _objbuild(_ad)[2]))
+      any("sjabloon-GrenstAan" in i for i in _objbuild(_ad)[2]))
 
 # dak Hellingshoek-ENUM: plat=6 / hellend=3 (geverifieerd vabi_enums; GEEN rauwe graden)
 from core.dossier import SchilDeel as _SD
@@ -1629,6 +1629,33 @@ try:
           _locs.get("Gevel gevel-voor") == "2" and _locs.get("Gevel gevel-achter") == "3"
           and _locs.get("Gevel gevel-kopg-ZW") == "5" and _locs.get("Vloer vloer") == "0"
           and _locs.get("Dak dak-schu-NW") == "1")
+    # (c2) audit-fixes 12-7: perimeter-/GrenstAan-/verdiepingen-sjabloonlekken + netto-herrekening
+    _d.schil.append(_S58(id="raam-1", type="kozijn", subtype="Raam", orientatie="NW",
+                         oppervlakte_m2=2.5, glastype="Dubbel", begrenzing="Buitenlucht"))
+    _d.schil.append(_S58(id="vloer-leeg", type="vloer", oppervlakte_m2=10.0,
+                         isolatie_aanwezig="Onbekend", begrenzing=""))
+    _rootc, _mc, _issc, _stc = _OG58.build_tree(_d)
+    _xc = _ET58.tostring(_rootc, encoding="unicode")
+    _hvs = {(h.findtext("Naam") or ""): h for h in _rootc.iter() if h.tag.endswith("Hoofdvlak")}
+    _vl = _hvs.get("Vloer vloer")
+    check("audit: vloer zonder perimeter -> AutoPerimeter=1 + 0.00 (geen 28.14-sjabloonlek)",
+          _vl is not None and _vl.findtext("AutoPerimeter") == "1" and _vl.findtext("Perimeter") == "0.00"
+          and any("perimeter" in str(i).lower() and "ONTBREEKT" in str(i) for i in _issc))
+    check("audit: LEGE begrenzing geflagd (sjabloon-GrenstAan blijft anders stil staan)",
+          any("vloer-leeg" in str(i) and "ONTBREEKT" in str(i) for i in _issc))
+    _gv = _hvs.get("Gevel gevel-voor")
+    check("audit: netto = bruto - deelvlakken (48.00 - 2.50 = 45.50, zoals de echte export)",
+          _gv is not None and _gv.findtext("BrutoOppervlakte") == "48.00"
+          and _gv.findtext("NettoOppervlakte") == "45.50")
+    _dleeg = _D58()
+    _dleeg.schil = [_S58(id="gevel-x", type="gevel", orientatie="Z", oppervlakte_m2=30.0,
+                         isolatie_aanwezig="Onbekend", begrenzing="Buitenlucht")]
+    _rootl, _, _issl, _ = _OG58.build_tree(_dleeg)
+    _xl = _ET58.tostring(_rootl, encoding="unicode")
+    check("audit: geen Ag/verdiepingen -> 1 laag met 0.00 + actie (GEEN sjabloon-185m2-lek)",
+          "28.86" not in _xl and "94.51" not in _xl
+          and any("AG/VERDIEPINGEN ONTBREKEN" in str(i) for i in _issl))
+    _d.schil = [s for s in _d.schil if s.id not in ("raam-1", "vloer-leeg")]
     # (d) parser: gebouwhoogte = HANDMATIG veld + verdieping-m2 + Ag = som gemeten verdiepingen
     from magicplan.statistics_csv import build_dossier as _bd58
     _rows58 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "87.13"], ["Floors", "3"],

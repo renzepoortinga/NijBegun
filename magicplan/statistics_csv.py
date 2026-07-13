@@ -544,7 +544,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         return {"rc_bron": rc,
                 "isolatie": {"ja": "Ja", "nee": "Nee", "onbekend": "Onbekend"}.get(iso.lower(), iso or "Onbekend"),
                 "dikte_mm": (dikte if not dikte_onb else None),
-                "dikte_onbekend": dikte_onb, "spouw": spouw, "begrenzing": begr, "bouwjaar": bouwjaar}
+                "dikte_onbekend": dikte_onb, "spouw": spouw, "begrenzing": begr, "bouwjaar": bouwjaar,
+                # RUWE ingevuld-indicator (audit 12-7): 'isolatie' hierboven defaultt naar 'Onbekend'
+                # en is dus altijd truthy — fallback-condities moeten HIERop testen, niet op isolatie.
+                "ingevuld": bool(invoer or iso or dikte or bouwjaar or spouw_s or begr)}
 
     g_b = _bouwdeel("Gevel", "Rc-bron gevel", "Isolatie aanwezig")
     v_b = _bouwdeel("Vloer", "Rc-bron vloer", "", "Begrenzing (vloer)")
@@ -605,7 +608,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                      % ", ".join(sorted(set(nareken_namen))))
 
     # vloer (begane grond): begrenzing uit Schil&zone/Floor; afwijkende delen (grond/kruip/kelder) via ruimtenaam
-    vloer_begr = v_b["begrenzing"] or _undot(G("Begrenzing (vloer)")) or "Kruipruimte"
+    vloer_begr = v_b["begrenzing"] or _undot(G("Begrenzing (vloer)"))
+    if not vloer_begr:
+        # audit 12-7: dit was een STILLE default. Kruipruimte blijft de meest voorkomende situatie,
+        # maar de adviseur moet het WETEN (grond vs kruipruimte stuurt het warmteverlies).
+        vloer_begr = "Kruipruimte"
+        notes.append("VLOER-BEGRENZING ontbreekt in de opname -> 'Kruipruimte' aangenomen; "
+                     "controleer (grond/kelder?) en pas zo nodig aan in de webapp of Vabi.")
     bg_floor_area = footprint_bg or _f(G("Above grade living area"))  # begane-grond-footprint (niet de meerlaagse som)
     split_tot = round(sum(vloer_split.values()), 2)
     hoofd_area = round(max(0.0, (bg_floor_area or 0.0) - split_tot), 2) if split_tot else (bg_floor_area or 0.0)
@@ -665,6 +674,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     dak_done = False
     _force9 = False
     _dak_kappen = []          # (dak_nr, type, hoofdorientatie) voor dubbele-kap-detectie
+    dak_klasse = {}    # per dak (1-3): bouwjaarklasse-antwoord -> wint op de eigen dak%d-vlakken
     for _dn in (1, 2, 3):
         # 13-7: live hernoemd naar 'Dak' / 'Extra dak A' / 'Extra dak B' (Dak 1/2/3 = legacy)
         _kand_pre = (("Dak", "Dak 1"), ("Extra dak A", "Dak 2"), ("Extra dak B", "Dak 3"))[_dn - 1]
@@ -679,8 +689,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             continue
         tn = t_n.lower()
         b_n = _bouwdeel(Pd, "Rc-bron dak")
-        if not (b_n["isolatie"] or b_n["dikte_mm"] or b_n["rc_bron"]):
+        if not b_n["ingevuld"]:      # audit 12-7: isolatie defaultte altijd -> fallback draaide nooit
             b_n = _bouwdeel("Dakvlak %d" % _dn, "Rc-bron dak")
+        if b_n["bouwjaar"]:
+            dak_klasse[_dn] = b_n["bouwjaar"]    # per-dak klasse -> post-pass op de dak%d-vlakken
         vlakken_n = []
         if "plat" in tn:
             m2p = _f(G(Pd + " plat - oppervlak (m², leeg = footprint bovenste verdieping)")) or top_fp
@@ -1013,9 +1025,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     _klasse_per_type = {"gevel": g_b["bouwjaar"], "vloer": v_b["bouwjaar"], "dak": d_b["bouwjaar"]}
     for s in schil:
         if not getattr(s, "bouwjaarklasse", ""):
-            k = _klasse_per_type.get(s.type, "")
-            if k:
-                s.bouwjaarklasse = k
+            # per-dak klasse-antwoord wint op de vlakken van dat dak (id-prefix dak1-/dak2-/dak3-)
+            if s.type == "dak":
+                for _n, _k in dak_klasse.items():
+                    if s.id.startswith("dak%d-" % _n) and _k:
+                        s.bouwjaarklasse = _k
+                        break
+            if not s.bouwjaarklasse:
+                k = _klasse_per_type.get(s.type, "")
+                if k:
+                    s.bouwjaarklasse = k
     dos.schil = schil
     if not dos.identificatie.bouwjaar:
         notes.append("BOUWJAAR ONTBREEKT in de export (Object-form 'Bouwjaar' — oudere formversie? "
@@ -1031,6 +1050,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         systeem=(vsys.split()[0] if vsys else ""),
         systeem_soort=_undot(G("Systeem (ventilatie)")),
         subsysteem_code=(sub.split()[0] if sub else ""))
+    if not dos.ventilatie.systeem:
+        notes.append("VENTILATIESYSTEEM (A-E) ONTBREEKT in de opname — dit stuurt de Standaard! "
+                     "Vul het veld in MagicPlan/de webapp in; anders houdt de VABI-installatiebib "
+                     "de sjabloon-ventilatie.")
     inst = Installaties()
     # G2: probeer meerdere naamvarianten (MagicPlan-form gebruikt '-', oude form had en-dash '–')
     def G2(*namen):

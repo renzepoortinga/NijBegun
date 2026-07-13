@@ -1,0 +1,782 @@
+# Aannames-audit — MagicPlan → VABI-keten (12/13-7-2026)
+
+**Aanleiding:** bij de eerste echte Objecten-import (Essenhage 32) bleken 5 stille fouten (sjabloon-bouwjaar 1994, Ag gelijk verdeeld, gevelhoogte als gebouwhoogte, bouwjaarklasse genegeerd, alles op het Voorgevel-tabblad). Eis van Renze: **geen aannames, punt** — elke waarde richting VABI is (a) directe MagicPlan-conversie, (b) in EPA geverifieerde enum-mapping, of (c) 0/leeg + luide actie.
+
+**Aanpak:** multi-agent audit (8 auditors + adversariële verificatie) over de generatoren, parser, geometrie en routes; 251 bevindingen, waarvan 174 in de fout-categorieën. Alles hieronder, per bestand, met status.
+
+**Nog niet machinaal geauditeerd** (sessielimieten): dashboard/app.py (webapp-editor), isolatieplan/fill_template.py, vabi/codebook.py en statistics_csv.py regels 1-520 (deels wel gedekt door de parser2-auditor). constructie_generate.py is 12-7 handmatig doorgelicht (klasse-fix). Vervolg-audit hierop staat open.
+
+
+## core/geometry.py — 61 bevindingen (37 verdacht)
+
+- **[HOOG | Verzwolgen invoer | r193]** dak_vlakken_zadeldak filtert lege orientaties stil weg (`[x for x in orient_schuin if x][:2]`): per lege orientatie wordt een half dakvlak NIET uitgestoten; zijn beide orientaties leeg, dan komt er helemaal GEEN schuin dak in het dossier.
+  - *Scenario:* Parser kan 'Oriëntatie voorgevel' niet afleiden (veld leeg in MagicPlan) -> orient_schuin=("","") -> zadeldak levert 0 dakvlakken -> VABI-objectenbibliotheek zonder schuin dak -> verliesoppervlak en warmtebehoefte veel te laag, zonder enige melding.
+  - *Status:* OPEN — reviewen
+- **[HOOG | Verzwolgen invoer | r193]** dak_vlakken_zadeldak filtert lege orientaties stil weg ([x for x in orient_schuin if x][:2]) en maakt per OVERGEBLEVEN orientatie een vlak van de HELFT van het totaal. Bij 1 lege orientatie ontbreekt dus de helft van het schuine dak; bij 2 lege orientaties ontbreekt het HELE dak, zonder note. Het live per-dak-pad (statistics_csv.py:700-701) leidt vlak 2 zelf af (_opp8), maar het legacy-pad (statistics_csv.py:898-900) heeft guard '(o1 or o2)': alleen o1 ingevuld is genoeg om te draaien met orient_schuin=(o1, '').
+  - *Scenario:* Legacy-pad: adviseur vult alleen 'orientatie vlak 1'=Z in, vlak 2 leeg -> dak_vlakken_zadeldak geeft 1 vlak van tot/2 terug -> in VABI staat maar de helft van het schuine dakoppervlak, zonder actiepunt -> warmteverlies dak structureel te laag.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[MIDDEL | Stille default | r65-67]** schuin_dakvlak_m2 clamt cos(a)<=0 (helling >=90°) stil naar 'dak = footprint' (alsof plat, regel 67, bovendien ongerond); helling 0 (leeg-veld-als-0) geeft eveneens stil de footprint terug; helling None crasht met TypeError in _cos.
+  - *Scenario:* Tikfout hellingshoek 95°, of parser die 0 doorgeeft bij een leeg veld: bij footprint 63 m² en echte helling 45° hoort 89,1 m² dak, maar VABI krijgt 63 m² zonder flag -> dak-warmteverlies ~30% te laag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r37]** aantal_woningscheidende_wanden valt bij onbekend of leeg woningtype stil terug op 0 (= vrijstaand). Gangbare Nederlandse termen als "rijwoning", "rijtjeshuis", "geschakeld" en "appartement/portiekwoning" matchen geen enkel sleutelwoord op regel 30-36.
+  - *Scenario:* Woningtype "rijwoning" (= tussenwoning) -> 0 buurwanden -> de ISSO-hartmaat-toeslag (2×2×0,11×gevelhoogte ≈ 2-3 m² gevel) wordt in de callers (magicplan/assemble.py:93, magicplan/statistics_csv.py:556-557) stil weggelaten -> voor- en achtergevel structureel te klein in VABI, geen melding.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r49-50]** woningscheidende_wand_toeslag_m2 geeft stil 0,0 terug als gevelhoogte ontbreekt of 0 is, óók wanneer er wél buurwanden zijn (n>0) — de verplichte ISSO 82.1 §8.2-toeslag valt dan geruisloos weg.
+  - *Scenario:* Tussenwoning zonder ingevulde gevelhoogte -> toeslag 0,0 i.p.v. ±2,4 m² (0,44 × ~5,5 m) -> gevel-m² te klein in de VABI-objectenbibliotheek, zonder flag of actiepunt.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r131]** dak_en_kopgevel default bij leeg/None type_dak stil naar "zadeldak" (`(type_dak or "zadeldak").lower()`): het dak wordt footprint/cos(a) plus 2 kopgevel-driehoeken zonder dat iemand dat koos. De functie zit momenteel alleen nog in tests (grep), maar is publieke API en kan opnieuw aangeroepen worden.
+  - *Scenario:* Caller geeft type_dak=None door voor een woning met plat dak -> dak-m² met 1/cos(a)-vergroting plus fantoom-kopgevel-driehoeken in het dossier, geen flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r132-141]** dak_en_kopgevel herkent alleen "plat" en "lessenaar" als substring; "schilddak", "tentdak" en "afwijkend" vallen stil door naar de zadeldak-tak (regel 138-141) en krijgen kopgevel-driehoeken toegekend — een schilddak heeft die per definitie niet.
+  - *Scenario:* type_dak="schilddak" via deze (legacy-)functie -> extra_gevel_m2 = 2 kopgevel-driehoeken (bv. 9 m² bij B=6 m / 45°) ten onrechte bij de gevel opgeteld; toelichting zegt bovendien 'zadeldak' terwijl de invoer 'schilddak' was.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r120-121]** ag_onder_schuin_dak geeft bij helling <=0 of >=90 stil de VOLLE footprint als Ag terug (weggevallen=0,0) zonder flag — een ontbrekende helling wordt zo geruisloos 'geen schuin-dak-reductie'. Let op: de caller (magicplan/statistics_csv.py:852) omzeilt dit met de verborgen default `h_z or 45.0` — dat is een tweede aanname, buiten dit bestand (hoort in de parser-audit).
+  - *Scenario:* Zolderverdieping, helling onbekend (0 doorgegeven) -> de strook met hoogte <1,5 m telt volledig mee -> Ag te groot -> compactheid en Standaard-toets in VABI vervuild, zonder melding.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r113, 122]** kniewandhoogte_m heeft default 0,0: een NIET-ingevuld kniewand-veld wordt behandeld als 'gemeten: geen kniewand', waardoor de weggevallen strook (1,5−0)/tan(a) te breed uitvalt.
+  - *Scenario:* Zolder met 0,9 m kniewand, veld leeg -> bij 45° strook 1,5 m i.p.v. 0,6 m per zijde -> Ag ~1,8 m² per meter noklengte te laag, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r89-90]** oppervlak_vorm behandelt élke onherkende vormnaam stil als rechthoek (a*b); ook a=0/b=0 (leeg veld) levert geruisloos 0,0 m² zonder flag.
+  - *Scenario:* vorm="trapezium" met a=basis 6 m, b=hoogte 2 m -> 12 m² i.p.v. ±9 m² het dossier in, geen melding; of een leeg maatveld -> 0-m²-vlak zonder actiepunt richting de adviseur.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r74-76]** kopgevel_driehoek_m2 valideert niets: helling >=90° laat tan() exploderen (astronomische gevel-m²), helling 0/ontbrekend geeft stil 0 m², en een negatieve helling geeft negatieve m² terug.
+  - *Scenario:* Parser geeft helling 90 door (typefout) -> kopgevel-driehoek in de orde 10^16 m² het dossier in; of helling 0 (leeg veld) -> kopgevels 0 m² -> gevel-verliesoppervlak te klein — beide zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r196-198]** dak_vlakken_zadeldak stoot bij ontbrekende breedte_m kopgevel-vlakken uit met m2=0,0 zónder flag-veld: dit voldoet aan '0/leeg' maar mist de verplichte LUIDE flag; downstream kan een 0-m²-gevel geruisloos wegfilteren of als 0 importeren.
+  - *Scenario:* Dakbreedte niet bepaald -> kopgevel Noord/Zuid met 0 m² in de objectenbibliotheek -> gevel-verliesoppervlak te klein, adviseur ziet niets.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r178-179]** dak_vlakken_schilddak: (a) zonder orientaties ontstaat via `or [""]` ÉÉN vlak met orientatie="" dat de VOLLE dak-m² draagt, zonder flag; (b) het totaal wordt GELIJK verdeeld over de opgegeven zijden — een heuristiek (hoofd- vs schildvlakken zijn in werkelijkheid ongelijk). De docstring zegt 'adviseur verfijnt in Vabi', maar de functie retourneert géén flag/note-veld; of de caller flagt is in dit bestand niet geborgd.
+  - *Scenario:* Schilddak, oriëntatie voorgevel onbekend -> hele dak op orientatie "" zonder actiepunt; of 4 zijden gelijk verdeeld terwijl de schildvlakken klein zijn -> verlies per oriëntatie scheef in VABI.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r196-198]** dak_vlakken_zadeldak: 'kop = kopgevel_driehoek_m2(...) if breedte_m else 0.0' — ontbreekt de vloerbreedte, dan worden kopgevel-vlakken TOCH aangemaakt met m2=0.0, zonder flag in het vlak of de return. De live caller geeft precies dit door: statistics_csv.py:700 'br_z or 0.0'.
+  - *Scenario:* MagicPlan-veld 'zadel - vloerbreedte tussen de kopgevels (m)' leeg gelaten, kopgevel-zijde is wel als buitengevel getikt -> kopgevel-driehoek komt als 0 m2 in dossier/VABI zonder actiepunt -> gevel-warmteverlies te laag en niemand ziet het (0 lijkt legitiem).
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r37]** aantal_woningscheidende_wanden: onherkend of leeg woningtype valt stil terug op 'return 0' (geen buurwanden). Types als 'geschakeld', 'portiekwoning', 'maisonnette', 'rijwoning' of een leeg veld geven 0 zonder enige flag; daarmee vervalt de hele hartmaat-toeslag.
+  - *Scenario:* Woningtype 'Geschakelde woning' (1 buurwand) of leeg veld bij een tussenwoning -> n=0 -> toeslag 0 -> voor- en achtergevel samen 0,22-0,44 x gevelhoogte m2 te klein in VABI, stil.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r49-50]** woningscheidende_wand_toeslag_m2: ontbrekende of ongeldige gevelhoogte (None/0/negatief) geeft stil 0.0 terug. Beide callers flaggen alleen bij toeslag > 0 (assemble.py:97 'if _wsw > 0', statistics_csv.py:557/560 'if toeslag_tot'), dus een 0 door ontbrekende hoogte is onzichtbaar.
+  - *Scenario:* Tussenwoning, veld 'Gevelhoogte' leeg -> toeslag 0.0 i.p.v. 0,44 x hoogte m2 -> gevel-m2 in VABI te klein zonder actiepunt; de adviseur kan het verschil met de gemeten binnenwerkse gevel niet zien.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r66-67]** schuin_dakvlak_m2: cos-clamp 'if c <= 0: return footprint_m2' — een hellingshoek >= 90 graden (invoerfout/parse-fout) levert stilzwijgend de platte footprint als schuin dakoppervlak, alsof het dak plat is. Geen flag, geen fout.
+  - *Scenario:* Adviseur tikt per ongeluk 95 i.p.v. 45 graden -> dak_m2 = footprint (bv. 63 m2 i.p.v. 89 m2) in dossier/VABI; de fout is niet zichtbaar want het getal oogt plausibel.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r74-76]** kopgevel_driehoek_m2 valideert de hellingshoek niet: a > 90 geeft tan(a) < 0 -> NEGATIEVE gevel-m2; a == 90 geeft tan -> ~1.6e16 -> astronomisch oppervlak. Beide gaan zonder guard of flag de return in (schuin_dakvlak_m2 heeft wel een clamp, deze zusterfunctie niet).
+  - *Scenario:* Hellingshoek 100 graden door tikfout -> kopgevel_driehoek_m2(6, 100) = -51,05 m2 -> negatief gevelvlak in dossier; of a=90 -> m2 van orde 1e16 -> VABI-import/berekening ontspoort.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r131]** dak_en_kopgevel: 't = (type_dak or "zadeldak").lower()' — een LEEG/None daktype wordt stil een zadeldak, inclusief het toevoegen van kopgevel-driehoeken aan de gevel. Verzachtend: deze functie wordt live nergens meer aangeroepen (alleen tests/run_tests.py:301 en __main__); het per-dak-pad in statistics_csv gebruikt de dak_vlakken_*-functies. Latent risico als iemand de functie hergebruikt.
+  - *Scenario:* Toekomstige caller geeft type_dak='' door (form-veld leeg) -> tool rekent zadeldak: schuin dak = footprint/cos(a) + 2 kopgevel-driehoeken, terwijl de woning bv. een plat dak heeft -> dak- en gevel-m2 in VABI beide fout, zonder flag.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[MIDDEL | Verzwolgen invoer | r131-141]** dak_en_kopgevel herkent alleen 'plat' en 'lessenaar'; ALLES anders (ook 'Schilddak', 'Tentdak', 'Afwijkend', typo's) valt door naar de zadeldak-tak en krijgt kopgevel-driehoeken — terwijl een schilddak per definitie GEEN verticale kopgevels heeft (zie dak_vlakken_schilddak-docstring). Zelfde caveat: momenteel alleen test-caller, dus latent.
+  - *Scenario:* Caller geeft type_dak='Schilddak' aan deze functie -> extra_gevel_m2 = 2 kopgevel-driehoeken die niet bestaan -> gevel-m2 te hoog en dakverdeling fout in VABI, zonder note.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r178]** dak_vlakken_schilddak: '[o for o in orients if o] or [""]' — lege orientaties worden stil weggefilterd en hun dak-aandeel wordt HERVERDEELD over de resterende zijden; zijn ALLE orientaties leeg dan komt het volledige dak op 1 vlak met orientatie ''. Het live per-dak-pad (statistics_csv.py:730) leidt alle 4 orientaties af uit o_s, maar het legacy-pad (statistics_csv.py:903-904, guard 'o1 or o2 or k1 or k2') kan partieel gevuld zijn.
+  - *Scenario:* Legacy-pad met alleen o1='Z' ingevuld -> heel het schilddak-oppervlak (footprint/cos a) komt als 1 vlak op Zuid -> zoninstraling/orientatie-afhankelijke resultaten in VABI fout, zonder note over de weggevallen zijden.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[MIDDEL | Stille default | r177-181]** dak_vlakken_schilddak verdeelt het totaal GELIJK over de opgegeven zijden — een heuristiek (echt schilddak: 2 grote vlakken + 2 kleinere driehoekige kopschilden), gedocumenteerd in de docstring maar NIET als flag in de geretourneerde vlakken. Het legacy-pad flagt dit zelf (statistics_csv.py:917-919); het nieuwe per-dak-pad (statistics_csv.py:730) flagt alleen wanneer de kopschild-helling afwijkt (731-733) — bij gelijke helling gaat de gelijk-verdeling dus zonder note het dossier in.
+  - *Scenario:* Per-dak-pad, schilddak met 1 helling: 4 vlakken van elk 25% terwijl de kopschilden in werkelijkheid bv. 15% zijn -> per-orientatie dak-m2 in VABI onnauwkeurig zonder actiepunt voor de adviseur.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[MIDDEL | Stille default | r165-169]** dak_vlakken_lessenaar berekent de twee zijgevel-driehoeken (trapezium-top) en de hoge-zijde-opstand bewust NIET — dat staat alleen in de docstring, niet als flag in de return. De caller maakt de hoge-zijde-note alleen als de hoogte-velden zijn ingevuld (statistics_csv.py:743 'if hh_ and hl_ is not None'); zijn die leeg, dan verdwijnt ook de waarschuwing.
+  - *Scenario:* Lessenaarsdak, hoogte-velden hoge/lage zijde leeg -> geen note -> de gevel-strook aan de hoge kant en de zijgevel-driehoeken ontbreken volledig in dossier/VABI zonder dat de adviseur een actiepunt krijgt.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r113, 123]** ag_onder_schuin_dak: (a) aantal_schuine_zijden default 2 is een zadeldak-aanname (lessenaar moet expliciet 1 doorgeven); (b) de min(..., footprint)-clamp kapt de reductie stil af op de volle footprint, dus Ag=0 zonder melding.
+  - *Scenario:* Lessenaarsdak-zolder met de vergeten default 2 -> dubbele Ag-reductie -> Ag te laag. Of helling 10° zonder kniewand: strook 8,5 m per zijde -> hele verdieping valt weg (Ag=0) — vrijwel zeker foute invoer die onopgemerkt blijft.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r193]** De `[:2]`-slice in dak_vlakken_zadeldak kapt méér dan twee opgegeven schuine orientaties stil af (derde en volgende verdwijnen).
+  - *Scenario:* Caller geeft per ongeluk 3 orientaties door -> het derde halve dakvlak verdwijnt zonder melding uit het dossier.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r165-169]** dak_vlakken_lessenaar: orient default "" levert een dakvlak zonder oriëntatie zonder flag; en de twee zijgevel-trapezium-toppen worden stil weggelaten — alleen de docstring vermeldt dit, de return bevat geen note (de 'hoge-zijde-note' uit CLAUDE.md zit dus in de caller, niet hier geborgd).
+  - *Scenario:* Lessenaarsdak zonder oriëntatie-invoer -> dakvlak met orientatie "" in het dossier; als de caller de note vergeet ontbreken de zijgevel-driehoeken in de schil zonder actiepunt.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r151-152]** hellingshoek_uit_nok coercet aantal_schuine_zijden None/0 stil naar 1 (`max(int(... or 1), 1)` — lessenaar-geometrie i.p.v. de zadel-default 2) en knieschothoogte None naar 0,0 via `or 0.0` — een leeg knieschot-veld wordt 'geen knieschot', dus hoek te steil en dak-m² te groot.
+  - *Scenario:* Caller geeft aantal_schuine_zijden=None door -> b = volle breedte -> hoek 26,6° i.p.v. 45° -> dak-m² te klein; of knieschot 0,9 m niet ingevuld -> berekende hoek te steil -> dak/cos te groot. Beide zonder flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r160-161]** dakvlak_m2: `if m2_handmatig is not None` laat een expliciete 0,0 winnen van de berekening — geeft de parser lege velden als 0.0 (i.p.v. None) door, dan wordt het dakvlak 0 m².
+  - *Scenario:* Leeg 'm² handmatig'-veld als 0.0 doorgegeven -> dakvlak 0 m² in het dossier i.p.v. de berekende footprint/cos(a), geen flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r101-103]** dakkapel_vlakken valideert de maten niet: None crasht met TypeError, 0-maten leveren stil 0-m²-vlakken; en helling >=90 valt in de else-tak met de misleidende flagtekst 'hellingshoek onbekend' (hij was ongeldig, niet onbekend).
+  - *Scenario:* Dakkapel-diepte niet ingevuld (0) -> wangen + dakje 0 m² én gat 0 -> schil onderschat zonder gerichte flag (de generieke flag op regel 105 meldt dan zelfs 'gat 0.00 m² afgetrokken' alsof alles klopt).
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r193]** dak_vlakken_zadeldak: de '[:2]'-cap gooit een eventuele derde (of verdere) schuine orientatie stil weg. Elk vlak krijgt bovendien tot/2, dus bij >2 orientaties zou de som toch al niet kloppen.
+  - *Scenario:* Caller geeft per abuis 3 orientaties door -> derde stil genegeerd; geen fout, geen note.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r120-121]** ag_onder_schuin_dak: helling <= 0 of >= 90 -> return (volle footprint, 0.0) zonder flag — de 1,5m-lijn-aftrek vervalt dan stil. Verzachtend: de enige live caller gebruikt de functie uitsluitend voor een SUGGESTIE-note (statistics_csv.py:847-856, 'Ag = heilig', wordt niet in het dossier geschreven), dus momenteel lekt dit niet naar VABI.
+  - *Scenario:* Helling onbekend -> caller-default (zie apart punt) of 0 -> functie zegt 'geen aftrek' -> de hint 'Ag-aftrek zolder invullen' verschijnt niet terwijl er wel degelijk m2 onder de 1,5m-lijn wegvalt -> Ag blijft te hoog (via de MagicPlan-meting, niet via deze functie).
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r122-124]** ag_onder_schuin_dak: kniewandhoogte_m default 0.0 (geen kniewand aannemen = maximale aftrek) en de clamp 'min(..., footprint_m2)' kan bij tegenstrijdige invoer (strook x zijden x eave > footprint) stil Ag=0 opleveren. Geen flag in beide gevallen. Zelfde verzachting: alleen hint-pad.
+  - *Scenario:* Kniewand 1,2 m aanwezig maar veld leeg -> aftrek berekend alsof kniewand 0 -> hint noemt een te groot weggevallen-oppervlak; of onzinnige eave-lengte -> ag=0 zonder waarschuwing.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r151]** hellingshoek_uit_nok: 'max(int(aantal_schuine_zijden or 1), 1)' — geeft een caller expliciet None of 0 door, dan wordt stil 1 zijde (lessenaar-geometrie) gebruikt terwijl de signature-default 2 (zadeldak) is. Inconsistent en onzichtbaar.
+  - *Scenario:* Toekomstige caller geeft aantal_schuine_zijden=None door voor een zadeldak -> b = volle breedte i.p.v. breedte/2 -> berekende helling ~2x te vlak -> dak-m2 te klein in VABI.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r101-109]** dakkapel_vlakken valideert breedte/hoogte/diepte niet: diepte 0 geeft wangen en dakje van 0 m2 terwijl de altijd-geretourneerde flag-tekst beweert dat 'voorvlak+2 wangen = gevel, dakje = plat dak' zijn toegevoegd; None geeft een TypeError (luid, maar geen nette melding).
+  - *Scenario:* MagicPlan-veld dakkapel-diepte leeg en caller geeft 0 door -> alleen het voorvlak telt, wangen/dakje/gat = 0 -> dakkapel half in de schil, flag-tekst wekt de indruk dat alles verwerkt is.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r89-90]** oppervlak_vorm: elke onherkende vorm ('trapezium', 'veelhoek', typo, leeg) valt stil terug op rechthoek a*b — het commentaar zegt 'rechthoek / overig' maar er is geen flag. Verzachtend: momenteel alleen test-caller (tests/run_tests.py:311).
+  - *Scenario:* Vorm 'trapezium' met a=basis, b=hoogte -> a*b i.p.v. 0,5*(a+b_top)*h -> tot ~2x te groot vlak, zonder note.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r168]** dak_vlakken_lessenaar: orient default '' — een ontbrekende orientatie levert een dakvlak met lege orientatie zonder flag. Live caller guardt ('if h_l and o_l', statistics_csv.py:741) dus latent; maar een lege-orientatie-vlak zou stil door objecten_generate kunnen lopen.
+  - *Scenario:* Nieuwe caller vergeet de guard -> vlak met orientatie '' -> in VABI een dakvlak zonder/verkeerde orientatie zonder actiepunt.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r32-36]** aantal_woningscheidende_wanden matcht op substrings in vrije tekst: 'twee' matcht ook niet-bedoelde teksten (bv. 'appartement tweede verdieping' -> 1 buurwand) en de volgorde tussen/hoek kan bij samengestelde teksten verrassen. Nu het woningtype in de webapp een dropdown is, is het risico klein, maar de functie accepteert nog steeds vrije tekst (CSV/CLI-pad).
+  - *Scenario:* Vrije-tekst-woningtype 'woning op tweede bouwlaag' -> substring 'twee' -> n=1 -> onterechte hartmaat-toeslag van 0,22 x gevelhoogte m2 op de gevel.
+  - *Status:* OPEN — reviewen
+- **[OK | Rekenregel (ok) | r18-23, 40-51]** Hartmaat-toeslag: +0,11 m gevelbreedte per gebouwscheidende wand, voor- én achtergevel (2 × n × 0,11 × gevelhoogte) = gedocumenteerde ISSO 82.1 §8.2-regel; de aanname 'wanddikte 22 cm indien niet meetbaar' staat expliciet in de bron en in het commentaar. Ook de binnenwerks-voorwaarde is gedocumenteerd (docstring r.46-47) — caller is verantwoordelijk dat de meting binnenwerks was.
+  - *Scenario:* n.v.t. (gedocumenteerde ISSO-regel; randgevallen apart gerapporteerd op r.37 en r.49-50).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r62-68]** Schuin dakoppervlak = footprint/cos(a): standaard-meetkunde (horizontale projectie), gedocumenteerd in docstring en module-header, geldig voor symmetrisch zadeldak en lessenaarsdak — mits de helling geldig is (de clamp bij cos<=0 is apart gerapporteerd).
+  - *Scenario:* n.v.t. bij geldige invoer.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r71-76]** Kopgevel-driehoek = 0,5 × B × (B/2)·tan(a): zuivere meetkunde voor een symmetrisch zadeldak; de symmetrie-aanname (nok in het midden) staat expliciet in module-header (r.9-14) en docstring. Sinds commit b16a282 bepaalt de caller welke zijden meetellen (tussenwoning-kopgevel = buurwand).
+  - *Scenario:* n.v.t. bij geldige invoer (validatiegat apart gerapporteerd op r.74-76).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r26-36]** Mapping woningpositie -> aantal buurwanden (vrijstaand 0 / tussen 2 / hoek-kop-eind-2^1-kap 1) volgt ISSO 82.1 §7.1.1 en is gedocumenteerd — geldt voor de HERKENDE termen; de stille fallback naar 0 op r.37 is apart als fout gerapporteerd.
+  - *Scenario:* n.v.t. voor herkende woningtypes.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r93-105]** Dakkapel-vlakkensplitsing (voorvlak b×h + 2 wangen d×h = gevel; dakje b×d = plat dak; gat in schuin vlak = (b×d)/cos(a) aftrekken) = gedocumenteerde ISSO 82.1 §8.2.1-regel op basis van gemeten B/H/D.
+  - *Scenario:* n.v.t. bij volledige maten (0/None-randgeval apart gerapporteerd). Kanttekening: de flagtekst op r.105 zegt 'afgetrokken' terwijl de functie alleen het gat-getal levert — de daadwerkelijke aftrek moet de caller doen; verifieer dat in de parser-audit.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r106-108]** Dakkapel zonder bekende dakhelling: gat-aftrek wordt overgeslagen (gat=0,0) mét expliciete, luide flag "GAT in het schuine dak NIET afgetrokken (hellingshoek onbekend) -> verifieer in Vabi" — conform de eis 0/leeg + flag.
+  - *Scenario:* n.v.t. — correct geflagd. (Enige smetje: helling >=90 krijgt dezelfde 'onbekend'-tekst, zie aparte bevinding r.101-103.)
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r112-124]** Ag onder schuin dak: alleen hoogte >=1,5 m telt mee (NEN 2580/ISSO-gebruiksoppervlakteregel, gedocumenteerd); weggevallen strook per zijde = (1,5 − kniewand)/tan(a) × gootlengte = zuivere meetkunde op gemeten invoer.
+  - *Scenario:* n.v.t. bij volledige invoer (helling-guard, kniewand-default en clamp zijn apart als fouten gerapporteerd).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r144-155]** hellingshoek_uit_nok: alpha = atan((nok − knieschot)/(breedte/zijden)) = zuivere meetkunde uit de meetinstructie; geeft netjes None (geen gok) bij ontbrekende/ongeldige breedte of h<=0 — de caller moet die None wél luid afhandelen (statistics_csv.py:643/697-698 vangt hem met `or`-fallbacks; dat hoort in de parser-audit).
+  - *Scenario:* n.v.t. — None-return is conform de eis (coercion-randgevallen r.151-152 apart gerapporteerd).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r158-162]** dakvlak_m2: handmatig opgegeven m² wint altijd van de berekening = directe conversie van adviseur-invoer (voorrangsregel, gedocumenteerd in docstring).
+  - *Scenario:* n.v.t. (het 0.0-vs-None-contractrisico is apart gerapporteerd op r.160-161).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r184-195]** dak_vlakken_zadeldak: totaal schuin oppervlak footprint/cos(a), gehalveerd per vlak — de symmetrie-aanname (nok in het midden) is gedocumenteerd in module-header en docstring, incl. de instructie dat de adviseur complexe/asymmetrische daken handmatig per vlak invoert.
+  - *Scenario:* n.v.t. bij symmetrisch zadeldak (drop-lege-orientaties en 0-kopgevel zijn apart als fouten gerapporteerd).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Bewuste default (ok) | r71, 128]** Default aantal_kopgevels=2 is inherent aan de zadeldak-definitie (twee kopgevels) en gedocumenteerd; sinds commit b16a282 geeft de caller alleen de zijden met een getikte buitengevel door (tussenwoning: kopgevel = buurwand, niet in de schil). Het blijft een default — hierbij benoemd voor de review.
+  - *Scenario:* Alleen mis als een nieuwe caller vergeet het aantal te overschrijven bij een tussen-/hoekwoning; de actieve route (dak_vlakken_zadeldak, r.196: aantal=1 per doorgegeven kopgevel-oriëntatie) is hier niet gevoelig voor.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Geflagd (ok) | r134-137]** Lessenaar-tak van dak_en_kopgevel laat de zijgevel-driehoeken bewust weg (extra_gevel_m2=0) en zegt dat in de meegeleverde toelichting: "zijgevel-driehoeken handmatig opgeven" — aanname benoemd, mits de caller de toelichting daadwerkelijk toont (legacy-functie, nu alleen in tests gebruikt).
+  - *Scenario:* Alleen mis als een caller de toelichting-string negeert.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r23]** HARTMAAT_GEBOUWSCHEIDENDE_WAND_M = 0.11: gedocumenteerd ISSO 82.1 par. 8.2-forfait (gebouwscheidende wand 22 cm -> halve dikte 0,11 m wanneer de dikte niet meetbaar is). Geen eigen aanname van de tool; bron en voorwaarde staan in het commentaar.
+  - *Scenario:* n.v.t. — wel bewust zijn dat 0,11 een ISSO-forfait is; bij een werkelijk gemeten wanddikte mag de adviseur afwijken (parameter halve_dikte_m bestaat daarvoor).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r40-51]** Toeslagformule 2 x n x 0,11 x gevelhoogte (voor+achtergevel, per buurwand) = directe ISSO 82.1 par. 8.2-regel, correct gedocumenteerd incl. de voorwaarde 'alleen bij binnenwerks gemeten gevel'. assemble.py:90-94 bewaakt die voorwaarde via dos.opname.gevel_tot_hartmaat_gemeten en flagt de toegepaste toeslag in de opmerking (regels 97-99).
+  - *Scenario:* n.v.t. voor de formule zelf; de rand-gevallen (hoogte leeg, woningtype onherkend) staan als aparte foute bevindingen hierboven.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r62-68]** schuin_dakvlak_m2 = footprint / cos(a): standaard meetkunde voor de projectie van een hellend vlak, gedocumenteerd in de module-docstring (regels 9-13) en geldig voor symmetrisch zadeldak en lessenaar. Input is echte opname (footprint uit MagicPlan + gemeten/afgeleide helling).
+  - *Scenario:* n.v.t. voor de formule; alleen de cos-clamp bij a >= 90 is fout (aparte bevinding).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r71-76]** kopgevel_driehoek_m2 = 0,5 x B x (B/2) x tan(a): correcte driehoeks-meetkunde voor een symmetrisch zadeldak met nok in het midden; de symmetrie-aanname staat expliciet in de docstring. Asymmetrische daken worden in de caller apart behandeld en geflagd ('kopgevels op vlak-1-helling benaderd; verifieer de m2 in Vabi', statistics_csv.py:714-720).
+  - *Scenario:* n.v.t. voor de formule; het ontbrekende bereik-guard (a >= 90) is een aparte bevinding.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r93-109]** dakkapel_vlakken volgt ISSO 82.1 par. 8.2.1 (voorvlak + 2 wangen = gevel, dakje = plat dak, gat = (b x d)/cos(a) van het schuine vlak af) en is een schoolvoorbeeld van de gewenste stijl: bij ONTBREKENDE hellingshoek wordt de gat-aftrek overgeslagen MET een luide flag ('GAT ... NIET afgetrokken -> verifieer in Vabi', regel 108). De succes-flag benoemt bovendien wat er is gedaan.
+  - *Scenario:* n.v.t. — alleen de ontbrekende b/h/d-validatie is een aparte laag-bevinding.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r112-124]** ag_onder_schuin_dak: de 1,5m-hoogtelijn (min_hoogte_m=1.5) is de NEN 2580/gebruiksoppervlak-regel, de strookformule (1,5 - kniewand)/tan(a) is directe meetkunde. Belangrijk en goed: de live caller past de uitkomst NIET automatisch op Ag toe ('Ag = heilig', statistics_csv.py:847-848) maar maakt er alleen een suggestie-note van.
+  - *Scenario:* n.v.t. voor regel en formule; de stille vroege-return en de kniewand-0-default staan als aparte laag-bevindingen.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r144-155]** hellingshoek_uit_nok: atan((nok - knieschot) / (breedte / zijden)) is de gedocumenteerde meetinstructie-formule op basis van echte metingen. Ongeldige invoer (breedte <= 0, hoogteverschil <= 0) geeft None terug — geen gok — en de live callers flaggen dat luid ('hellingshoek ... ontbreekt -> vul aan; dak overgeslagen', statistics_csv.py:722-723/735/748).
+  - *Scenario:* n.v.t.; alleen de 'or 1'-afhandeling van aantal_schuine_zijden is een aparte laag-bevinding.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Bewuste default (ok) | r158-162]** dakvlak_m2: 'handmatige m2 wint' van de cos-berekening — dit is het door de eigenaar gewenste SOBOLT-principe (direct ingevoerde m2 heeft voorrang op de geometrie-benadering; zo ook geimplementeerd in statistics_csv.py:872-897 met note). LET OP: deze specifieke functie heeft momenteel GEEN enkele caller (grep: alleen de definitie) — dode code.
+  - *Scenario:* n.v.t.; klein randje: float(m2_handmatig) crasht op een komma-decimaal ('12,5'), maar de live paden parsen via _f voordat iets hier zou komen.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Rekenregel (ok) | r133]** Plat dak = footprint (dak_en_kopgevel 'plat'-tak en het platte pad in de parser): triviale, correcte meetkunde met toelichting-string in de return.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r191-192]** dak_vlakken_zadeldak: totaal = footprint/cos(a), per vlak de helft — correct voor het gedocumenteerde symmetrische zadeldak; het asymmetrische geval wordt in de caller apart herrekend per halve footprint MET note (statistics_csv.py:714-720). Ook goed: de kopgevel-buurwand-logica (kopgevels alleen meenemen op zijden waar echt een buitengevel is getikt) zit in de caller en is deterministisch geflagd (statistics_csv.py:702-713).
+  - *Scenario:* n.v.t. voor de halvering; de lege-orientatie- en breedte-0-randen staan als aparte bevindingen.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r137]** dak_en_kopgevel lessenaar-tak: extra_gevel_m2=0 met expliciete toelichting 'zijgevel-driehoeken handmatig opgeven' in de return — de omissie wordt benoemd. (Functie is wel alleen nog test-gebruikt; het live lessenaar-pad is dak_vlakken_lessenaar, waar dezelfde omissie juist NIET in de return zit — zie de aparte middel-bevinding.)
+  - *Scenario:* n.v.t. voor deze tak.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r26-37]** De mapping woningtype -> aantal buurwanden (vrijstaand 0, hoek/2-onder-1-kap 1, tussen 2) is de ISSO 82.1 par. 7.1.1-regel en correct voor de herkende types. Alleen de fallback en het substring-matchen zijn fout (aparte bevindingen hierboven).
+  - *Scenario:* n.v.t. voor de herkende dropdown-waarden.
+  - *Status:* OK (Rekenregel (ok))
+
+## magicplan/assemble.py — 22 bevindingen (17 verdacht)
+
+- **[HOOG | Stille default | r31 + 76-77]** Ag wordt gevuld met MagicPlan 'living_area' (pd.get('living_area')) en alleen overschreven als het report-veld ag_m2 is ingevuld. living_area is de MagicPlan-woonoppervlak-heuristiek, geen NTA8800-Ag; commit 9773dad heeft dit in de CSV-route juist verboden (Ag = som gemeten verdiepingen), maar deze route doet het nog stil. Bovendien: expliciete ag_m2=0 in het report is falsy en wordt genegeerd.
+  - *Scenario:* Adviseur vult ag_m2 niet in het form; MagicPlan-living_area = 98 m2 terwijl de gemeten verdiepingen-som 122,06 m2 is -> dossier en VABI krijgen Ag=98 zonder enige melding -> verkeerde compactheid/Standaard-toets.
+  - *Status:* GEFIXT 12-7 (9773dad, CSV-route): Ag = som gemeten verdiepingen; API-route: luide issue
+- **[HOOG | Verzwolgen invoer | r35-39 (doorwerkend in 80 en 85)]** Als een bouwlaag geen ceilingHeight-value heeft, wordt die laag stil NIET meegeteld in total_h (if ch: total_h += ...). total_h wordt daarna zowel gevelhoogte-fallback (r.80) als gevel-m2-hoogte (r.85). Geen note, geen actiepunt.
+  - *Scenario:* Woning met 2 lagen; op de zolderlaag is de plafondhoogte niet ingevoerd -> total_h = 2,6 i.p.v. 5,2 -> gevel-m2 halveert en gevelhoogte_m=2,6 gaat het dossier in, zonder enige melding. VABI krijgt een veel te kleine schil.
+  - *Status:* GEFIXT 12/13-7: uitsluitend handmatig veld; leeg -> 0 + actie
+- **[HOOG | Stille default | r79-80]** gevelhoogte_m wordt bij ontbreken stil gelijkgesteld aan de som van plafondhoogtes (total_h). Dat is een benadering (verdiepingsvloer-dikten en borstwering/kopgevel ontbreken) en exact bug-klasse (3): een afgeleide hoogte die zonder flag als opnamewaarde het dossier in gaat en downstream Gebouwhoogte/gevel-m2/hart-op-hart-toeslag stuurt.
+  - *Scenario:* gevelhoogte_m niet in het report -> total_h = 2,6+2,6 = 5,2 m terwijl de echte gevelhoogte incl. 2 verdiepingsvloeren ~5,8 m is -> gevel ~10% te klein en (via oudere objecten-generator 'Gebouwhoogte uit opname') een foute Gebouwhoogte in VABI, stilzwijgend.
+  - *Status:* GEFIXT 12/13-7: uitsluitend handmatig veld; leeg -> 0 + actie
+- **[HOOG | Stille default | r51 + 108-109]** footprint = grootste verdieping ('footprint-proxy', alleen als code-comment gedocumenteerd) en wordt ongewijzigd gebruikt voor ZOWEL de begane-grondvloer (_maak_vloer) als het dak (_maak_dak). Vloer- en dak-SchilDeel krijgen geen opmerking/flag dat hun oppervlak een proxy is (de gevel krijgt die wel).
+  - *Scenario:* Woning met uitbouw op de begane grond (BG 70 m2, verdieping 45 m2): footprint=70 -> dak-m2 wordt op 70 gebaseerd i.p.v. 45 (te groot). Omgekeerd bij overstek: BG 45, verdieping 70 -> vloer-bg=70 (te groot). Beide zonder melding in VABI.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[HOOG | Verzwolgen invoer | r45-50 + 84-85]** Alleen symbol_id die met 'window' begint of 'doorwithwindow' is, telt als opening. Gewone deuren (symbol 'door') worden volledig genegeerd: geen deur-SchilDeel in de schil EN niet afgetrokken van het gevel-oppervlak. Geen flag.
+  - *Scenario:* Voordeur + achterdeur (samen ~4 m2): gevel blijft 4 m2 te groot en er staat geen enkele deur in het dossier/VABI -> transmissieverlies gevel te hoog, deur-U-waarde ontbreekt geheel, stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[HOOG | Verzwolgen invoer | r111-118]** Report-kozijnclassificaties worden puur OP VOLGORDE aan de geometrie-ramen gekoppeld (koz = kozijnen[i] if i < len(kozijnen) else {}). Bij een telling-mismatch: (a) overtollige report-blokken worden stil weggegooid, (b) ramen zonder classificatie krijgen stil subtype 'Raam' + glastype '' , (c) bij verschoven volgorde komt het glastype op het VERKEERDE raam. Nergens een flag.
+  - *Scenario:* Adviseur vulde 8 raam-blokken in het report, geometrie vindt 7 ramen (1 raam als 'door' getekend): raam 3 t/m 8 schuiven een positie op -> HR++ komt op het enkelglas-raam en andersom; blok 8 verdwijnt. VABI rekent met verwisselde U-waarden zonder melding.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[HOOG | Verzwolgen invoer | rhele build_dossier (100-118); vgl. core/dossier.py r.97]** SchilDeel.bouwjaarklasse (bestaat in het datamodel: 'per-bouwdeel klasse voor het beslisschema; wint van project-bouwjaar') wordt in deze route NERGENS gezet, en report_parser kent ook geen bouwjaarklasse-veld. Het per-bouwdeel 'Bouwjaar-klasse'-antwoord uit het MagicPlan Constructies-form bereikt de constructie-keuze dus nooit via assemble - exact bug-klasse (4) die in de CSV-route net gefixt is.
+  - *Scenario:* Gevel-bouwjaarklasse 'Van 1975 t/m 1982' ingevuld in MagicPlan; dossier via assemble.py -> bouwjaarklasse='' -> beslisschema valt terug op project-bouwjaar of 'Tot 1965'-default -> verkeerde standaardconstructie/Rc in VABI.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[MIDDEL | Verzwolgen invoer | r48-50 + 111-118]** Raam zonder width of height krijgt area 0.0 (a = ... if w and h else 0.0) en wordt toch als kozijn toegevoegd: een 0-m2 kozijn in de schil, niets afgetrokken van de gevel, geen actiepunt. Ook width='0' is falsy -> 0.0.
+  - *Scenario:* MagicPlan-raam zonder ingevoerde maten -> VABI krijgt een kozijn van 0,00 m2 (of de import faalt op 0-oppervlak) en het echte glasoppervlak zit nog in de gevel-m2; niemand ziet het.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r47 + 113-118]** 'doorwithwindow' wordt als gewoon raam behandeld: volledige b x h telt als glas-kozijn. De elders ingevoerde 65%-regel (deur met raam = 65% glas / rest paneel/dicht) uit de CSV-route wordt hier niet toegepast; geen flag.
+  - *Scenario:* Achterdeur met glas 1,0 x 2,3 m -> 2,3 m2 volledig als raam/glas in VABI i.p.v. ~1,5 m2 glas + dicht deel -> te veel glasverlies, stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Verzwolgen invoer | r63-65 (via extractor._g 119-130)]** _g vangt ValueError/TypeError bij casten stil af en geeft default terug. Een ingevuld maar onparseerbaar antwoord ('ca. 1930', '45 graden', '2,6 m') wordt dus stil None/default - het antwoord van de adviseur verdwijnt. Geldt voor bouwjaar, renovatiejaar, bouwlagen, qv10_waarde, gevelhoogte_m, isolatie_mm, dakhelling, alle floats/ints.
+  - *Scenario:* Bouwjaar 'ca. 1930' in het form -> int-cast faalt -> bouwjaar=None -> downstream 0+actie (na de fix) of eerder sjabloon-1994-lek; de adviseur denkt dat 1930 is doorgekomen. Dakhelling '45 gr' -> None -> dak = footprint (plat-aanname).
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r67]** type_advies defaultt bij leeg naar 'Basis' zonder note. De opnameklasse (basis EP-W/B vs detail EP-W/D) stuurt de opname-eisen; een stil ingevulde klasse is een aanname.
+  - *Scenario:* Veld niet ingevuld of naam-mismatch in het report -> dossier zegt 'Basis' terwijl een detailopname bedoeld/vereist was; niemand merkt het tot de audit.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r69]** bewijslast defaultt bij leeg/naam-mismatch naar 'Geen' zonder flag. 'Geen bewijslast' is inhoudelijk een claim (bepaalt Rc-bron/forfaitair) en mag niet stil ontstaan.
+  - *Scenario:* Report-label wijkt af ('Bewijslast aanwezig?') -> parser mist het -> 'Geen' -> alle Rc's forfaitair terwijl er kwaliteitsverklaringen zijn -> te slecht label / verkeerde constructiekeuze, stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Verzwolgen invoer | r91-94 (via core/geometry.py 26-37)]** De hart-op-hart-toeslag hangt aan aantal_woningscheidende_wanden(woningtype): onbekend/leeg woningtype (of 'appartement'/'portiekwoning') geeft n=0 -> toeslag stil 0. Er is GEEN melding dat de toeslag is overgeslagen wegens ontbrekend woningtype (de opmerking wordt alleen toegevoegd als _wsw > 0).
+  - *Scenario:* Tussenwoning maar woningtype-veld leeg in het report -> toeslag 0,44 x hoogte (~2,3 m2) ontbreekt stil -> gevel structureel te klein, en juist bij deze woning is de correctie verplicht (binnenwerks gemeten).
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r108-109 + geheel bestand]** De assemble-route mist de nieuwe dak-geometrie: geen kopgevels bij zadeldak, geen dakkapellen, geen per-daktype-berekening (core/geometry), geen Locatie-splitsing - het dak is 1 vlak 'horizontaal'. T.o.v. de CSV-route ontbreekt stil geometrie die daar juist is toegevoegd. Nergens een route-brede flag dat deze (oudere) route minder compleet is.
+  - *Scenario:* Zadeldak-woning via de report-route: 2 kopgevel-driehoeken (~10-15 m2 gevel) ontbreken volledig in VABI; dakkapel niet gemodelleerd; niemand wordt gewaarschuwd.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[MIDDEL | Stille default | r58-120 (geen enkele append naar Validatie.issues)]** Structureel: build_dossier vult nergens dossier.validatie.issues of een actiepuntenlijst; alle signalering hangt aan vrije tekst in opmerkingen (alleen gevel) en aan losse tools (sanity.py). Daarmee is 'luid flaggen' in deze route architectureel niet mogelijk zonder toevoeging.
+  - *Scenario:* Elke hierboven genoemde stille default passeert zonder dat de webapp-actiekaart of IMPORTEREN.txt iets toont.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[LAAG | Stille default | r102 (en extractor.py 182)]** Gevel-begrenzing defaultt bij leeg naar 'Buitenlucht' zonder note. Voor de meeste gevels juist, maar het is een keuze van de code, niet van de adviseur.
+  - *Scenario:* Gevel grenst aan een serre/AOR of onverwarmd trappenhuis; veld leeg -> 'Buitenlucht' -> GrenstAan=0 in VABI i.p.v. AOR -> te hoog transmissieverlies, stil.
+  - *Status:* GEFIXT 13-7: ook lege begrenzing wordt luid geflagd
+- **[LAAG | Stille default | r115]** Kozijn-begrenzing is hardcoded 'Buitenlucht' (geen report-veld wordt geraadpleegd, anders dan in extractor._map_wand r.238 waar wel een begrenzing-antwoord gelezen wordt).
+  - *Scenario:* Binnenkozijn naar een onverwarmde aanbouw/serre -> toch Buitenlucht in VABI, stil.
+  - *Status:* GEFIXT 13-7: ook lege begrenzing wordt luid geflagd
+- **[OK | Rekenregel (ok) | r90-99]** Hart-op-hart-gevel-toeslag +0,11 m per buurwand x voor+achtergevel (core/geometry.woningscheidende_wand_toeslag_m2) is een gedocumenteerde ISSO 82.1 par. 8.2-regel, wordt alleen toegepast als NIET tot hartmaat gemeten, en wordt expliciet in de gevel-opmerking vermeld met bedrag en woningtype. Geen aanname.
+  - *Scenario:* n.v.t. (regel + transparante vermelding).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r51-54 + 83-106 (flag op 95-99)]** De gevel-m2-benadering zelf (perimeter = 4*sqrt(footprint)*1.15; gevel = perimeter x total_h - ramen) IS geflagd: de gevel-opmerking zegt letterlijk 'benaderd (omtrek x hoogte - openingen; party-walls nog niet uitgefilterd); verifieer in Vabi' en de module-docstring herhaalt dat. Kanttekening: de flag zit alleen in SchilDeel.opmerkingen (vrije tekst), niet in Validatie.issues of een actiepunt dat in IMPORTEREN.txt/de webapp-actiekaart landt; en de 1.15-vormfactor is een ongefundeerde constante.
+  - *Scenario:* L-vormige of langgerekte plattegrond: echte omtrek kan 1,3-1,5x het vierkant zijn -> gevel tot ~25% te klein; de adviseur ziet dit alleen als hij de opmerking leest.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r100-106 (orientatie ontbreekt), 115 (orientatie='')]** Gevel en kozijnen krijgen GEEN orientatie (leeg) en de gevel wordt niet gesplitst in voor/achter/links/rechts - conform eis (c) 'leeg', en vabi/sanity.py flagt ontbrekende orientatie later als nameet-punt. Wel: de flag ligt buiten het dossier (sanity-run), en zonder splitsing kunnen de VABI-Locatie-tabs (bug-klasse 5) niet gevuld worden via deze route.
+  - *Scenario:* Adviseur slaat sanity.py over -> 1 ongesplitste gevel zonder orientatie gaat richting objecten-generator; Locatie/orientatie moeten daar alsnog handmatig.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Bewuste default (ok) | r117]** kozijnmateriaal leeg -> 'Hout of kunststof' met code-comment '80%-default; alleen afwijking invoeren'. Dit is de door de eigenaar expliciet gevraagde default (raam zonder afwijking -> alleen glastype). Het IS en blijft een default: bij een aluminium-kozijn zonder ingevuld materiaal komt er stil 'Hout of kunststof'.
+  - *Scenario:* Aluminium kozijnen (koudebrug, andere U) zonder ingevuld materiaal -> default wint; alleen relevant als de opname-instructie ('alleen afwijking invoeren') niet gevolgd is.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Bewuste default (ok) | r103 (en extractor.py 184, 253, 274)]** isolatie_aanwezig leeg -> 'Onbekend' (gevel/vloer/dak). 'Onbekend' is de eerlijke leeg-waarde die het beslisschema conservatief stuurt - geen verzonnen feit. Benoemd als default.
+  - *Scenario:* n.v.t. (Onbekend = expliciet niet-weten).
+  - *Status:* OK (Bewuste default (ok))
+
+## magicplan/extractor.py — 18 bevindingen (15 verdacht)
+
+- **[HOOG | Verzwolgen invoer | r92-116 (vgl. docstring r.15)]** _collect_answers raadt de container-naam (customFields/fields/answers/formValues/forms); vindt hij niets, dan is het resultaat een LEGE dict en vallen ALLE form-antwoorden stil terug op defaults. De docstring claimt 'logt onbekende sleutels', maar de functie logt niets. Er is ook geen check '0 antwoorden gevonden'.
+  - *Scenario:* MagicPlan wijzigt de API-containernaam of een project heeft de antwoorden elders -> heel het dossier bestaat uit defaults (bouwjaar None, bewijslast 'Geen', type_advies 'Basis', begrenzing 'Buitenlucht', isolatie 'Onbekend') zonder ook maar een waarschuwing.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[HOOG | Stille default | r218-221]** exterior = w.get('exterior'/'isExterior'/'buitenwand'); 'if exterior is not False and area > 0' behandelt ELKE wand zonder expliciete binnenwand-markering als gevel (comment geeft het toe: 'default: schil, tenzij expliciet als binnenwand gemarkeerd'). Geen flag per wand.
+  - *Scenario:* Plan-JSON zonder exterior-veld (of andere veldnaam): alle binnenwanden worden gevels -> gevel-m2 2-3x te groot, en buur-/woningscheidende wanden komen als Buitenlucht-gevel in VABI, volledig stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[HOOG | Verzwolgen invoer | r228-232]** Wand-objecten zonder 'element'-form-antwoord worden met 'continue' volledig overgeslagen: een getekend raam/deur zonder ingevuld element-veld verdwijnt stil uit de schil (en het gevel-oppervlak wordt er ook niet voor gecorrigeerd).
+  - *Scenario:* Adviseur tekent 6 ramen maar vult bij 2 het element-veld niet in -> die 2 ramen bestaan niet in het dossier/VABI; label te gunstig of te ongunstig afhankelijk van glastype, geen melding.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[HOOG | Stille default | r260-269 (via assemble r.109 en extractor r.209)]** _maak_dak: geen handmatig oppervlak EN geen dakhelling -> opp = footprint, d.w.z. een stilzwijgende plat-dak-aanname, ook als daktype 'Zadeldak' is ingevuld. Bovendien onparseerbare helling ('45 gr') -> via _g stil None -> zelfde fallback. hellingshoek/oppervlak_handmatig worden wel transparant op het SchilDeel bewaard, maar er is geen note/actiepunt.
+  - *Scenario:* Zadeldak 45 graden, helling-veld vergeten: dak-m2 = footprint i.p.v. footprint/cos(45) = 1,41x -> dak ~30% te klein in VABI, stil; plus ontbrekende kopgevels (zie assemble-bevinding).
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r180-189 + 222-227]** Alle gevels krijgen dezelfde PROJECT-brede gevel_tags (geveltype, begrenzing default 'Buitenlucht', isolatie, rc, spouw). Per-wand afwijkingen zijn in deze route onmogelijk; een buurwand krijgt dus dezelfde eigenschappen als de voorgevel. Dit is bug-klasse (5)-verwant (alle gevels een kloon-eigenschap) en niet geflagd.
+  - *Scenario:* Hoekwoning: de woningscheidende wand wordt een 'gevel' met begrenzing Buitenlucht en het algemene geveltype -> transmissieverlies veel te hoog in VABI, stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Verzwolgen invoer | r233-235 + 240]** Kozijn-oppervlak: area, anders width x height, anders float(0) - een kozijn zonder maten wordt stil 0,00 m2 opgenomen, zonder flag.
+  - *Scenario:* Raam-object zonder area/width/height in de plan-JSON -> 0-m2 kozijn in VABI; glasoppervlak ontbreekt stil in de energiebalans.
+  - *Status:* GEFIXT 13-7: 0-m²-vlakken krijgen een luide actie
+- **[MIDDEL | Stille default | r191-199]** grond_footprint = oppervlak van de EERSTE floor in de lijst, top_footprint = de LAATSTE. Dat veronderstelt stil dat de API de lagen van onder naar boven en zonder kelder aanlevert; niets wordt gecontroleerd of geflagd.
+  - *Scenario:* Plan met kelder als eerste laag: vloer-bg krijgt het kelder-oppervlak en de kelder zelf wordt niet als apart vlak gemodelleerd; floors in omgekeerde volgorde: dak op BG-footprint. Alles stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Verzwolgen invoer | r119-130 (bool-tak r.127)]** De bool-cast in _g herkent alleen exact 'true/1/ja/yes/waar/y'; elk ander ingevuld antwoord ('Ja, met CO2-sturing', 'aanwezig', 'gemeten: 1,2') wordt stil False. Raakt qv10_gemeten, spouw_aanwezig, gevel_tot_hartmaat_gemeten, alle kwaliteitsverklaring-vlaggen, dwtw, circulatieleiding, koeling_aanwezig, zon_belemmering, vent_co2/zelfregelend/tijdsturing.
+  - *Scenario:* 'Qv10 gemeten?' beantwoord met 'Ja, 0,8' -> qv10_gemeten=False -> gemeten qv10 wordt genegeerd en VABI valt terug op forfaitair, stil. 'Spouw aanwezig: aanwezig' -> False -> geen spouwmuurisolatie-advies.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r133-141 (gebruikt in assemble r.44 en extractor r.202)]** _functie leidt de ruimtefunctie af uit de NAAM (keuken/bad/toilet/was/...); onherkende namen worden stil 'overig'. De functie stuurt de ventilatieberekening (keuken 21 / bad 14 / toilet 7 dm3/s), dus een gemiste badkamer verandert de ventilatie-eis.
+  - *Scenario:* Ruimte heet 'Doucheruimte' of 'Sanitair' -> geen 'bad'-match -> functie 'overig' -> de 14 dm3/s-eis van de badkamer ontbreekt stil in de ventilatiebalans.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Stille default | r178]** Ag = ag_m2-form-antwoord, default 0.0. Het 0-deel voldoet aan eis (c), maar de LUIDE flag ontbreekt: een dossier met Ag=0 rolt zonder actiepunt door.
+  - *Scenario:* ag_m2 niet ingevuld -> Ag=0.0 -> compactheid/verliesoppervlak-verhoudingen onzinnig; pas bij de VABI-import of sanity valt het misschien op.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[MIDDEL | Verzwolgen invoer | r328-336]** PV wordt alleen aangemaakt als 'zon_systeem' is ingevuld; zijn wel zon_aantal/zon_oppervlak/zon_orientatie beantwoord maar het systeem-veld niet, dan verdwijnt het HELE PV-systeem stil. Ook: deze route kent maar 1 systeem (geen PV-2/PV-3 zoals statistics_csv).
+  - *Scenario:* Adviseur vult 12 panelen + Zuid + 35 graden in maar het systeem-dropdown-antwoord ontbreekt in de container -> geen ZonneEnergie-knoop in VABI -> label te ongunstig, stil.
+  - *Status:* GEFIXT 13-7: lege PV-velden worden geflagd
+- **[MIDDEL | Stille default | r159 + 162 (en assemble 67-69)]** Zelfde stille defaults als in assemble: type_advies 'Basis' en bewijslast 'Geen' bij leeg, zonder note (dubbel geregistreerd omdat beide routes ze onafhankelijk zetten).
+  - *Scenario:* Zie assemble-bevindingen r.67/69: verkeerde opnameklasse / bewijslast 'Geen' terwijl er kwaliteitsverklaringen zijn.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[LAAG | Stille default | r273 (en 252)]** Dak krijgt altijd orientatie='horizontaal' en begrenzing='Buitenlucht' hardcoded, ook bij een schuin dak (helling staat wel apart in hellingshoek). Vloer-orientatie 'horizontaal' is definitioneel juist; dak-'horizontaal' bij 45 graden helling is een codekeuze zonder note.
+  - *Scenario:* Schuin dak met PV-relevante orientatie: het dakvlak heeft geen orientatie-informatie in het dossier; downstream moet dat handmatig.
+  - *Status:* GEFIXT 13-7: ook lege begrenzing wordt luid geflagd
+- **[LAAG | Stille default | r243]** u_huidig = u_glas OF u_kozijn: twee verschillende grootheden (U-glas vs U-kozijn/raam) landen zonder onderscheid of note op hetzelfde veld.
+  - *Scenario:* Alleen u_kozijn ingevuld (bv. 2,8) -> die waarde wordt als U van het hele raamvlak gebruikt waar downstream U-raam verwacht wordt; verschil glas/kozijn verdwijnt stil.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[LAAG | Stille default | r340-344]** Foto's zonder file/url krijgen bestand='' zonder flag - de photos.py-golden-rule ('id zonder URL wordt geflagd') geldt hier niet.
+  - *Scenario:* Foto-entries met alleen een id -> lege bestandsnamen in de fotochecklist; bewijslast-foto lijkt aanwezig maar is onvindbaar.
+  - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
+- **[OK | Rekenregel (ok) | r266-267]** Dak-oppervlak = footprint / cos(helling) is de gedocumenteerde ISSO/meetkunde-regel (schuin dakvlak uit horizontale projectie); handmatig veld wint. De max(cos, 0.1)-guard begrenst extreme hellingen stil, maar dat is een bescherming, geen gegevensbron.
+  - *Scenario:* n.v.t. (bij >84 graden helling wordt stil op factor 10 gecapt - theoretisch randgeval).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r169]** dos.meta.tool_versie = 'extractor-0.2 (container 1x live verifieren)' markeert de hele route expliciet als nog-te-verifieren; samen met de EXPECTED_CONTAINERS-docstring is de onzekerheid van de container-structuur benoemd (zij het zwak: alleen in meta, geen actiepunt).
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r247-257]** _maak_vloer: begrenzing default '' (leeg conform eis c), isolatie 'Onbekend', orientatie 'horizontaal' (definitioneel juist voor een vloer), oppervlak = doorgegeven footprint (de proxy-kwestie is apart geregistreerd). Lege begrenzing wordt downstream door de objecten-generator/sanity als te-bepalen behandeld - leeg-plus-latere-flag, geen gok.
+  - *Scenario:* n.v.t. mits sanity/generator draait; anders lege begrenzing zonder melding (zie structurele issues-collector-bevinding).
+  - *Status:* OK (Geflagd (ok))
+
+## magicplan/statistics_csv.py — 62 bevindingen (38 verdacht)
+
+- **[HOOG | Verzwolgen invoer | r551, 681-683, 752-760, 884-892, 1013-1018]** Per-dak bouwjaarklasse-antwoord (b_n['bouwjaar'] uit de dak-loop, b_d['bouwjaar'] bij directe vlakken) wordt NERGENS op de dak-SchilDelen gezet. Alle dakvlakken krijgen via _klasse_per_type['dak'] (regel 1013) de klasse uit d_b=_bouwdeel('Dakvlak 1') met alt 'Dak 1', terwijl de live form-prefixen 'Dak'/'Extra dak A'/'Extra dak B' heten (regel 669-670).
+  - *Scenario:* Adviseur vult 'Dak - bouwjaar (onbekend)' = 'Van 1975 t/m 1982' -> d_b vindt niets ('Dakvlak 1'/'Dak 1' bestaat niet) -> dakvlakken zonder bouwjaarklasse -> constructie-beslisschema valt terug op project-bouwjaar of de generator-default 'Tot 1965' — exact de live gevonden bug 4, maar dan voor het DA
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[HOOG | Verzwolgen invoer | r682-683 (545)]** De fallback naar de oude 'Dakvlak N - ...'-boom draait NOOIT: _bouwdeel geeft isolatie altijd truthy terug ('Onbekend'-default op regel 545), dus `if not (b_n['isolatie'] or ...)` is altijd False. Antwoorden uit oudere formversies zijn dood.
+  - *Scenario:* Export van een oudere formversie met 'Type dak = Zadeldak' + 'Dakvlak 1 - isolatie aanwezig? = Ja' + dikte: b_n uit prefix 'Dak' is leeg -> isolatie wordt 'Onbekend' i.p.v. 'Ja', dikte weg -> forfaitaire ongeisoleerde constructie in VABI, zonder flag.
+  - *Status:* GEFIXT 13-7: fallback test nu op de ruwe 'ingevuld'-indicator
+- **[HOOG | Stille default | r608]** vloer_begr valt zonder enige note terug op 'Kruipruimte' als het begrenzing-veld leeg is of hernoemd werd. Begrenzing stuurt de VABI GrenstAan-code (2=Grond vs 3=Kruipruimte) en dus het warmteverlies.
+  - *Scenario:* Woning met begane-grondvloer op zand (grond); het veld 'Vloer - begrenzing' is leeg of heet net anders -> VABI krijgt GrenstAan=Kruipruimte i.p.v. Grond -> verkeerde vloer-warmteverliesberekening, geen actiepunt in IMPORTEREN.txt.
+  - *Status:* GEFIXT 13-7: ook lege begrenzing wordt luid geflagd
+- **[HOOG | Stille default | r1026-1033 (+ geen check bij 1127-1158)]** Leeg 'Ventilatiesysteem (A-E)' -> dos.ventilatie.systeem = '' zonder flag. De installatie-generator kloont dan de sjabloon-ventilatie -> sjabloon-lek downstream, terwijl ventilatie het ENIGE installatiedeel is dat de Standaard/warmtebehoefte beinvloedt (Nij Begun-kern).
+  - *Scenario:* Adviseur vergeet het ventilatie-veld (of veldnaam wijkt af) -> dossier zonder ventilatiesysteem -> VABI rekent met de ventilatie uit het gekloonde sjabloon (bv. systeem C van de sjabloonwoning) zonder dat iemand het ziet.
+  - *Status:* GEFIXT 13-7: leeg ventilatiesysteem -> luide note + flag (stuurt de Standaard)
+- **[HOOG | Verzwolgen invoer | r686, 692-698, 725-727, 737-740, 878, 819-820, 948-950]** Vrijwel alle dak-parametervelden worden met EXACTE plan-key-lookups gelezen, inclusief lange zelfdocumenterende suffixen ('(m², leeg = footprint bovenste verdieping)', '(°, leeg = berekend uit nok/breedte)'). De suffixen zijn live al 2x hernoemd (zie regel 674); alleen het type-veld (675) en de _Gp-dakkapelvelden zijn prefix-robuust gemaakt.
+  - *Scenario:* MagicPlan hernoemt de suffix van 'Dak plat - oppervlak (...)' -> de ingevulde 40 m² wordt niet gevonden -> footprint 55 m² stil gebruikt (bij dak 1 zelfs ZONDER note, want de note op 688 geldt alleen _dn>1). Zadel: hellingshoek-suffix hernoemd -> 'dak overgeslagen'-note terwijl de adviseur het veld 
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r473]** Deur-orientatie leest positioneel r[17] ZONDER _norm_kompas-guard (het raam heeft die guard wel, regel 450-451) en zoekt ook geen 'Oriëntatie (override)'-kolom op naam zoals het raam doet.
+  - *Scenario:* (a) Nieuwe exportversie met een ander veld in kolom 17 (bv. 'Ja' van een checkbox) -> deur krijgt orientatie 'Ja' -> onmapbare/verkeerde orientatie in de VABI-objecten. (b) Een echte deur-orientatie-override in een naam-kolom wordt genegeerd -> deur stil op de wandorientatie.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r403-408, 449-452, 559, 705-707]** Orientatie uit de override-KOLOM wordt raw doorgegeven (alleen _undot, geen _norm_kompas): 'Zuidoost'/'zo' uit de kolom vs 'ZO' uit naam-token/afleiding zijn verschillende strings.
+  - *Scenario:* Kolomwaarde 'Zuidoost' -> aparte gevel-key naast een afgeleide 'ZO'-gevel (dubbele gevels in VABI) en de kopgevel-buitencheck op 705 ('ZO' not in {'Zuidoost'}) laat een echte kopgevel weg met een MISLEIDENDE buurwand-note.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r312-313 (gebruikt op 557, 595)]** Gevelhoogte wordt zonder note geschat als som van de plafondhoogtes; verdiepingsvloer-dikten (~0,25-0,35 m per bouwlaag) ontbreken -> structureel te laag. Voedt de hart-op-hart-toeslag (557) en de gevel-volledigheids-schatting (595).
+  - *Scenario:* 2-laags woning, plafonds 2,60+2,60 -> gevelhoogte 5,20 i.p.v. ~5,80 m -> hart-op-hart-toeslag ~10% te laag en de 60%-volledigheidscheck nog toleranter, alles zonder flag.
+  - *Status:* GEFIXT 12/13-7: uitsluitend handmatig veld; leeg -> 0 + actie
+- **[MIDDEL | Verzwolgen invoer | r788-791]** Dakkapel-groep met 3 van de 4 velden ingevuld (aantal/breedte/hoogte/diepte) wordt met `continue` volledig stil overgeslagen — geen note.
+  - *Scenario:* Adviseur vult aantal=1, breedte=3,0, hoogte=1,4 maar vergeet diepte -> de hele dakkapel (gevelvlak + wangen + plat dakje + gat-aftrek) ontbreekt in VABI zonder actiepunt.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r737-748]** Het lessenaar-veld heet 'hellingshoek (°, leeg = berekend)' maar de beloofde berekening bestaat niet: hl_/hh_ worden alleen voor een note gebruikt; leeg veld -> dak overgeslagen.
+  - *Scenario:* Adviseur laat de hellingshoek bewust leeg (het form belooft 'leeg = berekend') en vult hoge/lage zijde in -> dak volledig overgeslagen; de note zegt 'vul aan' en spreekt het form tegen.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r179-191 (toegepast op 979)]** _norm_kozijn_mat maakt van ELKE onherkende niet-lege waarde stil 'Hout of kunststof' (regel 191). De lege-waarde-default is de bewuste eigenaars-default, maar een gevulde onherkende waarde hoort niet stil te degraderen.
+  - *Scenario:* Kozijnmateriaal 'Staal' (stalen kozijn, geen 'metaal'/'aluminium' in de string) -> VABI kozijn A (hout/kunststof) i.p.v. C (metaal niet onderbroken) -> te gunstige U-waarde, geen flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r543]** 'Spouw aanwezig?' = 'Onbekend' (of elke andere niet-ja-waarde) wordt spouw=False — alsof geverifieerd is dat er GEEN spouw is; alleen een leeg veld geeft None.
+  - *Scenario:* Adviseur kiest eerlijk 'Onbekend' -> dossier spouw_aanwezig=False -> generator kiest een massieve/ongespouwde constructie i.p.v. de onbekend/forfaitaire route, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r411-414]** Het 'Deels binnen/deels buiten (narekenen)'-vinkje wordt alleen herkend als yes/ja/true/1/aan; andere export-representaties van een checkbox (bv. 'checked', 'X', 'waar') vallen stil weg.
+  - *Scenario:* Vinkje staat aan maar de export schrijft 'checked' -> muur die deels binnen ligt telt VOLLEDIG als buitengevel, zonder NAREKENEN-note en zonder 'Grenst aan buiten'-splitsing -> gevel-m² te hoog in VABI.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r420-421]** Wandhoogte-kolom wordt gezocht met startswith('height') en valt anders POSITIONEEL terug op kolom 6, zonder note.
+  - *Scenario:* Header heet 'Wall height' of (NL-export) 'Hoogte' -> geen match -> kolom 6 (bv. wanddikte 0,10) als hoogte -> 'Grenst aan buiten'-splitsing rekent 4,5 m x 0,10 m = 0,45 m² gevel i.p.v. 11,7 m²; de note toont plausibel ogende maar foute getallen.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r466-471, 487-492, 461-462]** Raam-glastype/kozijnmateriaal en deur-glasvelden: naam-lookup met positionele fallback (r[16]/r[15]/r[20]/r[19]). Bij een subtiel hernoemde header valt de code stil terug op een kolom die in nieuwe exports een ANDER veld kan bevatten — dan komt er een verkeerde niet-lege waarde door zonder flag.
+  - *Scenario:* Header wordt 'Type glas raam' -> exact-match ('type glas') faalt -> r[16] bevat toevallig de kozijncode 'B' -> glastype 'B' in het dossier -> generator kiest een verkeerde/onmapbare beglazing; de bestaande 'GLASTYPE ONTBREEKT'-flag vuurt niet want de waarde is niet leeg.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r1028-1029, 1050-1053]** Subsysteem = de EERSTE gevulde van 'Subsysteem (A)'..' (E)', los van het gekozen ventilatiesysteem; MagicPlan bewaart verborgen conditionele antwoorden na het omschakelen van de master-dropdown. Zelfde patroon bij verwarming: subtype = (hr or wpm) kan een stale WP-antwoord bij een gasketel plakken.
+  - *Scenario:* Adviseur kiest eerst systeem D en vult 'Subsysteem (D)', schakelt dan terug naar C en vult 'Subsysteem (C)' -> beide staan in de export; de code pakt de eerste gevulde (D) -> verkeerd subsysteem bij systeem C in VABI.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r1081-1095]** PV wordt alleen gelezen als de master 'Zonne-energie aanwezig?' gevuld is; zijn de PV-detailvelden wel gevuld maar de master leeg (vergeten of veld hernoemd), dan wordt de hele PV-installatie stil genegeerd.
+  - *Scenario:* Adviseur vult paneeltype/aantal/orientatie maar het master-veld blijft leeg -> dossier zonder PV -> VABI-installatiebibliotheek zonder ZonneEnergie-knoop, geen actiepunt.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r426, 593-600]** Een buitenmuur zonder gevelnaam/orientatie verdwijnt stil uit de schil (bedoeld voor binnenwanden); het enige vangnet is de aggregate volledigheidscheck die pas onder 60% van de schatting waarschuwt — en helemaal niet vuurt als perimeter of gevelhoogte ontbreekt (schatting=0).
+  - *Scenario:* Adviseur vergeet 1 van de 4 gevels te taggen -> ~25% gevel-m² weg; bruto blijft > 60% van de schatting -> geen note; VABI-verliesoppervlak structureel te laag.
+  - *Status:* GEFIXT 13-7: vloer zonder meting -> Perimeter 0.00 + AutoPerimeter=1 + actie
+- **[MIDDEL | Stille default | r639]** type_dak valt zonder flag terug op 'Zadeldak' wanneer geen enkel daktype-veld gevonden wordt; dit stuurt de legacy-fallbackpaden (regel 898+).
+  - *Scenario:* Daktype-veld hernoemd maar legacy hellingshoek + orientatie-zijde-1 aanwezig -> een lessenaarsdak wordt als zadeldak gerekend (2 vlakken + kopgevel-driehoeken die niet bestaan), zonder note.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r609-611, 617-618]** Als zowel de Ground-surface-kolom als 'Above grade living area' ontbreekt is bg_floor_area None en wordt de begane-grondvloer 0,0 m², met alleen de generieke opmerking 'benadering; verifieer in Vabi' — geen specifieke note dat het oppervlak ONTBREEKT.
+  - *Scenario:* Exportvariant zonder 'Ground surface without walls'-kolom -> vloer 0 m² in VABI; het isolatieplan mist de complete vloermaatregel zonder duidelijk actiepunt.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r461-464, 985-993, 1013-1018]** De paneel-bouwjaarklasse (form-antwoord 'Paneel - bouwjaarklasse') belandt alleen als TEKST in de opmerkingen ('zet in Vabi'), niet in SchilDeel.bouwjaarklasse; panelen staan ook niet in _klasse_per_type -> het beslisschema kiest de constructie op het project-bouwjaar.
+  - *Scenario:* Paneel met bouwjaarklasse '1975 t/m 1982' in een woning van 1930 -> generator kiest de 1930-constructie voor het paneel; de opmerking is een handmatig actiepunt maar de gegenereerde XML is fout totdat de adviseur het ziet.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r231, 240-241 (note-conditie 1020)]** Project-bouwjaar valt stil terug op 'Bouwjaar-klasse (vloer)' en _eerste_jaar reduceert een klasse tot het EERSTE jaartal ('1992 t/m 2013' -> 1992). Vult de vloer-klasse het bouwjaar, dan blijft ook de 'BOUWJAAR ONTBREEKT'-note (1020) uit.
+  - *Scenario:* Object-form-bouwjaar leeg, vloer-bouwjaarklasse '1992 t/m 2013' gevuld -> woningbouwjaar wordt 1992 (uit een BOUWDEEL-klasse, niet het woningbouwjaar) zonder note; qv10-forfait en alle klasse-afleidingen rekenen daarmee.
+  - *Status:* GEFIXT 12-7 (d1247c9): leeg -> 0 + luide actie
+- **[MIDDEL | Verzwolgen invoer | r386, 388, 429, 438, 462]** Kernkolommen zijn positioneel: Type=r[8], netto-opp=r[4], bruto-opp=r[3], paneel-opp=r[3]; rijen met <12 kolommen worden stil overgeslagen (386). Bij kolomverschuiving in een nieuwe exportversie vallen wanden/ramen/deuren stil weg of krijgen 0 m².
+  - *Scenario:* MagicPlan voegt een kolom toe vóór kolom 8 -> geen enkele rij heeft nog typ=='Wall' -> lege schil; alleen de aggregate 'GEEN buitengevels'-note vangt totale uitval, gedeeltelijke verschuiving (alleen opp-kolommen) geeft stil 0-m² gevels.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r774-780, 807-809, 843]** De per-dak _trek_af doet stil NIETS wanneer geen (schuin, >0°) dakvlak matcht: het dakkapel-gat of dakraam-oppervlak wordt dan niet afgetrokken. De losse DAKRAMEN-sectie heeft daarvoor wel een note (963-964), de per-dak-variant niet.
+  - *Scenario:* Dakkapel op een plat dak (geen kandidaat met hellingshoek>0) of dakraam met orientatie-mismatch -> gat/glas niet afgetrokken -> dak-m² dubbel geteld (dak + dakraam) in VABI, zonder flag.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[LAAG | Stille default | r852]** Cross-file bevinding bij ag_onder_schuin_dak: de caller vult een ontbrekende helling met 'h_z or 45.0' — een verzonnen default-helling van 45 graden. Verzachtend: het resultaat stuurt alleen de drempel/tekst van een suggestie-note (Ag zelf wordt nooit automatisch aangepast, regel 848 'Ag = heilig'), en de note-tekst print 'h_z or 0' waardoor de gebruikte 45 niet eens zichtbaar is.
+  - *Scenario:* Zadeldak zonder bekende helling -> aftrek-hint berekend op 45 graden; bij een werkelijk dak van 25 graden is de echte 1,5m-aftrek ~2x groter dan gesuggereerd -> adviseur vult op de hint een te lage Ag-aftrek in.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r560]** Cross-file bevinding bij de hartmaat-regel: de ISSO-toeslag (die per definitie op de VOOR- en ACHTERgevel-breedte hoort, zie geometry.py:44-45) wordt hier gelijk verdeeld over ALLE getikte gevels, dus ook zijgevels. Het totaal klopt, maar de per-orientatie-verdeling wijkt af van ISSO 8.2 en de SchilDeel-opmerking vermeldt de toegevoegde 'extra' m2 niet per vlak.
+  - *Scenario:* Hoekwoning met getikte voor-, achter- en zijgevel: de 0,22 x h toeslag wordt over 3 gevels gesmeerd -> zijgevel te groot, voor/achtergevel te klein per orientatie in VABI (zon/orientatie-effecten marginaal verschoven), zonder note.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r529]** Legacy-veld 'Isolatiedikte onbekend' wordt alleen bij letterlijk 'yes' herkend, niet bij 'ja' (de rest van het bestand accepteert wel ja/yes/true).
+  - *Scenario:* Oude export met 'Isolatiedikte onbekend = Ja' -> dikte_onb blijft False -> rc_bron blijft leeg i.p.v. 'Dikte onbekend' -> generator kiest een andere invoer-route zonder flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r349-355, 663-664, 338]** Begane-grond- en bovenste-verdieping-keuze zijn naam-/volgorde-heuristieken zonder note: BG = naam met ground/grond/begane, anders de GROOTSTE niet-kelder-vloer; top = laatste niet-kelder in CSV-volgorde (de Ag-aftrek-verdieping op 338 heeft wel een note met de naam).
+  - *Scenario:* Verdiepingen heten 'Niveau 1/Niveau 2' en niveau 2 is groter (overstek) -> vloer-footprint en top_fp = niveau 2 -> vloer- en dak-m² van de verkeerde laag, zonder melding welke laag gekozen is.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r483, 999-1009]** Deur zonder 'Type constructie' wordt stil een dichte deur; en een deur mét raam/65%-glas maar leeg glastype krijgt GEEN 'GLASTYPE ONTBREEKT'-flag (ramen wel, regel 981).
+  - *Scenario:* Deur met 65% glas waarvan het glastype-veld leeg bleef -> deur in VABI met glasvlag maar zonder glastype; of type-constructie-veld niet ingevuld -> deur forfaitair dicht terwijl hij grotendeels glas is — beide zonder actiepunt.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r371-374, 455-457]** Ontbreekt/hernoemt de 'Raam = Ja | Paneel = Nee'-kolom, dan blijft ALLES raam (gedocumenteerd in de code); de paneel-detailantwoorden (isolatie/dikte/bouwjaarklasse) gaan dan stil verloren en het paneel wordt een raam met leeg glastype.
+  - *Scenario:* Kolomnaam wijzigt -> dicht paneel wordt raam; de lege-glastype-flag vuurt wel, maar wijst de adviseur naar het verkeerde probleem (glas invullen i.p.v. paneel herstellen).
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r1058]** Koeling wordt alleen aangemaakt bij exact ja/yes/true; 'Onbekend' of een andere waarde betekent stil: geen koeling.
+  - *Scenario:* 'Koeling aanwezig? = Onbekend' -> dossier zonder koeling, geen note; energielabel-route mist mogelijk een aanwezige airco.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r1060, 1066]** systeem='Individueel' (koeling) en type_installatie='Individueel' (tapwater) zijn hardcoded aannames — niet uit het form. Voor grondgebonden woningen vrijwel altijd juist, maar het is een ongedocumenteerde keuze.
+  - *Scenario:* Woning op collectieve stadsverwarming/collectief tapwater -> dossier zegt Individueel -> verkeerde VABI-systeemkeuze zonder flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r1117-1119]** Rekenzone-antwoord buiten 1-3 wordt stil 1 (_rz-coerce), waardoor ook de multi-zone-flag (1152-1158) niet vuurt.
+  - *Scenario:* Adviseur typt zone '4' -> stil zone 1, geen note dat de waarde genegeerd is.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r816-823]** De dakramen-matrix zoekt exacte glastype-tokens (Enkel/Dubbel/HR/HR+/HR++/TripleHR/Onbekend) in de exacte veldnaam; wordt een glastype in het form hernoemd (bv. 'Triple/HR+++'), dan verdwijnt die m² stil.
+  - *Scenario:* Formveld heet 'Dak dakramen vlak 1 - Triple (m²)' -> 'TripleHR' matcht niet -> 3 m² dakraam weg zonder flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r771-773, 792, 830]** _kies_vlak kiest dakvlak 1 tenzij het antwoord '2' of 'tegenover' bevat; elke andere optietekst (bv. 'achterzijde') geeft stil vlak 1.
+  - *Scenario:* Dakvlak-keuze-optie wordt hernoemd naar 'Achterdakvlak' -> dakkapel/dakramen aan de verkeerde orientatie, gat van het verkeerde vlak afgetrokken, geen flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r883, 932]** Direct ingevoerde dakvlakken zonder eigen hellingshoek erven stil de globale dakvlak-1-helling (883); de 9-vakjes ('Anders') krijgen die globale helling of None (932) zonder vermelding van de herkomst.
+  - *Scenario:* Dakvlak 2 (30°) zonder eigen hellingshoek-veld -> krijgt de 45° van vlak 1 -> beloopbare consequenties in VABI (helling-enum/opp-projectie) zonder flag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r876-894 t.o.v. 668-761]** Het nieuwe per-dak-typemodel en de directe 'Dakvlak N - oppervlak'-velden kunnen BEIDE schildelen toevoegen; er is geen kruiscontrole of note bij dubbel vuren (kan alleen als een form beide veldensets bevat).
+  - *Scenario:* Form met zowel 'Dak - type = Zadeldak' als 'Dakvlak 1 - oppervlak = 40' ingevuld -> zadeldak-vlakken ÉN het directe vlak in de schil -> dak dubbel geteld zonder waarschuwing.
+  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+- **[LAAG | Verzwolgen invoer | r1092]** Alleen PV-2 t/m PV-5 worden gelezen (range(2,6)); PV-6 en hoger vallen stil weg en de meerdere-PV-note telt alleen de gelezen systemen.
+  - *Scenario:* Opname met 6 PV-orientatiegroepen -> systeem 6 ontbreekt zonder flag.
+  - *Status:* OPEN — reviewen
+- **[OK | Geflagd (ok) | r317-323]** Gebouwhoogte: uitsluitend handmatige MagicPlan-invoer; ontbreekt het veld dan geen waarde + LUIDE note ('in Vabi komt nu 0') — de bug-3-fix, conform de eis.
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r329-348]** Verdiepingen = gemeten per-verdieping-m², Ag = som daarvan; afwijking t.o.v. MagicPlans woonoppervlak-heuristiek >2% wordt genoteerd; Ag-aftrek-verdieping wordt bij naam genoemd (bug-2-fix). Kanttekening: 'bovenste = laatste in CSV-volgorde' is een aanname, maar de note noemt de verdieping zodat de adviseur het ziet.
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r581-589]** Afgeleide gevel-orientaties worden expliciet ter controle in een note gezet (voor/rechts/achter/links) en bij 0 gevonden buitengevels volgt een luide instructie-note.
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r556-560, 574-580]** Hart-op-hart-toeslag per woningscheidende wand (ISSO 8.2, via core.geometry) — gedocumenteerde rekenregel; de gelijkmatige verdeling over alle gevels is een benadering maar staat per gevel in de opmerkingen ('+X m² hart-op-hart').
+  - *Scenario:* n.v.t. (rekenregel, zichtbaar in opmerkingen). Let wel: de gebruikte gevelhoogte kan de geschatte som-van-plafonds zijn (zie het aparte gevelhoogte-punt).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r423-425]** AVR/buurwand (en de ramen/deuren erin) buiten de thermische schil laten is de ISSO-regel (p.66/75), geen aanname.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Bewuste default (ok) | r81-87, 409]** Begrenzing zonder naam-token = 'Buitenlucht': de gedocumenteerde naamconventie (adviseur benoemt afwijkingen expliciet in de wandnaam). Het IS een default — benoemd in de code-kop en in de per-gevel-opmerkingen wanneer die afwijkt.
+  - *Scenario:* n.v.t. (conventie).
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Geflagd (ok) | r418-436, 602-605]** 'Grenst aan buiten (m)'-splitsing (meters x wandhoogte) met note per wand, en de narekenen-lijst als expliciet handmatig actiepunt — rekenregel + flag. (Wel afhankelijk van de hoogte-kolom-vondst, zie het aparte punt over regel 420-421.)
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r612-616, 1128-1130]** Perimeter = volledige buitenomtrek met note dat woningscheidende wanden er in Vabi uit moeten; ontbrekend woningtype wordt luid geflagd (toeslag 0 + infiltratie onbekend).
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r617-634, 274-276]** Vloer = begane-grond-footprint met opmerking 'benadering; verifieer in Vabi'; vloerdelen per begrenzing uit ruimtenaam-tokens met note en m²-verdeling. Kanttekening: het token 'grond' kan false-positive matchen op een ruimtenaam als 'Begane grond kamer' — de note maakt het wel zichtbaar.
+  - *Scenario:* n.v.t. (geflagd; false-positive zichtbaar in de note).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r640-644, 697-698]** Hellingshoek uit nokhoogte/vloerbreedte/knieschot (hellingshoek_uit_nok, core.geometry) — gedocumenteerde meetkunde, geen aanname.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r699-720]** Zadeldak: 2 vlakken + kopgevel-driehoeken via core.geometry; kopgevel-weglating is deterministisch (alleen op zijden waar een buitengevel is getikt) MET note; asymmetrisch zadeldak wordt berekend en geflagd voor Vabi-verificatie.
+  - *Scenario:* n.v.t. (rekenregel + geflagd). Wel gevoelig voor het orientatie-normalisatiepunt (regel 705).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r724-748]** Schilddak (footprint/cos verdeeld over 4 zijden, afwijkende kopschild-helling geflagd) en lessenaarsdak (1 vlak, hoge-zijde-gevelstrook als expliciet nareken-actiepunt) — rekenregels met notes.
+  - *Scenario:* n.v.t. (zie wel het aparte punt over de niet-bestaande 'leeg = berekend'-belofte bij lessenaar).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r781-810]** Dakkapel conform ISSO 82.1 par. 8.2.1: voorvlak + 2 wangen = gevel, dakje = plat dak, gat uit het schuine vlak afgetrokken; per kapel een note met de flag uit core.geometry.
+  - *Scenario:* n.v.t. (zie wel het aparte punt over stil overslaan bij gedeeltelijk gevulde velden).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r844-869, 895-897, 917-919, 936-942]** Reeks nette flags: 0,65 m²/dakraam-check, Ag-zolder-1,5m-suggestie (alleen note, Ag blijft heilig), dubbel-ingevoerd-zadeldak-detectie, directe-m²-voorrang-note, schilddak-verfijn-note en de LUIDE footprint-fallback-note als daktype/helling ontbreken.
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r946-968]** Losse DAKRAMEN-sectie: m² per orientatie x glastype 1-op-1 uit de invoer, glas afgetrokken van het dakvlak, note wanneer geen dakvlak met die orientatie bestaat, ventilatierooster-note voor het ventilatieplan.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r972-981]** Kleine ruit < 0,65 m² -> rekenen als 0,65 m² (Nij Begun opname-handleiding), vermeld in de opmerkingen; leeg glastype krijgt 'GLASTYPE ONTBREEKT'. Kanttekening: die flag staat alleen in de schildeel-opmerkingen, niet in de centrale notes/actiepuntenlijst.
+  - *Scenario:* n.v.t. (geflagd; overweeg de glastype-flag ook als note op te nemen).
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Bewuste default (ok) | r175-191, 979, 839, 957, 1008]** Kozijnmateriaal LEEG -> 'Hout of kunststof' (raam), en hardcoded 'Hout of kunststof' voor deuren en dakramen: de door de eigenaar gevraagde default. Het blijft een default — benoemd; de uitzondering (onherkende NIET-lege waarde degradeert ook stil) staat als apart fout-punt.
+  - *Scenario:* n.v.t. voor de lege-waarde-default.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Geflagd (ok) | r982-996]** Paneel-in-kozijn: dichte constructie met isolatie 'Onbekend' (CSV geeft geen Rc) + note dat de adviseur Rc/isolatie in webapp/Vabi verfijnt.
+  - *Scenario:* n.v.t. (geflagd; de bouwjaarklasse-doorgifte staat als apart fout-punt).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r1010-1023]** Bouwjaarklasse per bouwdeel stuurt het beslisschema voor gevel en vloer (bug-4-fix) en het ontbrekende project-bouwjaar geeft een LUIDE note (bug-1-fix). Voor het dak lekt de keten nog (zie het hoog-punt over d_b/'Dak'-prefix).
+  - *Scenario:* n.v.t. voor gevel/vloer.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r248-254, 1131-1133]** qv10 alleen meenemen als gemeten (ISSO 7.1.5); staat er een waarde zonder 'Qv10 gemeten?=Ja' dan volgt een uitleg-note dat VABI forfaitair rekent.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r1136-1158]** Meerdere PV-systemen, extra verwarming/tapwater/koeling (exemplaar 1 doorgezet, rest expliciet handwerk — golden rule), 2e ventilatiesysteem, Kwaliteitsverklaring-bouwdelen en multi-zone worden allemaal met duidelijke notes naar de adviseur geflagd.
+  - *Scenario:* n.v.t. (geflagd).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Bewuste default (ok) | r545, 553]** Isolatie-antwoord leeg -> 'Onbekend': een eerlijk 'weet niet' dat de forfaitaire bouwjaarklasse-route triggert, geen gok. Wel benoemen dat dit een default is (en dat de altijd-truthy-eigenschap de Dakvlak-fallback breekt — zie apart fout-punt).
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Bewuste default (ok) | r686-690]** Plat dak zonder m² -> footprint bovenste verdieping: de default staat letterlijk in de veldnaam '(leeg = footprint bovenste verdieping)' (zelfdocumenterend form) en dak 2/3 krijgen een controle-note. Kanttekening: dak 1 krijgt die note niet (asymmetrie).
+  - *Scenario:* n.v.t. (gedocumenteerde default; exacte-veldnaam-fragiliteit staat als apart fout-punt).
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Rekenregel (ok) | rgeheel bestand]** Enum-gok-check: dit bestand schrijft GEEN VABI-enumcodes, alleen dossier-vocabulaire-strings ('Hout of kunststof', 'Kruipruimte', 'HR++', kompas-letters); de code-mapping gebeurt in de generatoren tegen vabi/refs. Geen enum-gokken aangetroffen. Restrisico: raw doorgegeven strings (orientatie-kolom, glastype uit positionele kolom) kunnen daar onmapbaar aankomen — die gevallen staan hierboven als verzwolgen-invoer.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+
+## vabi/installatie_generate.py — 45 bevindingen (40 verdacht)
+
+- **[HOOG | Sjabloon-lek | r159-160]** Verwarming-Installatiejaar wordt alleen overschreven als het dossier een waarde heeft; sjabloonwaarde 2014 (template r602, Intergas) blijft anders staan. Exact dezelfde klasse fout als de bouwjaar-1994-bug van vandaag.
+  - *Scenario:* Dossier zonder cv-installatiejaar -> EPA rekent met een ketel uit 2014 (verkeerde rendementsklasse/leeftijdsforfait), zonder flag.
+  - *Status:* GEFIXT 13-7: ontbrekend installatiejaar wordt geflagd; tapwater schrijft ook 'Jaar'
+- **[HOOG | Sjabloon-lek | r163-168 + 183-184]** Bij leeg type_opwekker wordt niets geschreven en niets geflagd; sjabloon TypeOpwekker=4 (gasgestookte ketel) + SubType=4 (HR107) blijven (template r603/606). De vangnet-flag op r183 vuurt alleen als merk EN type beide leeg zijn.
+  - *Scenario:* Dossier met alleen merk='Remeha' maar zonder type_opwekker -> import beweert HR107-gasketel zonder enige flag; bij een all-electric woning zonder ingevuld opwekkertype rekent EPA een gasketel.
+  - *Status:* GEFIXT 13-7: leeg opwekkertype wordt luid geflagd
+- **[HOOG | Sjabloon-lek | r153-184 (template r585-613)]** De volledige hulpenergie-kwaliteitsverklaring van de sjabloonketel (HulpenergieId f7ccc4f2..., HulpenergieMerk/Type 'Kombi Kompakt HRE 36/30 | Intergas', HulpenergieCode 20130559GK, constantes A/B/C, HulpenergieInvoermethode=1) wordt NOOIT gewist of overschreven.
+  - *Scenario:* Elke gegenereerde import draagt de Intergas-hulpenergie-KV, ook bij een Remeha- of warmtepomp-dossier -> verkeerde hulpenergie in de labelberekening en een aantoonbaar onjuist projectdossier.
+  - *Status:* AFGEDEKT 13-7: vaste disclaimer-flag (sjabloonwaarden; label-route alles nalopen)
+- **[HOOG | Sjabloon-lek | r188-195 (template r973-1018)]** De tapwater-kwaliteitsverklaring van de sjabloonketel (Kwaliteitsverklaring=1, KV-id 9b7ab76e..., KV-merk Intergas, Rendement 0.850, Code 20120421GK) blijft in elke export staan; de generator raakt deze velden nooit aan.
+  - *Scenario:* Dossier met een Vaillant-geiser -> EPA rekent tapwater met het Intergas-KV-rendement 0,850 en toont een KV die niet bij het toestel hoort.
+  - *Status:* AFGEDEKT 13-7: vaste disclaimer-flag (sjabloonwaarden; label-route alles nalopen)
+- **[HOOG | Verzwolgen invoer | r194-195]** Het tapwater-installatiejaar wordt naar het element 'Installatiejaar' geschreven, maar in de TapwaterOpwekker-node is dat een ongebruikt veld (-1, template r967); het echte jaarveld heet 'Jaar' en houdt de sjabloonwaarde 2014 (r948).
+  - *Scenario:* Dossier tapwater-installatiejaar 2021 -> XML: Installatiejaar=2021 (dood veld) en Jaar=2014 (het veld dat EPA toont/gebruikt) -> adviseur ziet 2014.
+  - *Status:* GEFIXT 13-7: ontbrekend installatiejaar wordt geflagd; tapwater schrijft ook 'Jaar'
+- **[HOOG | Verzwolgen invoer | r145-149]** Het ventilatiesysteemtype uit het dossier (vent.systeem = A/B/C/D/E, core/dossier.py r107) wordt nooit naar de XML geschreven (codes niet geharvest, terecht), maar de flag vuurt ALLEEN als vent.subsysteem_code niet leeg is. Sjabloon Ventilatiesysteem=0/Subsysteem=0 (r198/229) blijft.
+  - *Scenario:* Opname zegt 'systeem C' zonder subsysteem_code -> sjabloontype (index 0) zonder enige flag, terwijl ventilatie juist de kern van het Nij Begun-plan is.
+  - *Status:* GEFIXT 13-7: leeg ventilatiesysteem -> luide note + flag (stuurt de Standaard)
+- **[HOOG | Verzwolgen invoer | r134 + 231-236]** De primaire Koeling (inst.koeling, core/dossier.py r164-174) wordt volledig genegeerd: geen write, geen flag. Alleen koeling_extra wordt geteld in de extra-flag. Sjabloon heeft KoelingAanwezig=0 (template r464). Ironisch: de Koeling-enumcodes ZIJN al geharvest (refs: Koelsysteem/TypeOpwekker/Expansie/Splitsysteem).
+  - *Scenario:* Woning met airco (koeling.aanwezig=True, splitsysteem ingevuld) -> import zegt 'geen koeling', zonder flag -> energielabel mist het koelgebruik.
+  - *Status:* GEFIXT 13-7: aanwezige koeling wordt luid geflagd
+- **[HOOG | Sjabloon-lek | r97-99]** AantalPanelen wordt alleen geschreven bij truthy waarde; sjabloonwaarde 10 panelen (template r1612) blijft anders staan (geldt ook voor elke deepcopy bij meerdere PV-systemen).
+  - *Scenario:* PV aanwezig maar aantal niet ingevuld (of 0) -> EPA rekent 10 panelen zonder flag -> te hoge opbrengst.
+  - *Status:* GEFIXT 13-7: lege PV-velden worden geflagd
+- **[HOOG | Sjabloon-lek | r106-111]** Bij LEGE PV-oriëntatie wordt niets geschreven en niets geflagd (de elif flagt alleen niet-lege, onmapbare tekst zoals 'oost-west'); sjabloon Orientatie=4 = Zuid blijft (template r1613).
+  - *Scenario:* Oriëntatie vergeten in te vullen -> panelen op Zuid = gunstigste opbrengst, zonder flag.
+  - *Status:* GEFIXT 13-7: lege PV-velden worden geflagd
+- **[HOOG | Verzwolgen invoer | r53]** _pv_fabricagejaar: het gedocumenteerde dossier-vocabulaire is 'Voor 2018 | Vanaf 2018' (core/dossier.py r187). 'voor 2018' bevat de substring '2018' en matcht daardoor de regel `if "2018" in s ...` -> code 4 = Vanaf 2018.
+  - *Scenario:* Opname-antwoord 'Voor 2018' -> gecodeerd als 'Vanaf 2018' -> nieuwste (gunstigste) rendementsklasse voor oude panelen.
+  - *Status:* GEFIXT 13-7: 'Voor 2018' -> Onbekend + flag (was: Vanaf 2018!)
+- **[HOOG | Sjabloon-lek | r177-182]** Bij leeg afgifte-veld: geen write en geen flag -> sjabloon Afgiftesysteem=3 (LUCHTVERWARMING) plus het hele VerwarmingAfgifte-blok van de sjabloonwoning (TypeLuchtverwarming=1, 1 ventilator van 460W, template r775-779) blijft staan. Bij 'radiatoren' komt er wel een flag maar blijft de sjabloonwaarde 3 óók in de XML.
+  - *Scenario:* Gewone radiatorenwoning zonder ingevuld afgifte-antwoord -> EPA rekent luchtverwarming met 460W ventilatorvermogen, zonder flag.
+  - *Status:* GEFIXT 13-7: leeg afgifte -> luide flag (sjabloon = luchtverwarming!)
+- **[HOOG | Sjabloon-lek | r130-242 (template r190 en r421)]** Projectspecifieke vrije teksten van de sjabloonwoning worden nooit gewist: Installatie/VerwarmingOpmerkingen 'Kelder behoort tot termische zone, open verbinding (geen deur bij trapopgang)' en Ventilatie/Opmerkingen 'Wel MV box maar geen ventiel in keuken (naast afzuigkap).'
+  - *Scenario:* ELKE gegenereerde import bevat opname-beweringen over andermans woning -> onjuiste bewijslast in het projectdossier (BRL Bijlage 3) en misleiding van de adviseur in Vabi.
+  - *Status:* GEFIXT 13-7: sjabloon-opmerkingen worden gewist
+- **[HOOG | Verzwolgen invoer | r118-123]** _set doet stilzwijgend NIETS als de tag geen direct child is (c is None -> return). Dit maskeert aantoonbaar drie dode writes in dit bestand (zie bevindingen over Ventilatie-Merk/Type/Installatiejaar, TapwaterInstallatie en AangeslotenOp) en elke toekomstige tikfout in een veldnaam.
+  - *Scenario:* Een correct dossierveld wordt 'geschreven', niemand ziet dat het nergens landt; sjabloonwaarde blijft in de import.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r142-144]** Dode writes: Merk/Type/Installatiejaar zijn GEEN directe kinderen van de Ventilatie-node maar zitten in de Ventilatiesysteem-subnode (template r224-226). ET.find matcht alleen directe kinderen -> _set no-opt; dossier-merk/type/jaar van de ventilatie-unit verdwijnen spoorloos.
+  - *Scenario:* Opname met mv-box 'Itho CVE-S 2019' -> import bevat lege Merk/Type en Installatiejaar=0; adviseur denkt dat de data is meegekomen.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r197-199]** Dubbel defect: (a) element 'TapwaterInstallatie' bestaat niet in de sjabloon -> fallback op de TapwaterOpwekker-node, die geen TypeInstallatie-kind heeft -> write no-opt (echte veld: Tapwatersysteem/TypeInstallatie, template r1211); (b) alleen 'individueel' wordt behandeld — 'collectief'/'warmtelevering' geeft geen write en geen flag.
+  - *Scenario:* Collectief tapwatersysteem in het dossier -> import zegt individueel (sjabloonwaarde 0), zonder flag; zelfs 'individueel' komt alleen goed door omdat de sjabloon toevallig 0 bevat.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r94-96]** Als _pv_bouwintegratie None teruggeeft (leeg of onherkend antwoord) wordt Bouwintegratie niet gezet -> sjabloonwaarde 2 = 'Sterk geventileerd' blijft (template r1596), terwijl 3=Onbekend gewoon geharvest is.
+  - *Scenario:* Bouwintegratie niet ingevuld -> gunstigste ventilatieklasse achter de panelen, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r103-105]** Hellingshoek alleen geschreven als niet-None; sjabloonwaarde 35 graden blijft anders (template r1607).
+  - *Scenario:* PV op plat dak in opzetframes, hoek niet gemeten -> 35 graden aangenomen zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r155-158 + 183-184]** Merk en Type worden per stuk alleen bij waarde overschreven; sjabloon 'Intergas'/'Kombi Kompakt HRE 36/30' (template r600-601) blijft bij een leeg veld. De flag op r183 vuurt alleen als BEIDE leeg zijn.
+  - *Scenario:* Dossier met type maar zonder merk -> import zegt Merk=Intergas bij een ander toestel, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r190-193]** Tapwater heeft GEEN tegenhanger van de verwarming-vangnet-flag (r183-184): bij leeg merk+type blijft 'Intergas'/'Kombi Kompakt HRE 36/30' + Jaar 2014 (template r946-948) staan zonder enige flag.
+  - *Scenario:* Dossier zonder tapwater-gegevens -> import bevat een compleet verzonnen Intergas-combitoestel uit 2014.
+  - *Status:* GEFIXT 13-7: schrijft ook naar het echte 'Jaar'-veld
+- **[MIDDEL | Sjabloon-lek | r208-210]** Gaskeur wordt alleen gezet bij 'cw'-antwoord; bij 'Zonder Gaskeur' of leeg blijft sjabloon Gaskeur=3 (Gaskeur CW, template r953). Bovendien wordt dossier.cw_klasse (core/dossier.py r154) nooit geschreven -> sjabloon CwKlasse=3 (r954) geldt altijd.
+  - *Scenario:* Toestel zonder Gaskeur -> import claimt Gaskeur CW klasse 3 -> gunstiger tapwaterrendement dan werkelijk, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Enum-gok | r202-204]** 'compleet' -> TypeToestel='2' is nergens in refs bevestigd. installatie_enums_EPA.md zegt juist: 'Compleet toestel' is een waarde van het veld TypeOpwekker (=0), niet van TypeToestel; TypeToestel gebruikt GLOBALE codes (alleen combitoestel=10 en warmtepompboiler=4 bevestigd).
+  - *Scenario:* Dossier type_toestel='Compleet toestel' -> TypeToestel=2, betekenis in EPA onbekend/mogelijk 'Indirect verwarmd vat' -> verkeerd toesteltype.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Enum-gok | r62 + 169-171]** VERW_SUBTYPE: alleen HR107=4 is export-bevestigd; CR=0/VR=1/HR100=2/HR104=3 zijn dropdown-volgorde-aannames. SubType is een CONDITIONELE sublijst en de eigen refs-les (r74-75) waarschuwt dat juist die lijsten GLOBALE codes kunnen hebben (BronWarmtepomp-les).
+  - *Scenario:* VR-ketel -> SubType=1; als de globale code afwijkt van de dropdown-index rekent EPA een ander keteltype.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Enum-gok | r28 + 140-141]** SYSTEEM_SOORT: 'collectief'/'gemeenschappelijk' -> '1' voor Ventilatie/Systeem staat NIET in installatie_enums_EPA.md (dat documenteert alleen Verwarming- en Koeling-Systeem 0-3). Alleen 0=individueel is indirect bevestigd (sjabloonwoning).
+  - *Scenario:* Collectief ventilatiesysteem -> code 1 geschreven op basis van analogie, niet van een echte export; bij afwijkende codering enum-mismatch of verkeerd systeemtype.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r169-171]** Onherkend subtype (bv. 'lucht-water' uit het dossier-vocabulaire, core/dossier.py r131) -> geen write, geen flag -> sjabloon SubType=4 (HR107) blijft.
+  - *Scenario:* Dossier subtype='lucht-water' (warmtepomp-indicator) -> import houdt HR107-subtype zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r151-184 (dossier r135-140)]** Dossiervelden distributiemedium, aanvoertemperatuur, type_distributie en regeling worden nooit geschreven en nooit geflagd, terwijl de codes WEL geharvest zijn (refs: Distributiemedium 0/1, WaterAanvoertemperatuur 0-8, TypeDistributie 0/1, Regeling 0-3). Sjabloon houdt DistributieMedium=1 'Geen (lokaal)' (template r791) — passend bij de luchtverwarming-sjabloonwoning, fout voor een cv-wonig.
+  - *Scenario:* Radiatorenwoning met water 70/55 -> import zegt 'geen distributiemedium' -> distributieverliezen ontbreken, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r151-184 (dossier r125)]** Verwarming.systeem (Individueel/Gemeenschappelijk/Warmtelevering) wordt nooit geschreven ondanks LIVE geharveste codes (refs r27: 0-3); sjabloon Verwarmingsysteem=0 blijft.
+  - *Scenario:* Woning op een warmtenet ('Warmtelevering derden') -> import zegt individueel gasgestookt systeem, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r37-44]** _pv_paneeltype-fallback '0' = Kwaliteitsverklaring is semantisch fout voor onbekende types: het dossier-vocabulaire 'Dunne film' en 'Onbekend' (core/dossier.py r186) matcht geen enkel keyword en wordt dus een KV-invoer, terwijl refs 7=Onbekend kristallijn/8=Onbekend amorf kennen. Extra: 'Multi-junctie amorf' bevat 'multi' en wordt 2=Multikristallijn i.p.v. 4.
+  - *Scenario:* pv_type='Onbekend' -> EPA verwacht een BCRG-kwaliteitsverklaring die er niet is; 'Dunne film' verdwijnt in dezelfde put.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r223-227]** Bij meerdere PV-systemen kopieert copy.deepcopy ook de Guid van de sjabloonnode -> twee of meer ZonneEnergie-knopen met identieke Guid 08acc3a7... in één import.
+  - *Scenario:* Dossier met 2 PV-systemen -> EPA kan de tweede node negeren/samensmelten of op een guid-conflict stuiten; niet-deterministisch importgedrag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r84-111]** Zonneboiler/opslag (sys_code 2/3): de sub-enums (TypeCollector, TypeOpslag, vatvolumes) zijn per refs niet geharvest en worden niet gezet, maar er is OOK GEEN flag; bovendien blijven de PV-sjabloonvelden in dezelfde unified node staan (10 panelen/35 graden/Zuid) omdat de PV-branch (r91) wordt overgeslagen maar aantal/hoek/oriëntatie-writes conditioneel zijn.
+  - *Scenario:* Dossier met zonneboiler -> ZonneEnergiesysteem=2 met daaronder collector-velden op -1 en spookwaarden AantalPanelen=10/Hellingshoek=35 uit de sjabloon, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r186-213 (dossier r155-160)]** Tapwater-dossiervelden open_verbranding, dwtw_aanwezig, circulatieleiding, lengte_keuken en lengte_badkamer worden nooit geschreven en niet geflagd. Sjabloon houdt de projectwaarden LeidinglengteNaarKeuken=2 / NaarBadkamer=1 (template r1200-1201) en OpenVerbrandingstoestel=0.
+  - *Scenario:* Woning met open geiser (open_verbranding=True) of aanwezige douche-wtw -> import weerspiegelt het niet; leidinglengteklassen van de sjabloonwoning gelden stilzwijgend voor elke woning.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r137-138]** Als het dossier helemaal geen ventilatie-object heeft (vent is None) wordt niets geschreven EN niets geflagd: de complete sjabloonventilatie (Systeem=0, type-index 0, Bron=1, opmerkingen-tekst) gaat ongemerkt mee.
+  - *Scenario:* CSV zonder ventilatie-antwoorden -> import bevat het ventilatiesysteem van de sjabloonwoning zonder enige actiepunt-regel.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r137-149 (dossier r112-117)]** Ventilatie-detailvelden uit het dossier (wtw_rendement_pct, co2_sturing, zelfregelend, tijdsturing, passieve_koeling, kwaliteitsverklaring) worden nooit geschreven en niet geflagd; sjabloonvelden (TypeWtw=-1, RendementKvWtw=0, IsSysteemVoorzienVanPassieveKoeling=0) blijven.
+  - *Scenario:* Balansventilatie met 95% wtw-rendement en CO2-sturing in de opname -> import bevat er niets van; het (voor Nij Begun bepalende) ventilatiebeeld is stil onvolledig.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r211-213]** AangeslotenOp is geen kind van TapwaterOpwekker maar van Tapwatersysteem (template r1235) -> dode write. Resultaat is nu toevallig correct omdat de sjabloon al 0 bevat.
+  - *Scenario:* Dossier 'aangesloten op: badkamer' zou (na toekomstige uitbreiding) nergens landen; nu al schrijft de code aantoonbaar naar het verkeerde niveau.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Enum-gok | r172-176]** OpstelplaatsOpwekker 'buiten' -> '1': refs bevestigen alleen 0=Binnen thermische zone uit export; '(1=Buiten)' is een dropdown-index-aanname op een binaire lijst.
+  - *Scenario:* Opwekker buiten -> code 1; risico klein (binaire dropdown) maar formeel niet export-bevestigd.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r54]** _pv_fabricagejaar-fallback '5' = Onbekend zonder flag. Semantisch eerlijk (Onbekend IS de lege waarde in EPA), maar de adviseur hoort niet dat het veld leeg was.
+  - *Scenario:* Leeg fabricagejaar -> Onbekend gecodeerd; adviseur checkt het niet na omdat er geen actiepunt is.
+  - *Status:* GEFIXT 13-7: 'Voor 2018' -> Onbekend + flag (was: Vanaf 2018!)
+- **[LAAG | Stille default | r84]** Leeg/onherkend pv.systeem valt terug op code '0' = PV-panelen zonder flag (de node bestaat alleen als het dossier een systeem heeft, dus impact beperkt).
+  - *Scenario:* systeem='zonnepanelen op carport' -> geen keyword-match op pvt/zonneboiler/opslag -> PV aangenomen; meestal juist, maar stil.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r100-102]** Ontbrekend paneeloppervlak laat sjabloon OppervlakPaneel=0.00 staan (eerlijk leeg), maar zonder luide flag dat het PV-oppervlak mist.
+  - *Scenario:* PV met aantal maar zonder m2 per paneel -> EPA rekent 0 m2 PV of weigert; adviseur ziet geen actiepunt.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Verzwolgen invoer | r72-78]** _pv_bouwintegratie: de 'geïntegreerd'-check heeft voorrang op 'matig'/'goed'; een antwoord dat beide woorden bevat wordt 0=Niet geventileerd. Met het huidige dossier-vocabulaire ('Goed/Matig geventileerd' resp. 'Niet geventileerd (geïntegreerd)') gaat het toevallig goed.
+  - *Scenario:* Toekomstige MagicPlan-optie 'Geïntegreerd, goed geventileerd' -> code 0 i.p.v. 2.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r140-141]** Onherkende systeem_soort-tekst (niet individueel/collectief/gemeenschappelijk) -> geen write, geen flag; sjabloon Systeem=0 (individueel) blijft.
+  - *Scenario:* systeem_soort='gedeeld met buren' -> stil individueel.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r34 + 57-58]** Dode code: PV_BOUWINTEGRATIE (r34) en _pv_code (r57) worden nergens gebruikt; de echte mapping loopt via _pv_bouwintegratie. Verwarrend bij review omdat de dict 'sterk'->'2' suggereert dat die tabel actief is.
+  - *Scenario:* Toekomstige bewerker past de ongebruikte dict aan en verwacht effect; geen directe runtime-fout.
+  - *Status:* OPEN — reviewen
+- **[OK | Rekenregel (ok) | r32-33, 92-93, 105-108]** PV-enum-mappings zijn optie (b) uit de eis, aantoonbaar EPA-geharvest (installatie_enums_EPA.md): ZonneEnergiesysteem 0-3, paneeltype-codes 1/2/3/5/6, fabricagejaar-brackets 0-5, bouwintegratie 0-3, Orientatie 0-7 (PV-klokrichting, correct onderscheiden van geometrie), Hellingshoek als rauwe graden (geen enum).
+  - *Scenario:* n.v.t. (geverifieerde mapping); alleen de fallbacks erboven zijn fout.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r165, 171 (HR107), 174, 179, 199, 202, 210, 213]** EPA-geharveste ankercodes correct toegepast: gasketel TypeOpwekker=4, HR107 SubType=4, binnen-opstelplaats=0, luchtverwarming-afgifte=3, tapwater individueel TypeInstallatie=0, combitoestel TypeToestel=10, Gaskeur CW=3, AangeslotenOp hele woning=0 — allemaal in refs bevestigd (al zijn twee van deze writes dode letters, zie de verzwolgen-invoer-bevindingen).
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Geflagd (ok) | r109-111, 147-149, 166-168, 181-182, 183-184, 205-207, 231-236]** Bestaande flags conform golden rule: PV oost-west/plat-oriëntatie; ventilatie-subsysteem uit sjabloon (als subsysteem_code bekend); warmtepomp/WKK/biomassa niet auto-gecodeerd; onbekend afgiftesysteem; verwarming volledig uit sjabloon (merk+type leeg); tapwater-toestel niet gecodeerd; extra (2e/3e) installaties alleen exemplaar 1 gewired. Kanttekening: bij meerdere hiervan blijft de concrete sjabloonwaarde in de XML staan naast de flag — de eis wil leeg + flag (zie hoog-bevindingen).
+  - *Scenario:* n.v.t. voor de flag zelf.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Bewuste default (ok) | r86, 220-221, 239-241]** Bewuste, onschadelijke defaults: PV-Naam-fallback 'PV-systeem' (vrije tekst); geen PV in dossier -> sjabloon-PV-node wordt verwijderd (geen fantoom-PV, expliciet ontwerpbesluit); installatienaam vaste tekst 'Installatie (uit MagicPlan-opname)'. Benoemd als default; geen rekenkundig effect.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Rekenregel (ok) | r65-69]** _norm_orient is pure tekstnormalisatie (noordoost->no etc.), geen aanname; voedt de geharveste PV_ORIENTATIE-tabel.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+
+## vabi/objecten_generate.py — 42 bevindingen (26 verdacht)
+
+- **[HOOG | Sjabloon-lek | r341-342]** Renovatiejaar wordt alleen geschreven 'if rj:' — exact hetzelfde patroon als de bouwjaar-1994-bug van 12-7. Er is geen else-tak die het veld op 0 zet + flagt. Het huidige sjabloon heeft toevallig Renovatiejaar=0 (regel 188 van refs/objecten_template.xml), maar zodra het sjabloon ooit ververst wordt met een export van een gerenoveerd project lekt dat renovatiejaar stil mee. Renovatiejaar stuurt in VABI de forfaitaire Qv10 en Rc-forfaits.
+  - *Scenario:* Sjabloon wordt vervangen door een export van een project met Renovatiejaar=2005; dossier zonder renovatiejaar -> VABI rekent qv10/forfaits alsof de woning in 2005 gerenoveerd is, zonder enige melding.
+  - *Status:* GEFIXT 13-7: wordt altijd expliciet geschreven (leeg -> 0)
+- **[HOOG | Sjabloon-lek | r187-190 + 265-267]** Perimeter wordt alleen overschreven als per is not None en >0. Het vloer-sjabloonvlak (objecten_template.xml regels 529-530) bevat Perimeter=28.14 met AutoPerimeter=0 (= HANDMATIGE perimeter). Elke gekloonde vloer zonder eigen perimeter houdt dus stil de 28,14 m randverlies-perimeter van de sjabloonwoning, in handmatige modus (VABI rekent hem niet zelf uit).
+  - *Scenario:* Vloer op grond, dossier zonder perimeter_m (of met begrenzing die niet in ('grond','kruip','kelder') matcht) -> VABI rekent randverlies met 28,14 m van de sjabloonwoning i.p.v. de echte omtrek; bij een klein appartement een fors te groot randverlies, zonder melding.
+  - *Status:* GEFIXT 13-7: vloer zonder meting -> Perimeter 0.00 + AutoPerimeter=1 + actie
+- **[HOOG | Sjabloon-lek | r264-271]** GrenstAan: de issue wordt alleen toegevoegd 'if begr and gc is None' — een LEGE begrenzing geeft gc=None ZONDER flag, waarna de sjabloonwaarde blijft staan. Het vloer-sjabloonvlak heeft GrenstAan=3 (kruipruimte, template regel 523); gevel/dak-sjabloon heeft 0 (buitenlucht). Een vloer zonder ingevulde begrenzing wordt dus stil 'grenst aan kruipruimte'.
+  - *Scenario:* Vloer boven een onverwarmde kelder of boven buitenlucht (poort) waarvan de begrenzing in MagicPlan leeg bleef -> VABI rekent met kruipruimte-randvoorwaarden (incl. sjabloon-BodemisolatieKruipruimte=2) zonder enige melding.
+  - *Status:* GEFIXT 13-7: ook lege begrenzing wordt luid geflagd
+- **[HOOG | Sjabloon-lek | r374-403 (m.n. 375)]** Het hele Verdiepingen/AantalBouwlagen-blok draait alleen 'if ag > 0 or vlagen:'. Heeft het dossier geen Ag en geen per-verdieping-metingen, dan blijven de SJABLOON-verdiepingen staan: 3 bouwlagen met 28.86/94.51/62.00 m2 (samen ~185 m2, template regels 202-216) en AantalBouwlagenRekenzone=3 (regel 247). Geen flag.
+  - *Scenario:* Dossier zonder gebruiksoppervlakte (bv. handmatig aangemaakt of CSV-parse-gat) -> VABI rekent de 60 m2-woning met de 185 m2 en 3 bouwlagen van de sjabloonwoning; energiebehoefte per m2 klopt van geen kant, zonder melding.
+  - *Status:* GEFIXT 13-7: geen Ag/metingen -> 1 laag met 0.00 + luide actie
+- **[HOOG | Stille default | r315-321 (comment 298)]** Deelvlak-plaatsing: een raam/deur/paneel wordt alleen op oriëntatie gematcht bij EXACTE string-gelijkheid (lowercased) tussen s.orientatie en de gevel-orientatie; bij geen match (raam zonder oriëntatie, of 'zuid' vs 'z', of dakraam-orientatie die niet op een dakvlak matcht) valt hij ZONDER flag op round-robin (placed % len(doelen)) — een willekeurige gevel. Het deelvlak erft de oriëntatie van dat hoofdvlak, dus de zonwinst wordt op de verkeerde windrichting gerekend.
+  - *Scenario:* Groot zuidraam (6 m2) zonder oriëntatie in de CSV -> round-robin plaatst het in de noordgevel -> VABI rekent de zontoetreding op noord; label/warmtebehoefte wijken af zonder dat de adviseur iets ziet.
+  - *Status:* GEFIXT 13-7: plaatsing zonder/meervoudige match wordt geflagd
+- **[HOOG | Verzwolgen invoer | r201-215 + 323-324]** _add_deelvlak retourneert False als gt.deelvlak None is (sjabloon bevat nergens een Deelvlak) of als het gekozen hoofdvlak geen DeelvlakList heeft. Op de aanroepplek (regel 323) wordt bij False alleen 'placed' niet opgehoogd — er komt GEEN issue. Het raam/de deur verdwijnt dan geluidloos uit de VABI-XML.
+  - *Scenario:* Sjabloon wordt ooit ververst met een export zonder ramen (of de vloer-fallback-route levert een hoofdvlak zonder DeelvlakList) -> alle ramen en deuren ontbreken in de import; verliesoppervlak veel te klein, geen melding (alleen een lager 'geplaatst'-getal in de stdout-stats).
+  - *Status:* GEFIXT 13-7: mislukte plaatsing -> luide actie
+- **[MIDDEL | Sjabloon-lek | r97-121 + 290-292]** _locatie_code geeft None (a) bij een gevel zonder naam-token wanneer 'Oriëntatie voorgevel' leeg of niet-KOMPAS8 is, en (b) bij een DIAGONALE gevel (45 graden t.o.v. de voorgevel: d in {1,3,5,7} valt buiten de map {0,4,2,6}). Bij None wordt Locatie niet gezet en blijft de kloon-default Locatie=2 (Voorgevel-tab, gevel-sjabloon regel 283) staan — precies bug #5 van vandaag, maar dan stil voor deze restgevallen. Er wordt geen issue geappend.
+  - *Scenario:* Hoekwoning met voorgevel Z en een schuine erker-gevel ZO -> d=1 -> None -> die gevel verschijnt op het Voorgevel-tabblad; of: 'Oriëntatie voorgevel' vergeten in te vullen -> ALLE niet-benoemde gevels weer op Voorgevel, zonder melding.
+  - *Status:* GEFIXT 12-7 (d1247c9): Locatie-tabbladen per vlak
+- **[MIDDEL | Sjabloon-lek | r274-280]** Dak-Hellingshoek: hc blijft None wanneer het dak geen 'plat' in subtype heeft EN hellingshoek None is; dan blijft de sjabloonwaarde van het dak-sjabloonvlak staan: Hellingshoek=3 = 'Dak hellend' (template regel 1407). Een plat dak dat zonder subtype/hellingshoek binnenkomt wordt dus stil hellend. De comment (272-273) documenteert alleen het gevel-geval.
+  - *Scenario:* Plat dak uit een handmatig dossier of een parser-pad dat subtype niet vult en geen hellingshoek meegeeft -> VABI behandelt het als hellend dak, zonder flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r259-260]** Dak-oriëntatie: bij een dak waarvan de orientatie niet in ORIENTATIE_CODE matcht (leeg, 'zuid' voluit, typefout) wordt zonder flag Orientatie=-1 (horizontaal) gezet. Voor een plat dak is dat correct (rekenregel), maar voor een HELLEND dakvlak met onherkenbare oriëntatie is horizontaal fout. Vergelijk: de gevel-variant (261-262) flagt dit wél.
+  - *Scenario:* Hellend zuiddakvlak met orientatie 'Zuid' (voluit) i.p.v. 'z' -> Orientatie=-1; i.c.m. Hellingshoek=3 een inconsistente invoer; PV-/zonwinst-relevantie en transmissie kloppen niet, geen melding.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r355-363]** Thermische massa: alleen een NIET-lege onbekende waarde wordt geflagd (elif w:). Is het form-antwoord leeg, dan blijven TypeBouwwijzeWanden/TypeBouwwijzeVloeren stil op de sjabloonwaarde van de kloonwoning staan (geen flag). De enum-codes 0/1/2 zelf zijn live geverifieerd — het gaat puur om het lege-invoer-pad.
+  - *Scenario:* Houtskeletbouw-woning (Licht) waarvan de opnemer het massa-veld leeg liet -> sjabloonwaarde (bv. 1=Zwaar) blijft staan -> warmteaccumulatie te gunstig gerekend, zonder melding.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r417-422]** Gebouwtype/Ligging: er komt alleen een issue 'if wt:'. Is woningtype leeg in het dossier, dan blijft het sjabloon-Gebouwtype stil staan en is er ook GEEN actiepunt. Het bewuste niet-zetten van de enum (golden rule) is prima, maar de flag hoort er ook bij ontbrekend woningtype te zijn.
+  - *Scenario:* Dossier zonder woningtype -> adviseur krijgt geen 'zet woningpositie handmatig'-actiepunt en het sjabloon-gebouwtype (van de kloonwoning) blijft ongemerkt staan; hoekwoning gerekend als tussenwoning of vice versa.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r418-434]** Daktype: bij leeg type_dak (td == '') wordt de hele tak overgeslagen — geen dt_node-set en geen issue. Sjabloon-Daktype=0 (Hellend dak, template regel 2367) blijft dan stil staan.
+  - *Scenario:* Woning met plat dak waarvan 'Type dak' in het form leeg bleef -> VABI-Daktype blijft 'Hellend dak' van de sjabloonwoning, zonder melding.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Stille default | r425-428]** Daktype-heuristiek: elke tekst met 'plat' die niet letterlijk 'deels plat'/'gedeeltelijk plat' bevat wordt code 2 (Plat dak/zonder kap) — óók samengestelde types. En 'schild' staat niet in de hellend-keywordlijst ('hellend','zadel','lessenaar','punt'), terwijl Schilddak een standaard form-optie is; die valt nu op de niet-herkend-flag (dat pad is tenminste geflagd).
+  - *Scenario:* type_dak='Zadeldak met plat deel' -> bevat 'plat', niet 'deels plat' -> code 2 (volledig plat/zonder kap) i.p.v. 1 (Deels plat), ZONDER flag. En elke schilddak-woning genereert onnodig handwerk via de niet-herkend-flag.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Sjabloon-lek | r169-198 (i.c.m. template r463-465, 355-357, 531, 535-537)]** Kloon-restvelden: _build_hoofdvlak/_add_deelvlak vervangen de Constructie-ref maar laten de gecachte vlak-niveau-velden staan: Hoofdvlak Rc=2.50/U/G (template regel 463-465), Deelvlak U=2.90/G=0.75 (355-357), en vloer-specifiek BodemisolatieKruipruimte=2 (531), AanwezigheidVentilatieKruipruimte=-1/VentilatieKruipruimte (535-536), VloerOpBovenMaaiveld=1 (537), DiepteVloerOnderMaaiveld. Voor geen van deze velden bestaat dossier-invoer of een flag. Of EPA de Rc/U/G-cache bij import herrekent uit de constructie-ref is niet gedocumenteerd/geverifieerd.
+  - *Scenario:* Als EPA de gecachte U=2.90/G=0.75 leest i.p.v. de HR++-constructie waarnaar het deelvlak verwijst, rekent elk raam met dubbelglas-waarden. En elke vloer krijgt stil 'bodemisolatie kruipruimte'-klasse 2 van de sjabloonwoning mee.
+  - *Status:* OPEN — reviewen
+- **[MIDDEL | Verzwolgen invoer | r265-267 + 187]** Een GEMETEN vloer-perimeter (perimeter_m) wordt weggegooid zodra de begrenzing-string geen 'grond'/'kruip'/'kelder' bevat — dus ook wanneer de begrenzing simpelweg LEEG is. per wordt None, de meting bereikt VABI nooit, en er is geen flag (en de sjabloonperimeter 28.14 blijft staan, zie de aparte bevinding).
+  - *Scenario:* Opnemer meet de perimeter (24 m) maar het begrenzing-veld blijft leeg -> perimeter verdwijnt geluidloos; VABI rekent randverlies met de sjabloon-28.14 m.
+  - *Status:* GEFIXT 13-7: vloer zonder meting -> Perimeter 0.00 + AutoPerimeter=1 + actie
+- **[MIDDEL | Verzwolgen invoer | r374-395]** Verdiepingen: n_lagen = max(len(geom.vloeren), len(vlagen), 1) telt OOK vloeren zonder m2 (>0-filter zit alleen op vlagen, regel 374), maar de Verdieping-knopen worden alleen uit vlagen gebouwd. Een vloer met 0/lege oppervlakte valt dus stil uit de Verdiepingen-lijst terwijl AantalBouwlagenRekenzone hem wél meetelt — inconsistente invoer, en de weggevallen laag krijgt geen eigen flag (de som-flag op 397-400 noemt alleen de gemeten lagen).
+  - *Scenario:* 3 vloeren in het dossier waarvan de zolder geen m2 heeft -> AantalBouwlagenRekenzone=3 maar slechts 2 Verdieping-knopen; Ag-som mist de zolderlaag; adviseur ziet alleen een som-flag zonder dat de ontbrekende laag benoemd is.
+  - *Status:* GEFIXT 13-7: lagen zonder m² niet meegeteld + actie
+- **[MIDDEL | Stille default | r254 + 322]** Oppervlakte: area = float(getattr(s,'oppervlakte_m2',0) or 0) — een schildeel zonder oppervlakte wordt als 0.00 m2-vlak/deelvlak weggeschreven ZONDER flag. Dat voldoet aan de '0/leeg'-helft van de eigenaars-eis maar mist de verplichte LUIDE flag; een 0 m2-gevel telt niet mee in het verliesoppervlak en valt in Vabi nauwelijks op.
+  - *Scenario:* CSV-parse-gat laat oppervlakte_m2 leeg voor de achtergevel -> VABI-import bevat een achtergevel van 0.00 m2 -> verliesoppervlak stil te klein; de adviseur ziet hooguit toevallig een 0 in de vlakkenlijst.
+  - *Status:* GEFIXT 13-7: 0-m²-vlakken krijgen een luide actie
+- **[LAAG | Enum-gok | r61-68]** ORIENTATIE_CODE: per de eigen comment zijn alleen ZW=1, NW=3, N=4, NO=5, ZO=7 geverifieerd uit code_universe.json; Z=0, W=2, O=6 zijn geINTERPOLEERD via de kompasrotatie-aanname. De 5 ankers passen weliswaar exact op één rotatiepatroon (sterke onderbouwing), maar de 3 codes zijn niet aantoonbaar uit een echte export en er is geen flag.
+  - *Scenario:* Mocht VABI Z/W/O toch anders coderen (onwaarschijnlijk maar niet aangetoond), dan staan alle zuid-, west- en oostgevels op een verkeerde orientatie zonder melding.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Enum-gok | r71-91 + 132-133]** GrenstAan-codes 1 (Water), 7 (Onverwarmde kelder), 8 (AVR) en 9 (Ander gebouw) zijn per de eigen comment NIET probe-bevestigd maar afgeleid 'uit de bevestigde dropdown-volgorde'. Code 8 (AVR) wordt op regel 133 zonder flag daadwerkelijk geschreven zodra een buurwand tóch in de schil zit; 7 en 9 idem via GRENST_AAN_CODE.
+  - *Scenario:* Als de dropdown-index-aanname voor de niet-geprobeerde posities toch afwijkt, krijgt een vloer boven een onverwarmde kelder een verkeerde begrenzingscode zonder melding.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r243]** is_basis: 'detail' not in type_advies — bij een LEEG/ontbrekend opname/type_advies wordt stilzwijgend basisopname aangenomen, waardoor AOR/AOS/ASGR-begrenzingen als buitenlucht (0) worden gecodeerd. De regel zelf is ISSO-conform, maar de keuze basis-vs-detail wordt zonder flag genomen.
+  - *Scenario:* Adviseur doet een detailopname maar type_advies is niet gezet -> AOR-vlakken krijgen code 0 i.p.v. 4, zonder melding.
+  - *Status:* GEFIXT 13-7: ook lege begrenzing wordt luid geflagd
+- **[LAAG | Verzwolgen invoer | r306-307]** Dakraam-detectie hangt volledig aan de substring 'dakraam' in s.subtype. Een dakraam dat via een ander pad binnenkomt (subtype leeg, 'tuimelvenster', naam-only) wordt stil als gevelraam behandeld en in een gevel geplaatst — zonder flag (de flag op 308-310 dekt alleen het geval dakraam-herkend-maar-geen-dakvlak).
+  - *Scenario:* Parser levert een dakraam met subtype '' -> raam belandt in een gevel-hoofdvlak; hellingshoek/orientatie van het dakvlak (relevant voor zonwinst) gaan verloren, geen melding.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r316-317]** Bij de orientatie-match wint altijd de EERSTE gevel met die orientatie (next(...)). Hebben twee gevels dezelfde orientatie (L-vormige woning, kopgevel + hoofdgevel), dan belanden ALLE ramen van die orientatie in de eerste — de orientatie klopt, maar de raam-verdeling per vlak (en dus netto-gevel-m2 per vlak) niet. Geen flag.
+  - *Scenario:* Twee zuidgevels van 20 en 8 m2; 6 m2 raam hoort in de kleine -> alles in de grote geplaatst; per-vlak netto-oppervlakken kloppen niet (totaal wel).
+  - *Status:* GEFIXT 13-7: plaatsing zonder/meervoudige match wordt geflagd
+- **[LAAG | Verzwolgen invoer | r39-43 (patroon; risico bij 154-160)]** _set schrijft alleen als de tag al in de gekloonde knoop bestaat; ontbreekt de tag (sjabloon-drift na een EPA-versie-update, of de gevel-als-vloer-fallback van GeoTemplates regels 154-160), dan verdwijnt de dossierwaarde geluidloos — geen exception, geen flag, en de aanroepers checken de returnwaarde nergens.
+  - *Scenario:* Nieuwe EPA-versie hernoemt 'Qv10Waarde' -> gemeten qv10 bereikt de XML nooit; import slaagt, VABI rekent forfaitair, niemand merkt het.
+  - *Status:* GEFIXT 13-7: vloer zonder meting -> Perimeter 0.00 + AutoPerimeter=1 + actie
+- **[LAAG | Verzwolgen invoer | r328-330]** Als de rekenzone-Algemeen-knoop (met Bouwjaar) niet gevonden wordt (alg is None), wordt het VOLLEDIGE blok 3 — bouwjaar, renovatiejaar, qv10, thermische massa, Ag/Verdiepingen — stil overgeslagen. Geen exception, geen issue. Het sjabloon is weliswaar onder eigen beheer, maar bij een sjabloonwissel faalt dit onhoorbaar.
+  - *Scenario:* Sjabloon-verversing waarbij de structuur nét anders is -> import slaagt met ALLE Algemeen-waarden van de sjabloonwoning (incl. Bouwjaar 1994-achtige lekken die juist gefixt waren).
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r137-160]** GeoTemplates: (a) ontbreekt een dak- of vloer-Hoofdvlak in het sjabloon, dan wordt stil het gevel-sjabloon gebruikt (regels 154-160) — met gevel-restvelden (geen kruipruimte-context) en zonder flag; (b) als sjabloon-Deelvlak wordt de EERSTE Deelvlak in het bestand gepakt (147-153): alle zonwering-/belemmering-/overstek-velden van dat ene raam erven mee in ELK gegenereerd raam. In het huidige sjabloon is die eerste toevallig 'schoon' (Overstek=0), maar Deelvlak Index 2 (template regels 441-443) heeft Overstek=1 met maten — een sjabloonwissel kan dus stil elke raam een overstek geven.
+  - *Scenario:* Sjabloon ververst met een export waar het eerste raam zonwering + overstek heeft -> alle gegenereerde ramen krijgen die zonwering/overstek, zonder melding; zonwinst structureel te laag.
+  - *Status:* OPEN — reviewen
+- **[LAAG | Stille default | r176-177 + 211-213]** NettoOppervlakte wordt gelijk aan de bruto-oppervlakte gezet, waarna deelvlakken (ramen/deuren) worden TOEGEVOEGD zonder de netto te verlagen. In het echte sjabloon is Netto = Bruto minus deelvlak-m2 (32.76 vs 22.63, template regels 309-311). Vermoedelijk herrekent EPA dit bij import, maar dat is niet gedocumenteerd/geverifieerd; zo niet, dan telt raam-m2 dubbel in het verliesoppervlak.
+  - *Scenario:* Gevel 30 m2 met 8 m2 raam -> Netto blijft 30.00 in de XML; als EPA de cache leest i.p.v. herrekent: 8 m2 dubbel geteld.
+  - *Status:* GEFIXT 13-7: netto = bruto - deelvlakken (zoals de echte export)
+- **[OK | Geflagd (ok) | r250-251 + 311-314]** Schildelen zonder constructie-mapping (m is None) worden uit de geometrie weggelaten. Dit is INDIRECT geflagd: resolve_constructies (constructie_generate.py regels 177, 199) flagt 'onbekend type'/'geen passende standaard-constructie' en die issues komen via regel 221 in dezelfde lijst. Nuance: de flag benoemt niet dat het vlak ook uit de GEOMETRIE verdwijnt (verliesoppervlak te klein); overweeg dat toe te voegen aan de issue-tekst.
+  - *Scenario:* n.v.t. (geflagd) — al zou een adviseur die de flag leest als 'alleen een constructie-probleem' kunnen missen dat het vlak volledig ontbreekt in de import.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r331-340]** Bouwjaar: bij ontbreken wordt expliciet 0 gezet + luide issue ('BOUWJAAR ONTBREEKT') — de fix van bug #1 van 12-7, volledig conform de eigenaars-eis (0/leeg + luide flag).
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r404-416]** Gebouwhoogte: alleen de handmatige opname-invoer (gebouwhoogte_m); geen gevelhoogte-fallback meer (fix bug #3) en bij ontbreken 0 + luide issue. Conform de eis.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r343-351]** Qv10: alleen geschreven als qv10_gemeten expliciet True is (directe conversie); een ingevulde-maar-niet-gemeten waarde wordt genegeerd MET issue (ISSO 7.1.5-referentie). Sjabloon-restwaarde Qv10Gemeten=0/Qv10Waarde=0.000 (template regels 189-190) is de veilige forfaitaire stand — al steunt dat op het huidige sjabloon; een regressietest op die sjabloonwaarde zou dit borgen.
+  - *Scenario:* n.v.t. (bij het huidige sjabloon).
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r261-262]** Gevel met onbekende/onherkenbare orientatie: sjabloon-default blijft staan maar er wordt een duidelijke issue geappend ('onbekende orientatie -> sjabloon-default'). Conform de eis. (Het dak-equivalent is dat NIET — zie de aparte stille-default-bevinding op 259-260.)
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r268-271]** Niet-lege begrenzing die niet in de GrenstAan-mapping past: sjabloon-default + duidelijke issue ('verifieer in Vabi'). Conform de eis. (Het LEGE-begrenzing-pad is dat niet — zie de hoog-bevinding.)
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r308-310]** Dakraam zonder dak-hoofdvlak: wordt in een gevel geplaatst met expliciete issue ('verplaats in Vabi naar het dakvlak'). Conform de eis.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r396-403]** Verdiepingen: gemeten per-verdieping-m2 hebben voorrang (fix bug #2) mét controle-issue (som + berging/zolder-waarschuwing); alleen als fallback wordt Ag gelijk verdeeld en dát wordt expliciet geflagd ('corrigeer de verdieping-m2 in Vabi'). Conform de eis.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Geflagd (ok) | r420-422 + 433-434]** Gebouwtype/Ligging bij INGEVULD woningtype: bewust niet gezet (enum niet bevestigd, golden rule) + issue. Daktype-tekst die niet herkend wordt: sjabloon-default + issue. Beide conform. (De lege-invoer-paden van beide velden zijn wél lek — zie aparte bevindingen.)
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Geflagd (ok))
+- **[OK | Rekenregel (ok) | r83-90 + 124-131]** AOR/AOS/sterk-geventileerd -> buitenlucht (0) in de basisopname: gedocumenteerde ISSO-regel (officieel NTA8800-opnameformulier p.4 + ISSO 82.1 par. 6.3.4), met eigen detail-codes (4/5/6) voor de detailopname. Geen aanname.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r244-245 + 265-267]** Vloer-perimeter (randverlies) alleen bij begrenzing grond/kruipruimte/kelder: gedocumenteerde ISSO 8.3-regel. Correct als regel; alleen het weggooien van een gemeten perimeter zonder flag (zie verzwolgen-invoer-bevinding) schuurt met de eis.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r257-258]** Vloer krijgt Orientatie=-1 (horizontaal): geometrische definitie, conform de echte export (sjabloon-vloer heeft ook -1, template regel 540).
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r71-74, 97-99, 182-186, 352-355, 424]** Geverifieerde enum-mappings (eis-categorie b): GrenstAan 0/2/3/4/5/6 (live probe 22-6, grenstaan_mapping.md), Hellingshoek 3=hellend/6=plat (vabi_enums.json), thermische massa 0/1/2 (live 22-6, TypeBouwwijzeVloeren=0 apart bevestigd), Daktype 0/1/2 (live), Locatie 0-5 (echte export + live bevestigd 12-7 na bug #5), ORIENTATIE deels (5 van 8 codes, zie enum-gok-bevinding voor de rest).
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Bewuste default (ok) | r435-440]** Adresgegevens (straat/huisnummer/postcode/woonplaats/BAG-id's) worden bewust geblankt — AVG-keuze van de eigenaar; de adviseur vult Algemeen zelf in EPA. Het is een default (leeg), expliciet en gedocumenteerd in de comment.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Bewuste default (ok))
+- **[OK | Rekenregel (ok) | r283-285]** Naam = '<Kind> <schil-id>' + AutoNaam=0: directe afleiding uit dossier-identifiers (traceerbaarheid), geen rekensemantiek. Deelvlak-Naam blijft overigens sjabloon-'Raam' met AutoNaam=1 (EPA hernoemt zelf) — cosmetisch.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+- **[OK | Rekenregel (ok) | r163-166 + constructie_generate.py 208-215]** GUID's: hoofd-/deelvlakken krijgen verse uuid4 (eigen identiteit), constructie-verwijzingen komen als deterministische uuid5 uit resolve_constructies zodat Objecten- en Constructiebibliotheek identiek verwijzen (gedocumenteerde fix van de enum-mismatch). Geen invoerwaarde, geen aanname.
+  - *Scenario:* n.v.t.
+  - *Status:* OK (Rekenregel (ok))
+
+## vabi/refs/installatie_template.xml — 1 bevindingen (1 verdacht)
+
+- **[LAAG | Sjabloon-lek | r7 + 1558]** Sjabloon-restanten: (a) XmlVersie is nog 12.0.0/120000061 terwijl de objecten-sjabloon juist wegens versie-mismatch naar 12.0.1 moest (import is 23-6 wel live bewezen); (b) een tweede Tapwatersysteem (Index=1) met de echte Ag van de sjabloonwoning (AangeslotenGebruiksoppervlakte 174.75) reist in elke export mee (vermoedelijk inert door AantalWarmtapwatersystemen=0).
+  - *Scenario:* Bij een toekomstige EPA-update kan de 12.0.0-sjabloon alsnog gaan botsen; de 174.75 m2 kan bij activering van een 2e systeem opduiken als andermans gebruiksoppervlak.
+  - *Status:* OPEN — reviewen
