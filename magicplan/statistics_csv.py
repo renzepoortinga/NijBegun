@@ -1078,6 +1078,20 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("BOUWJAAR ONTBREEKT in de export (Object-form 'Bouwjaar' — oudere formversie? "
                      "Herstart de MagicPlan-app en exporteer opnieuw, of vul het bouwjaar in de webapp "
                      "in). Zonder bouwjaar kan Vabi niet forfaitair rekenen.")
+    # TRANSPARANTIE-flags (geen aannames-verhulling): de gevel- en dak-m² zijn AFGELEID uit MagicPlan
+    # (gevel = som van de wanden die jij als voor/achter/links/rechts tikte; dak = footprint / cos(helling))
+    # en zijn een STARTPUNT, geen NTA8800-eindwaarde. MagicPlan meet per kamer op kamerhoogte en tot een
+    # andere begrenzing dan NTA8800 -> gevels vallen doorgaans wat te hoog uit, en het dak hangt aan de
+    # ingevoerde helling/footprint. Controleer/corrigeer de m² per bouwdeel in de webapp-opname of in Vabi.
+    _gevel_tot = round(sum((s.oppervlakte_m2 or 0) for s in schil if s.type == "gevel"), 1)
+    _dak_tot = round(sum((s.oppervlakte_m2 or 0) for s in schil if s.type == "dak"), 1)
+    if _gevel_tot:
+        notes.append("GEVEL-m² = %.1f m² (afgeleid: som van de getikte buitenwanden, bruto). Dit is een "
+                     "STARTPUNT — MagicPlan meet per kamer, dus controleer/corrigeer de gevel-m² per "
+                     "oriëntatie in Vabi (NTA8800-begrenzing wijkt af)." % _gevel_tot)
+    if _dak_tot:
+        notes.append("DAK-m² = %.1f m² (afgeleid: footprint / cos(helling)). Hangt volledig aan de "
+                     "ingevoerde hellingshoek en footprint — controleer beide en het dak-m² in Vabi." % _dak_tot)
 
     # ---- installaties ----
     vsys = _undot(G("Ventilatiesysteem (A-E)"))      # 'A Natuurlijke ventilatie'
