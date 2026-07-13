@@ -25,7 +25,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "refs", "installatie_template.xml")
 
 # systeem-soort (individueel/collectief): codes uit echte exports (0=individueel gangbaar)
-SYSTEEM_SOORT = {"individueel": "0", "collectief": "1", "gemeenschappelijk": "1"}
+# audit 13-7: alleen 0=individueel is uit een echte EPA-export bevestigd voor Ventilatie/Systeem.
+# collectief/gemeenschappelijk=1 is een dropdown-volgorde-AANNAME -> niet schrijven, wel flaggen.
+SYSTEEM_SOORT = {"individueel": "0"}
 
 # Installatie-enumcodes LIVE GEHARVEST uit EPA (22-6-2026) — zie vabi/refs/installatie_enums_EPA.md.
 # ZonneEnergie/PV:
@@ -61,8 +63,10 @@ def _pv_code(d, keuze, fallback=None):
     return d.get((keuze or "").strip().lower(), fallback)
 
 
-# Verwarming (anker-codes; rest = dropdown-volgorde, zie refs):
-VERW_SUBTYPE = {"cr": "0", "vr": "1", "hr100": "2", "hr104": "3", "hr107": "4"}
+# Verwarming: alleen HR107=4 is uit een echte EPA-export bevestigd. CR/VR/HR100/HR104 zijn
+# dropdown-volgorde-AANNAMES op een CONDITIONELE sublijst (die globale codes kan hebben) -> audit
+# 13-7: niet schrijven, wel flaggen (golden rule).
+VERW_SUBTYPE = {"hr107": "4"}
 
 
 def _norm_orient(s):
@@ -149,6 +153,9 @@ def build_tree(dos):
         soort = (getattr(vent, "systeem_soort", "") or "").lower()
         if soort in SYSTEEM_SOORT:
             _set(vnode, "Systeem", SYSTEEM_SOORT[soort])
+        elif soort:
+            flags.append("ventilatie-systeemsoort '%s' niet EPA-bevestigd (alleen individueel) "
+                         "-> sjabloon-default; zet 'm in Vabi." % getattr(vent, "systeem_soort", ""))
         _set(vnode, "Merk", getattr(vent, "merk", ""))
         _set(vnode, "Type", getattr(vent, "type", ""))
         _set(vnode, "Installatiejaar", getattr(vent, "installatiejaar", None))
@@ -193,11 +200,14 @@ def build_tree(dos):
         st = (getattr(verw, "subtype", "") or "").lower().replace(" ", "")
         if st in VERW_SUBTYPE:
             _set(op, "SubType", VERW_SUBTYPE[st])
+        elif st:
+            flags.append("ketel-subtype '%s' niet EPA-bevestigd (alleen HR107) -> sjabloon-default; "
+                         "zet de HR-klasse (CR/VR/HR100/HR104) zelf in Vabi." % getattr(verw, "subtype", ""))
         opl = (getattr(verw, "opstelplaats", "") or "").lower()
         if "binnen" in opl:
-            _set(op, "OpstelplaatsOpwekker", "0")
+            _set(op, "OpstelplaatsOpwekker", "0")   # 0=binnen thermische zone: EPA-bevestigd
         elif "buiten" in opl:
-            _set(op, "OpstelplaatsOpwekker", "1")
+            flags.append("opstelplaats 'buiten' niet EPA-bevestigd -> sjabloon-default; zet 'm in Vabi.")
         afg = (getattr(verw, "afgifte", "") or "").lower()
         if "lucht" in afg:
             _set(_find(root, "VerwarmingAfgifte") or op, "Afgiftesysteem", "3")  # enige LIVE-bevestigde afgiftecode
@@ -232,11 +242,11 @@ def build_tree(dos):
             _set(_find(root, "TapwaterInstallatie") or top, "TypeInstallatie", "0")
         tt = (getattr(tap, "type_toestel", "") or "").lower()
         if "combi" in tt:
-            _set(top, "TypeToestel", "10")  # Gasgestookt combitoestel
-        elif "compleet" in tt:
-            _set(top, "TypeToestel", "2")
+            _set(top, "TypeToestel", "10")  # Gasgestookt combitoestel: EPA-bevestigd (globale code)
         elif tt:
-            flags.append("tapwater-toestel '%s' nog niet auto-gecodeerd -> in Vabi zetten"
+            # audit 13-7: 'compleet'->TypeToestel=2 was FOUT ('Compleet toestel' is een TypeOpwekker-
+            # waarde, niet TypeToestel; refs installatie_enums_EPA.md). Verwijderd -> flaggen.
+            flags.append("tapwater-toestel '%s' niet EPA-bevestigd -> sjabloon-default; zet 't in Vabi."
                          % getattr(tap, "type_toestel", ""))
         gk = (getattr(tap, "gaskeur", "") or "").lower()
         if "cw" in gk and "zonder" not in gk:

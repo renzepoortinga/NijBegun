@@ -928,7 +928,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             continue
         t_d = _undot(G(p + " - daktype")) or type_dak
         o_d = _undot(G(p + " - oriëntatie") or G(p + " - orientatie"))
-        h_d = _f(G(p + " - hellingshoek (°)")) or _f(G(p + " - hellingshoek")) or helling
+        # audit 13-7: per-vlak helling ook door _helling_ok (tikfout 95° gaf hier anders stil door)
+        h_d = _helling_ok(_f(G(p + " - hellingshoek (°)")) or _f(G(p + " - hellingshoek")),
+                          "Dakvlak %d (direct)" % n) or helling
         b_d = _bouwdeel(p, "Rc-bron dak")
         schil.append(SchilDeel(
             id="dak-vlak%d-%s" % (n, (o_d or "x").lower()), type="dak", subtype=t_d,

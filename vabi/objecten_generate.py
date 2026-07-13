@@ -89,6 +89,9 @@ _DETAIL_CODE = {
     "sterk geventileerd": "6", "sterk geventileerde ruimte": "6",
 }
 _AVR = {"avr", "aangrenzende verwarmde ruimte", "buurwoning", "aangrenzende woning"}
+# codes die NIET direct probe-bevestigd zijn (afgeleid uit de dropdown-volgorde) -> als ze echt
+# geschreven worden een LUIDE flag zodat de adviseur ze in Vabi controleert (audit 13-7).
+_GRENST_ONBEVESTIGD = {"1": "Water", "7": "Onverwarmde kelder", "8": "AVR/buurwoning", "9": "Ander gebouw"}
 
 
 _KOMPAS8 = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
@@ -276,6 +279,10 @@ def build_tree(dos):
             per = (getattr(s, "perimeter_m", None)
                    if kind == "vloer" and any(k in begr.lower() for k in _PERIM_BEGR) else None)
             gc = _grenst_aan_code(begr, basis=is_basis)
+            if gc in _GRENST_ONBEVESTIGD:
+                issues.append("%s %s: begrenzing '%s' -> GrenstAan-code %s (%s) is NIET probe-bevestigd "
+                              "in EPA -> controleer de begrenzing in Vabi." % (kind, s.id, begr, gc,
+                              _GRENST_ONBEVESTIGD[gc]))
             # dak: Hellingshoek-enum expliciet zetten (plat=6, hellend=3) zodat een plat dakvlak niet
             # de hellend-sjabloonwaarde (3) erft. Gevels houden de sjabloon-default (6).
             hc = None

@@ -1720,6 +1720,56 @@ except Exception as _e:
     check("VABI-import-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print()
+print("60. Enum-gok-fixes (audit 13-7): alleen EPA-bevestigde codes schrijven, rest sjabloon + LUIDE flag")
+try:
+    from core.dossier import Dossier as _D60, Verwarming as _V60, Tapwater as _T60, Ventilatie as _Ve60
+    import vabi.installatie_generate as _IG60
+    # (a) ketel-subtype != HR107 -> NIET geschreven + flag
+    _d = _D60()
+    _d.installaties.verwarming = _V60(type_opwekker="Gasgestookte ketel", subtype="HR104")
+    _r, _f = _IG60.build_tree(_d)
+    _op = _IG60._find(_r, "VerwarmingOpwekker")
+    check("enum: ketel-subtype HR104 NIET auto-geschreven (alleen HR107) + flag",
+          _op.findtext("SubType") != "3" and any("subtype" in x.lower() and "HR107" in x for x in _f))
+    # (b) ventilatie collectief -> NIET geschreven + flag
+    _d2 = _D60(); _d2.ventilatie = _Ve60(systeem="C", systeem_soort="collectief")
+    _r2, _f2 = _IG60.build_tree(_d2)
+    check("enum: ventilatie-systeemsoort 'collectief' niet auto-gecodeerd + flag",
+          any("systeemsoort" in x.lower() for x in _f2))
+    # (c) tapwater 'compleet' -> geen foute TypeToestel=2 meer + flag
+    _d3 = _D60(); _d3.installaties.tapwater = _T60(type_toestel="Compleet toestel")
+    _r3, _f3 = _IG60.build_tree(_d3)
+    _top = _IG60._find(_r3, "TapwaterOpwekker")
+    # de foute 'compleet'->TypeToestel=2-mapping is weg; onbevestigd toestel -> LUIDE flag
+    check("enum: tapwater 'compleet' niet meer actief gemapt -> LUIDE flag i.p.v. gok",
+          any("tapwater-toestel" in x.lower() and "bevestigd" in x.lower() for x in _f3))
+    # (d) objecten: onbevestigde GrenstAan (Water=1) -> luide issue
+    from core.dossier import SchilDeel as _S60
+    from vabi import objecten_generate as _OG60
+    _d4 = _D60()
+    _d4.schil = [_S60(id="vloer-water", type="vloer", oppervlakte_m2=40.0,
+                      isolatie_aanwezig="Onbekend", begrenzing="Water")]
+    _root4, _m4, _iss4, _st4 = _OG60.build_tree(_d4)
+    check("enum: GrenstAan 'Water' (code 1, niet probe-bevestigd) -> luide issue",
+          any("niet probe-bevestigd" in str(i).lower() or "NIET probe-bevestigd" in str(i) for i in _iss4))
+    # (e) parser: per-vlak helling 95 (direct dakvlak) -> _helling_ok vangt hem
+    import tempfile as _t60, os as _o60, csv as _c60
+    from magicplan.statistics_csv import build_dossier as _bd60
+    _rows60 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "80"], ["Woningtype", "Tussenwoning"],
+               ["Type dak", "Zadeldak"], ["Dakvlak 1 - oppervlak (m²)", "30"],
+               ["Dakvlak 1 - hellingshoek (°)", "95"], ["Dakvlak 1 - oriëntatie", "NW"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Ceiling Height"],
+               ["Ground Floor", "40", "2.60 m"], []]
+    with _t60.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f60:
+        _c60.writer(_f60).writerows(_rows60); _p60 = _f60.name
+    _d60, _n60 = _bd60(_p60); _o60.unlink(_p60)
+    check("enum/parser: per-vlak helling 95 -> ONGELDIG-note, geen dakvlak met helling 95",
+          any("ONGELDIG" in str(n) for n in _n60)
+          and not any(s.type == "dak" and s.hellingshoek == 95 for s in _d60.schil))
+except Exception as _e:
+    check("enum-gok-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
 print("59. Webapp opleveren: leeg project -> direct Afronden + eigen ventilatieplan/bijlagen uploaden + export-zip")
 try:
     import io as _io59, shutil as _sh59, zipfile as _zip59

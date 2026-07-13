@@ -1,5 +1,33 @@
 # Aannames-audit — MagicPlan → VABI-keten (12/13-7-2026)
 
+---
+## ⭐ WAT JIJ NOG IN EPA MOET CHECKEN (de enige echt-open punten)
+
+Alle **stille** aannames zijn dicht: waar de tool iets niet zeker weet, schrijft hij nu 0/leeg + een
+**luide melding** in IMPORTEREN.txt en in de "Zelf doen in Vabi"-kaart. Wat overblijft zijn een handvol
+**enum-codes** die de tool alleen 100% zeker weet als jij ze één keer tegen een echte EPA-export controleert.
+Deze raken je **Objecten-import** (de schil) — dus die zijn belangrijk voor jou:
+
+1. **Oriëntatie-codes Z/W/O** — de tool leidt de VABI-oriëntatiecode af uit een kompasrotatie. 5 van de 8
+   richtingen (ZW/NW/N/NO/ZO) zijn hard bevestigd; **Z, W en O** zijn ingevuld volgens hetzelfde patroon.
+   *Check:* importeer één woning met een zuid-, west- én oostgevel; kijk in EPA (Objecten → Geometrie) of de
+   oriëntatie per gevel klopt. Zo ja: dit is voor altijd bevestigd (het staat visueel in de geometrie-tab, dus
+   je ziet het meteen bij elke opname).
+2. **GrenstAan Water / Onverwarmde kelder / AVR-buurwoning / Ander gebouw** — de tool schrijft deze nu **met een
+   luide flag** ("niet probe-bevestigd, controleer in Vabi"). De veelvoorkomende begrenzingen (buitenlucht,
+   grond, kruipruimte, AOR/AOS) zijn wél hard bevestigd. Kom je een van die vier tegen? Dan zie je de flag —
+   controleer die ene in EPA.
+
+**Installatie-bibliotheek (energielabel-scope, NIET Nij Begun):** ketel-subtype (alleen HR107 zeker),
+ventilatie individueel/collectief, tapwater-toestel en opstelplaats worden nu **niet meer gegokt** — de tool
+laat de sjabloonwaarde staan en flagt luid. Voor je isolatieplannen telt hier alleen de **ventilatie**; de rest
+loop je pas na als je ooit een compleet energielabel maakt.
+
+**Conclusie:** voor je Nij Begun-imports hoef je alleen punt 1 (oriëntatie) één keer te bevestigen. Al het andere
+is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fouten meer.
+
+---
+
 **Aanleiding:** bij de eerste echte Objecten-import (Essenhage 32) bleken 5 stille fouten (sjabloon-bouwjaar 1994, Ag gelijk verdeeld, gevelhoogte als gebouwhoogte, bouwjaarklasse genegeerd, alles op het Voorgevel-tabblad). Eis van Renze: **geen aannames, punt** — elke waarde richting VABI is (a) directe MagicPlan-conversie, (b) in EPA geverifieerde enum-mapping, of (c) 0/leeg + luide actie.
 
 **Aanpak:** multi-agent audit (8 auditors + adversariële verificatie) over de generatoren, parser, geometrie en routes; 251 bevindingen, waarvan 174 in de fout-categorieën. Alles hieronder, per bestand, met status.
