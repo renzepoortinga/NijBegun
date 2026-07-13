@@ -224,7 +224,21 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                   gevelhoogte_m=None):
     sec = _parse_sections(csv_path)
     plan = _plan_kv(sec.get("PLAN ATTRIBUTES", []))
-    G = lambda k: plan.get(k, "")
+    # 1-OP-1-GARANTIE (audit 13-7): veldnamen kregen live al 2x een ander "(...)"-suffix, waardoor
+    # exacte lookups een INGEVULD antwoord stil kwijtraakten (verzwolgen invoer). Daarom: eerst
+    # exact, anders match op de veldnaam ZONDER het "(...)"-suffix — maar alleen als die basisnaam
+    # ondubbelzinnig is (1 kandidaat). Nooit raden bij meerdere kandidaten.
+    _basis = lambda k: " ".join(str(k).split(" (")[0].lower().split())
+    _basis_map = {}
+    for _pk in plan:
+        _basis_map.setdefault(_basis(_pk), []).append(_pk)
+
+    def G(k):
+        v = plan.get(k, "")
+        if v != "":
+            return v
+        _kand = _basis_map.get(_basis(k), [])
+        return plan.get(_kand[0], "") if len(_kand) == 1 else ""
     notes = []
 
     dos = Dossier()
@@ -645,12 +659,30 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # dak-per-vlak: gebruik dak-velden uit de opname indien aanwezig (helling uit nok/knie/breedte
     # of direct + oriëntaties van de schuine vlakken/kopgevels + plat dak), anders footprint-fallback.
     # dak-velden komen nu uit het CONSTRUCTIES-dakblok (geconsolideerd uit Object); oude Object-velden = fallback.
-    type_dak = _undot(G("Dakvlak 1 - daktype") or G("Type dak")) or "Zadeldak"
+    def _helling_ok(h, ctx):
+        """audit 13-7: ongeldige helling (<=0 of >=89, bv. tikfout '95') gaf stil een TE KLEIN dak
+        (cos-clamp naar footprint). Ongeldig -> luide note + geen berekening."""
+        if h is None:
+            return None
+        if 0 < float(h) < 89:
+            return float(h)
+        notes.append("%s: hellingshoek %g° is ONGELDIG (moet tussen 0 en 89) -> dak NIET berekend; "
+                     "corrigeer de invoer." % (ctx, float(h)))
+        return None
+
+    type_dak = _undot(G("Dakvlak 1 - daktype") or G("Type dak"))
+    if not type_dak:
+        # audit 13-7: dit was een STILLE Zadeldak-aanname; nu default + LUIDE note (legacy-pad —
+        # de nieuwe type-masters per dak zijn leidend en eisen expliciete keuze)
+        type_dak = "Zadeldak"
+        notes.append("TYPE DAK ontbreekt in de opname -> 'Zadeldak' aangenomen (legacy-pad); "
+                     "controleer het daktype en de dakvlakken in de webapp/Vabi.")
     helling = _f(G("Dakvlak 1 - hellingshoek (°)")) or _f(G("Dakvlak 1 - hellingshoek")) or _f(G("Hellingshoek dak")) or _f(G("Dak hellingshoek"))
     breedte = _f(G("Dak - vloerbreedte (m)")) or _f(G("Dak vloerbreedte"))
     if helling is None:
         helling = hellingshoek_uit_nok(breedte, _f(G("Dak - nokhoogte (m, optioneel)")) or _f(G("Dak nokhoogte")),
                                        (_f(G("Dak - knieschothoogte (m, optioneel)")) or _f(G("Dak knieschothoogte")) or 0.0))
+    helling = _helling_ok(helling, "Dak (legacy-pad)")
     o1 = _undot(G("Dakvlak 1 - oriëntatie") or G("Dakvlak 1 - orientatie") or G("Dak orientatie zijde 1") or G("Dak oriëntatie zijde 1"))
     o2 = _undot(G("Dakvlak 2 - oriëntatie") or G("Dakvlak 2 - orientatie") or G("Dak orientatie zijde 2") or G("Dak oriëntatie zijde 2"))
     k1 = _undot(G("Dak - kopgevel oriëntatie 1") or G("Dak - kopgevel orientatie 1") or G("Kopgevel orientatie 1") or G("Kopgevel oriëntatie 1"))
@@ -706,8 +738,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             nok_z = _f(G(Pd + " zadel - nokhoogte boven zoldervloer (m)"))
             kn_z = _f(G(Pd + " zadel - knieschothoogte (m, leeg = 0)")) or 0.0
             kn_z2 = _f(G(Pd + " zadel - knieschothoogte vlak 2 (m, leeg = zelfde)"))
-            h_z = _f(G(Pd + " zadel - hellingshoek (°, leeg = berekend uit nok/breedte)"))                 or hellingshoek_uit_nok(br_z, nok_z, kn_z)
-            h_z2 = _f(G(Pd + " zadel - hellingshoek vlak 2 (°, leeg = zelfde)"))                 or ((hellingshoek_uit_nok(br_z, nok_z, kn_z2) or h_z) if kn_z2 else h_z)
+            h_z = _helling_ok(_f(G(Pd + " zadel - hellingshoek (°, leeg = berekend uit nok/breedte)"))
+                              or hellingshoek_uit_nok(br_z, nok_z, kn_z), "Dak %d (zadel)" % _dn)
+            h_z2 = _helling_ok(_f(G(Pd + " zadel - hellingshoek vlak 2 (°, leeg = zelfde)"))
+                               or ((hellingshoek_uit_nok(br_z, nok_z, kn_z2) or h_z) if kn_z2 else h_z),
+                               "Dak %d (zadel, vlak 2)" % _dn)
             if h_z and o_z:
                 vlakken_n = dak_vlakken_zadeldak(top_fp, br_z or 0.0, h_z,
                                                  orient_schuin=(o_z, _opp8(o_z)), orient_kopgevel=_zij8(o_z))
@@ -734,7 +769,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 notes.append("Dak %d (zadel): hellingshoek (of nok/breedte) en/of oriëntatie ontbreekt -> "
                              "vul aan; dak overgeslagen." % _dn)
         elif "schild" in tn or "tent" in tn:
-            h_s = _f(G(Pd + " schild - hellingshoek lange vlakken (°)"))
+            h_s = _helling_ok(_f(G(Pd + " schild - hellingshoek lange vlakken (°)")), "Dak %d (schild)" % _dn)
             h_k = _f(G(Pd + " schild - hellingshoek kopschilden (°, leeg = zelfde)"))
             o_s = _undot(G(Pd + " schild - oriëntatie lang dakvlak 1"))
             if h_s and o_s:
@@ -749,7 +784,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             o_l = _undot(G(Pd + " lessenaar - oriëntatie dakvlak (afwaterend naar)"))
             hl_ = _f(G(Pd + " lessenaar - hoogte lage zijde boven vloer (m)"))
             hh_ = _f(G(Pd + " lessenaar - hoogte hoge zijde boven vloer (m)"))
-            h_l = _f(G(Pd + " lessenaar - hellingshoek (°, leeg = berekend)"))
+            h_l = _helling_ok(_f(G(Pd + " lessenaar - hellingshoek (°, leeg = berekend)")),
+                              "Dak %d (lessenaar)" % _dn)
             if h_l and o_l:
                 vlakken_n = dak_vlakken_lessenaar(top_fp, h_l, o_l)
                 if hh_ and hl_ is not None:

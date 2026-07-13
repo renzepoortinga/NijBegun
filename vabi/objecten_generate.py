@@ -263,7 +263,11 @@ def build_tree(dos):
             if kind == "vloer":
                 oc = "-1"                       # vloer = horizontaal
             elif kind == "dak" and not oc:
-                oc = "-1"                       # plat/onbekend dak -> horizontaal (fallback)
+                oc = "-1"                       # plat dak -> horizontaal
+                if (getattr(s, "hellingshoek", 0) or 0) > 0:
+                    # audit 13-7: een HELLEND vlak zonder oriëntatie werd stil horizontaal gezet
+                    issues.append("dak %s: HELLEND vlak ZONDER oriëntatie -> horizontaal gezet; "
+                                  "zet de oriëntatie in Vabi." % s.id)
             elif kind == "gevel" and oc is None:
                 issues.append("gevel %s: onbekende orientatie %r -> sjabloon-default" % (s.id, orient))
             # begrenzing -> GrenstAan (alleen bevestigde codes; onbekend -> sjabloon-default + flag)

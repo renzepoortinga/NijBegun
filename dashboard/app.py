@@ -150,7 +150,9 @@ def _load_state(tag):
     p = os.path.join(_pdir(tag), "project.json")
     if os.path.isfile(p):
         with open(p, encoding="utf-8") as fh:
-            return json.load(fh)
+            st = json.load(fh)
+        st["tag"] = tag                 # borg de tag (klikbare stepper werkt ook bij oude projecten)
+        return st
     return None
 
 
@@ -264,10 +266,24 @@ def stepper(active, st):
         for s in order:
             if order.index(s) < idx:
                 done.add(s)
+    tag = st.get("tag") if st else None
+    endpoint = {"klaar": "afronden"}    # 'Opleveren' heeft geen eigen route -> de Afronden-pagina
     parts = ['<div class=stepper>']
     for s, lbl in STAPPEN:
         cls = "active" if s == active else ("done" if s in done else "")
-        parts.append('<div class="step %s"><div class=bar></div>%s</div>' % (cls, lbl))
+        ep = endpoint.get(s, s)
+        # elke stap is klikbaar -> je kunt vrij navigeren (bv. direct naar Afronden), niet gedwongen
+        # de VABI-toets-heenweg doorlopen. De opname-editor/afronden werkt met wat er is.
+        href = None
+        if tag and ep in app.view_functions:
+            try:
+                href = url_for(ep, tag=tag)
+            except Exception:
+                href = None
+        if href:
+            parts.append('<a class="step %s" href="%s"><div class=bar></div>%s</a>' % (cls, href, lbl))
+        else:
+            parts.append('<div class="step %s"><div class=bar></div>%s</div>' % (cls, lbl))
     parts.append('</div>')
     return "".join(parts)
 
@@ -515,6 +531,19 @@ AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 <div><label>Foto voorkant woning{% if st.foto_voorkant %} <span class="pill green">✓ toegevoegd</span>{% endif %}</label><input type=file name=foto_voorkant accept="image/*"></div>
 <div><label>Foto huisnummer{% if st.foto_huisnummer %} <span class="pill green">✓ toegevoegd</span>{% endif %}</label><input type=file name=foto_huisnummer accept="image/*"></div></div>
 <div class=btn-row><button class=btn>Foto's opslaan</button></div></form></div>
+<div class=card><h2>Eigen ventilatieplan &amp; bijlagen uploaden</h2>
+<p class=muted>Heb je een eigen ventilatieplan (op de echte MagicPlan-plattegrond) of andere bijlagen (facturen,
+plattegrond, extra foto's, offertes)? Upload ze hier — ze gaan mee in de export-bundel.</p>
+<form method=post action="{{url_for('bijlagen', tag=tag)}}" enctype=multipart/form-data>
+<div class=grid2>
+<div><label>Eigen ventilatieplan (PDF / afbeelding){% if st.ventilatieplan_eigen %} <span class="pill green">✓ {{st.ventilatieplan_eigen}}</span>{% endif %}</label>
+<input type=file name=ventilatieplan_eigen accept="image/*,.pdf,.svg"></div>
+<div><label>Extra bijlagen (meerdere tegelijk){% if st.bijlagen %} <span class="pill green">✓ {{st.bijlagen|length}} bestand(en)</span>{% endif %}</label>
+<input type=file name=bijlagen multiple></div></div>
+<div class=btn-row><button class=btn>Uploaden</button></div>
+{% if st.bijlagen %}<ul class=files>{% for b in st.bijlagen %}<li>{{b}} <a class="btn sec" href="{{url_for('download', tag=tag, filename=b)}}">download</a>
+<a class="btn sec" href="{{url_for('bijlage_weg', tag=tag, naam=b)}}" onclick="return confirm('Verwijderen?')">✕</a></li>{% endfor %}</ul>{% endif %}
+</form></div>
 <div class=card><h2>Toelichting op advies</h2>
 <p class=muted>Deze persoonlijke toelichting komt in de bijlage bij het plan (met de technische haalbaarheid per maatregel).</p>
 <form method=post action="{{url_for('toelichting', tag=tag)}}">
@@ -527,7 +556,9 @@ AFRONDEN = """{{stepper|safe}}<h1>Afronden volgens Nij Begun</h1>
 <div class=card><h2>Klaar voor indienen? (Beoordelingsformulier)</h2><ul class=check>
 {% for ok, txt in beoord %}<li><span class="mk {{'ok2' if ok else 'no2'}}">{{ '✓' if ok else '○' }}</span>{{txt}}</li>{% endfor %}</ul>
 <p class="muted small">Spiegelt de compleetheidscriteria van de Nij Begun-kwaliteitscommissie.</p></div>
-<div class=card><h2>Ventilatieplan</h2><div class=svgbox>{{vent_svg|safe}}</div></div>
+<div class=card><h2>Ventilatieplan (automatisch)</h2>
+{% if st.ventilatieplan_eigen %}<p class=muted>Je hebt een <b>eigen ventilatieplan</b> geüpload ({{st.ventilatieplan_eigen}}) — dat zit in de export. Dit auto-plan is de onderbouwing/berekening.</p>{% endif %}
+<div class=svgbox>{{vent_svg|safe}}</div></div>
 <div class=card><h2>Gegenereerde bestanden</h2><ul class=files>
 {% for f in files %}<li>{{f}} <a class="btn sec" href="{{url_for('download', tag=tag, filename=f)}}">download</a></li>{% endfor %}</ul></div>
 <div class=btn-row><a class="btn sec" href="{{url_for('afronden', tag=tag)}}?regen=1">Opnieuw genereren</a><div class=spacer></div>
@@ -1175,16 +1206,18 @@ def afronden(tag):
                 fh.write(foto_checklist.generate(dos))
         except Exception:
             pass
-    # ventilatieplan (altijd vers) + de VENTILATIEBEREKENING-tabel (Beoordelingsformulier vraagt de berekening)
-    vres = vent_bereken(dos.geometrie.ruimtes)
-    svg = ventilatieplan_svg(vres, adres=st.get("adres", ""))
-    with open(os.path.join(pdir, "ventilatieplan_%s.svg" % tag), "w", encoding="utf-8") as fh:
-        fh.write(svg)
+    # ventilatieplan (altijd vers) + de VENTILATIEBEREKENING-tabel (Beoordelingsformulier vraagt de berekening).
+    # Robuust: een (nog) leeg dossier mag de Afronden-pagina NOOIT laten crashen.
+    vres, svg = None, "<p class=muted>Nog geen ruimtes in de opname — ventilatieplan verschijnt zodra die er zijn.</p>"
     try:
+        vres = vent_bereken(dos.geometrie.ruimtes)
+        svg = ventilatieplan_svg(vres, adres=st.get("adres", ""))
+        with open(os.path.join(pdir, "ventilatieplan_%s.svg" % tag), "w", encoding="utf-8") as fh:
+            fh.write(svg)
         with open(os.path.join(pdir, "ventilatieberekening_%s.txt" % tag), "w", encoding="utf-8") as fh:
             fh.write(vent_rapport(vres))
-    except Exception:
-        pass
+    except Exception as e:
+        flash("Ventilatieplan (auto) kon niet gemaakt worden: %s — je kunt een eigen plan uploaden." % str(e)[:90])
     # leverformaat JSON (M29 punt 10a) — altijd vers
     try:
         _plan_json(tag, st, dos, vres)
@@ -1242,6 +1275,61 @@ def fotos(tag):
     return redirect(url_for("afronden", tag=tag) + "?regen=1")
 
 
+def _veilige_naam(naam):
+    """Bestandsnaam ontdoen van pad-/rare tekens (upload-veiligheid)."""
+    naam = os.path.basename(naam or "").replace("\\", "_")
+    naam = re.sub(r"[^A-Za-z0-9._ +()\-]", "_", naam).strip() or "bestand"
+    return naam[:120]
+
+
+@app.route("/project/<tag>/bijlagen", methods=["POST"])
+@login_required
+def bijlagen(tag):
+    """Eigen ventilatieplan + vrije bijlagen (facturen/plattegrond/foto's) — gaan mee in de export."""
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    pdir = _pdir(tag)
+    n = 0
+    vp = request.files.get("ventilatieplan_eigen")
+    if vp and vp.filename:
+        ext = os.path.splitext(vp.filename)[1].lower() or ".pdf"
+        naam = "ventilatieplan_eigen_%s%s" % (tag, ext)
+        vp.save(os.path.join(pdir, naam))
+        st["ventilatieplan_eigen"] = naam
+        n += 1
+    bdir = os.path.join(pdir, "bijlagen")
+    os.makedirs(bdir, exist_ok=True)
+    huidig = list(st.get("bijlagen") or [])
+    for f in request.files.getlist("bijlagen"):
+        if f and f.filename:
+            naam = _veilige_naam(f.filename)
+            f.save(os.path.join(bdir, naam))
+            if naam not in huidig:
+                huidig.append(naam)
+            n += 1
+    st["bijlagen"] = huidig
+    _save_state(tag, st)
+    flash("%d bestand(en) geüpload — ze zitten in de export-bundel." % n if n else "Geen bestand gekozen.")
+    return redirect(url_for("afronden", tag=tag))
+
+
+@app.route("/project/<tag>/bijlage/<path:naam>/weg")
+@login_required
+def bijlage_weg(tag, naam):
+    st = _load_state(tag)
+    if not st:
+        abort(404)
+    naam = os.path.basename(naam)
+    p = os.path.join(_pdir(tag), "bijlagen", naam)
+    if os.path.isfile(p):
+        os.remove(p)
+    st["bijlagen"] = [b for b in (st.get("bijlagen") or []) if b != naam]
+    _save_state(tag, st)
+    flash("Bijlage verwijderd.")
+    return redirect(url_for("afronden", tag=tag))
+
+
 @app.route("/project/<tag>/toelichting", methods=["POST"])
 @login_required
 def toelichting(tag):
@@ -1296,6 +1384,9 @@ def export(tag):
         for p in glob.glob(os.path.join(pdir, "fotos", "*")):    # MagicPlan-foto's (fotoblad)
             if os.path.isfile(p):
                 z.write(p, os.path.join("fotos", os.path.basename(p)))
+        for p in glob.glob(os.path.join(pdir, "bijlagen", "*")):  # eigen bijlagen (facturen/plattegrond/...)
+            if os.path.isfile(p):
+                z.write(p, os.path.join("bijlagen", os.path.basename(p)))
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
                     headers={"Content-Disposition": "attachment; filename=isolatieplan_%s.zip" % tag})
@@ -1307,6 +1398,9 @@ def download(tag, filename):
     pdir = _pdir(tag)
     if ".." in filename or not os.path.isdir(pdir):
         abort(404)
+    # bijlagen staan in de submap bijlagen/ — daar ook zoeken als het bestand niet in de root staat
+    if not os.path.isfile(os.path.join(pdir, filename)) and os.path.isfile(os.path.join(pdir, "bijlagen", filename)):
+        return send_from_directory(os.path.join(pdir, "bijlagen"), filename, as_attachment=True)
     return send_from_directory(pdir, filename, as_attachment=True)
 
 

@@ -156,8 +156,9 @@ def hellingshoek_uit_nok(vloerbreedte_m, nokhoogte_m, knieschothoogte_m=0.0, aan
 
 
 def dakvlak_m2(footprint_of_breedte_lengte_m2, hellingshoek_graden, m2_handmatig=None):
-    """Oppervlak van één (schuin) dakvlak. Handmatige m2 wint; anders horizontale projectie / cos(a)."""
-    if m2_handmatig is not None:
+    """Oppervlak van één (schuin) dakvlak. Handmatige m2 wint; anders horizontale projectie / cos(a).
+    audit 13-7: een LEEG veld dat als 0.0 doorkomt mag de berekening niet blokkeren (gaf 0-m2-dak)."""
+    if m2_handmatig:
         return round(float(m2_handmatig), 2)
     return schuin_dakvlak_m2(footprint_of_breedte_lengte_m2, hellingshoek_graden)
 

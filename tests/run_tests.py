@@ -1688,8 +1688,78 @@ try:
     _o58.unlink(_p58b)
     check("parser: veld ontbreekt -> gebouwhoogte LEEG + GEBOUWHOOGTE-note (geen 5.24+2.97-gok)",
           _d3.opname.gebouwhoogte_m is None and any("GEBOUWHOOGTE ONTBREEKT" in str(n) for n in _n3))
+    # (f) 1-op-1-garantie: hernoemd "(...)"-suffix mag een INGEVULD veld niet meer stil kwijtraken
+    _rows58c = [(["Gevelhoogte (m, tot de dakvoet gemeten)", "5.24"] if r and r[0].startswith("Gevelhoogte")
+                 else r) for r in _rows58]
+    with _t58.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f58c:
+        _c58.writer(_f58c).writerows(_rows58c)
+        _p58c = _f58c.name
+    _d4, _n4 = _bd58(_p58c)
+    _o58.unlink(_p58c)
+    check("parser: suffix-drift ('Gevelhoogte (m, tot de dakvoet gemeten)') -> waarde tóch gelezen",
+          _d4.opname.gevelhoogte_m == 5.24)
+    # (g) ongeldige hellingshoek (tikfout 95) -> LUIDE note + dak niet stil te klein berekend.
+    # dak-velden in de PLAN ATTRIBUTES-sectie zetten (vóór de blanco regel die FLOOR inleidt).
+    _rows58d, _ingevoegd = [], False
+    for r in _rows58:
+        if not _ingevoegd and r == []:
+            _rows58d += [["Type dak", "Zadeldak"], ["Hellingshoek dak", "95"],
+                         ["Dak - vloerbreedte (m)", "6"],
+                         ["Dakvlak 1 - oriëntatie", "NW"], ["Dakvlak 2 - oriëntatie", "ZO"]]
+            _ingevoegd = True
+        _rows58d.append(r)
+    with _t58.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f58d:
+        _c58.writer(_f58d).writerows(_rows58d)
+        _p58d = _f58d.name
+    _d5, _n5 = _bd58(_p58d)
+    _o58.unlink(_p58d)
+    check("parser: helling 95 gr -> ONGELDIG-note en geen stil te klein dak",
+          any("ONGELDIG" in str(n) for n in _n5)
+          and not any(s.type == "dak" and s.hellingshoek == 95 for s in _d5.schil))
 except Exception as _e:
     check("VABI-import-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
+print("59. Webapp opleveren: leeg project -> direct Afronden + eigen ventilatieplan/bijlagen uploaden + export-zip")
+try:
+    import io as _io59, shutil as _sh59, zipfile as _zip59
+    import dashboard.app as _W59
+    _W59.app.config.update(TESTING=True)
+    _c59 = _W59.app.test_client()
+    with _c59.session_transaction() as _s59:
+        _s59["ingelogd"] = True
+    _r59 = _c59.post("/nieuw", data={"straat": "Testweg 5", "postcode": "9990ZZ", "plaats": "X",
+                                     "woningtype": "Tussenwoning"})
+    _tag59 = _r59.headers["Location"].rstrip("/").split("/")[-2]
+    # (a) direct naar Afronden zonder VABI-toets -> geen crash, klikbare stepper
+    _ra59 = _c59.get("/project/%s/afronden" % _tag59)
+    check("opleveren: Afronden direct bereikbaar (geen VABI-heenweg) + klikbare stepper",
+          _ra59.status_code == 200 and '<a class="step' in _ra59.get_data(as_text=True))
+    # (b) eigen ventilatieplan + 2 bijlagen uploaden
+    _c59.post("/project/%s/bijlagen" % _tag59, data={
+        "ventilatieplan_eigen": (_io59.BytesIO(b"%PDF plan"), "eigen_plan.pdf"),
+        "bijlagen": [(_io59.BytesIO(b"f"), "factuur.pdf"), (_io59.BytesIO(b"p"), "plattegrond.png")]},
+        content_type="multipart/form-data", follow_redirects=True)
+    _st59 = _W59._load_state(_tag59)
+    check("opleveren: eigen ventilatieplan + bijlagen opgeslagen",
+          bool(_st59.get("ventilatieplan_eigen")) and set(_st59.get("bijlagen") or []) == {"factuur.pdf", "plattegrond.png"})
+    # (c) foto voorkant uploaden
+    _c59.post("/project/%s/fotos" % _tag59, data={"foto_voorkant": (_io59.BytesIO(b"J"), "voor.jpg")},
+              content_type="multipart/form-data", follow_redirects=True)
+    check("opleveren: foto voorkant opgeslagen", bool(_W59._load_state(_tag59).get("foto_voorkant")))
+    # (d) export-zip bevat de eigen bestanden
+    _rz59 = _c59.get("/project/%s/export" % _tag59)
+    _namen59 = _zip59.ZipFile(_io59.BytesIO(_rz59.data)).namelist()
+    check("opleveren: export-zip bevat eigen ventilatieplan + bijlagen/ + foto voorkant",
+          any("ventilatieplan_eigen" in n for n in _namen59)
+          and any(n.startswith("bijlagen/") for n in _namen59)
+          and any("foto_voorkant" in n for n in _namen59))
+    # (e) bijlage verwijderen
+    _c59.get("/project/%s/bijlage/factuur.pdf/weg" % _tag59, follow_redirects=True)
+    check("opleveren: bijlage verwijderen werkt", "factuur.pdf" not in (_W59._load_state(_tag59).get("bijlagen") or []))
+    _sh59.rmtree(_W59._pdir(_tag59), ignore_errors=True)
+except Exception as _e:
+    check("webapp opleveren: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

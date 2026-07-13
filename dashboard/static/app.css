@@ -170,6 +170,9 @@ h3{font-size:16px;margin:0 0 8px;font-weight:650}
 .stepper .step.active{color:var(--ink);font-weight:600}
 .stepper .step.done a{color:var(--ink2)}
 .stepper .step a{color:inherit}
+a.step{text-decoration:none;cursor:pointer;display:block}
+a.step:hover .bar{background:var(--blue)}
+a.step:hover{color:var(--ink)}
 
 /* ============================================================
    BUTTONS — min 44px touch-target
