@@ -409,6 +409,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     n_wall_ext = 0
     nareken_namen = []        # wanden die de adviseur markeerde om handmatig in Vabi na te rekenen
     gevel_tikken = []         # per getikte buitenwand: kamer/wand/orient/breedte (tikfout-checks)
+    _kamer_instantie = 0       # elke NIEUWE kamer-blok = uniek nummer (namen als 'Bedroom' herhalen)
+    _vorige_kamer = None
     for r in wall_rows[1:]:
         _c0w = (r[0] or "").strip() if r else ""
         # verdieping-scheidingsrij in de WALL-sectie ('Ground Floor'/'1st Floor'/...) -> tracken
@@ -416,6 +418,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             cur_verdieping = _c0w
         if len(r) < 12 or not _c0w:
             continue
+        # nieuw kamer-blok = naam verandert OF de wandnummering reset naar 'Wall 0' (MagicPlan begint
+        # elke kamer met Wall 0; vangt ook twee opeenvolgende kamers met dezelfde naam, bv. 2x 'Bedroom')
+        _wandnaam0 = (r[1] or "").strip().lower() if len(r) > 1 else ""
+        if _c0w != _vorige_kamer or _wandnaam0 in ("wall 0", "wall0"):
+            _kamer_instantie += 1
+            _vorige_kamer = _c0w
         typ = (r[8] or "").strip() if len(r) > 8 else ""
         if typ == "Wall":
             # ECHTE EXPORT (Essenhage 8-7): kolom 0 = KAMERnaam, kolom 1 = WANDnaam ('Wall 0' of door
@@ -458,7 +466,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 n_wall_ext += 1
                 # tik-administratie voor de consistentie-checks (dubbele evenwijdige wanden /
                 # zolderwand-onder-schuin-dak) — puur signaleren, nooit zelf corrigeren
-                gevel_tikken.append({"kamer": (r[0] or "").strip(), "wand": (r[1] or "").strip() if len(r) > 1 else "",
+                gevel_tikken.append({"kamer": (r[0] or "").strip(), "kamer_id": _kamer_instantie,
+                                     "verdieping": cur_verdieping,
+                                     "wand": (r[1] or "").strip() if len(r) > 1 else "",
                                      "orient": cur_orient, "breedte": _f(r[5]) if len(r) > 5 else None,
                                      "m2": _f(r[3]) or 0.0})
                 k = (cur_orient, cur_begr, cur_isol or "", cur_nareken, cur_rz)
@@ -1145,19 +1155,27 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     from collections import defaultdict as _dd
     _per_kamer_ori = _dd(list)
     for t in gevel_tikken:
-        # kamernamen zijn niet uniek (3x 'Bedroom') -> verdieping in de sleutel tegen vals samenvoegen
-        _per_kamer_ori[(t["kamer"], kamer_verdieping.get(t["kamer"], ""), t["orient"])].append(t)
-    for (_km, _vd, _ori), _ts in _per_kamer_ori.items():
+        # kamernamen zijn niet uniek (3x 'Bedroom') -> kamer_id (uniek per blok) in de sleutel
+        _per_kamer_ori[(t["kamer_id"], t["kamer"], t["orient"])].append(t)
+    for (_kid, _km, _ori), _ts in _per_kamer_ori.items():
+        _vd = _ts[0].get("verdieping", "")
         if len(_ts) < 2:
             continue
         _breedtes = [round(t["breedte"], 1) for t in _ts if t["breedte"]]
         _dubbel = {b for b in _breedtes if _breedtes.count(b) >= 2}
         if _dubbel:
-            notes.append("TIKFOUT? kamer '%s': %d evenwijdige wanden met gelijke breedte (%s m) ALLEBEI "
+            notes.append("TIKFOUT? kamer '%s'%s: %d evenwijdige wanden met gelijke breedte (%s m) ALLEBEI "
                          "als gevel %s getikt — een kamer heeft maar één wand op een gevel; haal de "
                          "dubbele weg (m² telt nu dubbel, samen %.1f m²)."
-                         % (_km, len(_ts), "/".join("%.1f" % b for b in sorted(_dubbel)), _ori,
-                            sum(t["m2"] for t in _ts)))
+                         % (_km, (" (%s)" % _vd if _vd else ""), len(_ts),
+                            "/".join("%.1f" % b for b in sorted(_dubbel)), _ori, sum(t["m2"] for t in _ts)))
+        elif len(_ts) >= 2:
+            # ook DUBBEL, maar met verschillende breedtes (bv. Living Room Wall 1 5,81 + Wall 3 3,66):
+            # meestal een tikfout (tegenoverliggende wanden), soms een echt geknikte/L-vormige gevel.
+            notes.append("LET OP kamer '%s'%s: %d wanden als gevel %s getikt (breedtes %s m). Klopt dat "
+                         "(geknikte/L-vormige gevel), of is het dubbel? Eén rechte gevel = één wand per "
+                         "kamer." % (_km, (" (%s)" % _vd if _vd else ""), len(_ts), _ori,
+                                     "/".join("%.1f" % b for b in _breedtes)))
     # (2) zolderwand getikt met dezelfde oriëntatie als een SCHUIN dakvlak: dat stuk schil zit al
     #     in het dak (footprint/cos) -> dubbel geteld.
     _verd_volgorde = [v.naam for v in geo.vloeren]
@@ -1173,17 +1191,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                      % (len(_zolder_dubbel), _top_verd,
                         "/".join(sorted({t["orient"] for t in _zolder_dubbel})),
                         sum(t["m2"] for t in _zolder_dubbel)))
-    # TRANSPARANTIE-flags (geen aannames-verhulling): de gevel- en dak-m² zijn AFGELEID uit MagicPlan
-    # (gevel = som van de wanden die jij als voor/achter/links/rechts tikte; dak = footprint / cos(helling))
-    # en zijn een STARTPUNT, geen NTA8800-eindwaarde. MagicPlan meet per kamer op kamerhoogte en tot een
-    # andere begrenzing dan NTA8800 -> gevels vallen doorgaans wat te hoog uit, en het dak hangt aan de
-    # ingevoerde helling/footprint. Controleer/corrigeer de m² per bouwdeel in de webapp-opname of in Vabi.
+    # TRANSPARANTIE-flags (geen aannames-verhulling): gevel = breedte x verdiepingshoogte per bouwlaag
+    # (BRUTO; ramen/deuren gaan er in Vabi als deelvlak af); dak = footprint / cos(helling). Beide zijn
+    # een STARTPUNT — controleer de opbouw-notes hierboven (breedte per verdieping) op tikfouten en
+    # corrigeer per bouwdeel in Vabi.
     _gevel_tot = round(sum((s.oppervlakte_m2 or 0) for s in schil if s.type == "gevel"), 1)
     _dak_tot = round(sum((s.oppervlakte_m2 or 0) for s in schil if s.type == "dak"), 1)
     if _gevel_tot:
-        notes.append("GEVEL-m² = %.1f m² (afgeleid: som van de getikte buitenwanden, bruto). Dit is een "
-                     "STARTPUNT — MagicPlan meet per kamer, dus controleer/corrigeer de gevel-m² per "
-                     "oriëntatie in Vabi (NTA8800-begrenzing wijkt af)." % _gevel_tot)
+        notes.append("GEVEL-m² = %.1f m² BRUTO (breedte x verdiepingshoogte per bouwlaag; ramen/deuren "
+                     "= deelvlakken in Vabi). Loop de opbouw-note per gevel na op te brede verdiepingen "
+                     "(= dubbel getikt)." % _gevel_tot)
     if _dak_tot:
         notes.append("DAK-m² = %.1f m² (afgeleid: footprint / cos(helling)). Hangt volledig aan de "
                      "ingevoerde hellingshoek en footprint — controleer beide en het dak-m² in Vabi." % _dak_tot)
