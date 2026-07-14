@@ -33,8 +33,9 @@
      waarschuwt hierop ("TIKFOUT? evenwijdige wanden"), maar voorkomen is beter.
    - **Zolderwanden onder het schuine dak NIET tikken.** Op zolder zit de thermische schil in het
      DAK (dat rekent de tool al uit footprint + helling). Alleen échte verticale kopgevels tikken
-     (de driehoek-zijden, haaks op de nok) — en die maakt de tool bij een zadeldak ook al zelf als
-     je die zijde als Linker-/Rechtergevel hebt getikt op een lagere verdieping.
+     (de driehoek-zijden, haaks op de nok). *Vangnet:* tik je per ongeluk tóch de voor/achtergevel
+     op de zolder, dan **haalt de tool die verdieping automatisch uit de gevel** (want die oriëntatie
+     is een schuin dakvlak) en meldt dat in een note — dubbeltelling met het dak kan dus niet meer.
    - **Wél elke verdieping.** Op BG én verdieping(en) de gevelwanden tikken — een gemiste kamer =
      een gat in de gevel (de tool checkt de volledigheid tegen omtrek x gevelhoogte).
    - **Ramen/deuren gewoon per kamer intikken zoals je meet** — die kloppen bewezen op de

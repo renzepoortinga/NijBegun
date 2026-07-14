@@ -616,18 +616,17 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     toeslag_tot = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, woningtype) if n_buur else 0.0
     n_gevel = max(len(gevel_per), 1)
     verd_hoogte = {v.naam: v.hoogte_m for v in geo.vloeren if v.hoogte_m}
+    gevel_refs = []     # {s, orient, bxh, extra} -> post-pass haalt de ZOLDER eruit (schuin dakvlak)
     for (orient, begr, isol_ov, nareken, rz), opp_netto in sorted(gevel_per.items()):
         key = (orient, begr, isol_ov, nareken, rz)
         # GEVEL-m2 = breedte x verdiepingshoogte per bouwlaag (BRUTO; ramen/deuren = deelvlakken
         # in Vabi). Alleen als alle segmenten een breedte hebben én de verdiepingshoogtes bekend
         # zijn; anders fallback = bruto wandsom (som 'Surface' van de getikte wanden) + note.
         bxh = gevel_bxh.get(key, {})
-        if bxh and key not in gevel_bxh_onvolledig and all(vd in verd_hoogte for vd in bxh):
+        _is_bxh = bool(bxh and key not in gevel_bxh_onvolledig and all(vd in verd_hoogte for vd in bxh))
+        if _is_bxh:
             opp = round(sum(br * verd_hoogte[vd] for vd, br in bxh.items()), 2)
-            opbouw = " + ".join("%s %.2fx%.2f" % (vd, br, verd_hoogte[vd]) for vd, br in sorted(bxh.items()))
-            notes.append("Gevel %s (%s): %s = %.2f m2 BRUTO (breedte x verdiepingshoogte; ramen/"
-                         "deuren gaan er in Vabi als deelvlak af)."
-                         % (orient, orient_naam.get(orient, "?"), opbouw, opp))
+            # de opbouw-note komt in de ZOLDER-post-pass (dan is bekend of een verdieping schuin dak is)
         else:
             opp = gevel_bruto.get(key, opp_netto)
             notes.append("Gevel %s: b x h-methode niet mogelijk (wandbreedte of verdiepingshoogte "
@@ -641,7 +640,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         gnaam = orient_naam.get(orient, "")
         gid = "gevel-%s%s" % (gnaam or orient, suffix)
         wand_isol = isol_ov or isol   # per-wand override wint van de projectdefault
-        schil.append(SchilDeel(
+        _gevel_s = SchilDeel(
             id=gid, type="gevel", subtype="", begrenzing=begr,
             orientatie=orient, gevel_naam=gnaam, oppervlakte_m2=round(opp + extra, 2),
             isolatie_aanwezig=wand_isol, rekenzone=rz, rc_bron=gevel_rc,
@@ -652,7 +651,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                          + (" | +%.2f m2 hart-op-hart (ISSO 8.2)" % extra if extra else "")
                          + (" | isolatie %s (per-wand override)" % isol_ov if isol_ov else "")
                          + (" | Rc/U via kwaliteitsverklaring (zet Invoer in Vabi)" if gevel_rc == "Kwaliteitsverklaring" else "")
-                         + (" | NAREKENEN in Vabi (gemarkeerd: deels buiten/binnen of bijzonder)" if nareken else ""))))
+                         + (" | NAREKENEN in Vabi (gemarkeerd: deels buiten/binnen of bijzonder)" if nareken else "")))
+        schil.append(_gevel_s)
+        if _is_bxh:
+            gevel_refs.append({"s": _gevel_s, "orient": orient, "bxh": dict(bxh), "extra": extra})
     if orientatie_voorgevel:
         afg = lambda gn: _orient_afleiden(gn, orientatie_voorgevel) or "?"
         notes.append("Voorgevel-oriëntatie %s -> afgeleid: voorgevel=%s, rechtergevel=%s, achtergevel=%s, "
@@ -1176,21 +1178,33 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                          "(geknikte/L-vormige gevel), of is het dubbel? Eén rechte gevel = één wand per "
                          "kamer." % (_km, (" (%s)" % _vd if _vd else ""), len(_ts), _ori,
                                      "/".join("%.1f" % b for b in _breedtes)))
-    # (2) zolderwand getikt met dezelfde oriëntatie als een SCHUIN dakvlak: dat stuk schil zit al
-    #     in het dak (footprint/cos) -> dubbel geteld.
+    # (2) ZOLDER-UITSLUITING (eis Renze 14-7): op de bovenste verdieping onder een SCHUIN dakvlak is
+    #     de voor/achtergevel het DAK zelf, geen verticale gevel. Die verdieping halen we automatisch
+    #     uit de gevel-m² voor de oriëntaties die een schuin dakvlak hebben; de echte KOPGEVELS (haaks
+    #     op de nok, andere oriëntatie) blijven wél gevel. De opbouw-note per gevel komt hier (nu is
+    #     bekend welke oriëntatie schuin dak is).
     _verd_volgorde = [v.naam for v in geo.vloeren]
     _top_verd = _verd_volgorde[-1] if _verd_volgorde else ""
     _schuin_oris = {s.orientatie for s in schil if s.type == "dak" and (s.hellingshoek or 0) > 0 and s.orientatie}
-    _zolder_dubbel = [t for t in gevel_tikken
-                      if _top_verd and kamer_verdieping.get(t["kamer"], "") == _top_verd
-                      and t["orient"] in _schuin_oris]
-    if _zolder_dubbel:
-        notes.append("TIKFOUT? %d wand(en) op de bovenste verdieping (%s) getikt als gevel op %s — daar "
-                     "zit het SCHUINE dakvlak al (samen %.1f m² dubbel: in gevel én dak). Zolderwanden "
-                     "onder het schuine dak niet als gevel tikken (alleen echte kopgevels)."
-                     % (len(_zolder_dubbel), _top_verd,
-                        "/".join(sorted({t["orient"] for t in _zolder_dubbel})),
-                        sum(t["m2"] for t in _zolder_dubbel)))
+    for _ref in gevel_refs:
+        _s, _ori, _bxh, _ex = _ref["s"], _ref["orient"], _ref["bxh"], _ref["extra"]
+        _excl = {vd for vd in _bxh if _ori in _schuin_oris and vd == _top_verd}
+        _counted = {vd: br for vd, br in _bxh.items() if vd not in _excl}
+        _opp = round(sum(br * verd_hoogte[vd] for vd, br in _counted.items()), 2)
+        # hart-op-hart-toeslag alleen op een gevel die ECHT bestaat (niet als hij volledig zolder is)
+        _s.oppervlakte_m2 = round(_opp + (_ex if _counted else 0.0), 2)
+        _opbouw = " + ".join("%s %.2fx%.2f" % (vd, br, verd_hoogte[vd]) for vd, br in sorted(_counted.items())) or "—"
+        _n = ("Gevel %s (%s): %s = %.2f m² BRUTO (breedte x verdiepingshoogte; ramen/deuren = deelvlak "
+              "in Vabi)." % (_ori, orient_naam.get(_ori, "?"), _opbouw, _opp))
+        if _excl:
+            _weg = round(sum(_bxh[vd] * verd_hoogte[vd] for vd in _excl), 2)
+            _n += (" ZOLDER %s (%.2f m²) NIET meegeteld: daar is de gevel het SCHUINE DAKVLAK (zit al in "
+                   "het dak). Alleen echte kopgevels tellen op zolder." % ("/".join(sorted(_excl)), _weg))
+            _s.opmerkingen += " | zolder %s uit gevel gehouden (schuin dak)" % "/".join(sorted(_excl))
+            if not _counted:
+                _n += (" LET OP: deze gevel bestaat ALLEEN uit zolder -> nu 0 m²; klopt dat (volledig "
+                       "onder het schuine dak), of hoort er een lagere verdieping bij?")
+        notes.append(_n)
     # TRANSPARANTIE-flags (geen aannames-verhulling): gevel = breedte x verdiepingshoogte per bouwlaag
     # (BRUTO; ramen/deuren gaan er in Vabi als deelvlak af); dak = footprint / cos(helling). Beide zijn
     # een STARTPUNT — controleer de opbouw-notes hierboven (breedte per verdieping) op tikfouten en

@@ -1772,7 +1772,7 @@ except Exception as _e:
     check("enum-gok-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print()
-print("61. Gevel-tikfout-detectie (Essenhage-les 14-7: dubbele evenwijdige wanden + zolder-onder-dak)")
+print("61. Gevel-tikfout-detectie + zolder-uitsluiting (Essenhage-les 14-7)")
 try:
     import tempfile as _t61, os as _o61, csv as _c61
     from magicplan.statistics_csv import build_dossier as _bd61
@@ -1794,9 +1794,11 @@ try:
                # WALL: c0 kamer, c1 wand, c3 bruto, c4 netto, c5 breedte, c6 hoogte, c8 Type, c25 Gevelnaam
                ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
                 "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+               ["Ground Floor"],   # verdieping-scheidingsrij (voedt de b x h-verdiepingshoogte)
                _w61({0: "Woonkamer", 1: "Wall 1", 3: "10.4", 4: "10.4", 5: "4.0", 6: "2.6", 8: "Wall", 25: "Voorgevel"}),
                _w61({0: "Woonkamer", 1: "Wall 3", 3: "10.4", 4: "10.4", 5: "4.0", 6: "2.6", 8: "Wall", 25: "Voorgevel"}),
-               _w61({0: "Zolderkamer", 1: "Wall 1", 3: "9.6", 4: "9.6", 5: "4.0", 6: "2.4", 8: "Wall", 25: "Achtergevel"}),
+               ["2nd Floor"],
+               _w61({0: "Zolderkamer", 1: "Wall 0", 3: "9.6", 4: "9.6", 5: "4.0", 6: "2.4", 8: "Wall", 25: "Achtergevel"}),
                []]
     with _t61.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f61:
         _c61.writer(_f61).writerows(_rows61)
@@ -1805,11 +1807,14 @@ try:
     _o61.unlink(_p61)
     check("tikfout: 2 evenwijdige wanden zelfde kamer/gevel -> TIKFOUT-note (dubbel geteld)",
           any("TIKFOUT" in str(n) and "evenwijdige" in str(n) for n in _n61))
-    check("tikfout: zolderwand met oriëntatie van het schuine dakvlak -> TIKFOUT-note",
-          any("TIKFOUT" in str(n) and "bovenste verdieping" in str(n) for n in _n61))
+    # zolderwand op een schuin-dak-oriëntatie -> AUTOMATISCH uit de gevel gehouden (eis Renze 14-7)
+    check("zolder: wand op schuin-dak-oriëntatie -> ZOLDER automatisch NIET meegeteld in de gevel",
+          any("ZOLDER" in str(n) and "NIET meegeteld" in str(n) and "SCHUINE DAKVLAK" in str(n) for n in _n61))
+    _zo61 = sum(s.oppervlakte_m2 or 0 for s in _d61.schil if s.type == "gevel" and s.orientatie == "ZO")
+    check("zolder: achtergevel (alleen zolder onder schuin dak) -> ~0 m² gevel (zit in het dak)", _zo61 < 1.0)
     _nw61 = sum(s.oppervlakte_m2 or 0 for s in _d61.schil if s.type == "gevel" and s.orientatie == "NW")
-    check("tikfout: tool corrigeert NIET zelf (beide wanden blijven in de schil — adviseur beslist)",
-          20.7 <= _nw61 <= 22.5)   # 20.8 + ISSO hart-op-hart-toeslag (tussenwoning)
+    check("tikfout: dubbele wanden op BG (geen zolder) blijven in de schil — adviseur corrigeert",
+          20.7 <= _nw61 <= 22.5)   # 20.8 (BG-woonkamer, NW niet uitgesloten) + ISSO hart-op-hart
 except Exception as _e:
     check("gevel-tikfout-detectie: draait zonder fout", False); print("     " + repr(_e)[:200])
 
