@@ -337,7 +337,9 @@ _cgev = [s for s in _cd.schil if s.type == "gevel"]
 _ckoz = [s for s in _cd.schil if s.type == "kozijn"]
 check("csv: bouwjaar uit klasse = 1992", _cd.identificatie.bouwjaar == 1992)
 check("csv: 2 gevels per orientatie (ZW+NO)", {s.orientatie for s in _cgev} == {"ZW", "NO"})
-check("csv: gevel-m2 = surface-zonder-openingen (9+9)", abs(sum(s.oppervlakte_m2 for s in _cgev) - 18.0) < 0.1)
+# 14-7 (methode Renze): gevel-hoofdvlak = BRUTO (10+10, incl. openingen); ramen = deelvlakken in Vabi
+check("csv: gevel-m2 = BRUTO wandsom (10+10; ramen gaan er als deelvlak af)",
+      abs(sum(s.oppervlakte_m2 for s in _cgev) - 20.0) < 0.1)
 check("csv: 2 kozijnen (binnendeur uitgefilterd)", len(_ckoz) == 2)
 check("csv: ventilatie A / A1", _cd.ventilatie.systeem == "A" and _cd.ventilatie.subsysteem_code == "A1")
 check("csv: verwarming HR107", _cd.installaties.verwarming.type_opwekker == "HR107")
@@ -1810,6 +1812,47 @@ try:
           20.7 <= _nw61 <= 22.5)   # 20.8 + ISSO hart-op-hart-toeslag (tussenwoning)
 except Exception as _e:
     check("gevel-tikfout-detectie: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
+print("62. Gevel = breedte x verdiepingshoogte per bouwlaag (methode Renze 14-7: 5,81 -> 28,92 m2 BRUTO)")
+try:
+    import tempfile as _t62, os as _o62, csv as _c62
+    from magicplan.statistics_csv import build_dossier as _bd62
+    def _w62(vals):
+        r = [""] * 26
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    _rows62 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "80"], ["Woningtype", "Vrijstaand"],
+               ["Gevelhoogte (m)", "5.2"], ["Oriëntatie voorgevel", "NW"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+               ["Ground Floor", "50", "1", "1", "1", "1", "1", "2.60 m"],
+               ["1st Floor", "45", "1", "1", "1", "1", "1", "2.38 m"], [],
+               ["ROOM ATTRIBUTES", "Ground surface without walls: m²"],
+               ["Ground Floor", ""], ["Woonkamer", "50"],
+               ["1st Floor", ""], ["Slaapkamer", "45"], [],
+               ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+               ["Ground Floor"],
+               # BG: pui-wand met borstwering — wandsom zou maar 2,67 m2 tellen; b x h moet 5,81x2,60 geven
+               _w62({0: "Woonkamer", 1: "Wall 1", 3: "2.67", 4: "2.67", 5: "5.81", 6: "0.46", 8: "Wall", 25: "Achtergevel"}),
+               ["1st Floor"],
+               _w62({0: "Slaapkamer", 1: "Wall 2", 3: "13.83", 4: "13.83", 5: "5.81", 6: "2.38", 8: "Wall", 25: "Achtergevel"}),
+               []]
+    with _t62.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f62:
+        _c62.writer(_f62).writerows(_rows62)
+        _p62 = _f62.name
+    _d62, _n62 = _bd62(_p62)
+    _o62.unlink(_p62)
+    _ag62 = next((s for s in _d62.schil if s.type == "gevel" and s.orientatie == "ZO"), None)
+    check("b x h: achtergevel 5,81 -> BG 5,81x2,60 + 1e 5,81x2,38 = 28,92 m2 (Renze's voorbeeld)",
+          _ag62 is not None and abs(_ag62.oppervlakte_m2 - 28.92) < 0.05)
+    check("b x h: opbouw-note met beide verdiepingen",
+          any("5.81x2.60" in str(n) and "5.81x2.38" in str(n) for n in _n62))
+    check("b x h: gevel gemarkeerd als BRUTO (ramen/deuren = deelvlak)",
+          "BRUTO" in (_ag62.opmerkingen or ""))
+except Exception as _e:
+    check("gevel b x h: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print()
 print("59. Webapp opleveren: leeg project -> direct Afronden + eigen ventilatieplan/bijlagen uploaden + export-zip")

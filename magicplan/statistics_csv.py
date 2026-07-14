@@ -393,7 +393,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                             or ("raam" in (h or "").lower() and "paneel" in (h or "").lower())
                             or (h or "").strip().lower() == "paneel"), None)
     gevel_per = {}      # (orientatie, begrenzing) -> m2 (binnenwerks, zonder openingen)
-    gevel_bruto = {}    # idem mét openingen (voor volledigheidscheck)
+    gevel_bruto = {}    # idem mét openingen (voor volledigheidscheck + fallback)
+    # GEVEL = BREEDTE x VERDIEPINGSHOOGTE per bouwlaag (methode Renze 14-7, NTA8800-getrouw):
+    # bv. achtergevel 5,81 m -> BG 5,81x2,60 + 1e 5,81x2,38 = 28,92 m2 BRUTO (ramen/deuren gaan
+    # er in Vabi als deelvlak af). De kamer-wandsom telde borstweringen als 0,46 m-strookjes.
+    gevel_bxh = {}            # key -> {verdiepingnaam: som getikte wandbreedtes}
+    gevel_bxh_onvolledig = set()   # keys waar een breedte ontbreekt -> fallback wandsom
+    cur_verdieping = ""
     orient_naam = {}    # orientatie -> gevel-naam (voor/achter/links/rechts) voor leesbaar label
     kozijnen = []
     panelen = []          # dichte panelen-in-kozijn (Raam/paneel = paneel): dichte constructie i.p.v. glas
@@ -404,7 +410,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     nareken_namen = []        # wanden die de adviseur markeerde om handmatig in Vabi na te rekenen
     gevel_tikken = []         # per getikte buitenwand: kamer/wand/orient/breedte (tikfout-checks)
     for r in wall_rows[1:]:
-        if len(r) < 12 or not (r[0] or "").strip():
+        _c0w = (r[0] or "").strip() if r else ""
+        # verdieping-scheidingsrij in de WALL-sectie ('Ground Floor'/'1st Floor'/...) -> tracken
+        if _c0w in floor_names and (len(r) <= 8 or not (r[8] or "").strip()):
+            cur_verdieping = _c0w
+        if len(r) < 12 or not _c0w:
             continue
         typ = (r[8] or "").strip() if len(r) > 8 else ""
         if typ == "Wall":
@@ -462,6 +472,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
                 gevel_per[k] = round(gevel_per.get(k, 0.0) + _bijdrage, 2)
                 gevel_bruto[k] = round(gevel_bruto.get(k, 0.0) + (_f(r[3]) or 0.0), 2)
+                # b x h-methode: breedte van dit wandsegment bij de verdieping optellen.
+                # Bij 'Grenst aan buiten (m)' telt alleen de buiten-breedte.
+                _w_breed = _f(r[5]) if len(r) > 5 else None
+                if cur_nareken and _bm:
+                    _w_breed = _bm
+                if _w_breed and cur_verdieping:
+                    _d_bxh = gevel_bxh.setdefault(k, {})
+                    _d_bxh[cur_verdieping] = round(_d_bxh.get(cur_verdieping, 0.0) + _w_breed, 2)
+                else:
+                    gevel_bxh_onvolledig.add(k)
                 if cur_gevel_naam and cur_orient not in orient_naam:
                     orient_naam[cur_orient] = cur_gevel_naam
                 if cur_nareken:
@@ -585,7 +605,23 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     n_buur = aantal_woningscheidende_wanden(woningtype)
     toeslag_tot = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, woningtype) if n_buur else 0.0
     n_gevel = max(len(gevel_per), 1)
-    for (orient, begr, isol_ov, nareken, rz), opp in sorted(gevel_per.items()):
+    verd_hoogte = {v.naam: v.hoogte_m for v in geo.vloeren if v.hoogte_m}
+    for (orient, begr, isol_ov, nareken, rz), opp_netto in sorted(gevel_per.items()):
+        key = (orient, begr, isol_ov, nareken, rz)
+        # GEVEL-m2 = breedte x verdiepingshoogte per bouwlaag (BRUTO; ramen/deuren = deelvlakken
+        # in Vabi). Alleen als alle segmenten een breedte hebben én de verdiepingshoogtes bekend
+        # zijn; anders fallback = bruto wandsom (som 'Surface' van de getikte wanden) + note.
+        bxh = gevel_bxh.get(key, {})
+        if bxh and key not in gevel_bxh_onvolledig and all(vd in verd_hoogte for vd in bxh):
+            opp = round(sum(br * verd_hoogte[vd] for vd, br in bxh.items()), 2)
+            opbouw = " + ".join("%s %.2fx%.2f" % (vd, br, verd_hoogte[vd]) for vd, br in sorted(bxh.items()))
+            notes.append("Gevel %s (%s): %s = %.2f m2 BRUTO (breedte x verdiepingshoogte; ramen/"
+                         "deuren gaan er in Vabi als deelvlak af)."
+                         % (orient, orient_naam.get(orient, "?"), opbouw, opp))
+        else:
+            opp = gevel_bruto.get(key, opp_netto)
+            notes.append("Gevel %s: b x h-methode niet mogelijk (wandbreedte of verdiepingshoogte "
+                         "ontbreekt) -> bruto wandsom %.2f m2 gebruikt; controleer in Vabi." % (orient, opp))
         extra = round(toeslag_tot / n_gevel, 2) if toeslag_tot else 0.0
         suffix = "" if begr == "Buitenlucht" else "-" + begr[:3].lower()
         if isol_ov or nareken:
@@ -601,7 +637,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             isolatie_aanwezig=wand_isol, rekenzone=rz, rc_bron=gevel_rc,
             isolatiedikte_mm=g_b["dikte_mm"], spouw_aanwezig=g_b["spouw"],
             opmerkingen=((("%sgevel" % gnaam + " | ") if gnaam else "")
-                         + "binnenwerks; AVR/party-walls uitgefilterd"
+                         + "BRUTO (ramen/deuren als deelvlak); AVR/party-walls uitgefilterd"
                          + (" | begrenzing %s (naamconventie)" % begr if begr != "Buitenlucht" else "")
                          + (" | +%.2f m2 hart-op-hart (ISSO 8.2)" % extra if extra else "")
                          + (" | isolatie %s (per-wand override)" % isol_ov if isol_ov else "")

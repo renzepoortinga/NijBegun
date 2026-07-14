@@ -841,7 +841,9 @@ def opname(tag):
     for rz in sorted(per_zone):
         rows = sorted(per_zone[rz], key=lambda t: (orde.get((t[1].type or "").lower(), 9), t[1].id))
         zones.append((rz, rows))
-    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil if (s.begrenzing or "") != "AVR")
+    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil
+                  if (s.begrenzing or "") != "AVR" and s.type not in ("kozijn", "paneel"))
+    # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen
     ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
     bj_titel, bj_html = bouwjaar_mod.hint(dos.identificatie.bouwjaar)
     return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
@@ -1169,7 +1171,9 @@ def vabi(tag):
     except Exception as e:
         flash("VABI-import genereren mislukte: %s" % e)
     vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(outdir, "*.xml")))
-    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil if (s.begrenzing or "") != "AVR")
+    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil
+                  if (s.begrenzing or "") != "AVR" and s.type not in ("kozijn", "paneel"))
+    # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen
     ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
     return page(VABI, stepper=stepper("vabi", st), tag=tag, vabi_files=vabi_files, na=st.get("na"),
                 h=st.get("huidig") or {}, st=st, verlies=verlies, ag=ag, renojaar=renojaar)
