@@ -1199,19 +1199,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             continue
         _breedtes = [round(t["breedte"], 1) for t in _ts if t["breedte"]]
         _dubbel = {b for b in _breedtes if _breedtes.count(b) >= 2}
-        if _dubbel:
-            notes.append("TIKFOUT? kamer '%s'%s: %d evenwijdige wanden met gelijke breedte (%s m) ALLEBEI "
-                         "als gevel %s getikt — een kamer heeft maar één wand op een gevel; haal de "
-                         "dubbele weg (m² telt nu dubbel, samen %.1f m²)."
-                         % (_km, (" (%s)" % _vd if _vd else ""), len(_ts),
-                            "/".join("%.1f" % b for b in sorted(_dubbel)), _ori, sum(t["m2"] for t in _ts)))
-        elif len(_ts) >= 2:
-            # ook DUBBEL, maar met verschillende breedtes (bv. Living Room Wall 1 5,81 + Wall 3 3,66):
-            # meestal een tikfout (tegenoverliggende wanden), soms een echt geknikte/L-vormige gevel.
+        # gelijke-breedte dubbels (Wall 1 // Wall 3) zijn AL door de dedup 1x geteld -> geen aparte
+        # tikfout-note meer (die sprak de dedup-note tegen). Alleen de VERSCHILLENDE-breedte dubbels
+        # blijven onopgelost (kan een echte knik zijn of een tikfout) -> LET OP.
+        _verschillend = len(set(_breedtes)) >= 2
+        if _verschillend:
             notes.append("LET OP kamer '%s'%s: %d wanden als gevel %s getikt (breedtes %s m). Klopt dat "
                          "(geknikte/L-vormige gevel), of is het dubbel? Eén rechte gevel = één wand per "
-                         "kamer." % (_km, (" (%s)" % _vd if _vd else ""), len(_ts), _ori,
-                                     "/".join("%.1f" % b for b in _breedtes)))
+                         "kamer — of vul de gemeten gevelbreedte in (dan negeert de tool de wandsom)."
+                         % (_km, (" (%s)" % _vd if _vd else ""), len(_ts), _ori,
+                            "/".join("%.1f" % b for b in _breedtes)))
     # (2) ZOLDER-UITSLUITING (eis Renze 14-7): op de bovenste verdieping onder een SCHUIN dakvlak is
     #     de voor/achtergevel het DAK zelf, geen verticale gevel. Die verdieping halen we automatisch
     #     uit de gevel-m² voor de oriëntaties die een schuin dakvlak hebben; de echte KOPGEVELS (haaks
