@@ -464,34 +464,26 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 continue
             if cur_orient:  # oriëntatie bekend (ingevuld of afgeleid) = buitengevel (telt mee)
                 n_wall_ext += 1
-                # tik-administratie voor de consistentie-checks (dubbele evenwijdige wanden /
-                # zolderwand-onder-schuin-dak) — puur signaleren, nooit zelf corrigeren
-                gevel_tikken.append({"kamer": (r[0] or "").strip(), "kamer_id": _kamer_instantie,
-                                     "verdieping": cur_verdieping,
-                                     "wand": (r[1] or "").strip() if len(r) > 1 else "",
-                                     "orient": cur_orient, "breedte": _f(r[5]) if len(r) > 5 else None,
-                                     "m2": _f(r[3]) or 0.0})
                 k = (cur_orient, cur_begr, cur_isol or "", cur_nareken, cur_rz)
                 _bijdrage = _f(r[4]) or 0.0
+                _w_breed = _f(r[5]) if len(r) > 5 else None    # effectieve gevelbreedte van dit segment
                 if cur_nareken and _bm and _wh:
                     _buiten_m2 = round(min(_bm * _wh, _bijdrage or (_bm * _wh)), 2)
                     notes.append("Wand '%s': gesplitst via 'Grenst aan buiten (m)' = %.2f m x %.2f m hoogte "
                                  "-> %.2f m2 als gevel geteld (rest binnen/AVR, niet in de schil)."
                                  % (_wnaam.strip(), _bm, _wh, _buiten_m2))
                     _bijdrage = _buiten_m2
+                    _w_breed = _bm
                     k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
                 gevel_per[k] = round(gevel_per.get(k, 0.0) + _bijdrage, 2)
                 gevel_bruto[k] = round(gevel_bruto.get(k, 0.0) + (_f(r[3]) or 0.0), 2)
-                # b x h-methode: breedte van dit wandsegment bij de verdieping optellen.
-                # Bij 'Grenst aan buiten (m)' telt alleen de buiten-breedte.
-                _w_breed = _f(r[5]) if len(r) > 5 else None
-                if cur_nareken and _bm:
-                    _w_breed = _bm
-                if _w_breed and cur_verdieping:
-                    _d_bxh = gevel_bxh.setdefault(k, {})
-                    _d_bxh[cur_verdieping] = round(_d_bxh.get(cur_verdieping, 0.0) + _w_breed, 2)
-                else:
-                    gevel_bxh_onvolledig.add(k)
+                # tik-administratie: gevel_bxh (breedte x verdiepingshoogte) wordt NA de wand-loop
+                # uit deze tikken gebouwd, mét dedup van tegenoverliggende gelijke-breedte wanden.
+                gevel_tikken.append({"kamer": (r[0] or "").strip(), "kamer_id": _kamer_instantie,
+                                     "verdieping": cur_verdieping, "gevel_key": k,
+                                     "wand": (r[1] or "").strip() if len(r) > 1 else "",
+                                     "orient": cur_orient, "breedte": _f(r[5]) if len(r) > 5 else None,
+                                     "breedte_eff": _w_breed, "m2": _f(r[3]) or 0.0})
                 if cur_gevel_naam and cur_orient not in orient_naam:
                     orient_naam[cur_orient] = cur_gevel_naam
                 if cur_nareken:
@@ -558,6 +550,32 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             deuren.append({"area": _f(r[3]) or 0.0, "type_constructie": tc, "opp_raam": opp,
                            "glas": glas, "orient": orient, "begr": cur_begr})
 
+    # ---- gevel_bxh opbouwen uit de tikken, MET dedup (Essenhage-les 14-7) ----
+    # GEOMETRISCHE WET: twee wanden van dezelfde kamer met GELIJKE breedte op dezelfde gevel zijn
+    # tegenoverliggend (Wall 1 // Wall 3) — die kunnen fysiek niet allebei dezelfde buitengevel zijn.
+    # De breedte van zo'n paar telt dus 1x (geen aanname; de kamer raakt de gevel maar aan één kant).
+    from collections import defaultdict as _ddw
+    _tel_breedtes = _ddw(list)     # (kamer_id, gevel_key) -> lijst effectieve breedtes (op volgorde)
+    for _t in gevel_tikken:
+        _tel_breedtes[(_t["kamer_id"], _t["gevel_key"])].append(_t)
+    for (_kid, _gk), _tks in _tel_breedtes.items():
+        _gezien = {}    # afgeronde breedte -> hoe vaak al geteld
+        for _t in _tks:
+            _be, _vd = _t["breedte_eff"], _t["verdieping"]
+            if not _be or not _vd:
+                gevel_bxh_onvolledig.add(_gk); continue
+            _wr = round(_be, 2)
+            if _gezien.get(_wr, 0) >= 1:
+                # duplicaat parallelle wand (tegenoverliggend) -> NIET nog eens tellen
+                notes.append("Gevel %s (kamer '%s'%s): tweede wand van %.2f m op dezelfde gevel is de "
+                             "TEGENOVERLIGGENDE wand -> 1x geteld (kan niet dezelfde buitengevel zijn)."
+                             % (_t["orient"], _t["kamer"], (" %s" % _vd) if _vd else "", _wr))
+                _gezien[_wr] += 1
+                continue
+            _gezien[_wr] = _gezien.get(_wr, 0) + 1
+            _d_bxh = gevel_bxh.setdefault(_gk, {})
+            _d_bxh[_vd] = round(_d_bxh.get(_vd, 0.0) + _be, 2)
+
     # ---- schil opbouwen ----
     schil = []
 
@@ -616,14 +634,30 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     toeslag_tot = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, woningtype) if n_buur else 0.0
     n_gevel = max(len(gevel_per), 1)
     verd_hoogte = {v.naam: v.hoogte_m for v in geo.vloeren if v.hoogte_m}
+    # DIRECTE GEVELBREEDTE-INVOER (methode Renze 14-7, meest robuust): meet je de breedte van een
+    # gevel, dan doet de tool breedte x verdiepingshoogte per bouwlaag — geen wandsom, geen dubbeltel.
+    # Per gevelnaam (voor/achter/links/rechts) -> oriëntatie via de voorgevel-oriëntatie.
+    gevelbreedte_per_orient = {}
+    for _gnaam, _veld in (("voor", "Voorgevel - breedte (m)"), ("achter", "Achtergevel - breedte (m)"),
+                          ("links", "Linkergevel - breedte (m)"), ("rechts", "Rechtergevel - breedte (m)")):
+        _bm2 = _f(G(_veld))
+        _oo = _orient_afleiden(_gnaam, orientatie_voorgevel)
+        if _bm2 and _oo:
+            gevelbreedte_per_orient[_oo] = _bm2
     gevel_refs = []     # {s, orient, bxh, extra} -> post-pass haalt de ZOLDER eruit (schuin dakvlak)
     for (orient, begr, isol_ov, nareken, rz), opp_netto in sorted(gevel_per.items()):
         key = (orient, begr, isol_ov, nareken, rz)
         # GEVEL-m2 = breedte x verdiepingshoogte per bouwlaag (BRUTO; ramen/deuren = deelvlakken
-        # in Vabi). Alleen als alle segmenten een breedte hebben én de verdiepingshoogtes bekend
-        # zijn; anders fallback = bruto wandsom (som 'Surface' van de getikte wanden) + note.
+        # in Vabi). Voorkeur: de DIRECT GEMETEN gevelbreedte (rock-solid); anders de wandsom-breedte
+        # per verdieping (met dedup); anders fallback bruto wandsom + note.
         bxh = gevel_bxh.get(key, {})
-        _is_bxh = bool(bxh and key not in gevel_bxh_onvolledig and all(vd in verd_hoogte for vd in bxh))
+        _breedte_ov = gevelbreedte_per_orient.get(orient)
+        if _breedte_ov and bxh:
+            # override: elke GETIKTE verdieping krijgt de gemeten gevelbreedte (i.p.v. de wandsom)
+            bxh = {vd: _breedte_ov for vd in bxh}
+            notes.append("Gevel %s: DIRECT GEMETEN gevelbreedte %.2f m gebruikt (niet de wandsom) — "
+                         "meest betrouwbaar." % (orient, _breedte_ov))
+        _is_bxh = bool(bxh and (key not in gevel_bxh_onvolledig or _breedte_ov) and all(vd in verd_hoogte for vd in bxh))
         if _is_bxh:
             opp = round(sum(br * verd_hoogte[vd] for vd, br in bxh.items()), 2)
             # de opbouw-note komt in de ZOLDER-post-pass (dan is bekend of een verdieping schuin dak is)
@@ -1034,11 +1068,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             type=v["kind"], subtype=v.get("type", ""), begrenzing="Buitenlucht",
             orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
             isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
-            opmerkingen="dak-per-vlak uit opname (%s, helling %.0f gr)" % (type_dak, helling)))
+            opmerkingen="dak-per-vlak uit opname (%s, helling %.0f gr)" % (type_dak, (v.get("hellingshoek") or 0))))
         dak_done = True
     if dakvlakken and ("schild" in tl or "tent" in tl):
         notes.append("Schilddak: totaal schuin dakoppervlak = footprint/cos(%.0f°), gelijk verdeeld over de "
-                     "opgegeven zijden — verfijn de verdeling per dakvlak in Vabi." % helling)
+                     "opgegeven zijden — verfijn de verdeling per dakvlak in Vabi." % (helling or 0))
     if plat_m2:
         schil.append(SchilDeel(id="dak-plat", type="dak", subtype="plat", begrenzing="Buitenlucht",
                                orientatie=plat_or or "", oppervlakte_m2=plat_m2, hellingshoek=0,

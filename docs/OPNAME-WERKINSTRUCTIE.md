@@ -25,7 +25,13 @@
 8. Tik de **buitenwand(en)** aan -> **Gevelnaam** kiezen: Voorgevel / Achtergevel / Linkergevel /
    Rechtergevel / Buurwand (AVR). Leeg = binnenwand. GEEN namen typen.
 
-   **⭐ DE GOUDEN TIK-REGELS (Essenhage-les 14-7 — gevel was +26% door precies deze fouten):**
+   **⭐⭐ DE ZEKERSTE WEG — meet de gevelbreedte (nieuw 14-7):** vul in het Object-form per gevel
+   **"Voorgevel/Achtergevel/Linkergevel/Rechtergevel - breedte (m)"** in (net als de dak-vloerbreedte).
+   Dan rekent de tool **breedte × verdiepingshoogte per bouwlaag** en negeert de (foutgevoelige) wandsom
+   volledig — geen dubbeltelling mogelijk. Eén meting per gevel = rock-solid. Tik je geen breedte, dan
+   valt de tool terug op de som van je getikte wanden (zie de tik-regels hieronder).
+
+   **⭐ DE GOUDEN TIK-REGELS (voor de wandsom-fallback; Essenhage-les 14-7 — gevel was +26% door deze fouten):**
    - **Meerdere gevels per kamer mag gewoon** (hoekwoning: achtergevel + rechtergevel; doorlopende
      woonkamer-keuken: drie; vrijstaand: vier) — dat zijn verschillende oriëntaties en prima.
      Wat NIET kan: twee **tegenover elkaar liggende** wanden (Wall 1 én Wall 3, zelfde breedte)

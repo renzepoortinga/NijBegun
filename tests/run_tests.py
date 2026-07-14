@@ -701,8 +701,9 @@ _frec = {"id": "rec1", "form": _fform}
 _fadd = _fp.load_additions()
 _frec, _fadded, _freq, _fprobs = _fp.merge_record(_frec, _fadd, verbose=False)
 check("form_push: 'Oriëntatie voorgevel' toegevoegd", "Oriëntatie voorgevel" in _fadded)
-check("form_push: Rc-bron gevel/vloer/dak + Gebouwhoogte toegevoegd (5 velden totaal)",
-      len(_fadded) == 5 and any("Gebouwhoogte" in a for a in _fadded))
+check("form_push: Rc-bron + Gebouwhoogte + 4x gevelbreedte toegevoegd (9 velden totaal)",
+      len(_fadded) == 9 and any("Gebouwhoogte" in a for a in _fadded)
+      and any("Voorgevel - breedte" in a for a in _fadded))
 check("form_push: geen validatieproblemen", _fprobs == [])
 check("form_push: nieuw veld na de juiste sectie (Gevels)",
       any(c.get("name") == "Oriëntatie voorgevel" for c in _fp._form_of(_frec)["children"]))
@@ -1805,16 +1806,18 @@ try:
         _p61 = _f61.name
     _d61, _n61 = _bd61(_p61)
     _o61.unlink(_p61)
-    check("tikfout: 2 evenwijdige wanden zelfde kamer/gevel -> TIKFOUT-note (dubbel geteld)",
-          any("TIKFOUT" in str(n) and "evenwijdige" in str(n) for n in _n61))
+    # GEOMETRISCHE DEDUP: 2 gelijke-breedte wanden (tegenoverliggend) op dezelfde gevel -> 1x geteld
+    check("dedup: gelijke-breedte tegenoverliggende wand op dezelfde gevel -> 1x geteld (geen aanname)",
+          any("TEGENOVERLIGGENDE" in str(n) and "1x geteld" in str(n) for n in _n61))
     # zolderwand op een schuin-dak-oriëntatie -> AUTOMATISCH uit de gevel gehouden (eis Renze 14-7)
     check("zolder: wand op schuin-dak-oriëntatie -> ZOLDER automatisch NIET meegeteld in de gevel",
           any("ZOLDER" in str(n) and "NIET meegeteld" in str(n) and "SCHUINE DAKVLAK" in str(n) for n in _n61))
     _zo61 = sum(s.oppervlakte_m2 or 0 for s in _d61.schil if s.type == "gevel" and s.orientatie == "ZO")
     check("zolder: achtergevel (alleen zolder onder schuin dak) -> ~0 m² gevel (zit in het dak)", _zo61 < 1.0)
     _nw61 = sum(s.oppervlakte_m2 or 0 for s in _d61.schil if s.type == "gevel" and s.orientatie == "NW")
-    check("tikfout: dubbele wanden op BG (geen zolder) blijven in de schil — adviseur corrigeert",
-          20.7 <= _nw61 <= 22.5)   # 20.8 (BG-woonkamer, NW niet uitgesloten) + ISSO hart-op-hart
+    # Woonkamer BG Wall 1 + Wall 3 (beide 4,0 m) -> dedup naar 4,0 x 2,60 = 10,4 (+ hart-op-hart)
+    check("dedup: dubbele BG-wanden (4,0=4,0) -> 1x geteld = 10,4 m² i.p.v. 20,8",
+          10.3 <= _nw61 <= 12.0)
 except Exception as _e:
     check("gevel-tikfout-detectie: draait zonder fout", False); print("     " + repr(_e)[:200])
 
@@ -1856,6 +1859,41 @@ try:
           any("5.81x2.60" in str(n) and "5.81x2.38" in str(n) for n in _n62))
     check("b x h: gevel gemarkeerd als BRUTO (ramen/deuren = deelvlak)",
           "BRUTO" in (_ag62.opmerkingen or ""))
+    # DIRECTE GEVELBREEDTE-invoer: overruled de fragiele wandsom (dubbel-getikte wanden genegeerd)
+    _rows62b = [["PLAN ATTRIBUTES"], ["Total living area: m²", "80"], ["Woningtype", "Vrijstaand"],
+                ["Oriëntatie voorgevel", "NW"], ["Achtergevel - breedte (m)", "5.81"], [],
+                ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+                ["Ground Floor", "50", "1", "1", "1", "1", "1", "2.60 m"],
+                ["1st Floor", "45", "1", "1", "1", "1", "1", "2.38 m"], [],
+                ["ROOM ATTRIBUTES", "Ground surface without walls: m²"],
+                ["Ground Floor", ""], ["Woonkamer", "50"], ["1st Floor", ""], ["Slaapkamer", "45"], [],
+                ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                 "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+                ["Ground Floor"],
+                # bewust FOUT getikte breedtes (3,1 en 9,9) — de gemeten 5,81 moet die overrulen
+                _w62({0: "Woonkamer", 1: "Wall 1", 3: "8", 5: "3.1", 6: "2.6", 8: "Wall", 25: "Achtergevel"}),
+                ["1st Floor"],
+                _w62({0: "Slaapkamer", 1: "Wall 2", 3: "23", 5: "9.9", 6: "2.38", 8: "Wall", 25: "Achtergevel"}), []]
+    with _t62.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f62b:
+        _c62.writer(_f62b).writerows(_rows62b)
+        _p62b = _f62b.name
+    _d62b, _n62b = _bd62(_p62b)
+    _o62.unlink(_p62b)
+    _ag62b = next((s for s in _d62b.schil if s.type == "gevel" and s.orientatie == "ZO"), None)
+    check("gevelbreedte-invoer: gemeten 5,81 overrulet de (foute) wandsom -> 5,81x(2,60+2,38)=28,92",
+          _ag62b is not None and abs(_ag62b.oppervlakte_m2 - 28.92) < 0.05)
+    check("gevelbreedte-invoer: 'DIRECT GEMETEN'-note",
+          any("DIRECT GEMETEN gevelbreedte 5.81" in str(n) for n in _n62b))
+    # plat-dak legacy-pad mag niet crashen (helling None-bug 14-7)
+    _rows62c = [r for r in _rows62b if not (r and r[0].startswith("Achtergevel"))]
+    _rows62c = _rows62c[:5] + [["Type dak", "Plat dak"], ["Dakvlak 1 - oppervlak (m²)", "50"]] + _rows62c[5:]
+    with _t62.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f62c:
+        _c62.writer(_f62c).writerows(_rows62c)
+        _p62c = _f62c.name
+    _d62c, _n62c = _bd62(_p62c)
+    _o62.unlink(_p62c)
+    check("plat-dak legacy-pad crasht niet + maakt een plat dakvlak",
+          any(s.type == "dak" for s in _d62c.schil))
 except Exception as _e:
     check("gevel b x h: draait zonder fout", False); print("     " + repr(_e)[:200])
 

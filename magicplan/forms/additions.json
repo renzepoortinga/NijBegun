@@ -37,6 +37,30 @@
       "dataType": "number",
       "required": true,
       "help": "Hoogte van maaiveld tot het HOOGSTE punt (de nok). HANDMATIGE invoer, verplicht — de tool berekent dit bewust niet. Gevelhoogte (tot de goot/dakvoet) is het aparte veld hierboven."
+     },
+     {
+      "name": "Voorgevel - breedte (m)",
+      "dataType": "number",
+      "required": false,
+      "help": "Gemeten breedte van de VOORGEVEL. Vul je dit in, dan rekent de tool breedte x verdiepingshoogte per bouwlaag (meest betrouwbaar; zolder onder schuin dak telt niet mee). Leeg = de tool telt de getikte wanden op."
+     },
+     {
+      "name": "Achtergevel - breedte (m)",
+      "dataType": "number",
+      "required": false,
+      "help": "Gemeten breedte van de ACHTERGEVEL (idem voorgevel)."
+     },
+     {
+      "name": "Linkergevel - breedte (m)",
+      "dataType": "number",
+      "required": false,
+      "help": "Gemeten breedte van de LINKERGEVEL — alleen bij een hoek-/2^1kap-/vrijstaande woning (bij een tussenwoning is dit een buurwand)."
+     },
+     {
+      "name": "Rechtergevel - breedte (m)",
+      "dataType": "number",
+      "required": false,
+      "help": "Gemeten breedte van de RECHTERGEVEL (idem linkergevel)."
      }
     ],
     "Vloer & Dak": [
