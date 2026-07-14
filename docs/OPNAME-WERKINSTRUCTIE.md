@@ -24,6 +24,20 @@
 7. **Benoem de kamer** (Woonkamer/Keuken/Badkamer/... — stuurt de ventilatieberekening).
 8. Tik de **buitenwand(en)** aan -> **Gevelnaam** kiezen: Voorgevel / Achtergevel / Linkergevel /
    Rechtergevel / Buurwand (AVR). Leeg = binnenwand. GEEN namen typen.
+
+   **⭐ DE GOUDEN TIK-REGELS (Essenhage-les 14-7 — gevel was +26% door precies deze fouten):**
+   - **Eén wand per gevel per kamer.** Tik nóóit twee tegenover elkaar liggende wanden (Wall 1 én
+     Wall 3) allebei als dezelfde gevel — een kamer raakt een gevel maar aan één kant. De tool
+     waarschuwt ("TIKFOUT? evenwijdige wanden"), maar voorkomen is beter.
+   - **Zolderwanden onder het schuine dak NIET tikken.** Op zolder zit de thermische schil in het
+     DAK (dat rekent de tool al uit footprint + helling). Alleen échte verticale kopgevels tikken
+     (de driehoek-zijden, haaks op de nok) — en die maakt de tool bij een zadeldak ook al zelf als
+     je die zijde als Linker-/Rechtergevel hebt getikt op een lagere verdieping.
+   - **Wél elke verdieping.** Op BG én verdieping(en) de gevelwanden tikken — een gemiste kamer =
+     een gat in de gevel (de tool checkt de volledigheid tegen omtrek x gevelhoogte).
+   - **Ramen/deuren gewoon per kamer intikken zoals je meet** — die kloppen bewezen op de
+     centimeter (Essenhage: 12,26 vs 12,26 m² op NW). De gevel-m² is de enige plek waar
+     tik-discipline telt.
 9. **Ramen/deuren plaatsen** + B x H meten (identiek raam: kopieer). Per raam: **alleen Type glas** — de
    rest is default (hout/kunststof · geen rooster · raam); alleen afwijkingen aanraken (paneel! metaal! rooster!).
    Per deur: Type constructie (dicht / met raam / 65% glas) + evt. **bovenlicht** (glas of dicht paneel).

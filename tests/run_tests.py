@@ -1770,6 +1770,48 @@ except Exception as _e:
     check("enum-gok-fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print()
+print("61. Gevel-tikfout-detectie (Essenhage-les 14-7: dubbele evenwijdige wanden + zolder-onder-dak)")
+try:
+    import tempfile as _t61, os as _o61, csv as _c61
+    from magicplan.statistics_csv import build_dossier as _bd61
+    def _w61(vals):
+        r = [""] * 26
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    _rows61 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "80"], ["Woningtype", "Tussenwoning"],
+               ["Gevelhoogte (m)", "5.2"], ["Oriëntatie voorgevel", "NW"],
+               ["Type dak", "Zadeldak"], ["Hellingshoek dak", "35"], ["Dak - vloerbreedte (m)", "5.9"],
+               ["Dakvlak 1 - oriëntatie", "NW"], ["Dakvlak 2 - oriëntatie", "ZO"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Volume", "GP", "CP", "W1", "W2", "Ceiling Height"],
+               ["Ground Floor", "50", "1", "1", "1", "1", "1", "2.60 m"],
+               ["2nd Floor", "30", "1", "1", "1", "1", "1", "2.40 m"], [],
+               ["ROOM ATTRIBUTES", "Ground surface without walls: m²"],
+               ["Ground Floor", ""], ["Woonkamer", "50"],
+               ["2nd Floor", ""], ["Zolderkamer", "30"], [],
+               # WALL: c0 kamer, c1 wand, c3 bruto, c4 netto, c5 breedte, c6 hoogte, c8 Type, c25 Gevelnaam
+               ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+               _w61({0: "Woonkamer", 1: "Wall 1", 3: "10.4", 4: "10.4", 5: "4.0", 6: "2.6", 8: "Wall", 25: "Voorgevel"}),
+               _w61({0: "Woonkamer", 1: "Wall 3", 3: "10.4", 4: "10.4", 5: "4.0", 6: "2.6", 8: "Wall", 25: "Voorgevel"}),
+               _w61({0: "Zolderkamer", 1: "Wall 1", 3: "9.6", 4: "9.6", 5: "4.0", 6: "2.4", 8: "Wall", 25: "Achtergevel"}),
+               []]
+    with _t61.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f61:
+        _c61.writer(_f61).writerows(_rows61)
+        _p61 = _f61.name
+    _d61, _n61 = _bd61(_p61)
+    _o61.unlink(_p61)
+    check("tikfout: 2 evenwijdige wanden zelfde kamer/gevel -> TIKFOUT-note (dubbel geteld)",
+          any("TIKFOUT" in str(n) and "evenwijdige" in str(n) for n in _n61))
+    check("tikfout: zolderwand met oriëntatie van het schuine dakvlak -> TIKFOUT-note",
+          any("TIKFOUT" in str(n) and "bovenste verdieping" in str(n) for n in _n61))
+    _nw61 = sum(s.oppervlakte_m2 or 0 for s in _d61.schil if s.type == "gevel" and s.orientatie == "NW")
+    check("tikfout: tool corrigeert NIET zelf (beide wanden blijven in de schil — adviseur beslist)",
+          20.7 <= _nw61 <= 22.5)   # 20.8 + ISSO hart-op-hart-toeslag (tussenwoning)
+except Exception as _e:
+    check("gevel-tikfout-detectie: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
 print("59. Webapp opleveren: leeg project -> direct Afronden + eigen ventilatieplan/bijlagen uploaden + export-zip")
 try:
     import io as _io59, shutil as _sh59, zipfile as _zip59
