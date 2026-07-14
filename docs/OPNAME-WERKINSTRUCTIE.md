@@ -26,9 +26,11 @@
    Rechtergevel / Buurwand (AVR). Leeg = binnenwand. GEEN namen typen.
 
    **⭐ DE GOUDEN TIK-REGELS (Essenhage-les 14-7 — gevel was +26% door precies deze fouten):**
-   - **Eén wand per gevel per kamer.** Tik nóóit twee tegenover elkaar liggende wanden (Wall 1 én
-     Wall 3) allebei als dezelfde gevel — een kamer raakt een gevel maar aan één kant. De tool
-     waarschuwt ("TIKFOUT? evenwijdige wanden"), maar voorkomen is beter.
+   - **Meerdere gevels per kamer mag gewoon** (hoekwoning: achtergevel + rechtergevel; doorlopende
+     woonkamer-keuken: drie; vrijstaand: vier) — dat zijn verschillende oriëntaties en prima.
+     Wat NIET kan: twee **tegenover elkaar liggende** wanden (Wall 1 én Wall 3, zelfde breedte)
+     allebei als dezélfde gevel tikken — een kamer raakt één gevel maar aan één kant. De tool
+     waarschuwt hierop ("TIKFOUT? evenwijdige wanden"), maar voorkomen is beter.
    - **Zolderwanden onder het schuine dak NIET tikken.** Op zolder zit de thermische schil in het
      DAK (dat rekent de tool al uit footprint + helling). Alleen échte verticale kopgevels tikken
      (de driehoek-zijden, haaks op de nok) — en die maakt de tool bij een zadeldak ook al zelf als
