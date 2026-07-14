@@ -14,7 +14,7 @@
    thermische massa + begrenzing-default · VLOER-boom · **DAK: per dak het type tikken** — een zadeldak is
    **1 dak** (de tool maakt beide vlakken + kopgevels zelf); Dak 2/3 alleen voor een écht extra dak
    (aanbouw/berging). Per dak: maten van dat type + evt. dakkapel (aantal/B/H/D) + evt. dakramen
-   (aantal/m2/glas) + de dak-isolatieboom ("Dak N - invoer"). Kwaliteitsverklaring alléén kiezen als je
+   (aantal/m2/glas) + de dak-isolatieboom ("Dak N - invoer"). **Knieschot? Altijd de knieschothoogte invullen** bij de nok-methode (Essenhage: zonder knieschot 45° i.p.v. de echte 30°) — of meet de helling direct met een hellingsmeter-app. Kwaliteitsverklaring alléén kiezen als je
    een factuur/verklaring hebt (anders Beslisschema!).
 5. **Installaties**: Ventilatie A-E + subsysteem (zakkaart in de ventilatie-gids). Verwarming/tapwater/PV =
    energielabel, mag je overslaan voor Nij Begun.

@@ -692,8 +692,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     helling = _f(G("Dakvlak 1 - hellingshoek (°)")) or _f(G("Dakvlak 1 - hellingshoek")) or _f(G("Hellingshoek dak")) or _f(G("Dak hellingshoek"))
     breedte = _f(G("Dak - vloerbreedte (m)")) or _f(G("Dak vloerbreedte"))
     if helling is None:
-        helling = hellingshoek_uit_nok(breedte, _f(G("Dak - nokhoogte (m, optioneel)")) or _f(G("Dak nokhoogte")),
-                                       (_f(G("Dak - knieschothoogte (m, optioneel)")) or _f(G("Dak knieschothoogte")) or 0.0))
+        _kn_leg = (_f(G("Dak - knieschothoogte (m, optioneel)")) or _f(G("Dak knieschothoogte")) or 0.0)
+        _nok_leg = _f(G("Dak - nokhoogte (m, optioneel)")) or _f(G("Dak nokhoogte"))
+        helling = hellingshoek_uit_nok(breedte, _nok_leg, _kn_leg)
+        if helling and _nok_leg and not _kn_leg:
+            notes.append("Dak: helling %g° BEREKEND uit nokhoogte ZONDER knieschot — heeft de zolder "
+                         "een knieschot, vul die hoogte in (helling valt anders te steil uit; "
+                         "Essenhage: 45° i.p.v. de echte 30°). Of meet de helling direct." % helling)
     helling = _helling_ok(helling, "Dak (legacy-pad)")
     o1 = _undot(G("Dakvlak 1 - oriëntatie") or G("Dakvlak 1 - orientatie") or G("Dak orientatie zijde 1") or G("Dak oriëntatie zijde 1"))
     o2 = _undot(G("Dakvlak 2 - oriëntatie") or G("Dakvlak 2 - orientatie") or G("Dak orientatie zijde 2") or G("Dak oriëntatie zijde 2"))
@@ -750,8 +755,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             nok_z = _f(G(Pd + " zadel - nokhoogte boven zoldervloer (m)"))
             kn_z = _f(G(Pd + " zadel - knieschothoogte (m, leeg = 0)")) or 0.0
             kn_z2 = _f(G(Pd + " zadel - knieschothoogte vlak 2 (m, leeg = zelfde)"))
-            h_z = _helling_ok(_f(G(Pd + " zadel - hellingshoek (°, leeg = berekend uit nok/breedte)"))
-                              or hellingshoek_uit_nok(br_z, nok_z, kn_z), "Dak %d (zadel)" % _dn)
+            _h_veld_z = _f(G(Pd + " zadel - hellingshoek (°, leeg = berekend uit nok/breedte)"))
+            h_z = _helling_ok(_h_veld_z or hellingshoek_uit_nok(br_z, nok_z, kn_z), "Dak %d (zadel)" % _dn)
+            if not _h_veld_z and nok_z and not kn_z and h_z:
+                # Essenhage-les 14-7: nok 2,97 zonder knieschot gaf 45° waar het echte dak 30° was
+                # (knieschot ~1,25 m). De formule kan het knieschot niet raden -> luide check.
+                notes.append("Dak %d (zadel): helling %g° BEREKEND uit nokhoogte ZONDER knieschot — "
+                             "heeft de zolder een knieschot/borstwering, vul die hoogte in (de helling "
+                             "valt anders te STEIL uit en het dak te groot). Of meet de helling direct."
+                             % (_dn, h_z))
             h_z2 = _helling_ok(_f(G(Pd + " zadel - hellingshoek vlak 2 (°, leeg = zelfde)"))
                                or ((hellingshoek_uit_nok(br_z, nok_z, kn_z2) or h_z) if kn_z2 else h_z),
                                "Dak %d (zadel, vlak 2)" % _dn)
