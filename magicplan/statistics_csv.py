@@ -804,8 +804,25 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         return (_C8[(_C8.index(o) + 2) % 8], _C8[(_C8.index(o) - 2) % 8]) if o in _C8 else ("", "")
     _niet_kelder = [v for n2, v in floor_footprint.items() if not _is_kelder(n2)]
     top_fp = _niet_kelder[-1] if _niet_kelder else (bg_floor_area or 0.0)
+    # PITCHED-DAK-FOOTPRINT (Essenhage-les 15-7): de bovenste verdieping is vaak een ZOLDER
+    # (klein, binnen de kap). Een schuin dak overspant dan niet de zolder maar de verdieping
+    # ERONDER. top_fp (zolder 22 m²) gaf dak 25 waar het echte dak 57 m² was. Voor een SCHUIN dak
+    # (zadel/schild/lessenaar) nemen we daarom de verdieping onder de zolder als het dak die
+    # duidelijk overspant; een PLAT dak blijft top_fp (dat ligt wél op de bovenste verdieping).
+    _fp_namen = [n2 for n2 in floor_footprint if not _is_kelder(n2)]
+    _top_verd_naam = _fp_namen[-1] if _fp_namen else ""
+    dak_fp = top_fp
+    dak_fp_bron = "footprint bovenste verdieping (%.1f m²)" % (top_fp or 0)
+    if len(_fp_namen) >= 2:
+        _onder_fp = floor_footprint.get(_fp_namen[-2], 0.0)
+        if top_fp and _onder_fp and top_fp < 0.70 * _onder_fp:
+            dak_fp = _onder_fp
+            dak_fp_bron = ("footprint van de verdieping ONDER de zolder (%s = %.1f m²); de bovenste "
+                           "verdieping (%.1f m²) is te klein en lijkt een zolder binnen de kap"
+                           % (_fp_namen[-2], _onder_fp, top_fp))
     dak_done = False
     _force9 = False
+    _heeft_plat_dak = False   # aanbouw-dak-detectie (is de uitbouw z'n eigen platte dak ingevoerd?)
     _dak_kappen = []          # (dak_nr, type, hoofdorientatie) voor dubbele-kap-detectie
     dak_klasse = {}    # per dak (1-3): bouwjaarklasse-antwoord -> wint op de eigen dak%d-vlakken
     for _dn in (1, 2, 3):
@@ -828,6 +845,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             dak_klasse[_dn] = b_n["bouwjaar"]    # per-dak klasse -> post-pass op de dak%d-vlakken
         vlakken_n = []
         if "plat" in tn:
+            _heeft_plat_dak = True
             m2p = _f(G(Pd + " plat - oppervlak (m², leeg = footprint bovenste verdieping)")) or top_fp
             vlakken_n = [{"kind": "dak", "type": "plat", "orientatie": "", "m2": m2p or 0.0, "hellingshoek": 0}]
             if _dn > 1 and not _f(G(Pd + " plat - oppervlak (m², leeg = footprint bovenste verdieping)")):
@@ -851,25 +869,36 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             h_z2 = _helling_ok(_f(G(Pd + " zadel - hellingshoek vlak 2 (°, leeg = zelfde)"))
                                or ((hellingshoek_uit_nok(br_z, nok_z, kn_z2) or h_z) if kn_z2 else h_z),
                                "Dak %d (zadel, vlak 2)" % _dn)
+            _fp_ov_z = _f(G(Pd + " zadel - grondoppervlak dat het dak overspant (m², leeg = auto)"))
+            _fp_z = _fp_ov_z or dak_fp
             if h_z and o_z:
-                vlakken_n = dak_vlakken_zadeldak(top_fp, br_z or 0.0, h_z,
+                vlakken_n = dak_vlakken_zadeldak(_fp_z, br_z or 0.0, h_z,
                                                  orient_schuin=(o_z, _opp8(o_z)), orient_kopgevel=_zij8(o_z))
-                # KOPGEVELS zijn bij een TUSSENWONING vrijwel altijd BUURWANDEN (nok evenwijdig aan de
-                # straat) -> niet in de schil. Deterministisch: alleen kopgevels meenemen op zijden
-                # waar de adviseur ook echt een buitengevel heeft getikt (voor/achter/links/rechts).
-                _buiten_orients = {o for (o, _b, _i, _nr, _rz) in gevel_per if o}
+                notes.append("Dak %d (zadel): schuine vlakken berekend over %s (%.0f° helling) -> "
+                             "verifieer de m² in Vabi. Klopt de overspanning niet? Vul dan "
+                             "'grondoppervlak dat het dak overspant (m²)' in."
+                             % (_dn, ("het INGEVULDE grondoppervlak %.1f m²" % _fp_ov_z) if _fp_ov_z
+                                else dak_fp_bron, h_z))
+                # KOPGEVEL-DRIEHOEKEN zitten op NOK-/zolderniveau. Ze zijn alleen BUITEN als op de
+                # BOVENSTE verdieping een gevel met die orientatie is getikt. Een aanbouw-zijgevel op de
+                # BEGANE GROND (bv. bijkeuken) maakt de nok-kopgevel NIET buiten (Essenhage-les 15-7: de
+                # Laundry-aanbouw op NO/ZW zette de tussenwoning-kopgevels ten onrechte aan -> +8 m²).
+                _buiten_orients = {t["orient"] for t in gevel_tikken
+                                   if t.get("orient") and t.get("verdieping") == _top_verd_naam}
                 _weg_kop = [v for v in vlakken_n if v.get("kind") == "gevel"
                             and v.get("orientatie") and v["orientatie"] not in _buiten_orients]
                 if _weg_kop:
                     vlakken_n = [v for v in vlakken_n if v not in _weg_kop]
-                    notes.append("Dak %d (zadel): kopgevel(s) %s WEGGELATEN — op die zijde(n) is geen "
-                                 "buitengevel getikt (buurwand/tussenwoning). Is een kopgevel tóch buiten "
-                                 "(bv. nok haaks op de straat)? Tik die zijgevel dan als gevel, dan telt "
-                                 "de driehoek automatisch mee." % (_dn, "/".join(v["orientatie"] for v in _weg_kop)))
+                    notes.append("Dak %d (zadel): kopgevel(s) %s WEGGELATEN — op de bovenste verdieping is "
+                                 "op die zijde(n) geen buitengevel getikt (buurwand/tussenwoning; een "
+                                 "aanbouw-zijgevel op de begane grond telt hier NIET). Is een kopgevel tóch "
+                                 "buiten (bv. nok haaks op de straat, vrijstaand)? Tik die zijgevel dan op de "
+                                 "ZOLDER als gevel, dan telt de driehoek automatisch mee."
+                                 % (_dn, "/".join(v["orientatie"] for v in _weg_kop)))
                 if h_z2 and h_z2 != h_z:   # asymmetrisch: vlak 2 met eigen helling op de halve footprint
                     for v in vlakken_n:
                         if v.get("kind") == "dak" and v.get("orientatie") == _opp8(o_z):
-                            v["m2"] = round((top_fp / 2.0) / max(0.087, __import__("math").cos(__import__("math").radians(h_z2))), 2)
+                            v["m2"] = round((_fp_z / 2.0) / max(0.087, __import__("math").cos(__import__("math").radians(h_z2))), 2)
                             v["hellingshoek"] = h_z2
                     notes.append("Dak %d (zadel): ASYMMETRISCH (%g°/%g°) -> vlakken per halve footprint "
                                  "berekend en kopgevels op vlak-1-helling benaderd; verifieer de m² in Vabi." % (_dn, h_z, h_z2))
@@ -882,7 +911,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             o_s = _undot(G(Pd + " schild - oriëntatie lang dakvlak 1"))
             if h_s and o_s:
                 zij = _zij8(o_s)
-                vlakken_n = dak_vlakken_schilddak(top_fp, h_s, (o_s, _opp8(o_s), zij[0], zij[1]))
+                _fp_ov_s = _f(G(Pd + " schild - grondoppervlak dat het dak overspant (m², leeg = auto)"))
+                _fp_s = _fp_ov_s or dak_fp
+                vlakken_n = dak_vlakken_schilddak(_fp_s, h_s, (o_s, _opp8(o_s), zij[0], zij[1]))
+                notes.append("Dak %d (schild): berekend over %s -> verifieer de m² in Vabi."
+                             % (_dn, ("het INGEVULDE grondoppervlak %.1f m²" % _fp_ov_s) if _fp_ov_s else dak_fp_bron))
                 if h_k and h_k != h_s:
                     notes.append("Dak %d (schild): kopschilden %g° wijken af van de lange vlakken %g° -> "
                                  "verfijn de vlakverdeling in Vabi." % (_dn, h_k, h_s))
@@ -895,7 +928,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             h_l = _helling_ok(_f(G(Pd + " lessenaar - hellingshoek (°, leeg = berekend)")),
                               "Dak %d (lessenaar)" % _dn)
             if h_l and o_l:
-                vlakken_n = dak_vlakken_lessenaar(top_fp, h_l, o_l)
+                _fp_ov_l = _f(G(Pd + " lessenaar - grondoppervlak dat het dak overspant (m², leeg = auto)"))
+                _fp_l = _fp_ov_l or dak_fp
+                vlakken_n = dak_vlakken_lessenaar(_fp_l, h_l, o_l)
+                notes.append("Dak %d (lessenaar): berekend over %s -> verifieer de m² in Vabi."
+                             % (_dn, ("het INGEVULDE grondoppervlak %.1f m²" % _fp_ov_l) if _fp_ov_l else dak_fp_bron))
                 if hh_ and hl_ is not None:
                     notes.append("Dak %d (lessenaar): hoge-zijde-opstand (%.2f m hoogteverschil) hoort bij de "
                                  "GEVEL aan de hoge kant -> reken die strook (hoogteverschil x gevelbreedte) "
@@ -1099,6 +1136,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("Dak: geen hellingshoek/dakvlakken in de opname -> footprint-fallback. Voeg dak-velden toe "
                      "(Dak vloerbreedte/nokhoogte/knieschothoogte of Hellingshoek dak + oriëntaties schuine zijden).")
 
+    # AANBOUW-DAK-CHECK (Essenhage-les 15-7): is de begane grond fors groter dan het grondoppervlak dat
+    # het hoofddak overspant, dan steekt er een aanbouw/uitbouw uit met een EIGEN (meestal plat) dak.
+    # Is dat niet apart ingevoerd, dan ontbreekt dat dakoppervlak (EPA telde bij Essenhage ~10 m² extra).
+    if footprint_bg and dak_fp and (footprint_bg - dak_fp) > 5 and not _heeft_plat_dak:
+        notes.append("MOGELIJK DAK ONTBREEKT: de begane grond (%.1f m²) is ~%.1f m² groter dan het "
+                     "grondoppervlak dat het hoofddak overspant (%.1f m²) — er lijkt een aanbouw/uitbouw "
+                     "met een EIGEN dak te zijn (bv. een bijkeuken). Voer dat als 'Extra dak A' (meestal "
+                     "plat) in, anders ontbreekt dat dakoppervlak in de berekening."
+                     % (footprint_bg, footprint_bg - dak_fp, dak_fp))
+
     # DAKRAMEN-sectie (13-7, losgekoppeld van de daken): per ORIENTATIE (9) x glastype -> kozijn
     # subtype Dakraam; glas-m2 wordt afgetrokken van het dakvlak met die orientatie (anders note).
     for _ori in ("N", "NO", "O", "ZO", "Z", "ZW", "W", "NW", "Horizontaal"):
@@ -1236,6 +1283,29 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                  "controleer in MagicPlan."
                                  % (_wd[_a][1], (" (%s)" % _wd[_a][2]) if _wd[_a][2] else "",
                                     _a, _oa, _b, _ob))
+    # (1b) DUBBELTEL-CHECK (Essenhage-les 15-7): voor/achter overspannen dezelfde huisbreedte,
+    #      links/rechts dezelfde huisdiepte. Wijkt op één verdieping de getikte breedte van een
+    #      oriëntatie sterk af van de TEGENOVERLIGGENDE gevel, dan staat er waarschijnlijk een wand
+    #      DUBBEL (bv. 3x dezelfde badkamer op de voorgevel: 1e verd. 9,44 m vs achtergevel 5,71 m).
+    #      Puur signaleren; de tool corrigeert niets (geen aannames).
+    _orient_bxh = {_ref["orient"]: _ref["bxh"] for _ref in gevel_refs if _ref.get("orient")}
+    _gemeld_dt = set()
+    for _o, _bx in _orient_bxh.items():
+        if _o.lower() not in _COMPAS:
+            continue
+        _opp_o = _COMPAS[(_COMPAS.index(_o.lower()) + 4) % 8].upper()
+        _opp_bx = _orient_bxh.get(_opp_o, {})
+        for _vd, _br in _bx.items():
+            _ref_br = _opp_bx.get(_vd)
+            if _ref_br and _br > 1.25 * _ref_br and (_o, _vd) not in _gemeld_dt:
+                _gemeld_dt.add((_o, _vd))
+                notes.append("LET OP mogelijke DUBBELTEL: gevel %s is op '%s' %.2f m breed, maar de "
+                             "TEGENOVERLIGGENDE gevel %s daar %.2f m — voor/achter (en links/rechts) "
+                             "horen even breed te zijn. Staat dezelfde wand er meerdere keer (bv. een "
+                             "kamer die meermaals is getekend/gekopieerd)? Controleer dat, of vul de "
+                             "gemeten gevelbreedte van deze gevel in ('<gevel> - breedte (m)') zodat "
+                             "de tool de wandsom negeert."
+                             % (_o, _vd, _br, _opp_o, _ref_br))
     # (2) ZOLDER-UITSLUITING (eis Renze 14-7): op de bovenste verdieping onder een SCHUIN dakvlak is
     #     de voor/achtergevel het DAK zelf, geen verticale gevel. Die verdieping halen we automatisch
     #     uit de gevel-m² voor de oriëntaties die een schuin dakvlak hebben; de echte KOPGEVELS (haaks

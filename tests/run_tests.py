@@ -1927,6 +1927,81 @@ except Exception as _e:
     check("gevel b x h: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print()
+print("63. Zolder-dak-footprint + kopgevel-op-bovenste-verdieping + dubbeltel + aanbouw-dak (Essenhage-les 15-7)")
+try:
+    import tempfile as _t63, os as _o63, csv as _c63
+    from magicplan.statistics_csv import build_dossier as _bd63
+    def _w63(vals):
+        r = [""] * 26
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    # 3 verdiepingen: BG 50 (met aanbouw), 1e 44 (dakdragend), 2e ZOLDER 22 (< 0,7 x 44 -> zolder).
+    # Zadeldak NW/ZO -> kopgevels op NO/ZW. Aanbouw op BG heeft Linkergevel(NO)+Rechtergevel(ZW),
+    # maar op de ZOLDER staat GEEN NO/ZW-gevel -> nok-kopgevels moeten WEGGELATEN worden.
+    # Voorgevel 1e = 3,8+1,9+1,9 = 7,6 m (dubbel getekende kamer) vs achtergevel 1e = 5,0 -> DUBBELTEL.
+    _rows63 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "116"], ["Woningtype", "Tussenwoning"],
+               ["Gevelhoogte (m)", "5.0"], ["Oriëntatie voorgevel", "NW"],
+               ["Type dak", "Zadeldak"],
+               ["Dak zadel - oriëntatie dakvlak 1", "NW"],
+               ["Dak zadel - vloerbreedte tussen de kopgevels (m)", "5.8"],
+               ["Dak zadel - hellingshoek (°, leeg = berekend uit nok/breedte)", "35"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+               ["Ground Floor", "50", "1", "1", "1", "1", "1", "2.60 m"],
+               ["1st Floor", "44", "1", "1", "1", "1", "1", "2.40 m"],
+               ["2nd Floor", "22", "1", "1", "1", "1", "1", "2.50 m"], [],
+               ["ROOM ATTRIBUTES", "Ground surface without walls: m²"],
+               ["Ground Floor", ""], ["Woonkamer", "38"], ["Bijkeuken", "12"],
+               ["1st Floor", ""], ["Studeerkamer", "20"], ["Badkamer", "8"], ["Badkamer", "8"], ["Slaapkamer", "16"],
+               ["2nd Floor", ""], ["Zolder", "22"], [],
+               ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+               ["Ground Floor"],
+               _w63({0: "Woonkamer", 1: "Wall 1", 3: "15", 5: "5.8", 6: "2.6", 8: "Wall", 25: "Achtergevel"}),
+               _w63({0: "Woonkamer", 1: "Wall 3", 3: "15", 5: "5.8", 6: "2.6", 8: "Wall", 25: "Voorgevel"}),
+               _w63({0: "Bijkeuken", 1: "Wall 0", 3: "9", 5: "3.5", 6: "2.6", 8: "Wall", 25: "Linkergevel"}),
+               _w63({0: "Bijkeuken", 1: "Wall 2", 3: "9", 5: "3.5", 6: "2.6", 8: "Wall", 25: "Rechtergevel"}),
+               ["1st Floor"],
+               _w63({0: "Slaapkamer", 1: "Wall 0", 3: "10", 5: "3.2", 6: "2.4", 8: "Wall"}),
+               _w63({0: "Slaapkamer", 1: "Wall 1", 3: "12", 5: "5.0", 6: "2.4", 8: "Wall", 25: "Achtergevel"}),
+               _w63({0: "Studeerkamer", 1: "Wall 0", 3: "9", 5: "3.8", 6: "2.4", 8: "Wall"}),
+               _w63({0: "Studeerkamer", 1: "Wall 1", 3: "9", 5: "3.8", 6: "2.4", 8: "Wall", 25: "Voorgevel"}),
+               _w63({0: "Badkamer", 1: "Wall 0", 3: "4", 5: "1.6", 6: "2.4", 8: "Wall"}),
+               _w63({0: "Badkamer", 1: "Wall 1", 3: "5", 5: "1.9", 6: "2.4", 8: "Wall", 25: "Voorgevel"}),
+               _w63({0: "Badkamer", 1: "Wall 0", 3: "4", 5: "1.6", 6: "2.4", 8: "Wall"}),
+               _w63({0: "Badkamer", 1: "Wall 1", 3: "5", 5: "1.9", 6: "2.4", 8: "Wall", 25: "Voorgevel"}),
+               ["2nd Floor"],
+               _w63({0: "Zolder", 1: "Wall 0", 3: "9", 5: "3.8", 6: "2.5", 8: "Wall"}),  # geen geveltag
+               []]
+    with _t63.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f63:
+        _c63.writer(_f63).writerows(_rows63)
+        _p63 = _f63.name
+    _d63, _n63 = _bd63(_p63)
+    _o63.unlink(_p63)
+    # (1) DAK-FOOTPRINT: schuin dak over de verdieping ONDER de zolder (44 m²), niet de zolder (22 m²)
+    check("dak: footprint = verdieping ONDER de zolder (44 m²), niet de zolder (22 m²)",
+          any("ONDER de zolder" in str(n) for n in _n63))
+    _dak63 = sum(s.oppervlakte_m2 or 0 for s in _d63.schil if s.type == "dak")
+    # 44/cos(35) = 53,7 (schuin) -> ~53, NIET 22/cos(35)=27
+    check("dak: hellend dak ~54 m² (over 44 m²), niet ~27 (over zolder 22)", 48 <= _dak63 <= 60)
+    # (2) KOPGEVEL: aanbouw-zijgevel op BG (NO/ZW) mag de nok-kopgevels NIET aanzetten (geen tag op zolder)
+    check("kopgevel: WEGGELATEN want geen buitengevel op de bovenste verdieping (aanbouw-BG telt niet)",
+          any("kopgevel" in str(n).lower() and "WEGGELATEN" in str(n) and "bovenste verdieping" in str(n) for n in _n63))
+    _no63 = sum(s.oppervlakte_m2 or 0 for s in _d63.schil if s.type == "gevel" and s.orientatie == "NO")
+    check("kopgevel: NO-gevel = alleen de aanbouw-zijgevel (~9 m²), geen extra nok-driehoek", _no63 < 12)
+    # (3) DUBBELTEL: voorgevel 1e (7,6 m) veel breder dan achtergevel 1e (5,0 m) -> LET OP
+    check("dubbeltel: voorgevel 1e breder dan achtergevel -> LET OP mogelijke DUBBELTEL",
+          any("DUBBELTEL" in str(n) for n in _n63))
+    # (4) AANBOUW-DAK: BG (50) groter dan dakdragende verdieping (44), geen plat dak -> MOGELIJK DAK ONTBREEKT
+    check("aanbouw-dak: BG groter dan hoofddak-footprint + geen plat dak -> MOGELIJK DAK ONTBREEKT",
+          any("MOGELIJK DAK ONTBREEKT" in str(n) for n in _n63))
+    # geen valse dubbeltel op de begane grond (voor 5,8 ~ achter 5,8)
+    check("dubbeltel: GEEN valse flag op de BG (voor 5,8 ~ achter 5,8)",
+          not any("DUBBELTEL" in str(n) and "Ground Floor" in str(n) for n in _n63))
+except Exception as _e:
+    check("zolder-dak/kopgevel/dubbeltel: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
 print("59. Webapp opleveren: leeg project -> direct Afronden + eigen ventilatieplan/bijlagen uploaden + export-zip")
 try:
     import io as _io59, shutil as _sh59, zipfile as _zip59
