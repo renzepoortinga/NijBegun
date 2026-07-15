@@ -132,3 +132,27 @@ script is follow-up; browser-route werkt.
   + aansluitdetails), spouwmuur-herkennen-gids.md (4 inline SVG's, metselverband/muurdikte), rekenwijze-gids.md
   (hoe de tool elk oppervlak berekent), dak-rekenmodel.md (formules per type), dak-invoer-marktonderzoek.md
   (INBRIX/SOBOLT/Vabi). Alle in de webapp-Guide (/gids/<slug>); md_naar_html laat nu inline SVG verbatim door.
+
+## 15-7-2026 — DAK-redesign (webapp-wizard) + kopgevel-basis-fix + veld-relevantie-check
+- **KOPGEVEL-BASIS-FIX (parser, GEEN form-push nodig).** De kopgevel-driehoek staat HAAKS op de nok; z'n basis is
+  de OVERSPANNING (= footprint / noklengte), NIET de 'vloerbreedte tussen de kopgevels' (= de noklengte zelf).
+  De oude code gaf de noklengte als basis door -> te kleine/grote kopgevel bij hoek-/vrijstaande woningen (bij een
+  tussenwoning viel het niet op: kopgevels = buurwand, weggelaten). Nu: basis = footprint/noklengte, of de
+  expliciete overspanning als die is ingevuld. Geldt voor de per-dak- én de legacy-zadeldak-route. Test #66.
+- **NIEUW MAGICPLAN-VELD (te pushen in Constructies → DAK → zadel-geometrieblok):**
+  `Dak zadel - overspanning (m, leeg = auto)` (number, niet verplicht).
+  Help: "De diepte waarover het dak schuin loopt (= de basis van de kopgevel-driehoek). Samen met
+  'vloerbreedte tussen de kopgevels' (= noklengte) is het dak volledig expliciet: hellend vlak = schuine zijde x
+  noklengte; kopgevel = driehoek met basis = overspanning. Leeg = de tool leidt de overspanning af (footprint/noklengte)."
+  Parser leest 'm al; zolang het veld nog niet gepusht is, rekent de tool via footprint/noklengte (de fix).
+- **WEBAPP 'Dak toevoegen'-wizard** (opname-editor): plat / zadeldak-via-driehoek (overspanning c + noklengte +
+  hellingshoek + kopgevel-buiten-toggles, live voorbeeld) / 9 geometrieën; herhaalbaar tot 20, auto-genummerd;
+  + dakraam per dakvlak (deelvlak op het DAK-hoofdvlak). Dit is dé plek voor complexe daken.
+- **VELD-RELEVANTIE-CHECK (zadeldak) — alles nog nodig, maar 2 routes naar hetzelfde:**
+  - HELLING: `hellingshoek` (DIRECT meten = aanbevolen) OF `nokhoogte boven zoldervloer` + `knieschothoogte`
+    (afgeleid; alleen als je de hoek niet direct kunt meten).
+  - FOOTPRINT/OVERSPANNING: `overspanning` x `vloerbreedte tussen de kopgevels(noklengte)` (expliciet, aanbevolen)
+    OF `grondoppervlak dat het dak overspant` (footprint direct) OF auto (verdieping onder de zolder).
+  - ALTIJD nodig: `Type dak`, `oriëntatie dakvlak 1`. OPTIONEEL: `hellingshoek vlak 2` (asymmetrisch).
+  - Aanbeveling: zet in MagicPlan de PRIMAIRE route bovenaan (oriëntatie + hellingshoek + overspanning +
+    noklengte), en label nokhoogte/knieschot/grondoppervlak als "alleen als je niet direct kunt meten".

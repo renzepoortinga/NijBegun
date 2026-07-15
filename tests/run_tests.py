@@ -2186,5 +2186,48 @@ try:
 except Exception as _e:
     check("dak-wizard: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print()
+print("66. Zadeldak-kopgevel BASIS = overspanning (footprint/noklengte), niet de noklengte (MagicPlan-fix 15-7)")
+try:
+    import tempfile as _t66, os as _o66, csv as _c66
+    from magicplan.statistics_csv import build_dossier as _bd66
+    def _w66(vals):
+        r = [""] * 26
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    # Vrijstaand, 1 verdieping (= bovenste), zadeldak NW; kopgevels op NO/ZW getikt -> tellen mee.
+    # overspanning c=7 x noklengte 5 = footprint 35 -> hellend 24,75/stuk; kopgevel-basis 7 -> 12,25/stuk.
+    _rows66 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "35"], ["Woningtype", "Vrijstaand"],
+               ["Oriëntatie voorgevel", "NW"],
+               ["Type dak (zadeldak/schilddak = 1 dak; leeg = geen dak)", "Zadeldak"],
+               ["Dak zadel - oriëntatie dakvlak 1", "NW"],
+               ["Dak zadel - overspanning (m, leeg = auto)", "7"],
+               ["Dak zadel - vloerbreedte tussen de kopgevels (m)", "5"],
+               ["Dak zadel - hellingshoek (°, leeg = berekend uit nok/breedte)", "45"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+               ["Ground Floor", "35", "1", "1", "1", "1", "1", "2.60 m"], [],
+               ["ROOM ATTRIBUTES", "Ground surface without walls: m²"], ["Ground Floor", ""], ["Woonkamer", "35"], [],
+               ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+               ["Ground Floor"],
+               _w66({0: "Woonkamer", 1: "Wall 0", 3: "9.1", 5: "3.5", 6: "2.6", 8: "Wall", 25: "Linkergevel"}),
+               _w66({0: "Woonkamer", 1: "Wall 2", 3: "9.1", 5: "3.5", 6: "2.6", 8: "Wall", 25: "Rechtergevel"}), []]
+    with _t66.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f66:
+        _c66.writer(_f66).writerows(_rows66)
+        _p66 = _f66.name
+    _d66, _n66 = _bd66(_p66)
+    _o66.unlink(_p66)
+    _schuin66 = [s for s in _d66.schil if s.type == "dak" and "schuin" in (s.subtype or "")]
+    _kop66 = [s for s in _d66.schil if s.type == "gevel" and "kopgevel" in (s.subtype or "")]
+    check("zadeldak: hellend vlak = 35/cos45/2 = 24,75 m² (overspanning 7 x noklengte 5)",
+          len(_schuin66) == 2 and all(23.5 <= (s.oppervlakte_m2 or 0) <= 25.5 for s in _schuin66))
+    check("zadeldak: kopgevel-basis = overspanning 7 -> ~12,25 m² (NIET noklengte 5 -> 6,25)",
+          len(_kop66) == 2 and all(11.5 <= (s.oppervlakte_m2 or 0) <= 13.0 for s in _kop66))
+    check("zadeldak: note toont kopgevel-basis (overspanning) = 7.00 m",
+          any("kopgevel-basis (overspanning) = 7.00" in str(n) for n in _n66))
+except Exception as _e:
+    check("zadeldak-kopgevel-basis: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

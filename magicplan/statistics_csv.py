@@ -888,16 +888,29 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             h_z2 = _helling_ok(_f(G(Pd + " zadel - hellingshoek vlak 2 (°, leeg = zelfde)"))
                                or ((hellingshoek_uit_nok(br_z, nok_z, kn_z2) or h_z) if kn_z2 else h_z),
                                "Dak %d (zadel, vlak 2)" % _dn)
+            # OVERSPANNING + FOOTPRINT + KOPGEVEL-BASIS. 'vloerbreedte tussen de kopgevels' (br_z) is de
+            # NOKLENGTE (afstand tussen de kopgevels). De kopgevel-driehoek staat HAAKS op de nok; z'n
+            # basis is de OVERSPANNING (= footprint / noklengte), NIET de noklengte zelf. De oude code gaf
+            # br_z als kopgevel-basis door -> te kleine/grote kopgevel bij hoek-/vrijstaande woningen
+            # (Essenhage-kopgevel-fix 15-7; viel bij die tussenwoning niet op want kopgevels weggelaten).
+            _c_ov = _f(G(Pd + " zadel - overspanning (m, leeg = auto)"))
             _fp_ov_z = _f(G(Pd + " zadel - grondoppervlak dat het dak overspant (m², leeg = auto)"))
-            _fp_z = _fp_ov_z or dak_fp
+            if _c_ov and br_z:                        # volledig expliciet (zoals de webapp): c x noklengte
+                _fp_z = round(_c_ov * br_z, 2)
+                _kop_basis = _c_ov
+                _fp_bron_z = "overspanning %.2f m x noklengte %.2f m = %.1f m²" % (_c_ov, br_z, _fp_z)
+            else:
+                _fp_z = _fp_ov_z or dak_fp
+                _kop_basis = _c_ov or (round(_fp_z / br_z, 2) if br_z else 0.0)
+                _fp_bron_z = ("het INGEVULDE grondoppervlak %.1f m²" % _fp_ov_z) if _fp_ov_z else dak_fp_bron
             if h_z and o_z:
-                vlakken_n = dak_vlakken_zadeldak(_fp_z, br_z or 0.0, h_z,
+                vlakken_n = dak_vlakken_zadeldak(_fp_z, _kop_basis or 0.0, h_z,
                                                  orient_schuin=(o_z, _opp8(o_z)), orient_kopgevel=_zij8(o_z))
-                notes.append("Dak %d (zadel): schuine vlakken berekend over %s (%.0f° helling) -> "
-                             "verifieer de m² in Vabi. Klopt de overspanning niet? Vul dan "
-                             "'grondoppervlak dat het dak overspant (m²)' in."
-                             % (_dn, ("het INGEVULDE grondoppervlak %.1f m²" % _fp_ov_z) if _fp_ov_z
-                                else dak_fp_bron, h_z))
+                notes.append("Dak %d (zadel): schuine vlakken berekend over %s (%.0f° helling); "
+                             "kopgevel-basis (overspanning) = %.2f m. Verifieer in Vabi. Klopt de "
+                             "overspanning niet? Vul 'overspanning (m)' + 'vloerbreedte tussen de kopgevels "
+                             "(m)' in — dan is het dak volledig expliciet (zoals de webapp)."
+                             % (_dn, _fp_bron_z, h_z, _kop_basis or 0.0))
                 # KOPGEVEL-DRIEHOEKEN zitten op NOK-/zolderniveau. Ze zijn alleen BUITEN als op de
                 # BOVENSTE verdieping een gevel met die orientatie is getikt. Een aanbouw-zijgevel op de
                 # BEGANE GROND (bv. bijkeuken) maakt de nok-kopgevel NIET buiten (Essenhage-les 15-7: de
@@ -1110,7 +1123,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("Dak: %d dakvlak(ken) met direct ingevoerde m² (%s) — auto-berekening overgeslagen."
                      % (len(directe_vlakken), ", ".join("vlak %d" % n for n in directe_vlakken)))
     if not dak_done and helling and "zadel" in tl and (o1 or o2):
-        dakvlakken = dak_vlakken_zadeldak(bg_floor_area or 0.0, breedte or 0.0, helling,
+        # kopgevel-basis = OVERSPANNING (footprint / noklengte), niet de noklengte zelf (kopgevel-fix 15-7)
+        _kop_leg = (round((bg_floor_area or 0.0) / breedte, 2) if breedte else 0.0)
+        dakvlakken = dak_vlakken_zadeldak(bg_floor_area or 0.0, _kop_leg, helling,
                                           orient_schuin=(o1, o2), orient_kopgevel=(k1, k2))
     elif helling and "lessenaar" in tl and o1:
         dakvlakken = dak_vlakken_lessenaar(bg_floor_area or 0.0, helling, o1)
