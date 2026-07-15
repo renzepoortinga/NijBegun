@@ -462,12 +462,23 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             if cur_begr == "AVR":      # buurwoning/woningscheidend -> NIET in de schil (ISSO p.66/75)
                 cur_orient = ""        # ramen/deuren in deze wand vallen ook weg
                 continue
+            # DEELS-BUITEN ZONDER GEVEL-AANDUIDING (Essenhage-Hall-les 15-7): een wand met een
+            # buitenlengte of deels-buiten-vinkje maar ZONDER voor/achter/links/rechts-tag heeft geen
+            # oriëntatie -> zou stil uit de schil vallen. Nooit stil weglaten (geen aannames) -> LUIDE flag.
+            if not cur_orient and (_bm or cur_nareken):
+                notes.append("LET OP wand '%s'%s: gemarkeerd als deels-buiten%s, maar ZONDER "
+                             "gevel-aanduiding (voor/achter/links/rechts) -> deze wand is NIET meegeteld in "
+                             "de schil. Geef hem een gevel-tag, anders mist dit geveloppervlak."
+                             % (_wnaam.strip(), (" (%s)" % cur_verdieping) if cur_verdieping else "",
+                                (" met buitenlengte %.2f m" % _bm) if _bm else ""))
             if cur_orient:  # oriëntatie bekend (ingevuld of afgeleid) = buitengevel (telt mee)
                 n_wall_ext += 1
                 k = (cur_orient, cur_begr, cur_isol or "", cur_nareken, cur_rz)
                 _bijdrage = _f(r[4]) or 0.0
                 _w_breed = _f(r[5]) if len(r) > 5 else None    # effectieve gevelbreedte van dit segment
-                if cur_nareken and _bm and _wh:
+                # buitenlengte ingevuld -> ALTIJD splitsen (ook zonder het deels-buiten-vinkje): de
+                # ingevoerde meters zijn de bewuste "dit deel grenst aan buiten"-uitspraak (eis Renze 15-7).
+                if _bm and _wh:
                     _buiten_m2 = round(min(_bm * _wh, _bijdrage or (_bm * _wh)), 2)
                     notes.append("Wand '%s': gesplitst via 'Grenst aan buiten (m)' = %.2f m x %.2f m hoogte "
                                  "-> %.2f m2 als gevel geteld (rest binnen/AVR, niet in de schil)."

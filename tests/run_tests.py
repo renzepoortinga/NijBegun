@@ -2002,6 +2002,70 @@ except Exception as _e:
     check("zolder-dak/kopgevel/dubbeltel: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print()
+print("64. Deels-buiten (buitenlengte) -> tag x hoogte, cumulatief in de juiste EPA-tab (verificatie Renze 15-7)")
+try:
+    import tempfile as _t64, os as _o64, csv as _c64
+    from magicplan.statistics_csv import build_dossier as _bd64
+    from vabi.objecten_generate import _locatie_code as _lc64
+    def _h64():
+        return (["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                 "Width: m", "Height: m", "Annotation", "Type", "Grenst aan buiten (m) — meet de buitenlengte"]
+                + [""] * 15 + ["Gevelnaam (leeg = binnenwand)", "Deels binnen/deels buiten? (narekenen)"])
+    def _w64(vals):
+        r = [""] * 27
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    _base = [["PLAN ATTRIBUTES"], ["Total living area: m²", "40"], ["Woningtype", "Vrijstaand"],
+             ["Oriëntatie voorgevel", "NW"], [],
+             ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+             ["Ground Floor", "40", "1", "1", "1", "1", "1", "2.60 m"], [],
+             ["ROOM ATTRIBUTES", "Ground surface without walls: m²"], ["Ground Floor", ""], ["Hal", "40"], []]
+    # A) deels-buiten MET tag + buitenlengte 1,67 (zonder vinkje) -> 1,67 x 2,60 = 4,34 op Voorgevel (tab 2)
+    _rows64 = _base + [_h64(), ["Ground Floor"],
+              _w64({0: "Hal", 1: "Wall 0", 3: "15.6", 4: "15.6", 5: "6.03", 6: "2.60", 8: "Wall", 9: "1.67", 25: "Voorgevel"}),
+              # B) deels-buiten ZONDER tag -> LUIDE flag, niet meegeteld
+              _w64({0: "Hal", 1: "Wall 2", 3: "8.8", 4: "8.8", 5: "3.39", 6: "2.60", 8: "Wall", 9: "1.67", 26: "Yes"}), []]
+    with _t64.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f64:
+        _c64.writer(_f64).writerows(_rows64)
+        _p64 = _f64.name
+    _d64, _n64 = _bd64(_p64)
+    _o64.unlink(_p64)
+    _vgev = [s for s in _d64.schil if s.type == "gevel" and s.orientatie == "NW"]
+    check("deels-buiten MET tag: buitenlengte 1,67 x hoogte 2,60 = 4,34 m² (niet de hele wand 15,6)",
+          _vgev and abs(_vgev[0].oppervlakte_m2 - 4.34) < 0.2)
+    check("deels-buiten: buitenlengte werkt ZONDER het narekenen-vinkje (split-note aanwezig)",
+          any("gesplitst via" in str(n) for n in _n64))
+    check("deels-buiten MET tag -> juiste EPA-tab (Voorgevel = 2)",
+          _vgev and _lc64("gevel", _vgev[0], "NW") == "2")
+    check("deels-buiten ZONDER tag -> LUIDE flag (niet stil weggelaten)",
+          any("ZONDER gevel-aanduiding" in str(n) and "NIET meegeteld" in str(n) for n in _n64))
+    # C) cumulatief: twee Voorgevel-wanden op verschillende verdiepingen -> opgeteld op tab 2
+    #    (Vrijstaand = geen hart-op-hart-toeslag, zodat we de zuivere optelling toetsen)
+    _rows64c = [["PLAN ATTRIBUTES"], ["Total living area: m²", "80"], ["Woningtype", "Vrijstaand"],
+                ["Oriëntatie voorgevel", "NW"], [],
+                ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+                ["Ground Floor", "40", "1", "1", "1", "1", "1", "2.60 m"],
+                ["1st Floor", "40", "1", "1", "1", "1", "1", "2.40 m"], [],
+                ["ROOM ATTRIBUTES", "Ground surface without walls: m²"],
+                ["Ground Floor", ""], ["Woonkamer", "40"], ["1st Floor", ""], ["Slaapkamer", "40"], [],
+                _h64(), ["Ground Floor"],
+                _w64({0: "Woonkamer", 1: "Wall 1", 3: "13", 4: "13", 5: "5.0", 6: "2.6", 8: "Wall", 25: "Voorgevel"}),
+                ["1st Floor"],
+                _w64({0: "Slaapkamer", 1: "Wall 1", 3: "12", 4: "12", 5: "5.0", 6: "2.4", 8: "Wall", 25: "Voorgevel"}), []]
+    with _t64.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f64c:
+        _c64.writer(_f64c).writerows(_rows64c)
+        _p64c = _f64c.name
+    _d64c, _n64c = _bd64(_p64c)
+    _o64.unlink(_p64c)
+    _nwtot = sum(s.oppervlakte_m2 or 0 for s in _d64c.schil if s.type == "gevel" and s.orientatie == "NW")
+    # 5,0x2,60 + 5,0x2,40 = 13,0 + 12,0 = 25,0 (Vrijstaand -> geen toeslag)
+    check("cumulatief: voorgevel BG (5x2,60) + 1e (5x2,40) opgeteld = 25 m² op één tab",
+          24.5 <= _nwtot <= 25.5)
+except Exception as _e:
+    check("deels-buiten/cumulatief: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
 print("59. Webapp opleveren: leeg project -> direct Afronden + eigen ventilatieplan/bijlagen uploaden + export-zip")
 try:
     import io as _io59, shutil as _sh59, zipfile as _zip59
