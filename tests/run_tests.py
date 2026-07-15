@@ -2163,6 +2163,25 @@ try:
     # 5) auto-nummering: dak1.., dak2.., dak3.., dak4..
     _nrs = {int(_m.group(1)) for s in _d65d.schil for _m in [_re65.match(r"dak(\d+)", s.id or "")] if _m}
     check("dak-wizard: automatisch genummerd (>=4 dak-groepen)", len(_nrs) >= 4)
+    # 6) dakraam op het NW-dakvlak -> kozijn subtype Dakraam + VABI-deelvlak op het DAK (niet de gevel)
+    _c65.post("/project/%s/opname/dakraam" % _tag65,
+              data={"dak_orient": "NW", "glas": "HR++", "breedte": "0.8", "hoogte": "1.2"}, follow_redirects=True)
+    _d65e = _W65._dossier(_tag65)
+    _draam = [s for s in _d65e.schil if "dakraam" in (s.subtype or "").lower()]
+    check("dakraam: toegevoegd als kozijn subtype Dakraam op NW (~0,96 m²)",
+          len(_draam) == 1 and _draam[0].orientatie == "NW" and abs((_draam[0].oppervlakte_m2 or 0) - 0.96) < 0.05)
+    from vabi.objecten_generate import build_tree as _bt65
+    _root65 = _bt65(_d65e)[0]
+    def _lc65b(t):
+        return t.split("}")[-1]
+    _dak_dv = 0
+    for _hv in _root65.iter():
+        if _lc65b(_hv.tag) == "Hoofdvlak":
+            _nm = next((c.text for c in _hv if _lc65b(c.tag) == "Naam"), "") or ""
+            if _nm.startswith("Dak "):
+                _dvl = next((c for c in _hv if _lc65b(c.tag) == "DeelvlakList"), None)
+                _dak_dv += sum(1 for c in (list(_dvl) if _dvl is not None else []) if _lc65b(c.tag) == "Deelvlak")
+    check("dakraam: als deelvlak op een DAK-hoofdvlak geplaatst (niet op een gevel)", _dak_dv >= 1)
     _sh65.rmtree(_W65._pdir(_tag65), ignore_errors=True)
 except Exception as _e:
     check("dak-wizard: draait zonder fout", False); print("     " + repr(_e)[:200])

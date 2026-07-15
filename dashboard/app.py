@@ -438,6 +438,18 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div><label>Hellingshoek schuine vlakken (° — optioneel)</label><input name=helling9></div>
 <div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
 </div><div class=btn-row><button class=btn>+ Dak toevoegen</button></div></form></div></details>
+
+<details class=acc><summary><b>4 · Dakraam toevoegen{% if n_dakraam %} <span class="pill gray">{{n_dakraam}} nu</span>{% endif %}</b></summary><div class=acc-body>
+{% if dak_vlakken %}<p class="muted small">Voeg een dakraam toe aan een bestaand dakvlak (zelfde logica als een raam in een gevel). Het dakraam komt als deelvlak op dát dakvlak in Vabi; het glas wordt van het dakvlak afgetrokken. Herhaal voor meer dakramen.</p>
+<form method=post action="{{url_for('opname_dakraam', tag=tag)}}"><div class=grid2>
+<div><label>In dakvlak</label><select name=dak_orient>{% for lbl, ov in dak_vlakken %}<option value="{{ov}}">{{lbl}}</option>{% endfor %}</select></div>
+<div><label>Type glas</label><select name=glas>{% for g in glas_opts %}{% if g %}<option>{{g}}</option>{% endif %}{% endfor %}</select></div>
+<div><label>Breedte (m)</label><input name=breedte placeholder="bv. 0.8"></div>
+<div><label>Hoogte (m)</label><input name=hoogte placeholder="bv. 1.2"></div>
+<div><label>of direct oppervlak (m²)</label><input name=m2 placeholder="leeg = breedte x hoogte"></div>
+</div><div class=btn-row><button class=btn>+ Dakraam toevoegen</button></div></form>
+{% else %}<p class=muted>Voeg eerst een dakvlak toe (optie 1/2/3 hierboven), dan kun je er dakramen aan hangen.</p>{% endif %}
+</div></details>
 <script>function dakPrev(f){var c=parseFloat((f.lange_zijde.value||'').replace(',','.')),b=parseFloat((f.breedte.value||'').replace(',','.')),h=parseFloat((f.helling1.value||'').replace(',','.')),e=document.getElementById('dakprev');if(!(c>0&&b>0&&h>0&&h<90)){e.textContent='Vul lange zijde, breedte en hellingshoek in voor een voorbeeld.';return;}var s=(c/2)/Math.cos(h*Math.PI/180),vlak=s*b,kop=0.5*c*((c/2)*Math.tan(h*Math.PI/180));e.innerHTML='Voorbeeld: per hellend vlak <b>'+vlak.toFixed(2)+' m²</b> (2×, voor+achter) · per kopgevel <b>'+kop.toFixed(2)+' m²</b> (2×, alleen indien buiten).';}</script></div>
 
 <div class=card><h2>Ventilatie</h2>
@@ -878,10 +890,15 @@ def opname(tag):
     # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen
     ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
     bj_titel, bj_html = bouwjaar_mod.hint(dos.identificatie.bouwjaar)
+    # dakvlakken (voor de 'dakraam toevoegen'-keuze): label + oriëntatie-waarde
+    dak_vlakken = [("%s · %s · %.1f m²" % (s.id, s.orientatie or "Horizontaal", s.oppervlakte_m2 or 0),
+                    s.orientatie or "") for s in dos.schil if (s.type or "") == "dak"]
+    n_dakraam = sum(1 for s in dos.schil if "dakraam" in (s.subtype or "").lower())
     return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 elementen=elementen, zones=zones, verlies=verlies, ag=ag,
-                bj_titel=bj_titel, bj_html=bj_html, woningtypes=WONINGTYPE_OPTS,
-                begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS, koz_opts=KOZ_OPTS, ico=TYPE_ICO)
+                bj_titel=bj_titel, bj_html=bj_html, woningtypes=WONINGTYPE_OPTS, dak_vlakken=dak_vlakken,
+                n_dakraam=n_dakraam, begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
+                koz_opts=KOZ_OPTS, ico=TYPE_ICO)
 
 
 @app.route("/project/<tag>/opname/magicplan", methods=["POST"])
@@ -1162,6 +1179,38 @@ def opname_dak_negen(tag):
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     _dos_save(tag, st, dos)
     flash("Dak %d toegevoegd: %d vlak(ken) met eigen m². Nog een dak? Kies opnieuw hieronder." % (nr, n_add))
+    return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+
+
+@app.route("/project/<tag>/opname/dakraam", methods=["POST"])
+@login_required
+def opname_dakraam(tag):
+    """Voeg een dakraam toe aan een dakvlak. Wordt een kozijn (subtype 'Dakraam') met de oriëntatie van
+    dat dakvlak -> de VABI-generator plaatst het als deelvlak op het DAK-hoofdvlak (glas van het dak af)."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    from core.dossier import SchilDeel
+    f = request.form
+    n_bestaand = sum(1 for s in dos.schil if "dakraam" in (s.subtype or "").lower())
+    if n_bestaand >= 20:
+        flash("Maximaal 20 dakramen bereikt.")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    o = (f.get("dak_orient") or "").strip()
+    m2 = _f2(f.get("m2"))
+    if not m2:
+        b, h = _f2(f.get("breedte")), _f2(f.get("hoogte"))
+        m2 = round(b * h, 2) if (b and h) else None
+    if not m2:
+        flash("Vul het dakraam-oppervlak in (breedte x hoogte, of direct m²).")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    nr = n_bestaand + 1
+    dos.schil.append(SchilDeel(id="dakraam-%d-%s" % (nr, (o or "hor").lower()[:4]), type="kozijn", subtype="Dakraam",
+                               orientatie=o, oppervlakte_m2=m2, glastype=f.get("glas", "").strip(),
+                               kozijnmateriaal="Hout of kunststof", begrenzing="Buitenlucht", rekenzone=1,
+                               opmerkingen="Dakraam in dakvlak %s (glas van het dakvlak afgetrokken in Vabi)" % (o or "horizontaal")))
+    _dos_save(tag, st, dos)
+    flash("Dakraam %d toegevoegd (%.2f m² in dakvlak %s). Nog een dakraam? Herhaal hieronder." % (nr, m2, o or "horizontaal"))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
