@@ -1182,6 +1182,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 if k:
                     s.bouwjaarklasse = k
     dos.schil = schil
+    # VERSHEID: toon de projectdatum bovenaan, zodat je nooit per ongeluk een oude export analyseert
+    # (Essenhage-les 15-7: een CSV van 11-7 toonde nog oude geveltags terwijl MagicPlan al gecorrigeerd was).
+    _pdatum = _undot(G("Project creation date") or G("Projectdatum"))
+    if _pdatum:
+        notes.append("Deze opname komt uit een MagicPlan-export met projectdatum %s. Klopt dit niet met je "
+                     "laatste wijzigingen? Exporteer dan een VERSE Statistics-CSV en laad die opnieuw." % _pdatum)
     if not dos.identificatie.bouwjaar:
         notes.append("BOUWJAAR ONTBREEKT in de export (Object-form 'Bouwjaar' — oudere formversie? "
                      "Herstart de MagicPlan-app en exporteer opnieuw, of vul het bouwjaar in de webapp "
