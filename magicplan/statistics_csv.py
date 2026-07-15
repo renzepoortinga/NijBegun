@@ -479,9 +479,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 gevel_bruto[k] = round(gevel_bruto.get(k, 0.0) + (_f(r[3]) or 0.0), 2)
                 # tik-administratie: gevel_bxh (breedte x verdiepingshoogte) wordt NA de wand-loop
                 # uit deze tikken gebouwd, mét dedup van tegenoverliggende gelijke-breedte wanden.
+                _wnr_m = re.search(r"wall\s*(\d+)", ((r[1] or "").strip().lower() if len(r) > 1 else ""))
                 gevel_tikken.append({"kamer": (r[0] or "").strip(), "kamer_id": _kamer_instantie,
                                      "verdieping": cur_verdieping, "gevel_key": k,
                                      "wand": (r[1] or "").strip() if len(r) > 1 else "",
+                                     "wandnr": int(_wnr_m.group(1)) if _wnr_m else None,
                                      "orient": cur_orient, "breedte": _f(r[5]) if len(r) > 5 else None,
                                      "breedte_eff": _w_breed, "m2": _f(r[3]) or 0.0})
                 if cur_gevel_naam and cur_orient not in orient_naam:
@@ -1209,6 +1211,25 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                          "kamer — of vul de gemeten gevelbreedte in (dan negeert de tool de wandsom)."
                          % (_km, (" (%s)" % _vd if _vd else ""), len(_ts), _ori,
                             "/".join("%.1f" % b for b in _breedtes)))
+    # ONMOGELIJKE HOEK (Essenhage-Laundry-les 15-7): TEGENOVERLIGGENDE wanden (Wall 0//Wall 2 of
+    # Wall 1//Wall 3) van één kamer moeten 180° uit elkaar liggen (voor/achter of links/rechts).
+    # Zijn ze getagd op oriëntaties die 90° apart liggen, dan is één tag zeker MISGETIKT.
+    _perkamer = _dd(dict)      # kamer_id -> {wandnr: (orient, kamer, verdieping)}
+    for _t in gevel_tikken:
+        if _t.get("wandnr") is not None and _t["orient"] in map(str.upper, _COMPAS):
+            _perkamer[_t["kamer_id"]][_t["wandnr"]] = (_t["orient"], _t["kamer"], _t.get("verdieping", ""))
+    for _kid, _wd in _perkamer.items():
+        for _a, _b in ((0, 2), (1, 3)):
+            if _a in _wd and _b in _wd:
+                _oa, _ob = _wd[_a][0], _wd[_b][0]
+                _stap = abs(_COMPAS.index(_oa.lower()) - _COMPAS.index(_ob.lower())) % 8
+                if _stap not in (0, 4):     # niet gelijk en niet 180° -> onmogelijk voor een rechthoek
+                    notes.append("TIKFOUT (onmogelijke hoek) kamer '%s'%s: Wall %d = %s én Wall %d = %s, "
+                                 "maar dat zijn TEGENOVERLIGGENDE wanden (moeten 180° uit elkaar, dus "
+                                 "voor/achter óf links/rechts). Eén van deze twee is misgetikt — "
+                                 "controleer in MagicPlan."
+                                 % (_wd[_a][1], (" (%s)" % _wd[_a][2]) if _wd[_a][2] else "",
+                                    _a, _oa, _b, _ob))
     # (2) ZOLDER-UITSLUITING (eis Renze 14-7): op de bovenste verdieping onder een SCHUIN dakvlak is
     #     de voor/achtergevel het DAK zelf, geen verticale gevel. Die verdieping halen we automatisch
     #     uit de gevel-m² voor de oriëntaties die een schuin dakvlak hebben; de echte KOPGEVELS (haaks

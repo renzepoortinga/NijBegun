@@ -1818,6 +1818,35 @@ try:
     # Woonkamer BG Wall 1 + Wall 3 (beide 4,0 m) -> dedup naar 4,0 x 2,60 = 10,4 (+ hart-op-hart)
     check("dedup: dubbele BG-wanden (4,0=4,0) -> 1x geteld = 10,4 m² i.p.v. 20,8",
           10.3 <= _nw61 <= 12.0)
+    # ONMOGELIJKE HOEK: tegenoverliggende wanden (Wall 0//Wall 2) getagd op 90°-apart gevels
+    _rows61b = [["PLAN ATTRIBUTES"], ["Total living area: m²", "40"], ["Woningtype", "Vrijstaand"],
+                ["Oriëntatie voorgevel", "NW"], [],
+                ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+                ["Ground Floor", "40", "1", "1", "1", "1", "1", "2.60 m"], [],
+                ["ROOM ATTRIBUTES", "Ground surface without walls: m²"], ["Ground Floor", ""], ["Bijkeuken", "12"], [],
+                ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+                 "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"],
+                ["Ground Floor"],
+                _w61({0: "Bijkeuken", 1: "Wall 0", 3: "9", 5: "3.6", 6: "2.6", 8: "Wall", 25: "Achtergevel"}),
+                _w61({0: "Bijkeuken", 1: "Wall 2", 3: "9", 5: "3.6", 6: "2.6", 8: "Wall", 25: "Rechtergevel"}),
+                []]
+    with _t61.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f61b:
+        _c61.writer(_f61b).writerows(_rows61b)
+        _p61b = _f61b.name
+    _d61b, _n61b = _bd61(_p61b)
+    _o61.unlink(_p61b)
+    check("onmogelijke hoek: tegenoverliggende Wall 0=achter + Wall 2=rechts (90°) -> TIKFOUT",
+          any("onmogelijke hoek" in str(n) for n in _n61b))
+    # geldige combinatie (voor/achter op tegenoverliggende wanden) mag NIET flaggen
+    _rows61c = [(["Voorgevel" if r and len(r) > 25 and r[25] == "Rechtergevel" else (r[25] if r and len(r) > 25 else None)] and
+                 (r[:25] + ["Voorgevel"] if (r and len(r) > 25 and r[25] == "Rechtergevel") else r)) for r in _rows61b]
+    with _t61.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f61c:
+        _c61.writer(_f61c).writerows(_rows61c)
+        _p61c = _f61c.name
+    _d61c, _n61c = _bd61(_p61c)
+    _o61.unlink(_p61c)
+    check("onmogelijke hoek: voor/achter op tegenoverliggende wanden (180°) -> GEEN valse flag",
+          not any("onmogelijke hoek" in str(n) for n in _n61c))
 except Exception as _e:
     check("gevel-tikfout-detectie: draait zonder fout", False); print("     " + repr(_e)[:200])
 
