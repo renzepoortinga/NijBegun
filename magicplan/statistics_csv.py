@@ -486,6 +486,14 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     _bijdrage = _buiten_m2
                     _w_breed = _bm
                     k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
+                elif cur_nareken:
+                    # deels-buiten GEMARKEERD maar geen meters ingevuld -> FOUT (eis Renze 15-7): de hele
+                    # wand telt nu mee (waarschijnlijk te veel). Vul de buitenlengte in.
+                    notes.append("FOUT wand '%s'%s: gemarkeerd als deels-buiten, maar het veld 'Grenst aan "
+                                 "buiten (m)' is LEEG -> vul het aantal meters in dat aan buiten grenst. Zolang "
+                                 "het leeg is telt de HELE wand mee (%.2f m2), wat waarschijnlijk te veel is."
+                                 % (_wnaam.strip(), (" (%s)" % cur_verdieping) if cur_verdieping else "",
+                                    _bijdrage))
                 gevel_per[k] = round(gevel_per.get(k, 0.0) + _bijdrage, 2)
                 gevel_bruto[k] = round(gevel_bruto.get(k, 0.0) + (_f(r[3]) or 0.0), 2)
                 # tik-administratie: gevel_bxh (breedte x verdiepingshoogte) wordt NA de wand-loop

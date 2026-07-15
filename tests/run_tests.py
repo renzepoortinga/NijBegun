@@ -2062,6 +2062,16 @@ try:
     # 5,0x2,60 + 5,0x2,40 = 13,0 + 12,0 = 25,0 (Vrijstaand -> geen toeslag)
     check("cumulatief: voorgevel BG (5x2,60) + 1e (5x2,40) opgeteld = 25 m² op één tab",
           24.5 <= _nwtot <= 25.5)
+    # D) deels-buiten GEMARKEERD + tag maar LEGE meters -> FOUT-melding
+    _rows64d = _base + [_h64(), ["Ground Floor"],
+               _w64({0: "Hal", 1: "Wall 0", 3: "15.6", 4: "15.6", 5: "6.03", 6: "2.60", 8: "Wall", 25: "Voorgevel", 26: "Yes"}), []]
+    with _t64.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f64d:
+        _c64.writer(_f64d).writerows(_rows64d)
+        _p64d = _f64d.name
+    _d64d, _n64d = _bd64(_p64d)
+    _o64.unlink(_p64d)
+    check("deels-buiten + tag maar LEGE meters -> FOUT-melding (vul buitenlengte in)",
+          any("FOUT" in str(n) and "Grenst aan buiten (m)' is LEEG" in str(n) for n in _n64d))
 except Exception as _e:
     check("deels-buiten/cumulatief: draait zonder fout", False); print("     " + repr(_e)[:200])
 
