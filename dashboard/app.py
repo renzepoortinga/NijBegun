@@ -13,7 +13,7 @@ Draaien:
 Gouden regel: de tool rekent NTA 8800 nooit zelf — Vabi EPA-W bevestigt de Standaard. De webapp blijft
 lokaal (AVG) en is de handmatige adviseur-route.
 """
-import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re
+import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, TOOL_DIR)
 from flask import (Flask, request, session, redirect, url_for, send_from_directory,  # noqa: E402
@@ -407,6 +407,38 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <select name=type style="max-width:180px"><option value=gevel>Gevel</option><option value=dak>Dak</option>
 <option value=vloer>Vloer</option><option value=kozijn>Raam/deur</option><option value=paneel>Paneel (dicht)</option></select>
 <button class="btn sec">+ Vlak toevoegen</button></form></div>
+
+<div class=card id=dak-toevoegen><h2>⛰ Dak toevoegen</h2>
+<p class=muted>Voeg zoveel daken toe als nodig (tot 20) — elk dak wordt automatisch genummerd. Kies per dak de invoerwijze. De toegevoegde dakvlakken verschijnen in de gebouwboom hierboven.</p>
+<details class=acc><summary><b>1 · Plat dak</b></summary><div class=acc-body>
+<form method=post action="{{url_for('opname_dak_plat', tag=tag)}}"><div class=grid2>
+<div><label>Oppervlak (m²)</label><input name=m2 placeholder="bv. 24.5" required></div>
+<div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
+</div><div class=btn-row><button class=btn>+ Plat dak toevoegen</button></div></form></div></details>
+
+<details class=acc><summary><b>2 · Zadeldak — via driehoek berekenen</b></summary><div class=acc-body>
+<p class="muted small">De <b>hellende vlakken</b> zitten aan de gekozen oriëntatie én de tegenoverliggende. De <b>lange zijde (basis c)</b> is de breedte van de kopgevel (de zijde waarover het dak schuin loopt); de <b>breedte/noklengte</b> is de lengte waarmee elk hellend vlak vermenigvuldigd wordt. De <b>kopgevels</b> (driehoeken) tellen alleen mee als ze aan buiten grenzen (bij een tussenwoning meestal buurwand → uit laten).</p>
+<form method=post action="{{url_for('opname_dak_driehoek', tag=tag)}}" oninput="dakPrev(this)"><div class=grid2>
+<div><label>Oriëntatie hellende vlakken</label><select name=orient_hellend>{% for o in ori_opts %}{% if o %}<option>{{o}}</option>{% endif %}{% endfor %}</select></div>
+<div><label>Hellingshoek (°)</label><input name=helling1 value="45"></div>
+<div><label>Lange zijde / basis c (m)</label><input name=lange_zijde placeholder="bv. 7"></div>
+<div><label>Breedte / noklengte (m)</label><input name=breedte placeholder="bv. 5"></div>
+<div><label>Hellingshoek vlak 2 (° — leeg = zelfde)</label><input name=helling2 placeholder="alleen bij asymmetrisch"></div>
+<div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
+<div><label class=chk><input type=checkbox name=kopgevel1_buiten> Kopgevel 1 grenst aan buiten</label></div>
+<div><label class=chk><input type=checkbox name=kopgevel2_buiten> Kopgevel 2 grenst aan buiten</label></div>
+</div>
+<p class="muted small" id=dakprev>Vul lange zijde, breedte en hellingshoek in voor een voorbeeld.</p>
+<div class=btn-row><button class=btn>+ Zadeldak toevoegen</button></div></form></div></details>
+
+<details class=acc><summary><b>3 · Zelf de m² invoeren (9 geometrieën)</b></summary><div class=acc-body>
+<p class="muted small">Voor een lastig dak: vul per oriëntatie het (schuine) dakoppervlak in. Laat leeg wat er niet is.</p>
+<form method=post action="{{url_for('opname_dak_negen', tag=tag)}}"><div class=grid2>
+{% for o in ['N','NO','O','ZO','Z','ZW','W','NW','Horizontaal'] %}<div><label>{{o}} (m²)</label><input name="m2_{{o}}"></div>{% endfor %}
+<div><label>Hellingshoek schuine vlakken (° — optioneel)</label><input name=helling9></div>
+<div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
+</div><div class=btn-row><button class=btn>+ Dak toevoegen</button></div></form></div></details>
+<script>function dakPrev(f){var c=parseFloat((f.lange_zijde.value||'').replace(',','.')),b=parseFloat((f.breedte.value||'').replace(',','.')),h=parseFloat((f.helling1.value||'').replace(',','.')),e=document.getElementById('dakprev');if(!(c>0&&b>0&&h>0&&h<90)){e.textContent='Vul lange zijde, breedte en hellingshoek in voor een voorbeeld.';return;}var s=(c/2)/Math.cos(h*Math.PI/180),vlak=s*b,kop=0.5*c*((c/2)*Math.tan(h*Math.PI/180));e.innerHTML='Voorbeeld: per hellend vlak <b>'+vlak.toFixed(2)+' m²</b> (2×, voor+achter) · per kopgevel <b>'+kop.toFixed(2)+' m²</b> (2×, alleen indien buiten).';}</script></div>
 
 <div class=card><h2>Ventilatie</h2>
 <p class=muted>Nij Begun rekent met vuistregels: toevoer 0,7 dm³/s·m² per verblijfsgebied (min 7 l/s), afvoer keuken 21 / bad 14 / toilet 7, in balans. Ventilatie is een <b>verplicht</b> onderdeel van het isolatieplan.</p>
@@ -999,6 +1031,138 @@ def opname_el_nieuw(tag):
     _dos_save(tag, st, dos)
     flash("Vlak toegevoegd — vul de gegevens in.")
     return redirect(url_for("opname", tag=tag))
+
+
+# ---- DAK TOEVOEGEN (webapp-wizard: plat / driehoek-zadeldak / 9 geometrieën; herhaalbaar, auto-genummerd) ----
+DAK_COMPAS = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
+
+
+def _opp8(o):
+    o = (o or "").upper()
+    return DAK_COMPAS[(DAK_COMPAS.index(o) + 4) % 8] if o in DAK_COMPAS else ""
+
+
+def _zij8(o):
+    o = (o or "").upper()
+    if o not in DAK_COMPAS:
+        return ("", "")
+    return (DAK_COMPAS[(DAK_COMPAS.index(o) + 2) % 8], DAK_COMPAS[(DAK_COMPAS.index(o) - 2) % 8])
+
+
+def _volgend_dak_nr(dos):
+    """Volgend dak-groepnummer (auto-nummering): hoogste dakN in de ids + 1 (start 1)."""
+    n = 0
+    for s in dos.schil:
+        m = re.match(r"dak(\d+)", (s.id or ""))
+        if m:
+            n = max(n, int(m.group(1)))
+    return n + 1
+
+
+@app.route("/project/<tag>/opname/dak/plat", methods=["POST"])
+@login_required
+def opname_dak_plat(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    from core.dossier import SchilDeel
+    m2 = _f2(request.form.get("m2")) or 0.0
+    if not m2:
+        flash("Vul een oppervlak in voor het platte dak.")
+        return redirect(url_for("opname", tag=tag))
+    nr = _volgend_dak_nr(dos)
+    dos.schil.append(SchilDeel(id="dak%d-plat" % nr, type="dak", subtype="plat dak", begrenzing="Buitenlucht",
+                               orientatie="", oppervlakte_m2=m2, hellingshoek=0, isolatie_aanwezig="Onbekend",
+                               rekenzone=int(request.form.get("rekenzone") or 1),
+                               opmerkingen="Dak %d (plat) — webapp-invoer" % nr))
+    _dos_save(tag, st, dos)
+    flash("Plat dak %d toegevoegd (%.2f m²). Wil je nog een dak toevoegen? Kies opnieuw hieronder." % (nr, m2))
+    return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+
+
+@app.route("/project/<tag>/opname/dak/driehoek", methods=["POST"])
+@login_required
+def opname_dak_driehoek(tag):
+    """Zadeldak via de driehoek: lange zijde c (kopgevel-basis) x breedte (noklengte). Hellend vlak =
+    schuine zijde x breedte (voor + achter); kopgevels = driehoek op de haakse gevels, alleen indien buiten."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    from core.dossier import SchilDeel
+    from core.geometry import dak_vlakken_zadeldak
+    f = request.form
+    o = (f.get("orient_hellend") or "").upper()
+    c = _f2(f.get("lange_zijde")) or 0.0
+    breedte = _f2(f.get("breedte")) or 0.0
+    h1 = _f2(f.get("helling1")) or 0.0
+    h2 = _f2(f.get("helling2")) or h1
+    if not (o in DAK_COMPAS and c > 0 and breedte > 0 and 0 < h1 < 90):
+        flash("Zadeldak: kies een oriëntatie, en vul lange zijde, breedte en een geldige hellingshoek (0-89°) in.")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    footprint = c * breedte
+    zij = _zij8(o)
+    vlakken = dak_vlakken_zadeldak(footprint, c, h1, orient_schuin=(o, _opp8(o)), orient_kopgevel=zij)
+    if h2 != h1:   # asymmetrisch: tegenoverliggend vlak eigen helling op de halve footprint
+        for v in vlakken:
+            if v.get("kind") == "dak" and v.get("orientatie") == _opp8(o):
+                v["m2"] = round((footprint / 2.0) / max(0.087, math.cos(math.radians(h2))), 2)
+                v["hellingshoek"] = h2
+    kop_buiten = {zij[0]: f.get("kopgevel1_buiten") == "on", zij[1]: f.get("kopgevel2_buiten") == "on"}
+    nr = _volgend_dak_nr(dos)
+    rz = int(f.get("rekenzone") or 1)
+    n_dak = n_kop = 0
+    for v in vlakken:
+        if v.get("kind") == "gevel":     # kopgevel-driehoek -> alleen als die gevel aan buiten grenst
+            if not kop_buiten.get(v.get("orientatie")):
+                continue
+            dos.schil.append(SchilDeel(id="dak%d-kopgevel-%s" % (nr, (v["orientatie"] or "x").lower()),
+                                       type="gevel", subtype="kopgevel-driehoek", begrenzing="Buitenlucht",
+                                       orientatie=v["orientatie"], oppervlakte_m2=v["m2"], isolatie_aanwezig="Onbekend",
+                                       rekenzone=rz, opmerkingen="Dak %d — kopgevel-driehoek (zadeldak, basis %.2f m)" % (nr, c)))
+            n_kop += 1
+        else:
+            dos.schil.append(SchilDeel(id="dak%d-schuin-%s" % (nr, (v["orientatie"] or "x").lower()),
+                                       type="dak", subtype="schuin (zadeldak)", begrenzing="Buitenlucht",
+                                       orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
+                                       isolatie_aanwezig="Onbekend", rekenzone=rz,
+                                       opmerkingen="Dak %d — hellend vlak %s (c=%.2f x breedte=%.2f, %.0f°)"
+                                       % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1)))
+            n_dak += 1
+    _dos_save(tag, st, dos)
+    flash("Zadeldak %d toegevoegd: %d hellend vlak + %d kopgevel. Nog een dak? Kies opnieuw hieronder."
+          % (nr, n_dak, n_kop))
+    return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+
+
+@app.route("/project/<tag>/opname/dak/negen", methods=["POST"])
+@login_required
+def opname_dak_negen(tag):
+    """Zelf de m² per oriëntatie invoeren (9 geometrieën N..NW + Horizontaal) — voor een lastig dak."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    from core.dossier import SchilDeel
+    f = request.form
+    nr = _volgend_dak_nr(dos)
+    rz = int(f.get("rekenzone") or 1)
+    helling = _f2(f.get("helling9"))
+    n_add = 0
+    for o in DAK_COMPAS + ["Horizontaal"]:
+        m2 = _f2(f.get("m2_%s" % o))
+        if not m2:
+            continue
+        dos.schil.append(SchilDeel(id="dak%d-%s" % (nr, o.lower()[:4]), type="dak", subtype="vlak (zelf ingevoerd)",
+                                   begrenzing="Buitenlucht", orientatie=("" if o == "Horizontaal" else o),
+                                   oppervlakte_m2=m2, hellingshoek=(0 if o == "Horizontaal" else helling),
+                                   isolatie_aanwezig="Onbekend", rekenzone=rz,
+                                   opmerkingen="Dak %d — m² zelf ingevoerd (%s)" % (nr, o)))
+        n_add += 1
+    if not n_add:
+        flash("Geen m² ingevuld — vul minstens één oriëntatie in.")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    _dos_save(tag, st, dos)
+    flash("Dak %d toegevoegd: %d vlak(ken) met eigen m². Nog een dak? Kies opnieuw hieronder." % (nr, n_add))
+    return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
 @app.route("/project/<tag>/opname/installaties", methods=["POST"])

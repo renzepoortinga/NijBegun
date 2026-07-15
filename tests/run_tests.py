@@ -2117,5 +2117,55 @@ try:
 except Exception as _e:
     check("webapp opleveren: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print()
+print("65. Webapp: Dak toevoegen-wizard (plat / driehoek-zadeldak / 9 geometrieen; auto-genummerd)")
+try:
+    import re as _re65, shutil as _sh65
+    import dashboard.app as _W65
+    _W65.app.config.update(TESTING=True)
+    _c65 = _W65.app.test_client()
+    with _c65.session_transaction() as _s65:
+        _s65["ingelogd"] = True
+    _r65 = _c65.post("/nieuw", data={"straat": "Dakstraat 1", "postcode": "9991ZZ", "plaats": "X",
+                                     "woningtype": "Vrijstaand"})
+    _tag65 = _r65.headers["Location"].rstrip("/").split("/")[-2]
+    # 1) zadeldak via driehoek: c=7, breedte=5, 45 gr, NW, beide kopgevels buiten (jouw voorbeeld)
+    _c65.post("/project/%s/opname/dak/driehoek" % _tag65,
+              data={"orient_hellend": "NW", "lange_zijde": "7", "breedte": "5", "helling1": "45",
+                    "kopgevel1_buiten": "on", "kopgevel2_buiten": "on"}, follow_redirects=True)
+    _d65 = _W65._dossier(_tag65)
+    _schuin = [s for s in _d65.schil if s.type == "dak" and "schuin" in (s.subtype or "")]
+    _kop = [s for s in _d65.schil if s.type == "gevel" and "kopgevel" in (s.subtype or "")]
+    check("dak-wizard driehoek: 2 hellende vlakken ~24,75 m² (jouw 4,95x5)",
+          len(_schuin) == 2 and all(24.0 <= (s.oppervlakte_m2 or 0) <= 25.5 for s in _schuin))
+    check("dak-wizard driehoek: hellende vlakken op NW én ZO",
+          {s.orientatie for s in _schuin} == {"NW", "ZO"})
+    check("dak-wizard driehoek: 2 kopgevels ~12,25 m² op NO/ZW (haaks, buiten)",
+          len(_kop) == 2 and {s.orientatie for s in _kop} == {"NO", "ZW"}
+          and all(11.5 <= (s.oppervlakte_m2 or 0) <= 13.0 for s in _kop))
+    # 2) tussenwoning: kopgevels NIET aanvinken -> geen kopgevel toegevoegd (buurwand)
+    _c65.post("/project/%s/opname/dak/driehoek" % _tag65,
+              data={"orient_hellend": "NW", "lange_zijde": "7", "breedte": "5", "helling1": "45"},
+              follow_redirects=True)
+    _kop2 = [s for s in _W65._dossier(_tag65).schil if s.type == "gevel" and "kopgevel" in (s.subtype or "")]
+    check("dak-wizard driehoek: kopgevels UIT -> geen extra kopgevel (tussenwoning-buurwand)", len(_kop2) == len(_kop))
+    # 3) plat dak
+    _c65.post("/project/%s/opname/dak/plat" % _tag65, data={"m2": "24.5"}, follow_redirects=True)
+    check("dak-wizard plat: plat dak 24,5 m² toegevoegd",
+          any(s.type == "dak" and (s.subtype or "") == "plat dak" and abs((s.oppervlakte_m2 or 0) - 24.5) < 0.1
+              for s in _W65._dossier(_tag65).schil))
+    # 4) 9 geometrieen
+    _c65.post("/project/%s/opname/dak/negen" % _tag65,
+              data={"m2_NW": "10", "m2_ZO": "8", "m2_Horizontaal": "5"}, follow_redirects=True)
+    _d65d = _W65._dossier(_tag65)
+    _negen = [s for s in _d65d.schil if "zelf ingevoerd" in (s.subtype or "")]
+    check("dak-wizard 9-geom: 3 vlakken (NW/ZO/Horizontaal) toegevoegd", len(_negen) == 3)
+    # 5) auto-nummering: dak1.., dak2.., dak3.., dak4..
+    _nrs = {int(_m.group(1)) for s in _d65d.schil for _m in [_re65.match(r"dak(\d+)", s.id or "")] if _m}
+    check("dak-wizard: automatisch genummerd (>=4 dak-groepen)", len(_nrs) >= 4)
+    _sh65.rmtree(_W65._pdir(_tag65), ignore_errors=True)
+except Exception as _e:
+    check("dak-wizard: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
