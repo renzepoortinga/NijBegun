@@ -406,6 +406,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     deuren = []
     cur_orient = ""           # oriëntatie van de huidige (moeder)wand
     cur_begr = "Buitenlucht"  # begrenzing van de moederwand (parent; ramen/deuren erven die)
+    # F2 (15-7): de Constructies-form biedt per bouwdeel een 'Gevel - begrenzing'-standaard. Die werd
+    # gelezen maar nooit toegepast (alleen wandnaam-tokens werkten). Nu = fallback als een wand geen
+    # eigen begrenzing-token heeft (een expliciet token op de wand wint nog steeds).
+    _gevel_begr_default = _undot(G("Gevel - begrenzing"))
     n_wall_ext = 0
     nareken_namen = []        # wanden die de adviseur markeerde om handmatig in Vabi na te rekenen
     gevel_tikken = []         # per getikte buitenwand: kamer/wand/orient/breedte (tikfout-checks)
@@ -445,7 +449,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 col_orient = _c11 if _norm_kompas(_c11) else ""
             cur_orient = (_undot(col_orient) or _orient_uit_naam(_wnaam)
                           or _orient_afleiden(cur_gevel_naam, orientatie_voorgevel))
-            cur_begr = _begrenzing_uit_naam(_wnaam)  # begrenzing uit de wandnaam (naamconventie)
+            _wtok = _begrenzing_uit_naam(_wnaam)   # 'Buitenlucht' = géén expliciet token op de wand
+            cur_begr = _wtok if (_wtok and _wtok != "Buitenlucht") else (_gevel_begr_default or "Buitenlucht")  # F2: form-standaard als fallback
             cur_isol = _isolatie_uit_naam(_wnaam)    # per-wand isolatie-override (None = projectdefault)
             _chk = ((r[_idx_nareken] or "").strip().lower()
                     if (_idx_nareken is not None and len(r) > _idx_nareken) else "")
@@ -635,7 +640,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             rc = "Dikte onbekend"
         else:
             rc = ""
-        spouw = None if not spouw_s else (spouw_s.lower() in ("ja", "yes", "true"))
+        # 'Onbekend' -> None (niet False!): False = geverifieerd géén spouw, None = onbekend (audit F4 15-7)
+        spouw = (None if (not spouw_s or "onbek" in spouw_s.lower())
+                 else (spouw_s.lower() in ("ja", "yes", "true")))
         return {"rc_bron": rc,
                 "isolatie": {"ja": "Ja", "nee": "Nee", "onbekend": "Onbekend"}.get(iso.lower(), iso or "Onbekend"),
                 "dikte_mm": (dikte if not dikte_onb else None),
@@ -1138,7 +1145,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     for v in dakvlakken:
         schil.append(SchilDeel(
             id="%s-%s-%s" % (v["kind"], (v.get("type") or "")[:4], v["orientatie"] or "x"),
-            type=v["kind"], subtype=v.get("type", ""), begrenzing="Buitenlucht",
+            type=v["kind"], subtype=v.get("type", ""),
+            begrenzing=((d_b.get("begrenzing") or "Buitenlucht") if v["kind"] == "dak" else "Buitenlucht"),  # F6
             orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
             isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
             opmerkingen="dak-per-vlak uit opname (%s, helling %.0f gr)" % (type_dak, (v.get("hellingshoek") or 0))))
@@ -1147,7 +1155,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("Schilddak: totaal schuin dakoppervlak = footprint/cos(%.0f°), gelijk verdeeld over de "
                      "opgegeven zijden — verfijn de verdeling per dakvlak in Vabi." % (helling or 0))
     if plat_m2:
-        schil.append(SchilDeel(id="dak-plat", type="dak", subtype="plat", begrenzing="Buitenlucht",
+        schil.append(SchilDeel(id="dak-plat", type="dak", subtype="plat",
+                               begrenzing=(d_b.get("begrenzing") or "Buitenlucht"),  # F6
                                orientatie=plat_or or "", oppervlakte_m2=plat_m2, hellingshoek=0,
                                isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
                                opmerkingen="plat dak (bv. erker)"))
@@ -1163,7 +1172,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     opmerkingen="dak-m² per oriëntatie (handmatig, type Anders)"))
                 dak_done = True
     if not dak_done:
-        schil.append(SchilDeel(id="dak", type="dak", subtype=type_dak, begrenzing="Buitenlucht",
+        schil.append(SchilDeel(id="dak", type="dak", subtype=type_dak,
+                               begrenzing=(d_b.get("begrenzing") or "Buitenlucht"),  # F6
                                orientatie="", oppervlakte_m2=bg_floor_area or 0.0,
                                isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
                                opmerkingen="HELLINGSHOEK/dakvlakken ONTBREKEN -> dak-m2 = footprint (fallback)"))
@@ -1227,8 +1237,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             begrenzing=p.get("begr", "Buitenlucht"), orientatie=p["orient"],
             oppervlakte_m2=p["area"] or 0.0, isolatie_aanwezig=p.get("isolatie", "Onbekend"),
             isolatiedikte_mm=p.get("dikte"),
+            # F5 (15-7): de paneel-bouwjaarklasse OOK op het SchilDeel zetten, zodat de constructie-keuze
+            # forfaitair op de paneel-eigen klasse rekent i.p.v. op het project-bouwjaar.
+            bouwjaarklasse=p.get("bouwjaarklasse", ""),
             opmerkingen=("paneel-in-kozijn (dichte constructie) -> verifieer Rc/isolatie in Vabi"
-                         + (" · bouwjaarklasse afwijkend: %s (zet in Vabi)" % p["bouwjaarklasse"]
+                         + (" · bouwjaarklasse %s" % p["bouwjaarklasse"]
                             if p.get("bouwjaarklasse") else ""))))
     if panelen:
         notes.append("%d paneel(en)-in-kozijn herkend (Raam/paneel=paneel) -> dichte constructie; "

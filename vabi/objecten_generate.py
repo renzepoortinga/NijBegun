@@ -62,6 +62,9 @@ def _face_kind(hv):
 # N=4, NO=5, ZO=7 (geverifieerd) -> kompasrotatie vanaf Z. Horizontaal/plat/vloer = -1.
 ORIENTATIE_CODE = {"z": "0", "zw": "1", "w": "2", "nw": "3", "n": "4", "no": "5", "o": "6",
                    "zo": "7", "horizontaal": "-1"}
+# Z/W/O (codes 0/2/6) zijn INTERPOLEERD uit het rotatiepatroon, niet los in EPA bevestigd (audit F1
+# 15-7). Consistent met de golden rule flaggen we ze (eenmalig per oriëntatie) i.p.v. stil te gokken.
+_ORIENT_ONBEVESTIGD = {"z", "w", "o"}
 
 
 def _orient_code(orientatie):
@@ -254,6 +257,7 @@ def build_tree(dos):
     _PERIM_BEGR = ("grond", "kruip", "kelder")
     gevels = []   # (hoofdvlak_el, naam, orientatie) voor deelvlak-toewijzing
     daken = []    # idem: dak-hoofdvlakken (voor DAKRAMEN als deelvlak in het dakvlak)
+    _orient_gemeld = set()   # audit F1: onbevestigde oriëntaties (Z/W/O) 1x flaggen
     for s in dos.schil:
         kind = _classify(s)
         m = mapping.get(s.id)
@@ -273,6 +277,13 @@ def build_tree(dos):
                                   "zet de oriëntatie in Vabi." % s.id)
             elif kind == "gevel" and oc is None:
                 issues.append("gevel %s: onbekende orientatie %r -> sjabloon-default" % (s.id, orient))
+            # F1: Z/W/O (codes 0/2/6) zijn afgeleid, niet EPA-bevestigd -> 1x per oriëntatie flaggen
+            _ol = (orient or "").strip().lower()
+            if kind in ("gevel", "dak") and _ol in _ORIENT_ONBEVESTIGD and _ol not in _orient_gemeld:
+                _orient_gemeld.add(_ol)
+                issues.append("oriëntatie %s: VABI-code %s is afgeleid uit het rotatiepatroon en nog NIET "
+                              "los in EPA bevestigd -> controleer de %s-gevels/dakvlakken in Vabi "
+                              "(eenmalig te verifiëren)." % (orient.upper(), oc, orient.upper()))
             # begrenzing -> GrenstAan (alleen bevestigde codes; onbekend -> sjabloon-default + flag)
             begr = getattr(s, "begrenzing", "") or ""
             # perimeter (randverlies) ALLEEN voor vloeren grenzend aan grond/kruipruimte/kelder (ISSO 8.3)
@@ -498,7 +509,7 @@ def build_tree(dos):
         tdl = td.lower()
         dc = ("1" if ("deels plat" in tdl or "gedeeltelijk plat" in tdl)
               else "2" if "plat" in tdl
-              else "0" if any(k in tdl for k in ("hellend", "zadel", "lessenaar", "punt")) else None)
+              else "0" if any(k in tdl for k in ("hellend", "zadel", "lessenaar", "schild", "tent", "punt")) else None)
         if dc is not None:
             dt_node = next((e for e in root.iter() if _local(e.tag) == "Daktype"), None)
             if dt_node is not None:

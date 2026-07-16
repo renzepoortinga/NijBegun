@@ -2229,5 +2229,76 @@ try:
 except Exception as _e:
     check("zadeldak-kopgevel-basis: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print()
+print("67. VABI-mapping-audit fixes (opake schil F1-F6, 15-7)")
+try:
+    import tempfile as _t67, os as _o67, csv as _c67
+    from magicplan.statistics_csv import build_dossier as _bd67
+    from vabi.objecten_generate import build_tree as _bt67
+    def _w67(vals):
+        r = [""] * 26
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    _H67 = (["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²",
+             "Width: m", "Height: m", "Annotation", "Type"] + [""] * 16 + ["Gevelnaam (leeg = binnenwand)"])
+    # F2 (Gevel - begrenzing form-default=AOR toegepast) + F4 (spouw 'Onbekend' -> None) + F1 (Z-gevel flag)
+    _rows67 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "40"], ["Woningtype", "Vrijstaand"],
+               ["Oriëntatie voorgevel", "Z"], ["Gevel - begrenzing", "AOR"], ["Gevel - spouw aanwezig?", "Onbekend"], [],
+               ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+               ["Ground Floor", "40", "1", "1", "1", "1", "1", "2.60 m"], [],
+               ["ROOM ATTRIBUTES", "Ground surface without walls: m²"], ["Ground Floor", ""], ["Woonkamer", "40"], [],
+               _H67, ["Ground Floor"],
+               _w67({0: "Woonkamer", 1: "Wall 0", 3: "10", 5: "4.0", 6: "2.6", 8: "Wall", 25: "Voorgevel"}), []]
+    with _t67.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f67:
+        _c67.writer(_f67).writerows(_rows67)
+        _p67 = _f67.name
+    _d67, _n67 = _bd67(_p67)
+    _o67.unlink(_p67)
+    _vg67 = [s for s in _d67.schil if s.type == "gevel"]
+    check("F2: 'Gevel - begrenzing'=AOR form-standaard toegepast op de gevel (voorheen genegeerd)",
+          bool(_vg67) and _vg67[0].begrenzing == "AOR")
+    check("F4: spouw 'Onbekend' -> None (niet False = géén spouw)",
+          bool(_vg67) and _vg67[0].spouw_aanwezig is None)
+    _r67, _m67, _iss67, _s67 = _bt67(_d67)
+    check("F1: gevel op Z -> 'afgeleid uit het rotatiepatroon'-flag (niet stil gegokt)",
+          any("afgeleid uit het rotatiepatroon" in str(i) for i in _iss67))
+    # F3: schilddak -> Daktype-code 0 (hellend), geen 'niet herkend'
+    _d67.identificatie.type_dak = "Schilddak"
+    _r67b, _m67b, _iss67b, _s67b = _bt67(_d67)
+    def _lc67(t):
+        return t.split("}")[-1]
+    _dt67 = next((e.text for e in _r67b.iter() if _lc67(e.tag) == "Daktype"), None)
+    check("F3: schilddak -> Daktype-code 0 (hellend), niet 'niet herkend -> sjabloon'",
+          _dt67 == "0" and not any("Daktype" in str(i) and "niet herkend" in str(i) for i in _iss67b))
+    # F5: paneel-in-kozijn met bouwjaarklasse -> op het paneel-SchilDeel (constructiekeuze forfaitair op paneel-klasse)
+    _H67b = ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²", "Width: m",
+             "Height: m", "Annotation", "Type", "Raam = Ja | Paneel = Nee", "Paneel - bouwjaarklasse",
+             "Gevelnaam (leeg = binnenwand)"]
+    def _w67b(vals):
+        r = [""] * 12
+        for i, v in vals.items():
+            r[i] = str(v)
+        return r
+    _rows67b = [["PLAN ATTRIBUTES"], ["Total living area: m²", "40"], ["Woningtype", "Vrijstaand"],
+                ["Oriëntatie voorgevel", "N"], [],
+                ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "V", "GP", "CP", "W1", "W2", "Ceiling Height"],
+                ["Ground Floor", "40", "1", "1", "1", "1", "1", "2.60 m"], [],
+                ["ROOM ATTRIBUTES", "Ground surface without walls: m²"], ["Ground Floor", ""], ["Woonkamer", "40"], [],
+                _H67b, ["Ground Floor"],
+                _w67b({0: "Woonkamer", 1: "Wall 0", 3: "8", 5: "4.0", 6: "2.6", 8: "Wall", 11: "Voorgevel"}),
+                _w67b({0: "Woonkamer", 1: "Wall 0", 3: "0.5", 8: "Window", 9: "Nee (dicht paneel)",
+                       10: "Van 1965 t/m 1974"}), []]
+    with _t67.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _f67b:
+        _c67.writer(_f67b).writerows(_rows67b)
+        _p67b = _f67b.name
+    _d67c, _n67c = _bd67(_p67b)
+    _o67.unlink(_p67b)
+    _pnl67 = [s for s in _d67c.schil if s.type == "paneel"]
+    check("F5: paneel-bouwjaarklasse op het SchilDeel gezet (niet alleen in opmerking)",
+          bool(_pnl67) and getattr(_pnl67[0], "bouwjaarklasse", "") == "Van 1965 t/m 1974")
+except Exception as _e:
+    check("VABI-mapping-audit fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
