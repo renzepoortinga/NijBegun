@@ -124,6 +124,8 @@ def _norm_glas(g):
     g = (g or "").lower()
     if "triple" in g or "3-voud" in g or "drie" in g:
         return "triplehr"
+    if "voorzet" in g:      # audit-glas-F2 15-7: 'Voorzetglas' matchte de codebook-sleutel 'voorzetraam' niet
+        return "voorzetraam"
     if "vacu" in g:
         # VABI-Beslisschema kent geen vacuumglas -> map naar HR++ (dichtstbij, geldig);
         # adviseur verfijnt via U-waarde/kwaliteitsverklaring (zie generator-issues).
@@ -135,8 +137,12 @@ def _norm_kozijn(k):
     k = (k or "").lower()
     if "alu" in k or "mto" in k:
         return "metaal"
-    if "metaal" in k and "onderbroken" in k:
+    # audit-glas-F5 15-7: 'metaal NIET thermisch onderbroken' bevat 'onderbroken' -> viel op therm.
+    # onderbroken (code 3). 'niet' expliciet uitsluiten; niet-TO/plain metaal = code 4.
+    if "metaal" in k and "onderbroken" in k and "niet" not in k:
         return "therm. onderbroken metaal"
+    if "metaal" in k:
+        return "metaal"
     return k
 
 
@@ -193,8 +199,18 @@ def match_constructies(dos, pool, cb):
             if "vacu" in (s.glastype or "").lower():
                 issues.append("schildeel %s: vacuumglas gemapt naar HR++ (Beslisschema kent geen "
                               "vacuum); verifieer U-waarde/kwaliteitsverklaring in Vabi" % s.id)
+            elif (s.glastype or "").strip() and cb.glas_code(_norm_glas(s.glastype)) is None:
+                # audit-glas-F3 15-7: onherkend glastype (bv. 'Onbekend') viel stil op de eerste
+                # raam-template (Dubbel) -> nu geflagd i.p.v. gegokt.
+                issues.append("schildeel %s: glastype %r niet herkend -> tool koos een standaard-raam; "
+                              "controleer de U-waarde / het glas in Vabi." % (s.id, s.glastype))
         else:
             tmpl = pool.pick_deur(s.isolatie_aanwezig)
+            # audit-glas-F4 15-7: glas-in-deur (oppervlak + de >=65%-glas-vlag) komt niet in de
+            # standaard-deurconstructie -> flag zodat de adviseur het glas/raam in Vabi zet.
+            if getattr(s, "deur_met_raam_glas65", False) or (getattr(s, "glastype", "") or "").strip():
+                issues.append("schildeel %s: deur met glas -> de tool koos een standaard-deur; zet het "
+                              "glas/raam-in-deur (en zo nodig de 65-procent-glasvlag) in Vabi." % s.id)
         if tmpl is None:
             issues.append("schildeel %s: geen passende standaard-constructie (%s)" % (s.id, kind))
             continue

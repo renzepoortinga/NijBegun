@@ -184,7 +184,7 @@ def _norm_kozijn_mat(v):
         return "Hout of kunststof"
     if s[0] in _KOZIJN_MAT and (len(s) == 1 or not s[1].isalpha()):
         return _KOZIJN_MAT[s[0]]
-    if "thermisch onderbroken" in s:
+    if "thermisch onderbroken" in s and "niet" not in s:   # F5: 'niet thermisch onderbroken' uitsluiten
         return "Metaal thermisch onderbroken"
     if "metaal" in s or "aluminium" in s:
         return "Metaal niet thermisch onderbroken"
@@ -1072,7 +1072,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 hellingshoek=_hoofd_h,
                 opmerkingen="dakraam/-ramen (%dx) in dakvlak %s — in Vabi als raam op het DAKvlak"
                             % (int(_rwn), _ror or "?")))
-            _trek_af(_ror, _rwm)
+            # audit-glas-F1 15-7: NIET hier van het dakvlak aftrekken. Het dakraam wordt in Vabi als
+            # DEELVLAK op het dakvlak geplaatst (objecten) en dáár 1x afgetrokken; parser + objecten
+            # trokken het glas allebei af -> dakvlak dubbel verlaagd. Dak blijft BRUTO.
             if _rwn and _rwm / max(_rwn, 1) < 0.65:
                 notes.append("Dak %d dakramen %s: gemiddeld < 0,65 m2/stuk -> Nij Begun rekent kleine "
                              "ruiten als 0,65 m2; check het totaal." % (_dn, _g or "-"))
@@ -1206,11 +1208,13 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 oppervlakte_m2=_m, glastype=_gt, kozijnmateriaal="Hout of kunststof",
                 hellingshoek=(_vlak.hellingshoek if _vlak else None),
                 opmerkingen="dakraam (%s, %s) — in Vabi als raam op het dakvlak" % (_ori, _gt)))
-            if _vlak:
-                _vlak.oppervlakte_m2 = round(max((_vlak.oppervlakte_m2 or 0) - _m, 0.0), 2)
-            else:
-                notes.append("Dakramen %s (%s, %.1f m2): geen dakvlak met die orientatie gevonden -> "
-                             "m2 NIET afgetrokken; controleer het dak in Vabi." % (_ori, _gt, _m))
+            # NIET hier van het dakvlak aftrekken (audit-glas-F1 15-7): het dakraam is een apart
+            # kozijn-SchilDeel (subtype Dakraam) en wordt in Vabi als DEELVLAK op het dakvlak geplaatst
+            # -> de netto-aftrek gebeurt daar 1x (net als een raam in een gevel). Parser + objecten
+            # trokken het glas allebei af -> dak-oppervlak dubbel verlaagd (te laag). Dak blijft BRUTO.
+            if not _vlak:
+                notes.append("Dakramen %s (%s, %.1f m2): geen dakvlak met die orientatie -> het dakraam "
+                             "komt in Vabi mogelijk op een gevel; controleer het dak in Vabi." % (_ori, _gt, _m))
         _rr = _f(G("Dakramen %s - met ventilatierooster (aantal, leeg = geen)" % _ori))
         if _rr:
             notes.append("Dakramen %s: %d met VENTILATIEROOSTER -> telt als toevoervoorziening; "

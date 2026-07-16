@@ -418,6 +418,10 @@ def build_tree(dos):
             _set(alg, "Qv10Waarde", "%.3f" % float(qv))
         elif qv is not None:
             issues.append("qv10=%.2f genegeerd (niet-gemeten; ISSO 7.1.5 -> forfaitair op bouwjaar/renovatiejaar)" % float(qv))
+        elif bool(getattr(_opn, "qv10_gemeten", False)):
+            # audit 15-7: gemeten=Ja maar geen waarde -> viel stil terug op forfaitair; nu luide flag
+            issues.append("Qv10 GEMETEN=Ja maar GEEN waarde -> sjabloon (forfaitair) blijft staan; "
+                          "vul de gemeten qv10-waarde in Vabi in.")
         # thermische massa (Rekenzone>Algemeen) — LIVE GEVERIFIEERD in EPA (22-6-2026): 0=Licht,
         # 1=Zwaar, 2=Zeer zwaar (TypeBouwwijzeWanden/Vloeren). Alle drie worden nu automatisch gezet.
         opn = getattr(dos, "opname", None)
@@ -430,6 +434,11 @@ def build_tree(dos):
                 _set(alg, veld, code)
             elif w:
                 issues.append("%s='%s': onbekende thermische-massaklasse (verwacht Licht/Zwaar/Zeer zwaar)" % (veld, waarde))
+            else:
+                # audit 15-7 (HIGH): LEEG lekte stil de sjabloonwaarde 'Zwaar' (code 1) -> nu luide flag
+                # (zelfde patroon als bouwjaar/verdiepingen). Beïnvloedt de warmtebehoefte/TOjuli.
+                issues.append("%s ONTBREEKT -> sjabloon 'Zwaar' blijft staan; zet de thermische massa "
+                              "(Licht/Zwaar/Zeer zwaar) in Vabi. Bij een lichte constructie (HSB) is 'Zwaar' fout." % veld)
         # gebruiksoppervlakte (Ag): de rekenzone-Ag dragen we via de PER-VERDIEPING-oppervlakken
         # (Verdiepingen) + de vloer-hoofdvlakken in de geometrie. De DIRECTE Rekenzone>Algemeen-knoop
         # <Gebruiksoppervlakte> is GEEN m2-veld maar een enum/vlag (echte EPA-export = "1", ook bij een
@@ -504,6 +513,10 @@ def build_tree(dos):
     if wt:
         issues.append("Gebouwtype/Ligging (woningtype=%r): VABI-enumcode nog te bevestigen in EPA -> "
                       "sjabloon-default; zet woningpositie handmatig in Vabi (golden rule)." % wt)
+    else:
+        # audit 15-7: leeg woningtype liet Gebouwtype/Ligging stil op de sjabloon staan (geen flag)
+        issues.append("WONINGTYPE ONTBREEKT -> Gebouwtype/Ligging blijven op de sjabloon staan; "
+                      "kies het woningtype (webapp/MagicPlan) en zet de woningpositie in Vabi.")
     if td:
         # Daktype LIVE GEVERIFIEERD in EPA: 0=Hellend dak, 1=Deels plat dak, 2=Plat dak/zonder kap.
         tdl = td.lower()

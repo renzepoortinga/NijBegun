@@ -31,19 +31,23 @@ SYSTEEM_SOORT = {"individueel": "0"}
 
 # Installatie-enumcodes LIVE GEHARVEST uit EPA (22-6-2026) — zie vabi/refs/installatie_enums_EPA.md.
 # ZonneEnergie/PV:
-PV_SYSTEEM = {"pv": "0", "pvt": "1", "zonneboiler": "2", "opslag": "3"}
 PV_ORIENTATIE = {"n": "0", "no": "1", "o": "2", "zo": "3", "z": "4", "zw": "5", "w": "6", "nw": "7"}  # PV: klokrichting vanaf N (anders dan geometrie!)
-PV_BOUWINTEGRATIE = {"niet": "0", "matig": "1", "goed": "2", "sterk": "2", "onbekend": "3"}
 
 
 def _pv_paneeltype(s):
+    # codes: 0=Kwaliteitsverklaring 1=Mono 2=Multi 3=Amorf-enkelvoudig 4=Multi-junctie-amorf
+    # 5=CIGS 6=CdTe 7=Onbekend kristallijn 8=Onbekend amorf (installatie_enums_EPA.md:12)
     s = (s or "").lower()
     if "mono" in s: return "1"
     if "multi" in s or "poly" in s: return "2"
     if "amorf" in s: return "3"
     if "cigs" in s or "koper" in s or "gallium" in s: return "5"
     if "cdte" in s or "cadmium" in s: return "6"
-    return "0"  # kwaliteitsverklaring/onbekend
+    # audit 15-7 (F4): 'Dunne film'/'Onbekend' vielen op 0=Kwaliteitsverklaring (mismatch). Nu op de
+    # juiste onbekend-codes: dunne film = amorf-familie -> 8 (onbekend amorf); onbekend paneel -> 7.
+    if "dunne film" in s or "dunnefilm" in s or "thin" in s: return "8"
+    if "onbekend" in s: return "7"
+    return "0"  # leeg / expliciet kwaliteitsverklaring (BCRG)
 
 
 def _pv_fabricagejaar(s):
@@ -161,14 +165,20 @@ def build_tree(dos):
         _set(vnode, "Installatiejaar", getattr(vent, "installatiejaar", None))
         # het ventilatiesysteem-type (A1/B2/C3...) zit als code in de sjabloon; alleen
         # overschrijven als we het zeker kunnen mappen -> anders sjabloon-default + flag
+        # Het ventilatiesysteem-type/subsysteem (A1..E1) zit als code in de sjabloon en wordt NIET
+        # automatisch overschreven (de ~32 subsysteemcodes zijn nog niet uit EPA geharvest — golden rule).
+        # audit 15-7 (HIGH): de oude flag vuurde alleen bij een gevuld subsysteem -> koos de adviseur wél
+        # een systeem A-E maar geen subsysteem, dan bleef het STIL. Nu vuurt er ALTIJD een flag: ventilatie
+        # is het ENIGE installatiedeel dat de Nij Begun-Standaard stuurt.
         sub = getattr(vent, "subsysteem_code", "") or ""
-        if sub:
-            flags.append("ventilatiesysteem '%s' uit sjabloon overgenomen; verifieer in Vabi" % sub)
-        if not (getattr(vent, "systeem", "") or "").strip():
-            # audit 12-7: ventilatie is het ENIGE installatiedeel dat de Standaard beinvloedt —
-            # leeg systeem mag nooit stil op de sjabloon-ventilatie blijven staan.
-            flags.append("VENTILATIESYSTEEM ONTBREEKT in de opname -> sjabloon-ventilatie blijft "
-                         "staan; zet het systeem (A-E) in Vabi (dit stuurt de Standaard!).")
+        _syst = (getattr(vent, "systeem", "") or "").strip()
+        if _syst or sub:
+            flags.append("VENTILATIE: de opgenomen keuze (systeem %s%s) wordt NIET automatisch in Vabi "
+                         "gezet -> kies het ventilatiesysteem/subsysteem (A-E) ZELF in Vabi. DIT STUURT DE "
+                         "STANDAARD!" % (_syst or "?", (" / subsysteem %s" % sub) if sub else ""))
+        else:
+            flags.append("VENTILATIESYSTEEM ONTBREEKT in de opname -> sjabloon-ventilatie blijft staan; "
+                         "zet het systeem (A-E) in Vabi (DIT STUURT DE STANDAARD!).")
     elif vnode is not None:
         flags.append("VENTILATIE ONTBREEKT volledig in het dossier -> sjabloon-ventilatie blijft "
                      "staan; vul de ventilatie in Vabi in (dit stuurt de Standaard!).")
@@ -217,6 +227,20 @@ def build_tree(dos):
         else:
             flags.append("AFGIFTESYSTEEM ONTBREEKT -> sjabloon-afgifte (LUCHTVERWARMING!) blijft staan; "
                          "zet het echte afgiftesysteem (radiatoren/vloer/...) in Vabi.")
+        # aanvoertemperatuur -> WaterAanvoertemperatuur-enum (audit 15-7 #3: werd geparsed maar STIL
+        # gedropt). Bevestigde klassen 0=30/27..8=70/60; 80/60 en 90/70 zijn NIET bevestigd -> flaggen.
+        _at_raw = (getattr(verw, "aanvoertemperatuur", "") or "").strip()
+        if _at_raw:
+            _at = _at_raw.replace(".", "/").replace("-", "/").replace(" ", "")
+            _AANVOERTEMP = {"30/27": "0", "35/30": "1", "40/35": "2", "45/40": "3", "50/42": "4",
+                            "55/47": "5", "60/50": "6", "65/55": "7", "70/60": "8"}
+            _atc = _AANVOERTEMP.get(_at)
+            _atn = _find(root, "WaterAanvoertemperatuur")
+            if _atc is not None and _atn is not None:
+                _atn.text = _atc
+            else:
+                flags.append("aanvoertemperatuur '%s': hogere/onbekende klasse nog niet in EPA bevestigd "
+                             "(bevestigd t/m 70/60) -> zet de temperatuurklasse zelf in Vabi." % _at_raw)
         if not getattr(verw, "merk", "") and not getattr(verw, "type", ""):
             flags.append("verwarming uit sjabloon (geen dossier-data); adviseur vult aan in Vabi")
 

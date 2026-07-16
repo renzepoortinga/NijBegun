@@ -1416,8 +1416,10 @@ try:
     _noord = next((s2 for s2 in _dks if s2.orientatie == "N"), None)
     check("asymmetrisch: vlak 2 (N) heeft eigen helling 25", _noord is not None and _noord.hellingshoek == 25)
     check("asymmetrisch: note over benaderde vlakverdeling", any("ASYMMETRISCH" in str(x) for x in _n55))
-    check("dakraam: 1.8 m2 van het grootste schuine vlak afgetrokken (35.36 -> 33.56)",
-          any(abs((s2.oppervlakte_m2 or 0) - 33.56) < 0.3 for s2 in _dks))
+    # audit-glas-F1 15-7: het dakvlak blijft nu BRUTO (35.36) in het dossier — de parser trekt het
+    # dakraam-glas NIET meer af; de netto-aftrek gebeurt 1x in Vabi (dakraam als deelvlak op het dak).
+    check("dakraam: dakvlak blijft BRUTO (35.36) in het dossier — geen dubbele aftrek meer",
+          any(abs((s2.oppervlakte_m2 or 0) - 35.36) < 0.4 for s2 in _dks))
     check("Dak 1-prefix isolatieboom gelezen (Ja + 100mm)",
           _zuid is not None and _zuid.isolatie_aanwezig == "Ja" and _zuid.isolatiedikte_mm == 100)
 except Exception as _e:
@@ -1452,8 +1454,10 @@ try:
     check("A/B: dakraam B op ACHTERvlak N met Enkel", _rb is not None and _rb.orientatie == "N" and _rb.glastype == "Enkel")
     _z = next((x for x in _d6.schil if x.id == "dak1-schui-Z"), None)
     _n = next((x for x in _d6.schil if x.id == "dak1-schui-N"), None)
-    check("A/B: aftrek van het JUISTE vlak (Z -1.6, N -0.8)",
-          _z is not None and _n is not None and abs(_z.oppervlakte_m2 - 33.76) < 0.1 and abs(_n.oppervlakte_m2 - 34.56) < 0.1)
+    # audit-glas-F1 15-7: dakvlakken blijven BRUTO in het dossier; het dakraam-glas wordt 1x in Vabi
+    # afgetrokken (dakraam als deelvlak op het dak, per orientatie A->Z / B->N zoals hierboven getest).
+    check("A/B: dakvlakken blijven BRUTO (parser trekt niet af; 1x aftrek in Vabi per orientatie)",
+          _z is not None and _n is not None and _z.oppervlakte_m2 > 34.5 and _n.oppervlakte_m2 > 34.5)
 except Exception as _e:
     check("dakramen A/B: draait zonder fout", False); print("     " + repr(_e)[:170])
 
@@ -2299,6 +2303,37 @@ try:
           bool(_pnl67) and getattr(_pnl67[0], "bouwjaarklasse", "") == "Van 1965 t/m 1974")
 except Exception as _e:
     check("VABI-mapping-audit fixes: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print()
+print("68. VABI-mapping-audit fixes glas/installaties/algemeen (15-7)")
+try:
+    from vabi.constructie_generate import _norm_glas as _ng68, _norm_kozijn as _nk68
+    from vabi.installatie_generate import _pv_paneeltype as _pp68, build_tree as _ibt68
+    from vabi.objecten_generate import build_tree as _obt68
+    from core.dossier import Dossier as _Dos68, Ventilatie as _V68
+    # glas F2/F5
+    check("glas-F2: 'Voorzetglas' -> 'voorzetraam' (matcht codebook; niet meer stil op Dubbel)",
+          _ng68("Voorzetglas") == "voorzetraam")
+    check("glas-F5: 'Metaal niet thermisch onderbroken' -> 'metaal' (code 4, niet therm-onderbroken)",
+          _nk68("Metaal niet thermisch onderbroken") == "metaal")
+    check("glas-F5: 'Metaal thermisch onderbroken' -> therm. onderbroken metaal (blijft correct)",
+          _nk68("Metaal thermisch onderbroken") == "therm. onderbroken metaal")
+    # installaties PV F4
+    check("inst-PV: 'Onbekend' -> 7 (onbekend kristallijn), niet 0 (kwaliteitsverklaring)", _pp68("Onbekend") == "7")
+    check("inst-PV: 'Dunne film' -> 8 (onbekend amorf), niet 0", _pp68("Dunne film") == "8")
+    check("inst-PV: 'Monokristallijn' -> 1 (ongewijzigd)", _pp68("Monokristallijn") == "1")
+    # installaties ventilatie-flag (HIGH): vuurt ook bij systeem gekozen ZONDER subsysteem
+    _dv68 = _Dos68()
+    _dv68.ventilatie = _V68(systeem="A", systeem_soort="individueel", subsysteem_code="")
+    _iflags68 = _ibt68(_dv68)[1]
+    check("inst-ventilatie: flag vuurt ook bij systeem A ZONDER subsysteem (stuurt de Standaard)",
+          any("STUURT DE STANDAARD" in str(f) for f in _iflags68))
+    # algemeen: thermische massa leeg -> luide flag (geen stille sjabloon-'Zwaar'-leak)
+    _iss68 = _obt68(_Dos68())[2]
+    check("algemeen: thermische massa LEEG -> luide flag (geen stille sjabloon-'Zwaar')",
+          any("thermische massa" in str(i).lower() and "ONTBREEKT" in str(i) for i in _iss68))
+except Exception as _e:
+    check("audit-fixes glas/installaties/algemeen: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
