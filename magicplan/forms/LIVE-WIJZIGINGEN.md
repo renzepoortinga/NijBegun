@@ -29,7 +29,10 @@ Invoer:  ① Kwaliteitsverklaring → 📷 Foto factuur (verplicht op form-nivea
   Raam = Type glas (Enkel/Voorzetglas/Dubbel/HR/HR+/HR++/TripleHR/Vacuümglas/Onbekend) · Kozijnmateriaal (hout-kunststof / metaal TO / metaal niet-TO) ·
   Toevoerrooster aanwezig?→type · Begrenzing-override · Raam/paneel-toggle. Deur = Type constructie · Type glas · Oppervlakte raam-in-deur · Kozijnmateriaal · Begrenzing.
   **Verwijderd** (hoorde niet bij glas): isolatiedikte, Rc-bron, oriëntatie, bron, spouw. Oriëntatie + begrenzing erft een raam/deur van de moederwand (parser parent/child).
-  TODO generator-check: vabi/constructie_generate glas-enum-mapping voor HR+/HR++/TripleHR/Vacuümglas verifiëren (bij CSV-kalibratie).
+  ~~TODO generator-check: glas-enum-mapping HR+/HR++/TripleHR/Vacuümglas verifiëren~~ **AFGEHANDELD (audit 15-7)**:
+  Enkel/Dubbel/HR/HR+/HR++/TripleHR mappen correct; Vacuümglas -> HR++ mét flag (bewust). De ECHTE gaten zaten
+  elders en zijn nu gefixt: **Voorzetglas** matchte de codebook-sleutel 'voorzetraam' niet (viel stil op Dubbel),
+  en glas **'Onbekend'** viel stil op de eerste raam-template -> nu geflagd.
 - "Gevel - project" (oude plan-groep) **leeggemaakt** (overbodig; Constructies-form dekt gevel-standaard).
 - Bouwjaar-klassen exact: Tot 1965 · 1965–74 · 1975–82 · 1983–87 · 1988–91 · 1992–2013 · 2014 · 2015–17 ·
   2018–20 (1 jan/Overig) · 2021 (1 jan/Overig).

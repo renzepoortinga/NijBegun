@@ -86,6 +86,30 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - MagicPlan-opnameschema + bouwgids: ../MagicPlan_Forms_Fields_schema_v0.3.json (+ -bouwgids.md)
   in de map "Nij Begun & EPA" (twee templates: Energielabel vs Nij Begun; VABI-getrouw)
 
+## Status (15-7-2026) — 456/456 groen. VABI↔MAGICPLAN-MAPPING-AUDIT + GEOMETRIE-IJKING op de ECHTE EPA.
+ESSENHAGE-IJKING (echte EPA-monitor ernaast): Ag -3%, vloer -4%, achtergevel vrijwel exact (29,4 vs 30,0),
+dak van -63% naar -9%. Gefixt: (a) SCHUIN-DAK-FOOTPRINT gebruikte de BOVENSTE verdieping = de zolder binnen
+de kap -> nu de verdieping ERONDER (of expliciet 'overspanning x noklengte'); (b) KOPGEVEL-driehoeken werden
+aangezet door een aanbouw-zijgevel op de BEGANE GROND -> nu alleen als op de BOVENSTE verdieping een gevel
+met die orientatie is getikt; (c) KOPGEVEL-BASIS was de noklengte i.p.v. de OVERSPANNING (footprint/noklengte)
+-> fout bij hoek-/vrijstaande woningen. Nieuw: DUBBELTEL-check (voor/achter horen even breed), ONMOGELIJKE-HOEK-
+check (tegenoverliggende wanden 90° apart = tikfout), AANBOUW-DAK-check, versheid-note (projectdatum).
+GEVEL = breedte x verdiepingshoogte per bouwlaag (BRUTO); zolder onder schuin dak telt niet als gevel.
+VABI-MAPPING-AUDIT (4 parallelle agents: opake schil / glas / installaties / algemeen): 18 bevindingen gefixt,
+4 raakten de berekening: dakraam-glas werd DUBBEL van het dakvlak afgetrokken (parser + objecten) -> dak blijft
+nu BRUTO, 1x aftrek in Vabi · Voorzetglas viel stil op Dubbel · de ventilatie-subsysteem-flag (stuurt de
+Standaard!) vuurde niet altijd -> nu altijd · lege thermische massa lekte stil 'Zwaar' -> nu luide flag.
+Verder: orientatie Z/W/O nu geflagd (afgeleid, niet EPA-bevestigd) · 'Gevel - begrenzing'-form-standaard werkt
+· schilddak -> Daktype 0 · spouw 'Onbekend' -> None · paneel-bouwjaarklasse doorgezet · PV 'Onbekend/Dunne film'
+-> code 7/8 (was 0=Kwaliteitsverklaring) · aanvoertemp gemapt(<=70/60)/geflagd · metaal niet-TO -> code 4.
+WEBAPP 'Dak toevoegen'-wizard (opname-editor): plat / zadeldak-via-driehoek (overspanning c + noklengte +
+helling + kopgevel-buiten-toggles, live voorbeeld) / 9 geometrieen; herhaalbaar tot 20, auto-genummerd;
++ dakramen per dakvlak. DAKEN GAAN NIET MEER VIA MAGICPLAN (besluit Renze) — MagicPlan = schil (wanden/
+gevels/ramen), webapp = dak + dakramen. Daarom MOET de webapp mobiel perfect zijn (veldwerk op de telefoon).
+LEADS: ontvangstmail markeert alleen de daadwerkelijk gemailde leads (BCC-ids) -> later aangemelden blijven
+'nieuw' voor de volgende batch. OPEN: mobiel design (Apple HIG) · EPA-enum-harvest (Z/W/O, Gebouwtype/Ligging,
+GrenstAan 1/7/8/9, ventilatie-subsystemen A1-E1, verwarming-subtypes, koeling, tapwater, afgifte) via
+computer-use in EPA -> dan kunnen bijna alle resterende flags weg. Renze: git push + VPS-update.
 ## Status (11-7-2026) — 340/340 groen. DAK+BOUWJAAR DEEP DIVE + EPA-IMPORT BEWEZEN.
 MagicPlan-invoer is nu VOLLEDIG conditioneel/VABI-getrouw + zelfdocumenterend ("(leeg = ...)"-suffixen; defaultValue
 werkt niet via de API — save 400). DAK herontworpen: per dak (1-3) een type-master (Plat/Zadel/Schild/Lessenaar/

@@ -144,6 +144,18 @@ plaatsing in Vabi.
 
 VABI-plaatsing: identiek aan ramen (Deelvlak in de gevel met dezelfde oriëntatie, anders round-robin).
 
+### 3b. Dakramen (gecorrigeerd 15-7)
+
+Een dakraam wordt een **kozijn met subtype `Dakraam`** en de oriëntatie van het dakvlak waarin het zit.
+In VABI komt het als **Deelvlak op het DAK-hoofdvlak** met dezelfde oriëntatie (niet op een gevel).
+
+**Belangrijk — de aftrek gebeurt precies één keer.** Het dakvlak blijft in het dossier **BRUTO** (net als
+een gevel: die is ook bruto, met de ramen als deelvlak erin). De netto-aftrek doet de objecten-generator:
+`netto = bruto − Σ deelvlakken`. Tot 15-7 trok de parser het dakraam-glas er *óók* al af, waardoor het
+**dubbel** wegviel en het dakvlak te laag in VABI kwam — dat is gefixt (beide dakramen-invoerpaden).
+
+Is er geen dakvlak met die oriëntatie, dan volgt een flag (het dakraam belandt dan mogelijk op een gevel).
+
 ---
 
 ## 4. Dak — per daktype
@@ -167,7 +179,7 @@ adviseur weet het beste.
 
 | Daktype | Formule | Oriëntaties | Benadering / let op |
 |---|---|---|---|
-| **Zadeldak** | Totaal schuin dak = **footprint / cos(α)**; per schuin vlak de **helft**, op "Dakvlak 1/2 - oriëntatie". Kopgevel-driehoek per stuk = **0,5 × B × (B/2)·tan(α)** (B = vloerbreedte), als **extra gevelvlak** op de kopgevel-oriëntaties. | o1, o2 (schuin) + k1, k2 (kopgevel) | Geldt voor nok in het midden (symmetrisch). Asymmetrisch dak → m² handmatig per vlak. |
+| **Zadeldak** | Totaal schuin dak = **footprint / cos(α)**; per schuin vlak de **helft**, op "Dakvlak 1/2 - oriëntatie". Kopgevel-driehoek per stuk = **0,5 × B × (B/2)·tan(α)**, waarbij **B = de OVERSPANNING** (de maat loodrecht op de nok, waarover het dak schuin loopt) — **niet** de noklengte. Vanaf 15-7 leidt de tool die af als `footprint ÷ noklengte`, of je vult 'overspanning (m)' expliciet in. Komt als **extra gevelvlak** op de kopgevel-oriëntaties, en **alleen als die kopgevel aan buiten grenst** (tussenwoning = buurwand → niet meetellen). | o1, o2 (schuin) + k1, k2 (kopgevel) | Geldt voor nok in het midden (symmetrisch). Asymmetrisch dak → m² handmatig per vlak. |
 | **Lessenaarsdak** | Eén schuin vlak = **footprint / cos(α)**. | één oriëntatie | De twee zijgevel-driehoeken (trapezium-top) worden **niet** gegenereerd — zo nodig handmatig in Vabi. |
 | **Schilddak/tentdak** | Totaal = **footprint / cos(α)**, **gelijk verdeeld** over alle opgegeven oriëntaties (o1, o2, k1, k2). Géén verticale kopgevel-driehoeken. | alle opgegeven zijden | Gelijk verdelen is een benadering; de echte hoofd-/schildvlak-verhouding verfijn je in Vabi (wordt geflagd). |
 | **Plat dak** | m² = Dakvlak 1-oppervlak, of legacy "Plat dak m2", of anders **= footprint**. Helling 0. | evt. één (of Horizontaal) | — |

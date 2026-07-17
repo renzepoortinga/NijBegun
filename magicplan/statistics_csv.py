@@ -1512,7 +1512,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("qv10 %.2f staat ingevuld maar 'Qv10 gemeten?'=Nee (ISSO 7.1.5: alleen meenemen als "
                      "GEMETEN met blowerdoor; anders rekent VABI forfaitair op bouwjaar/renovatiejaar)." % dos.opname.qv10_waarde)
     # thermische massa: codes 0=Licht/1=Zwaar/2=Zeer zwaar zijn live in EPA bevestigd (22-6-2026) en
-    # worden automatisch geschreven door objecten_generate -> geen flag/handwerk meer nodig.
+    # worden automatisch geschreven door objecten_generate. LET OP (audit 15-7): een LEGE thermische
+    # massa wordt daar LUID geflagd (de sjabloonwaarde is 'Zwaar' — fout bij een lichte constructie).
     if len(inst.zonne_energie) > 1:
         notes.append("%d PV-systemen opgenomen -> alle worden doorgezet naar VABI (controleer m²/oriëntatie per systeem)."
                      % len(inst.zonne_energie))

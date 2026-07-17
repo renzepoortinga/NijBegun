@@ -47,7 +47,9 @@ class Opname:
     qv10_waarde: Optional[float] = None
     bewijslast: str = "Geen"      # Geen | Facturen | Tekeningen | Beide
     gevelhoogte_m: Optional[float] = None          # hoogte GEVEL (vloer tot dakvoet/goot); voor hart-op-hart-toeslag (ISSO 8.2)
-    gebouwhoogte_m: Optional[float] = None         # hoogte GEBOUW (tot de nok); VABI Gebouwhoogte. Leeg -> gevelhoogte + nokhoogte
+    gebouwhoogte_m: Optional[float] = None         # hoogte GEBOUW (tot de nok); VABI Gebouwhoogte. UITSLUITEND
+                                                   # handmatige invoer: leeg -> generator schrijft 0 + LUIDE flag
+                                                   # (bewust GEEN berekende fallback; zie geen-aannames-beleid)
     gevel_tot_hartmaat_gemeten: bool = False       # True = gevel al tot hartmaat gemeten -> geen toeslag.
                                                    # False (MagicPlan = binnenwerks) -> tool telt +0,11 m/buurwand
                                                    #        (voor+achtergevel) bij de gevel; woningtype stuurt ook de infiltratie

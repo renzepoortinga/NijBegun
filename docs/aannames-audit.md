@@ -1,5 +1,18 @@
 # Aannames-audit — MagicPlan → VABI-keten (12/13-7-2026)
 
+> ## ⚠️ LEES DIT EERST (bijgewerkt 15-7-2026)
+> **Dit document is de audit van 12/13-7 en is NIET meer de actuele stand.** Op 15-7 is een nieuwe,
+> systematische **VABI↔MagicPlan-mapping-audit** gedaan over vier gebieden (opake schil · openingen/glas ·
+> installaties · algemeen/object), waarbij elk invoerveld door de hele keten is getraceerd en tegen de
+> EPA-geverifieerde enum-refs is getoetst. Daar zijn **18 bevindingen uit gefixt**, waaronder 4 die de
+> berekening raakten: dakraam-glas werd dubbel van het dakvlak afgetrokken · Voorzetglas viel stil op
+> Dubbel · de ventilatie-subsysteem-flag (stuurt de Standaard) vuurde niet altijd · lege thermische massa
+> lekte stil 'Zwaar'. Zie commits `78693ac` + `e38b2d4` en tests **sectie 67/68**.
+>
+> **Waarschuwing bij dit document:** een aantal `*Status:*`-regels hieronder was **copy-paste-fout**
+> (hetzelfde "GEFIXT 13-7: per-dak klasse"-label stond op 9 ongerelateerde bevindingen). Die zijn 15-7
+> gemarkeerd als onbetrouwbaar. **De code en de testsuite zijn leidend, niet de statuslabels hier.**
+
 ---
 ## ⭐ WAT JIJ NOG IN EPA MOET CHECKEN (de enige echt-open punten)
 
@@ -10,9 +23,11 @@ Deze raken je **Objecten-import** (de schil) — dus die zijn belangrijk voor jo
 
 1. **Oriëntatie-codes Z/W/O** — de tool leidt de VABI-oriëntatiecode af uit een kompasrotatie. 5 van de 8
    richtingen (ZW/NW/N/NO/ZO) zijn hard bevestigd; **Z, W en O** zijn ingevuld volgens hetzelfde patroon.
+   **Sinds 15-7 worden Z/W/O LUID geflagd** (1x per oriëntatie) i.p.v. stil geschreven — je ziet dus in de
+   "Zelf doen in Vabi"-lijst wanneer het speelt.
    *Check:* importeer één woning met een zuid-, west- én oostgevel; kijk in EPA (Objecten → Geometrie) of de
    oriëntatie per gevel klopt. Zo ja: dit is voor altijd bevestigd (het staat visueel in de geometrie-tab, dus
-   je ziet het meteen bij elke opname).
+   je ziet het meteen bij elke opname) — dan haal ik de flag weg.
 2. **GrenstAan Water / Onverwarmde kelder / AVR-buurwoning / Ander gebouw** — de tool schrijft deze nu **met een
    luide flag** ("niet probe-bevestigd, controleer in Vabi"). De veelvoorkomende begrenzingen (buitenlucht,
    grond, kruipruimte, AOR/AOS) zijn wél hard bevestigd. Kom je een van die vier tegen? Dan zie je de flag —
@@ -42,7 +57,7 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
   - *Status:* OPEN — reviewen
 - **[HOOG | Verzwolgen invoer | r193]** dak_vlakken_zadeldak filtert lege orientaties stil weg ([x for x in orient_schuin if x][:2]) en maakt per OVERGEBLEVEN orientatie een vlak van de HELFT van het totaal. Bij 1 lege orientatie ontbreekt dus de helft van het schuine dak; bij 2 lege orientaties ontbreekt het HELE dak, zonder note. Het live per-dak-pad (statistics_csv.py:700-701) leidt vlak 2 zelf af (_opp8), maar het legacy-pad (statistics_csv.py:898-900) heeft guard '(o1 or o2)': alleen o1 ingevuld is genoeg om te draaien met orient_schuin=(o1, '').
   - *Scenario:* Legacy-pad: adviseur vult alleen 'orientatie vlak 1'=Z in, vlak 2 leeg -> dak_vlakken_zadeldak geeft 1 vlak van tot/2 terug -> in VABI staat maar de helft van het schuine dakoppervlak, zonder actiepunt -> warmteverlies dak structureel te laag.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[MIDDEL | Stille default | r65-67]** schuin_dakvlak_m2 clamt cos(a)<=0 (helling >=90°) stil naar 'dak = footprint' (alsof plat, regel 67, bovendien ongerond); helling 0 (leeg-veld-als-0) geeft eveneens stil de footprint terug; helling None crasht met TypeError in _cos.
   - *Scenario:* Tikfout hellingshoek 95°, of parser die 0 doorgeeft bij een leeg veld: bij footprint 63 m² en echte helling 45° hoort 89,1 m² dak, maar VABI krijgt 63 m² zonder flag -> dak-warmteverlies ~30% te laag.
   - *Status:* OPEN — reviewen
@@ -93,16 +108,16 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
   - *Status:* OPEN — reviewen
 - **[MIDDEL | Stille default | r131]** dak_en_kopgevel: 't = (type_dak or "zadeldak").lower()' — een LEEG/None daktype wordt stil een zadeldak, inclusief het toevoegen van kopgevel-driehoeken aan de gevel. Verzachtend: deze functie wordt live nergens meer aangeroepen (alleen tests/run_tests.py:301 en __main__); het per-dak-pad in statistics_csv gebruikt de dak_vlakken_*-functies. Latent risico als iemand de functie hergebruikt.
   - *Scenario:* Toekomstige caller geeft type_dak='' door (form-veld leeg) -> tool rekent zadeldak: schuin dak = footprint/cos(a) + 2 kopgevel-driehoeken, terwijl de woning bv. een plat dak heeft -> dak- en gevel-m2 in VABI beide fout, zonder flag.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[MIDDEL | Verzwolgen invoer | r131-141]** dak_en_kopgevel herkent alleen 'plat' en 'lessenaar'; ALLES anders (ook 'Schilddak', 'Tentdak', 'Afwijkend', typo's) valt door naar de zadeldak-tak en krijgt kopgevel-driehoeken — terwijl een schilddak per definitie GEEN verticale kopgevels heeft (zie dak_vlakken_schilddak-docstring). Zelfde caveat: momenteel alleen test-caller, dus latent.
   - *Scenario:* Caller geeft type_dak='Schilddak' aan deze functie -> extra_gevel_m2 = 2 kopgevel-driehoeken die niet bestaan -> gevel-m2 te hoog en dakverdeling fout in VABI, zonder note.
   - *Status:* OPEN — reviewen
 - **[MIDDEL | Verzwolgen invoer | r178]** dak_vlakken_schilddak: '[o for o in orients if o] or [""]' — lege orientaties worden stil weggefilterd en hun dak-aandeel wordt HERVERDEELD over de resterende zijden; zijn ALLE orientaties leeg dan komt het volledige dak op 1 vlak met orientatie ''. Het live per-dak-pad (statistics_csv.py:730) leidt alle 4 orientaties af uit o_s, maar het legacy-pad (statistics_csv.py:903-904, guard 'o1 or o2 or k1 or k2') kan partieel gevuld zijn.
   - *Scenario:* Legacy-pad met alleen o1='Z' ingevuld -> heel het schilddak-oppervlak (footprint/cos a) komt als 1 vlak op Zuid -> zoninstraling/orientatie-afhankelijke resultaten in VABI fout, zonder note over de weggevallen zijden.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[MIDDEL | Stille default | r177-181]** dak_vlakken_schilddak verdeelt het totaal GELIJK over de opgegeven zijden — een heuristiek (echt schilddak: 2 grote vlakken + 2 kleinere driehoekige kopschilden), gedocumenteerd in de docstring maar NIET als flag in de geretourneerde vlakken. Het legacy-pad flagt dit zelf (statistics_csv.py:917-919); het nieuwe per-dak-pad (statistics_csv.py:730) flagt alleen wanneer de kopschild-helling afwijkt (731-733) — bij gelijke helling gaat de gelijk-verdeling dus zonder note het dossier in.
   - *Scenario:* Per-dak-pad, schilddak met 1 helling: 4 vlakken van elk 25% terwijl de kopschilden in werkelijkheid bv. 15% zijn -> per-orientatie dak-m2 in VABI onnauwkeurig zonder actiepunt voor de adviseur.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[MIDDEL | Stille default | r165-169]** dak_vlakken_lessenaar berekent de twee zijgevel-driehoeken (trapezium-top) en de hoge-zijde-opstand bewust NIET — dat staat alleen in de docstring, niet als flag in de return. De caller maakt de hoge-zijde-note alleen als de hoogte-velden zijn ingevuld (statistics_csv.py:743 'if hh_ and hl_ is not None'); zijn die leeg, dan verdwijnt ook de waarschuwing.
   - *Scenario:* Lessenaarsdak, hoogte-velden hoge/lage zijde leeg -> geen note -> de gevel-strook aan de hoge kant en de zijgevel-driehoeken ontbreken volledig in dossier/VABI zonder dat de adviseur een actiepunt krijgt.
   - *Status:* OPEN — reviewen
@@ -243,7 +258,7 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
   - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
 - **[HOOG | Verzwolgen invoer | rhele build_dossier (100-118); vgl. core/dossier.py r.97]** SchilDeel.bouwjaarklasse (bestaat in het datamodel: 'per-bouwdeel klasse voor het beslisschema; wint van project-bouwjaar') wordt in deze route NERGENS gezet, en report_parser kent ook geen bouwjaarklasse-veld. Het per-bouwdeel 'Bouwjaar-klasse'-antwoord uit het MagicPlan Constructies-form bereikt de constructie-keuze dus nooit via assemble - exact bug-klasse (4) die in de CSV-route net gefixt is.
   - *Scenario:* Gevel-bouwjaarklasse 'Van 1975 t/m 1982' ingevuld in MagicPlan; dossier via assemble.py -> bouwjaarklasse='' -> beslisschema valt terug op project-bouwjaar of 'Tot 1965'-default -> verkeerde standaardconstructie/Rc in VABI.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[MIDDEL | Verzwolgen invoer | r48-50 + 111-118]** Raam zonder width of height krijgt area 0.0 (a = ... if w and h else 0.0) en wordt toch als kozijn toegevoegd: een 0-m2 kozijn in de schil, niets afgetrokken van de gevel, geen actiepunt. Ook width='0' is falsy -> 0.0.
   - *Scenario:* MagicPlan-raam zonder ingevoerde maten -> VABI krijgt een kozijn van 0,00 m2 (of de import faalt op 0-oppervlak) en het echte glasoppervlak zit nog in de gevel-m2; niemand ziet het.
   - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
@@ -264,7 +279,7 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
   - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
 - **[MIDDEL | Stille default | r108-109 + geheel bestand]** De assemble-route mist de nieuwe dak-geometrie: geen kopgevels bij zadeldak, geen dakkapellen, geen per-daktype-berekening (core/geometry), geen Locatie-splitsing - het dak is 1 vlak 'horizontaal'. T.o.v. de CSV-route ontbreekt stil geometrie die daar juist is toegevoegd. Nergens een route-brede flag dat deze (oudere) route minder compleet is.
   - *Scenario:* Zadeldak-woning via de report-route: 2 kopgevel-driehoeken (~10-15 m2 gevel) ontbreken volledig in VABI; dakkapel niet gemodelleerd; niemand wordt gewaarschuwd.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[MIDDEL | Stille default | r58-120 (geen enkele append naar Validatie.issues)]** Structureel: build_dossier vult nergens dossier.validatie.issues of een actiepuntenlijst; alle signalering hangt aan vrije tekst in opmerkingen (alleen gevel) en aan losse tools (sanity.py). Daarmee is 'luid flaggen' in deze route architectureel niet mogelijk zonder toevoeging.
   - *Scenario:* Elke hierboven genoemde stille default passeert zonder dat de webapp-actiekaart of IMPORTEREN.txt iets toont.
   - *Status:* AFGEDEKT 13-7 (route-breed): API-route krijgt vaste LUIDE issue 'benaderingen — gebruik CSV-route'; individuele punten open
@@ -351,7 +366,7 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
 
 - **[HOOG | Verzwolgen invoer | r551, 681-683, 752-760, 884-892, 1013-1018]** Per-dak bouwjaarklasse-antwoord (b_n['bouwjaar'] uit de dak-loop, b_d['bouwjaar'] bij directe vlakken) wordt NERGENS op de dak-SchilDelen gezet. Alle dakvlakken krijgen via _klasse_per_type['dak'] (regel 1013) de klasse uit d_b=_bouwdeel('Dakvlak 1') met alt 'Dak 1', terwijl de live form-prefixen 'Dak'/'Extra dak A'/'Extra dak B' heten (regel 669-670).
   - *Scenario:* Adviseur vult 'Dak - bouwjaar (onbekend)' = 'Van 1975 t/m 1982' -> d_b vindt niets ('Dakvlak 1'/'Dak 1' bestaat niet) -> dakvlakken zonder bouwjaarklasse -> constructie-beslisschema valt terug op project-bouwjaar of de generator-default 'Tot 1965' — exact de live gevonden bug 4, maar dan voor het DA
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[HOOG | Verzwolgen invoer | r682-683 (545)]** De fallback naar de oude 'Dakvlak N - ...'-boom draait NOOIT: _bouwdeel geeft isolatie altijd truthy terug ('Onbekend'-default op regel 545), dus `if not (b_n['isolatie'] or ...)` is altijd False. Antwoorden uit oudere formversies zijn dood.
   - *Scenario:* Export van een oudere formversie met 'Type dak = Zadeldak' + 'Dakvlak 1 - isolatie aanwezig? = Ja' + dikte: b_n uit prefix 'Dak' is leeg -> isolatie wordt 'Onbekend' i.p.v. 'Ja', dikte weg -> forfaitaire ongeisoleerde constructie in VABI, zonder flag.
   - *Status:* GEFIXT 13-7: fallback test nu op de ruwe 'ingevuld'-indicator
@@ -420,7 +435,7 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
   - *Status:* OPEN — reviewen
 - **[MIDDEL | Stille default | r774-780, 807-809, 843]** De per-dak _trek_af doet stil NIETS wanneer geen (schuin, >0°) dakvlak matcht: het dakkapel-gat of dakraam-oppervlak wordt dan niet afgetrokken. De losse DAKRAMEN-sectie heeft daarvoor wel een note (963-964), de per-dak-variant niet.
   - *Scenario:* Dakkapel op een plat dak (geen kandidaat met hellingshoek>0) of dakraam met orientatie-mismatch -> gat/glas niet afgetrokken -> dak-m² dubbel geteld (dak + dakraam) in VABI, zonder flag.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[LAAG | Stille default | r852]** Cross-file bevinding bij ag_onder_schuin_dak: de caller vult een ontbrekende helling met 'h_z or 45.0' — een verzonnen default-helling van 45 graden. Verzachtend: het resultaat stuurt alleen de drempel/tekst van een suggestie-note (Ag zelf wordt nooit automatisch aangepast, regel 848 'Ag = heilig'), en de note-tekst print 'h_z or 0' waardoor de gebruikte 45 niet eens zichtbaar is.
   - *Scenario:* Zadeldak zonder bekende helling -> aftrek-hint berekend op 45 graden; bij een werkelijk dak van 25 graden is de echte 1,5m-aftrek ~2x groter dan gesuggereerd -> adviseur vult op de hint een te lage Ag-aftrek in.
   - *Status:* OPEN — reviewen
@@ -459,7 +474,7 @@ is óf hard bevestigd, óf staat luid gevlagd zodat je het ziet. Geen stille fou
   - *Status:* OPEN — reviewen
 - **[LAAG | Stille default | r876-894 t.o.v. 668-761]** Het nieuwe per-dak-typemodel en de directe 'Dakvlak N - oppervlak'-velden kunnen BEIDE schildelen toevoegen; er is geen kruiscontrole of note bij dubbel vuren (kan alleen als een form beide veldensets bevat).
   - *Scenario:* Form met zowel 'Dak - type = Zadeldak' als 'Dakvlak 1 - oppervlak = 40' ingevuld -> zadeldak-vlakken ÉN het directe vlak in de schil -> dak dubbel geteld zonder waarschuwing.
-  - *Status:* GEFIXT 13-7: per-dak klasse wordt op de eigen dakvlakken gezet
+  - *Status:* ⚠️ LABEL ONBETROUWBAAR — dit "GEFIXT 13-7: per-dak klasse"-label stond copy-paste op 9 ongerelateerde bevindingen (ontdekt 15-7). Zie de audit van 15-7 (commits 78693ac + e38b2d4, tests sectie 67/68); de CODE is leidend, niet dit label.
 - **[LAAG | Verzwolgen invoer | r1092]** Alleen PV-2 t/m PV-5 worden gelezen (range(2,6)); PV-6 en hoger vallen stil weg en de meerdere-PV-note telt alleen de gelezen systemen.
   - *Scenario:* Opname met 6 PV-orientatiegroepen -> systeem 6 ontbreekt zonder flag.
   - *Status:* OPEN — reviewen
