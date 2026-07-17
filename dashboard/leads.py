@@ -291,8 +291,9 @@ def ontvangst_mail(adviseur=None):
     regels = [
         "Beste bewoner,", "",
         "Via het Nij Begun-portaal bent u aan %s toegewezen voor het opmaken van een isolatieplan "
-        "voor uw woning. Uw aanvraag is in goede orde ontvangen, hartelijk dank voor uw aanmelding." % bedrijf, "",
-        "Door de grote drukte rond de regeling is de wachttijd op dit moment langer dan wij zouden willen. "
+        "voor uw woning." % bedrijf, "",
+        "Uw aanvraag is in goede orde ontvangen, hartelijk dank voor uw aanmelding.", "",
+        "Door de huidige drukte is de wachttijd op dit moment langer dan wij zouden willen. "
         "Wij streven ernaar iedereen zo spoedig mogelijk in te plannen voor de woningopname en werken de "
         "lijst op volgorde van aanmelding af. U staat op de lijst en hoeft verder niets te doen.", "",
         "Zodra u aan de beurt bent, nemen wij persoonlijk contact met u op om een afspraak te maken.", "",
