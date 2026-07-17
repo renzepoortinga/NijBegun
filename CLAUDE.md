@@ -86,6 +86,16 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - MagicPlan-opnameschema + bouwgids: ../MagicPlan_Forms_Fields_schema_v0.3.json (+ -bouwgids.md)
   in de map "Nij Begun & EPA" (twee templates: Energielabel vs Nij Begun; VABI-getrouw)
 
+## DEPLOY-VALKUIL (15-7, live tegengekomen — kost bijna 50 bewoners de verkeerde mail)
+config.json is een bind-mount van een LOS BESTAND (deploy/docker-compose.yml) -> hangt aan het INODE.
+`sed -i` hernoemt een temp-bestand eroverheen = NIEUW inode -> de CONTAINER blijft de OUDE config zien
+terwijl de host de nieuwe toont. Na ELKE config.json-wijziging op de VPS:
+    sudo docker compose -f deploy/docker-compose.yml restart app
+Verifieer ALTIJD de container-view (die telt), niet de host:
+    sudo docker compose -f deploy/docker-compose.yml exec app grep -i email /app/config.json
+config.json + varianten (.bak) staan in .gitignore -> gaan NOOIT mee met een push; de VPS-config moet je
+dus apart bijwerken (bevat wachtwoordhash + TOTP: eerst `cp config.json config.json.bak`, dan JSON valideren).
+
 ## Status (15-7-2026) — 456/456 groen. VABI↔MAGICPLAN-MAPPING-AUDIT + GEOMETRIE-IJKING op de ECHTE EPA.
 ESSENHAGE-IJKING (echte EPA-monitor ernaast): Ag -3%, vloer -4%, achtergevel vrijwel exact (29,4 vs 30,0),
 dak van -63% naar -9%. Gefixt: (a) SCHUIN-DAK-FOOTPRINT gebruikte de BOVENSTE verdieping = de zolder binnen

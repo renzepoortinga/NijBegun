@@ -8,6 +8,12 @@ services:
     restart: unless-stopped
     volumes:
       - ../out:/app/out              # projectdata + leads BLIJVEN buiten de container (backup dit pad!)
+      # LET OP (15-7, live tegengekomen): dit is een bind-mount van een LOS BESTAND -> die hangt aan het
+      # INODE. 'sed -i' schrijft een temp-bestand en hernoemt dat eroverheen = NIEUW inode, dus de
+      # container blijft de OUDE config zien (host toonde info@..., container nog renze@... -> bijna 50
+      # bewoners het verkeerde adres gemaild). Na ELKE wijziging van config.json op de host:
+      #     sudo docker compose -f deploy/docker-compose.yml restart app
+      # Verifieer met: ... exec app grep -i email /app/config.json  (de container-view is wat telt).
       - ../config.json:/app/config.json:ro
     expose:
       - "8000"
