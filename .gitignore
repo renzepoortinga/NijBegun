@@ -1,8 +1,12 @@
 # === Geheimen & persoonsgegevens (NOOIT naar GitHub) ===
 .env
 .env.*
-# config.json bevat dashboard-wachtwoord/secret + adviseur-persoonsgegevens
+# config.json bevat dashboard-wachtwoord/secret + adviseur-persoonsgegevens.
+# Ook ALLE varianten (config.json.bak/.backup/.oud): een handmatige kopie voor een edit stond
+# anders untracked klaar om per ongeluk mee te committen (15-7: dat gebeurde bijna).
 config.json
+config.json.*
+config.*.json
 *secret*
 *credential*
 magicplan_forms_backup.json
