@@ -295,7 +295,11 @@ def page(body_tmpl, wrapclass="", **ctx):
 
 LOGIN = """<div class=card style="max-width:400px;margin:10vh auto">
 <h1>Inloggen</h1><p class=lead>Je persoonlijke isolatieplan-werkplek.</p>
-<form method=post><label>Wachtwoord</label><input type=password name=wachtwoord autofocus>
+<form method=post>
+{% if vraag_email %}<label>E-mailadres</label>
+<input type=email name=email autocomplete=username inputmode=email autocapitalize=off autocorrect=off spellcheck=false autofocus placeholder="naam@bedrijf.nl">{% endif %}
+<label>Wachtwoord</label>
+<input type=password name=wachtwoord autocomplete=current-password {{'' if vraag_email else 'autofocus'}}>
 {% if mfa %}<label>Code uit je authenticator-app (MFA)</label><input name=code inputmode=numeric autocomplete=one-time-code placeholder="123 456">{% endif %}
 <div class=btn-row><button class="btn lg">Inloggen</button></div></form></div>"""
 
@@ -639,14 +643,19 @@ Inhoud: doeltreffend (haalt de Standaard) · juiste set (uit de opname) · uitvo
 @app.route("/login", methods=["GET", "POST"])
 def login():
     dash = _dash_cfg()
+    # inloggen met e-mailadres + wachtwoord: 'dashboard.email' wint, anders het adviseur-adres uit
+    # config.json. Geen adres geconfigureerd -> geen e-mailveld (lokale modus blijft werken).
+    verwacht_email = (dash.get("email") or _cfg().get("adviseur", {}).get("email") or "").strip()
     if request.method == "POST":
         ok, fout = sec.login_check(dash, request.form.get("wachtwoord"), request.form.get("code"),
-                                   request.remote_addr or "?", fallback_pw=_password())
+                                   request.remote_addr or "?", fallback_pw=_password(),
+                                   email=request.form.get("email"), verwacht_email=verwacht_email)
         if ok:
             session["ingelogd"] = True
             return redirect(url_for("home"))
         flash(fout)
-    return page(LOGIN, wrapclass="narrow", mfa=bool(dash.get("totp_secret")))
+    return page(LOGIN, wrapclass="narrow", mfa=bool(dash.get("totp_secret")),
+                vraag_email=bool(verwacht_email))
 
 
 @app.route("/logout")

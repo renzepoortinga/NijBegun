@@ -2377,5 +2377,41 @@ try:
 except Exception as _e:
     check("ontvangstmail-markering: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print()
+print("70. Inloggen met e-mailadres + wachtwoord (17-7)")
+try:
+    import dashboard.security as _S70
+    _sec70 = _S70.nieuw_totp_secret()
+    _cfg70 = {"pw_hash": _S70.hash_password("geheim"), "totp_secret": _sec70}
+    _MAIL = "info@poortinga-energieadvies.nl"
+    # juist adres + juist wachtwoord + juiste code -> binnen
+    _ok, _ = _S70.login_check(_cfg70, "geheim", _S70.totp_code(_sec70), "8.8.8.1",
+                              email=_MAIL, verwacht_email=_MAIL)
+    check("login: juist e-mailadres + wachtwoord + code -> ingelogd", _ok)
+    # hoofdletters/spaties mogen niet uitmaken
+    _ok2, _ = _S70.login_check(_cfg70, "geheim", _S70.totp_code(_sec70), "8.8.8.2",
+                               email="  INFO@Poortinga-Energieadvies.NL ", verwacht_email=_MAIL)
+    check("login: e-mailadres case-insensitief + spaties eraf", _ok2)
+    # fout adres -> geweigerd, en de melding verraadt NIET welk veld fout was
+    _ok3, _m3 = _S70.login_check(_cfg70, "geheim", _S70.totp_code(_sec70), "8.8.8.3",
+                                 email="iemand@anders.nl", verwacht_email=_MAIL)
+    check("login: fout e-mailadres -> geweigerd ondanks juist wachtwoord", not _ok3)
+    check("login: melding verraadt niet WELK veld fout is", "E-mailadres of wachtwoord onjuist." == _m3)
+    # leeg e-mailveld terwijl er wel een adres is geconfigureerd -> geweigerd
+    _ok4, _ = _S70.login_check(_cfg70, "geheim", _S70.totp_code(_sec70), "8.8.8.4",
+                               email="", verwacht_email=_MAIL)
+    check("login: leeg e-mailadres -> geweigerd", not _ok4)
+    # GEEN adres geconfigureerd -> oude gedrag blijft (lokale modus, geen e-mailcheck)
+    _ok5, _ = _S70.login_check({}, "lokaalpw", "", "8.8.8.5", fallback_pw="lokaalpw")
+    check("login: zonder geconfigureerd adres blijft de lokale modus werken", _ok5)
+    # de loginpagina toont het e-mailveld alleen als er een adres is geconfigureerd
+    import dashboard.app as _W70
+    _W70.app.config.update(TESTING=True)
+    _h70 = _W70.app.test_client().get("/login").get_data(as_text=True)
+    check("login-pagina: e-mailveld aanwezig (adviseur-adres staat in config.json)",
+          'name=email' in _h70 and 'type=email' in _h70)
+except Exception as _e:
+    check("login met e-mailadres: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

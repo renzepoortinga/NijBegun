@@ -81,26 +81,33 @@ def poging_gelukt(ip):
 
 
 # ---------------- gecombineerde login-check ----------------
-def login_check(dash_cfg, wachtwoord, code, ip, fallback_pw=""):
-    """-> (ok, foutmelding). Hash+MFA indien geconfigureerd; anders lokale modus (plain wachtwoord)."""
+def login_check(dash_cfg, wachtwoord, code, ip, fallback_pw="", email="", verwacht_email=""):
+    """-> (ok, foutmelding). Hash+MFA indien geconfigureerd; anders lokale modus (plain wachtwoord).
+
+    verwacht_email gezet -> het ingevoerde e-mailadres moet daarmee overeenkomen (case-insensitief,
+    spaties eraf). Bij een fout adres geven we BEWUST dezelfde melding als bij een fout wachtwoord:
+    zo verraadt de login niet welk van beide velden fout was."""
     if geblokkeerd(ip):
         return False, "Te veel mislukte pogingen — probeer het over een kwartier opnieuw."
+    email_ok = True
+    if verwacht_email:
+        email_ok = (email or "").strip().lower() == verwacht_email.strip().lower()
     pw_hash = (dash_cfg or {}).get("pw_hash", "")
     if pw_hash:
         ok = check_password(wachtwoord or "", pw_hash)
         secret = (dash_cfg or {}).get("totp_secret", "")
-        if ok and secret:
+        if ok and email_ok and secret:
             ok = check_totp(secret, code)
             if not ok:
                 poging_mislukt(ip)
                 return False, "Wachtwoord klopt, maar de 6-cijferige code niet (authenticator-app)."
     else:
         ok = (wachtwoord or "") == fallback_pw
-    if ok:
+    if ok and email_ok:
         poging_gelukt(ip)
         return True, ""
     poging_mislukt(ip)
-    return False, "Onjuist wachtwoord."
+    return False, ("E-mailadres of wachtwoord onjuist." if verwacht_email else "Onjuist wachtwoord.")
 
 
 # ---------------- setup-CLI ----------------
