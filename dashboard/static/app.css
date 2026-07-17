@@ -371,6 +371,40 @@ details.acc .acc-body :is(h1,h2,h3){color:var(--ink)}
 
   /* kale tabellen scrollen zelf (fallback als er geen .table-wrap omheen zit) */
   .card>table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+
+  /* ---- LEADS: tabel -> KAARTEN (HIG: compacte breedte = lijst, geen tabel) --------------------
+     Een 6-koloms tabel is op een telefoon onleesbaar, ook mét zijwaarts scrollen: je ziet nooit
+     naam + adres + status tegelijk. Daarom wordt elke rij een kaart; de kolomnaam komt uit
+     data-label. Geen dubbele HTML: dezelfde tabel blijft op desktop gewoon een tabel. */
+  .lead-list{overflow:visible;white-space:normal}
+  .lead-list table{display:block;overflow:visible;white-space:normal;border-collapse:separate}
+  .lead-list tbody,.lead-list tr,.lead-list td{display:block;width:auto}
+  .lead-list tr:first-child{display:none}          /* koprij: labels staan nu per cel */
+  .lead-list tr{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin:0 0 12px;box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,.04));
+  }
+  .lead-list td{border:0;padding:7px 0;white-space:normal;font-size:15px;line-height:1.45}
+  .lead-list td:empty{display:none}
+  .lead-list td::before{
+    content:attr(data-label);display:block;
+    font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--sub);margin-bottom:3px;
+  }
+  /* naam = kop van de kaart; datum klein rechtsboven; beide zonder label */
+  .lead-list td.nm{padding:0;font-size:19px;line-height:1.3}
+  .lead-list td.nm::before,.lead-list td.dt::before,.lead-list td.act::before{display:none}
+  .lead-list td.dt{padding:0 0 2px;font-size:12px;color:var(--sub)}
+  .lead-list td[data-label="Adres"]{padding-top:8px}
+  /* status-select + afspraak: volle breedte, echte touch-targets */
+  .lead-list td select,.lead-list td input[type=datetime-local]{width:100%;min-height:44px;font-size:16px}
+  .lead-list td form[style*="flex"]{margin-top:8px}
+  /* acties onderaan de kaart, als knoppenrij die mag afbreken */
+  .lead-list td.act{
+    white-space:normal!important;display:flex;flex-wrap:wrap;gap:8px;
+    padding-top:12px;margin-top:6px;border-top:1px solid var(--line);
+  }
+  .lead-list td.act .btn{width:auto;flex:0 0 auto;min-height:44px}
+  .lead-list td.act form{display:inline-flex!important}
 }
 
 /* ============================================================

@@ -1646,21 +1646,21 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <span class=spacer></span>
 <a class="btn sec" href="{{url_for('leads_ontvangst')}}">✉ Ontvangstmail (alle nieuwe, BCC)</a>
 <a class="btn sec" href="{{url_for('leads_csv')}}">⬇ CSV</a></div></form></div>
-{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap"><table>
-<tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th></th></tr>
+{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap lead-list"><table>
+<tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th>Acties</th></tr>
 {% for l in leads %}<tr>
-<td class=small>{{l.ontvangen}}</td>
-<td><b>{{l.naam}}</b></td>
-<td>{{l.adres}}{% if l.bouwjaar %}<br><span class="pill blue">{{l.bouwjaar}}</span> <span class="pill gray">{{l.oppervlakte_m2}} m²</span>{% endif %}</td>
-<td class=small>{{l.telefoon}}<br>{{l.email}}</td>
-<td><form method=post action="{{url_for('leads_status', lid=l.id)}}">
+<td class="small dt" data-label="Ontvangen">{{l.ontvangen}}</td>
+<td class=nm data-label="Naam"><b>{{l.naam}}</b></td>
+<td data-label="Adres">{{l.adres}}{% if l.bouwjaar %}<br><span class="pill blue">{{l.bouwjaar}}</span> <span class="pill gray">{{l.oppervlakte_m2}} m²</span>{% endif %}</td>
+<td class=small data-label="Contact">{% if l.telefoon %}<a href="tel:{{l.telefoon}}">{{l.telefoon}}</a><br>{% endif %}{% if l.email %}<a href="mailto:{{l.email}}">{{l.email}}</a>{% endif %}</td>
+<td data-label="Status"><form method=post action="{{url_for('leads_status', lid=l.id)}}">
 <select name=status onchange="this.form.submit()">
 {% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
 </select></form>
 <form method=post action="{{url_for('leads_afspraak', lid=l.id)}}" style="display:flex;gap:4px;margin-top:6px">
 <input type=datetime-local name=wanneer value="{{l.afspraak or ''}}" style="min-height:38px;font-size:13px">
 <button class="btn sec" title="Afspraak opslaan (+ project aanmaken)">📅</button></form></td>
-<td style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a>
+<td class=act data-label="Acties" style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a>
 {% if l.afspraak %} <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging" title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ bevestiging</a>{% endif %}
 {% if l.project_tag %} <a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
 {% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %} <form method=post style="display:inline" action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
