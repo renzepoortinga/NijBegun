@@ -1655,6 +1655,7 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 {% if l.afspraak %} <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging" title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ bevestiging</a>{% endif %}
 {% if l.project_tag %} <a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
 {% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %} <form method=post style="display:inline" action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
+<form method=post style="display:inline" action="{{url_for('leads_weg', lid=l.id)}}" onsubmit="return confirm('Deze lead DEFINITIEF verwijderen (naam, adres, e-mail, telefoon)? Dit kan niet ongedaan worden gemaakt. Gebruik status \'vervallen\' als je 'm wilt bewaren.')"><button class="btn sec" title="Lead definitief verwijderen — bv. aanvraag geannuleerd (AVG)">🗑</button></form>
 </td></tr>{% endfor %}</table></div>
 <p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
 {% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
@@ -1767,6 +1768,23 @@ def leads_bag(lid):
             if info.get(k) not in (None, ""):
                 r[k] = info[k]
         leads_mod.save_leads(rows)
+    return redirect(url_for("leads_pagina"))
+
+
+@app.route("/leads/<int:lid>/weg", methods=["POST"])
+@login_required
+def leads_weg(lid):
+    """Lead DEFINITIEF verwijderen (bv. de bewoner heeft de aanvraag geannuleerd). AVG: de
+    persoonsgegevens (naam/adres/e-mail/telefoon) gaan uit out/leads. Een eventueel al aangemaakt
+    PROJECT blijft bestaan — daar staan bewust geen persoonsgegevens in (alleen adres/BAG)."""
+    rows = leads_mod.load_leads()
+    lead = next((x for x in rows if x.get("id") == lid), None)
+    if not lead:
+        abort(404)
+    naam = (lead.get("naam") or lead.get("email") or "lead %d" % lid).strip()
+    leads_mod.save_leads([x for x in rows if x.get("id") != lid])
+    flash("Lead '%s' definitief verwijderd%s." % (naam,
+          " (het gekoppelde project %s blijft staan)" % lead["project_tag"] if lead.get("project_tag") else ""))
     return redirect(url_for("leads_pagina"))
 
 

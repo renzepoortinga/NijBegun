@@ -2366,6 +2366,12 @@ try:
               _na69.get(4) == "nieuw")
         check("ontvangstmail: lead zonder e-mailadres (C) blijft 'nieuw' (kreeg niets)",
               _na69.get(3) == "nieuw")
+        # lead verwijderen (aanvraag geannuleerd) -> definitief weg, rest blijft ongemoeid
+        _c69.post("/leads/3/weg", follow_redirects=True)
+        check("lead verwijderen: geannuleerde lead 3 definitief weg (AVG), rest blijft staan",
+              not any(r["id"] == 3 for r in _mem69) and {r["id"] for r in _mem69} == {1, 2, 4})
+        _r69w = _c69.post("/leads/999/weg", follow_redirects=False)
+        check("lead verwijderen: onbekende lead -> 404 (geen stille no-op)", _r69w.status_code == 404)
     finally:
         _L69.load_leads, _L69.save_leads = _o_load69, _o_save69
 except Exception as _e:
