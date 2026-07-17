@@ -2335,5 +2335,41 @@ try:
 except Exception as _e:
     check("audit-fixes glas/installaties/algemeen: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print()
+print("69. Ontvangstmail: markeer ALLEEN de gemailde leads (BCC-ids) — niet later toegevoegde (15-7)")
+try:
+    import dashboard.app as _W69
+    from dashboard import leads as _L69
+    _W69.app.config.update(TESTING=True)
+    _c69 = _W69.app.test_client()
+    with _c69.session_transaction() as _s69:
+        _s69["ingelogd"] = True
+    # in-memory leads (raakt NOOIT het echte out/leads-bestand)
+    _mem69 = [{"id": 1, "status": "nieuw", "email": "a@x.nl", "naam": "A", "postcode": "9990AA", "huisnummer": "1"},
+              {"id": 2, "status": "nieuw", "email": "b@x.nl", "naam": "B", "postcode": "9990AA", "huisnummer": "2"},
+              {"id": 3, "status": "nieuw", "email": "", "naam": "C-geen-mail", "postcode": "9990AA", "huisnummer": "3"}]
+    _o_load69, _o_save69 = _L69.load_leads, _L69.save_leads
+    try:
+        _L69.load_leads = lambda: [dict(r) for r in _mem69]
+        _L69.save_leads = lambda rows: _mem69.__setitem__(slice(None), [dict(r) for r in rows])
+        _h69 = _c69.get("/leads/ontvangst").get_data(as_text=True)
+        check("ontvangstmail: alleen leads MET e-mail in de BCC (A+B, niet C)",
+              "a@x.nl" in _h69 and "b@x.nl" in _h69 and _h69.count("@x.nl") == 2)
+        # lead D meldt zich aan NA het openen van de ontvangst-pagina
+        _mem69.append({"id": 4, "status": "nieuw", "email": "d@x.nl", "naam": "D-later",
+                       "postcode": "9990AA", "huisnummer": "4"})
+        _c69.post("/leads/ontvangst/verstuurd", data={"ids": "1,2"}, follow_redirects=True)
+        _na69 = {r["id"]: r["status"] for r in _mem69}
+        check("ontvangstmail: de gemailde leads (A+B) -> 'mail gestuurd'",
+              _na69.get(1) == "mail gestuurd" and _na69.get(2) == "mail gestuurd")
+        check("ontvangstmail: later aangemelde D blijft 'nieuw' (gaat mee in de VOLGENDE batch)",
+              _na69.get(4) == "nieuw")
+        check("ontvangstmail: lead zonder e-mailadres (C) blijft 'nieuw' (kreeg niets)",
+              _na69.get(3) == "nieuw")
+    finally:
+        _L69.load_leads, _L69.save_leads = _o_load69, _o_save69
+except Exception as _e:
+    check("ontvangstmail-markering: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

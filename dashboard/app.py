@@ -1668,8 +1668,9 @@ LEADS_ONTVANGST = """<h1>Ontvangstbevestiging — bulk</h1>
 <h2 style="margin-top:14px">Tekst</h2><textarea rows=14 id=body readonly>{{tekst}}</textarea>
 <div class=btn-row><button class="btn sec" type=button onclick="navigator.clipboard.writeText(document.getElementById('body').value);this.textContent='✓ Gekopieerd'">Kopieer tekst</button>
 <span class=spacer></span>
-<form method=post action="{{url_for('leads_ontvangst_verstuurd')}}" onsubmit="return confirm('Alle {{n}} nieuwe leads markeren als mail gestuurd?')">
-<button class="btn green">✓ Verstuurd — markeer allen</button></form>
+<form method=post action="{{url_for('leads_ontvangst_verstuurd')}}" onsubmit="return confirm('Deze {{n}} lead(s) markeren als mail gestuurd?')">
+<input type=hidden name=ids value="{{ids}}">
+<button class="btn green">✓ Verstuurd — markeer deze {{n}}</button></form>
 <a class="btn ghost" href="{{url_for('leads_pagina')}}">← terug</a></div></div>"""
 
 LEAD_MAIL = """<h1>Kennismakingsmail — {{l.naam}}</h1>
@@ -1867,19 +1868,30 @@ def leads_ontvangst():
     rows = [r for r in leads_mod.load_leads() if r.get("status") == "nieuw" and r.get("email")]
     onderwerp, tekst = leads_mod.ontvangst_mail(_cfg().get("adviseur", {}))
     bcc = "; ".join(r["email"] for r in rows)
-    return page(LEADS_ONTVANGST, n=len(rows), bcc=bcc, onderwerp=onderwerp, tekst=tekst)
+    # exact DEZE leads staan in de BCC-lijst -> alleen die markeren als 'verstuurd' (zie route hieronder)
+    ids = ",".join(str(r.get("id")) for r in rows)
+    return page(LEADS_ONTVANGST, n=len(rows), bcc=bcc, onderwerp=onderwerp, tekst=tekst, ids=ids)
 
 
 @app.route("/leads/ontvangst/verstuurd", methods=["POST"])
 @login_required
 def leads_ontvangst_verstuurd():
+    """Markeer ALLEEN de leads die daadwerkelijk in de BCC-lijst stonden (ids uit de ontvangst-pagina).
+    Zo krijgt niemand die intussen is toegevoegd — of iemand zonder e-mailadres — stil 'mail gestuurd'
+    terwijl hij de mail nooit kreeg; die blijft 'nieuw' en gaat mee in de VOLGENDE batch."""
     rows = leads_mod.load_leads()
+    _raw = request.form.get("ids")
+    _ids = None if _raw is None else {int(x) for x in _raw.split(",") if x.strip().isdigit()}
     n = 0
     for r in rows:
-        if r.get("status") == "nieuw":
-            r["status"] = "mail gestuurd"; n += 1
+        if r.get("status") != "nieuw" or not r.get("email"):
+            continue
+        if _ids is not None and r.get("id") not in _ids:
+            continue
+        r["status"] = "mail gestuurd"
+        n += 1
     leads_mod.save_leads(rows)
-    flash("%d lead(s) gemarkeerd als 'mail gestuurd'." % n)
+    flash("%d lead(s) gemarkeerd als 'mail gestuurd' — zij krijgen de ontvangstmail niet nog eens." % n)
     return redirect(url_for("leads_pagina"))
 
 
