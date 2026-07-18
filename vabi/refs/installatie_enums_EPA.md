@@ -66,10 +66,30 @@ opslag-velden (`TypeOpslag`/`TotaalOpslagCapaciteit`/`BackupVolume`) en zonneboi
 `VolumeVoorraadvat`/`Zonbijdrage`/`N0`/`A1`/`A2`). PV = volledig gewired+geverifieerd. Opslag(accu)/zonneboiler sub-enums
 (`TypeOpslag`, `TypeCollector`) nog per stuk via export te bevestigen.
 
+## Ventilatie — node `Ventilatie` / `Ventilatiesysteem` (LIVE GEHARVEST 18-7-2026)
+Bron: voorbeeldproject 'hoekwoning' (Detailopname, systeem D) — dropdowns afgelezen + Installatie-export
+`hoekwoning_installatie.xml` bevestigd de integercodes.
+| Veld | Betekenis | Codes |
+|---|---|---|
+| `Systeem` | systeem | **0=Individueel** (export-bevestigd; collectief/warmtelevering = parallel aan verwarming) |
+| `Ventilatiesysteem` (= VentilatiesysteemType A-E, top-level, index=code) | systeemtype | **0=A Natuurlijke ventilatie · 1=B Mechanische toevoer · 2=C Mechanische afvoer · 3=D Mechanische balansventilatie · 4=E Gecombineerd systeem** (D=3 export-bevestigd) |
+| `Subsysteem` | subsysteem (ISSO 11.3) | **⚠️ GLOBALE codes, NIET per-systeem dropdown-index.** Bevestigd: **D5a=33** (export). D-lijst (8, matcht de bekende telling A:6/B:3/C:14/D:8/E:1): D1·D2·D3·D4a·D4b·D5a·D5b·D5c. Overige subsysteem-codes per stuk via export (golden rule). |
+| `TypeWtw` | WTW-type | **3=Platen- of buizenwarmtewisselaar** (export-bevestigd) |
+Conditioneel (D/E): LBK-velden + Type WTW + Volumeregeling. **Golden rule:** het ventilatie-subsysteem
+stuurt de Standaard → blijft een bewuste adviseurskeuze; de tool flagt het (geen stille gok van code 33 e.d.).
+
+## Herbevestigd 18-7-2026 (hoekwoning-export, WP + vloerverwarming + warmtepompboiler)
+Verwarming `TypeOpwekker`=9 (WP-el) · `TypeWarmtepomp`=1 (Lucht/water) · `BronWarmtepomp`=1 (Buitenlucht) ·
+`Afgiftesysteem`=2 (Vloerverwarming) · `Regeling`=2 · `DistributieMedium`=0 (Water) ·
+`WaterAanvoertemperatuur`=1 (35/30) · `OpstelplaatsOpwekker`=0 (binnen). Tapwater `TypeInstallatie`=0 ·
+`AangeslotenOp`=0 · `TypeOpwekker`=0 (Compleet toestel) · `TypeToestel`=4 (Elektrische warmtepomp/boiler).
+PV `ZonneEnergiesysteem`=0 · `PiekvermogenPVPanelen`=0 (Kwaliteitsverklaring) · `Orientatie`=4 (Zuid, PV-enum!)
+· `Hellingshoek`=45 (rauw). Alles conform de eerdere harvest → de installatie-mapping is stabiel.
+
 ## Nog te harvesten (per stuk via export — NIET gokken)
 - **BronWarmtepomp** overige codes (bodem/grondwater/retourlucht/…): globale codes, alleen Buitenlucht=1 bevestigd.
 - **Tapwater-detail**: warmtepompboiler/elektrische boiler/zonneboiler-toestelcodes, voorraadvat, DWTW, CW-klasse-codes.
-- **Ventilatie**: VentilatiesysteemType (A-E) + ~32 subsysteem-codes + TypeWtw — staan al als opties in de MagicPlan-form; codes via export.
+- **Ventilatie**: VentilatiesysteemType (A-E) + Systeem + TypeWtw=3 nu BEVESTIGD (18-7, zie boven). Resterend: de GLOBALE subsysteem-codes per stuk (alleen D5a=33 bevestigd) — via export bij de gekozen subsysteem; blijft adviseurskeuze.
 - **Biomassa** (kachel/ketel subtypes) · **WKK** (HRe-label/vermogen/bouwjaar) · hogere aanvoertemp-klassen (90/70).
 - **LES (23-6):** top-level dropdowns = index=code (TypeOpwekker/Afgifte/Koeling bevestigd), maar CONDITIONELE sub-lijsten
   (zoals BronWarmtepomp) gebruiken GLOBALE codes ≠ dropdown-index → altijd via export bevestigen (golden rule).

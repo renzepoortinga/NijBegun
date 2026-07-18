@@ -2265,8 +2265,11 @@ try:
     check("F4: spouw 'Onbekend' -> None (niet False = géén spouw)",
           bool(_vg67) and _vg67[0].spouw_aanwezig is None)
     _r67, _m67, _iss67, _s67 = _bt67(_d67)
-    check("F1: gevel op Z -> 'afgeleid uit het rotatiepatroon'-flag (niet stil gegokt)",
-          any("afgeleid uit het rotatiepatroon" in str(i) for i in _iss67))
+    # F1 (18-7): oriëntatie is nu LIVE in EPA bevestigd (Zuid=0) -> de Z-voorgevel krijgt code 0 in de
+    # objecten-XML en er is GEEN 'afgeleid uit het rotatiepatroon'-flag meer.
+    _z_codes = [e.text for e in _r67.iter() if e.tag.split("}")[-1] == "Orientatie" and (e.text or "") == "0"]
+    check("F1: gevel op Z -> Orientatie-code 0 (EPA-bevestigd), geen 'afgeleid'-flag meer",
+          bool(_z_codes) and not any("afgeleid uit het rotatiepatroon" in str(i) for i in _iss67))
     # F3: schilddak -> Daktype-code 0 (hellend), geen 'niet herkend'
     _d67.identificatie.type_dak = "Schilddak"
     _r67b, _m67b, _iss67b, _s67b = _bt67(_d67)
@@ -2275,6 +2278,23 @@ try:
     _dt67 = next((e.text for e in _r67b.iter() if _lc67(e.tag) == "Daktype"), None)
     check("F3: schilddak -> Daktype-code 0 (hellend), niet 'niet herkend -> sjabloon'",
           _dt67 == "0" and not any("Daktype" in str(i) and "niet herkend" in str(i) for i in _iss67b))
+    # 18-7: Gebouwtype/Subtype (woningpositie) LIVE in EPA bevestigd (export hoek=1 + monitor tussen=2)
+    # -> generator schrijft de codes i.p.v. te flaggen. Onbekende positie (meergezins) -> nog wel flag.
+    def _cls67(_wt):
+        _d67.identificatie.woningtype = _wt
+        _rr, _mm, _ii, _ss = _bt67(_d67)
+        _g = next((e.text for e in _rr.iter() if _lc67(e.tag) == "Gebouwtype"), None)
+        _s = next((e.text for e in _rr.iter() if _lc67(e.tag) == "Subtype"), None)
+        return _g, _s, _ii
+    _gv, _sv, _ = _cls67("Vrijstaand")
+    check("classificatie: Vrijstaand -> Gebouwtype 0 + Subtype 0", _gv == "0" and _sv == "0")
+    _gt, _st, _ = _cls67("Tussenwoning")
+    check("classificatie: Tussenwoning -> Subtype 2 (Tussenligging)", _gt == "0" and _st == "2")
+    _gk, _sk, _ = _cls67("Twee-onder-een-kap")
+    check("classificatie: Twee-onder-een-kap -> Subtype 3", _gk == "0" and _sk == "3")
+    _gm, _sm, _im = _cls67("Meergezins")
+    check("classificatie: Meergezins (onbekende positie) -> flag i.p.v. gok",
+          any("niet herkend" in str(i) for i in _im))
     # F5: paneel-in-kozijn met bouwjaarklasse -> op het paneel-SchilDeel (constructiekeuze forfaitair op paneel-klasse)
     _H67b = ["WALL ATTRIBUTES", "Wall", "Symbol", "Surface: m²", "Surface without openings: m²", "Width: m",
              "Height: m", "Annotation", "Type", "Raam = Ja | Paneel = Nee", "Paneel - bouwjaarklasse",

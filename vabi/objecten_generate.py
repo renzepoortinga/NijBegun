@@ -58,17 +58,44 @@ def _face_kind(hv):
     return "gevel"
 
 
-# VABI Orientatie-enum (Geometrie), afgeleid uit vabi/refs/code_universe.json: ZW=1, NW=3,
-# N=4, NO=5, ZO=7 (geverifieerd) -> kompasrotatie vanaf Z. Horizontaal/plat/vloer = -1.
+# VABI Orientatie-enum (Geometrie) — LIVE GEVERIFIEERD in EPA 12.0.1 via Geometrie-export (18-7-2026,
+# voorbeeldproject 'hoekwoning'): Gevel Zuid->0, Noord->4, Oost->6 (+ Dak Noord=4, Zuid=0). De EPA
+# "Orientatie voorgevel"-dropdownVOLGORDE (Zuid,ZW,W,NW,N,NO,O,ZO) == de integercode, op 3 punten
+# (0/4/6) rechtstreeks tegen de export gematcht -> hele kompasrotatie vanaf Zuid bevestigd. LET OP:
+# dit is ANDERS dan de PV-orientatie-enum (0=N..7=NW; zie installatie_enums_EPA.md). Vloer/plat = -1.
 ORIENTATIE_CODE = {"z": "0", "zw": "1", "w": "2", "nw": "3", "n": "4", "no": "5", "o": "6",
                    "zo": "7", "horizontaal": "-1"}
-# Z/W/O (codes 0/2/6) zijn INTERPOLEERD uit het rotatiepatroon, niet los in EPA bevestigd (audit F1
-# 15-7). Consistent met de golden rule flaggen we ze (eenmalig per oriëntatie) i.p.v. stil te gokken.
-_ORIENT_ONBEVESTIGD = {"z", "w", "o"}
 
 
 def _orient_code(orientatie):
     return ORIENTATIE_CODE.get((orientatie or "").strip().lower())
+
+
+# VABI Object-classificatie — LIVE GEVERIFIEERD in EPA 12.0.1 (18-7-2026): Gebouwtype 0=Eengezinswoning
+# (Objecten-export hoekwoning + monitor-fixture) en Subtype = WONINGPOSITIE (dropdown-index = code):
+# 0=Vrijstaand · 1=Kop-/eind-/hoekligging · 2=Tussenligging · 3=Twee onder een kap. Bevestigd: export
+# Subtype=1 (hoekwoning) + monitor Subtype=2 (tussenwoning). Ligging is appartement-only -> bij een
+# eengezinswoning 0 (=nvt). Nij Begun-scope = grondgebonden eengezinswoningen -> Gebouwtype altijd 0.
+GEBOUWTYPE_EENGEZINSWONING = "0"
+
+
+def _subtype_code(woningtype):
+    """woningtype (WONINGTYPE_OPTS) -> EPA Subtype/woningpositie-code, of None als onbekend/meergezins
+    (dan flaggen i.p.v. gokken). Zelfde positie-logica als core.geometry.aantal_woningscheidende_wanden,
+    maar 'twee onder een kap' is een EIGEN code (3), niet gelijk aan hoek (1)."""
+    w = (woningtype or "").strip().lower()
+    if not w:
+        return None
+    if "vrijstaand" in w:
+        return "0"
+    if ("onder een kap" in w or "onder-een-kap" in w or w.startswith("twee")
+            or "2-onder" in w or "2 onder" in w or "2^1" in w):
+        return "3"
+    if "tussen" in w:
+        return "2"
+    if any(k in w for k in ("hoek", "kop", "eind")):
+        return "1"
+    return None
 
 
 # VABI GrenstAan-enum (begrenzing per vlak) — LIVE GEVERIFIEERD in EPA 12.0.1 via probe-import
@@ -257,7 +284,6 @@ def build_tree(dos):
     _PERIM_BEGR = ("grond", "kruip", "kelder")
     gevels = []   # (hoofdvlak_el, naam, orientatie) voor deelvlak-toewijzing
     daken = []    # idem: dak-hoofdvlakken (voor DAKRAMEN als deelvlak in het dakvlak)
-    _orient_gemeld = set()   # audit F1: onbevestigde oriëntaties (Z/W/O) 1x flaggen
     for s in dos.schil:
         kind = _classify(s)
         m = mapping.get(s.id)
@@ -277,13 +303,6 @@ def build_tree(dos):
                                   "zet de oriëntatie in Vabi." % s.id)
             elif kind == "gevel" and oc is None:
                 issues.append("gevel %s: onbekende orientatie %r -> sjabloon-default" % (s.id, orient))
-            # F1: Z/W/O (codes 0/2/6) zijn afgeleid, niet EPA-bevestigd -> 1x per oriëntatie flaggen
-            _ol = (orient or "").strip().lower()
-            if kind in ("gevel", "dak") and _ol in _ORIENT_ONBEVESTIGD and _ol not in _orient_gemeld:
-                _orient_gemeld.add(_ol)
-                issues.append("oriëntatie %s: VABI-code %s is afgeleid uit het rotatiepatroon en nog NIET "
-                              "los in EPA bevestigd -> controleer de %s-gevels/dakvlakken in Vabi "
-                              "(eenmalig te verifiëren)." % (orient.upper(), oc, orient.upper()))
             # begrenzing -> GrenstAan (alleen bevestigde codes; onbekend -> sjabloon-default + flag)
             begr = getattr(s, "begrenzing", "") or ""
             # perimeter (randverlies) ALLEEN voor vloeren grenzend aan grond/kruipruimte/kelder (ISSO 8.3)
@@ -511,11 +530,23 @@ def build_tree(dos):
     td = getattr(getattr(dos, "identificatie", None), "type_dak", "") or \
          getattr(getattr(dos, "opname", None), "type_dak", "")
     if wt:
-        issues.append("Gebouwtype/Ligging (woningtype=%r): VABI-enumcode nog te bevestigen in EPA -> "
-                      "sjabloon-default; zet woningpositie handmatig in Vabi (golden rule)." % wt)
+        # Gebouwtype/Subtype (woningpositie) — LIVE GEVERIFIEERD in EPA (18-7): schrijf de bevestigde
+        # codes i.p.v. flaggen. Nij Begun = grondgebonden eengezinswoningen -> Gebouwtype 0 (Eengezins-
+        # woning), Subtype = woningpositie. Ligging is appartement-only (nvt bij eengezinswoning) -> laat
+        # de sjabloon-default staan (die importeert bewezen foutloos; niet nodeloos aanpassen).
+        st = _subtype_code(wt)
+        if st is not None:
+            for _tag, _val in (("Gebouwtype", GEBOUWTYPE_EENGEZINSWONING), ("Subtype", st)):
+                _n = next((e for e in root.iter() if _local(e.tag) == _tag), None)
+                if _n is not None:
+                    _n.text = _val
+        else:
+            # meergezins/onbekende positie -> niet gokken (golden rule): sjabloon-default + flag
+            issues.append("Woningpositie uit woningtype=%r niet herkend (geen grondgebonden "
+                          "eengezinswoning?) -> Gebouwtype/Subtype op de sjabloon; zet ze in Vabi." % wt)
     else:
-        # audit 15-7: leeg woningtype liet Gebouwtype/Ligging stil op de sjabloon staan (geen flag)
-        issues.append("WONINGTYPE ONTBREEKT -> Gebouwtype/Ligging blijven op de sjabloon staan; "
+        # audit 15-7: leeg woningtype liet Gebouwtype/Subtype stil op de sjabloon staan (geen flag)
+        issues.append("WONINGTYPE ONTBREEKT -> Gebouwtype/Subtype blijven op de sjabloon staan; "
                       "kies het woningtype (webapp/MagicPlan) en zet de woningpositie in Vabi.")
     if td:
         # Daktype LIVE GEVERIFIEERD in EPA: 0=Hellend dak, 1=Deels plat dak, 2=Plat dak/zonder kap.

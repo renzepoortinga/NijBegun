@@ -96,6 +96,17 @@ Verifieer ALTIJD de container-view (die telt), niet de host:
 config.json + varianten (.bak) staan in .gitignore -> gaan NOOIT mee met een push; de VPS-config moet je
 dus apart bijwerken (bevat wachtwoordhash + TOTP: eerst `cp config.json config.json.bak`, dan JSON valideren).
 
+## Status (18-7-2026) — 469/469 groen. EPA ENUM-HARVEST (live, voorbeeldproject 'hoekwoning') + 2 FLAGS WEG.
+Via EPA-exports (Geometrie/Objecten/Installatie) de laatste geometrie- en installatie-enums bevestigd.
+ORIENTATIE (Geometrie hoofdvlak) = 0=Z 1=ZW 2=W 3=NW 4=N 5=NO 6=O 7=ZO (Zuid=0/Noord=4/Oost=6 direct uit de
+export; dropdownvolgorde==code; ANDERS dan PV 0=N..7=NW) → de oriëntatie-flag (Z/W/O "afgeleid") is VERVALLEN.
+GEBOUWTYPE 0=Eengezinswoning (0-9) + SUBTYPE=woningpositie (0=Vrijstaand·1=Kop/eind/hoek·2=Tussen·3=Twee-onder-
+een-kap) → objecten_generate schrijft nu de codes i.p.v. te flaggen (alleen meergezins/onbekend blijft geflagd);
+LIVE RE-IMPORT bewezen: gegenereerde Hoekwoning-lib importeert FOUTLOOS in EPA 12.0.1 → "Eengezinswoning /
+Kop-/eind- of hoekligging". Ventilatie: Systeem 0=Individueel · VentilatiesysteemType 0=A..4=E (D=3) · TypeWtw
+3=Platen/buizen · Subsysteem GLOBAAL (D5a=33; blijft bewuste adviseurskeuze/flag). Verwarming/tapwater/PV
+herbevestigd (WP-el 9/Lucht-water 1/Buitenlucht 1/Vloerverwarming 2/aanvoertemp 35-30=1/warmtepompboiler 4).
+Codes in vabi/refs/grenstaan_mapping.md + installatie_enums_EPA.md. Open: overige globale subsysteem-codes.
 ## Status (15-7-2026) — 456/456 groen. VABI↔MAGICPLAN-MAPPING-AUDIT + GEOMETRIE-IJKING op de ECHTE EPA.
 ESSENHAGE-IJKING (echte EPA-monitor ernaast): Ag -3%, vloer -4%, achtergevel vrijwel exact (29,4 vs 30,0),
 dak van -63% naar -9%. Gefixt: (a) SCHUIN-DAK-FOOTPRINT gebruikte de BOVENSTE verdieping = de zolder binnen
