@@ -204,13 +204,18 @@ a.step:hover{color:var(--ink)}
    FORMULIEREN — inputs min 44px hoog
    ============================================================ */
 label{display:block;font-size:13px;color:var(--ink2);margin:14px 0 5px;font-weight:500}
-input[type=text],input[type=password],input[type=number],input[type=date],
-input:not([type]),select,textarea{
+/* ALLE tekst-achtige inputs gelijk stylen — types opsommen liet email/datetime-local/tel/... stil
+   op de kale browser-styling vallen (login-e-mailveld was kleiner). Nu: alles behalve de echte
+   uitzonderingen (checkbox/radio/file/range/knop/kleur), zodat een nieuw inputtype dit nooit meer mist. */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=submit]):not([type=button]):not([type=image]):not([type=color]):not([type=hidden]),
+select,textarea{
   width:100%;font:inherit;min-height:44px;padding:11px 14px;
   border:1px solid var(--line-strong);border-radius:12px;
   background:var(--card);color:var(--ink);
   -webkit-appearance:none;appearance:none;
 }
+/* iOS zoomt in op een veld met font < 16px bij focus -> alle inputs minstens 16px (voorkomt de zoom) */
+input,select,textarea{font-size:16px}
 select{
   background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);
   background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
