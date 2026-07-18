@@ -247,7 +247,7 @@ BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nij Begun · isolatieplan</title>
 <link rel="stylesheet" href="{{url_for('static', filename='app.css')}}"></head><body>
-<div class=topbar><span class=brand>🏠 Nij Begun · isolatieplan</span>
+<div class=topbar><a class=brand href="{{url_for('home') if session.ingelogd else url_for('login')}}">🏠 Nij Begun<span class=brand-sub> · isolatieplan</span></a>
 <nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('guide')}}">Guide</a>
 <a href="{{url_for('logout')}}">Uitloggen</a>{% endif %}</nav></div>
 <div class="wrap {{wrapclass or ''}}">
@@ -314,13 +314,13 @@ HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ing
 <div><label>Woningtype</label><select name=woningtype>{% for w in woningtypes %}<option {{'selected' if w=='Tussenwoning'}}>{{w}}</option>{% endfor %}</select></div></div>
 <div class=btn-row><button class="btn lg">Project starten →</button>
 <a class="btn ghost" href="{{url_for('guide')}}">Eerst de guide lezen</a></div></form></div>
-{% if projects %}<div class=card><h2>Lopende projecten</h2><div class="table-wrap"><table>
-<tr><th>Adres</th><th>Stap</th><th>Standaard</th><th>Maatregelen</th><th></th></tr>
-{% for p in projects %}<tr><td>{{p.adres}}</td>
-<td><span class="pill gray">{{p.stap}}</span></td>
-<td>{% if p.voldoet is none %}<span class=muted>—</span>{% elif p.voldoet %}<span class="pill green">voldoet</span>{% else %}<span class="pill amber">nog niet</span>{% endif %}</td>
-<td>{{p.n}}{% if p.totaal %} · &euro;{{'%.0f'|format(p.totaal)}}{% endif %}</td>
-<td><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a></td></tr>{% endfor %}</table></div></div>
+{% if projects %}<div class=card><h2>Lopende projecten</h2><div class="table-wrap card-table"><table>
+<tr><th>Adres</th><th>Stap</th><th>Standaard</th><th>Maatregelen</th><th>Actie</th></tr>
+{% for p in projects %}<tr><td data-label="Adres"><b>{{p.adres}}</b></td>
+<td data-label="Stap"><span class="pill gray">{{p.stap}}</span></td>
+<td data-label="Standaard">{% if p.voldoet is none %}<span class=muted>—</span>{% elif p.voldoet %}<span class="pill green">voldoet</span>{% else %}<span class="pill amber">nog niet</span>{% endif %}</td>
+<td data-label="Maatregelen">{{p.n}}{% if p.totaal %} · &euro;{{'%.0f'|format(p.totaal)}}{% endif %}</td>
+<td data-label="Actie"><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a></td></tr>{% endfor %}</table></div></div>
 {% endif %}"""
 
 HUIDIG = """{{stepper|safe}}<h1>Huidige staat — nulmeting</h1>
@@ -494,9 +494,9 @@ Bouwfysisch wenselijke extra's (bv. dakkapel-wangen, deur) adviseer je wél, maa
 <form method=post id=mf>
 {% for g in groepen %}
 <div class="card meas-group" data-m2="{{g.m2}}">
-<div style="display:flex;justify-content:space-between;align-items:center">
+<div class=grp-head>
 <h2 style="margin:0">{{g.onderdeel}} <span class="pill blue">{{'%.1f'|format(g.m2)}} m²</span></h2>
-<select name="bucket_{{loop.index0}}" class=bk style="max-width:230px">
+<select name="bucket_{{loop.index0}}" class=bk>
 <option value=standaard>In subsidietabel (Standaard)</option>
 <option value=isde>Advies (30% ISDE) — buiten tabel</option>
 <option value=geen>Niet opnemen</option></select></div>
@@ -514,21 +514,21 @@ Bouwfysisch wenselijke extra's (bv. dakkapel-wangen, deur) adviseer je wél, maa
 
 <div class=card><h2>Zelf kiezen uit de catalogus</h2>
 <p class=muted>De volledige Nij Begun-catalogus (zoals het portal): categorie → subcategorie → maatregel of bijkomende kosten. Voeg toe met eigen hoeveelheid.</p>
-{% if vrij %}<div class="table-wrap"><table><tr><th>Code</th><th>Omschrijving</th><th>Hoeveelheid</th><th>Kosten</th><th>Bucket</th><th></th></tr>
-{% for v in vrij %}<tr><td class=small>{{v.code}}</td><td>{{v.omschrijving[:58]}}</td>
-<td>{{v.hoeveelheid}} {{v.eenheid}}</td><td>€{{'%.0f'|format(v.kosten)}}</td>
-<td><span class="pill {{'green' if v.bucket=='standaard' else 'amber'}}">{{'Standaard' if v.bucket=='standaard' else '30% ISDE'}}</span></td>
-<td><form method=post action="{{url_for('maatregel_del', tag=tag, idx=loop.index0)}}"><button class="btn sec">✕</button></form></td></tr>{% endfor %}</table></div>
+{% if vrij %}<div class="table-wrap card-table"><table><tr><th>Code</th><th>Omschrijving</th><th>Hoeveelheid</th><th>Kosten</th><th>Bucket</th><th>Actie</th></tr>
+{% for v in vrij %}<tr><td class=small data-label="Code">{{v.code}}</td><td data-label="Omschrijving">{{v.omschrijving[:58]}}</td>
+<td data-label="Hoeveelheid">{{v.hoeveelheid}} {{v.eenheid}}</td><td data-label="Kosten">€{{'%.0f'|format(v.kosten)}}</td>
+<td data-label="Bucket"><span class="pill {{'green' if v.bucket=='standaard' else 'amber'}}">{{'Standaard' if v.bucket=='standaard' else '30% ISDE'}}</span></td>
+<td data-label="Actie"><form method=post action="{{url_for('maatregel_del', tag=tag, idx=loop.index0)}}"><button class="btn sec">✕ verwijderen</button></form></td></tr>{% endfor %}</table></div>
 <p class="muted small">Subtotaal catalogus-keuze (Standaard-bucket): <b>€{{'%.0f'|format(vrij_tot)}}</b></p>{% endif %}
 {% for c in boom %}<details class=acc><summary><b>{{c.naam}}</b> <span class="pill gray">{{c.code}}</span></summary><div class=acc-body>
 {% for s in c.subs %}<details class=acc><summary>{{s.naam[:60]}} <span class="pill gray">{{s.code}}</span></summary><div class=acc-body>
-{% for m in s.kern %}<form method=post action="{{url_for('maatregel_add', tag=tag)}}" style="display:flex;gap:8px;align-items:center;padding:4px 0">
-<input type=hidden name=code value="{{m.code}}"><span style="flex:1" class=small>{{m.code}} · {{m.omschrijving[:64]}} — €{{'%.2f'|format(m.prijs)}}/{{m.eenheid}}{% if m.biobased %} <span class="pill green">bio</span>{% endif %}</span>
+{% for m in s.kern %}<form method=post action="{{url_for('maatregel_add', tag=tag)}}" class=add-row>
+<input type=hidden name=code value="{{m.code}}"><span class="desc small">{{m.code}} · {{m.omschrijving[:64]}} — €{{'%.2f'|format(m.prijs)}}/{{m.eenheid}}{% if m.biobased %} <span class="pill green">bio</span>{% endif %}</span>
 <input name=hoeveelheid placeholder="{{m.eenheid}}" style="max-width:90px"><select name=bucket style="max-width:130px"><option value=standaard>Standaard</option><option value=isde>30% ISDE</option></select>
 <button class="btn sec">＋</button></form>{% endfor %}
 {% if s.meerwerk %}<p class="muted small" style="margin:8px 0 2px"><b>Bijkomende kosten</b></p>
-{% for m in s.meerwerk %}<form method=post action="{{url_for('maatregel_add', tag=tag)}}" style="display:flex;gap:8px;align-items:center;padding:4px 0">
-<input type=hidden name=code value="{{m.code}}"><span style="flex:1" class=small>{{m.code}} · {{m.omschrijving[:64]}} — €{{'%.2f'|format(m.prijs)}}/{{m.eenheid}}</span>
+{% for m in s.meerwerk %}<form method=post action="{{url_for('maatregel_add', tag=tag)}}" class=add-row>
+<input type=hidden name=code value="{{m.code}}"><span class="desc small">{{m.code}} · {{m.omschrijving[:64]}} — €{{'%.2f'|format(m.prijs)}}/{{m.eenheid}}</span>
 <input name=hoeveelheid placeholder="{{m.eenheid}}" style="max-width:90px"><select name=bucket style="max-width:130px"><option value=standaard>Standaard</option><option value=isde>30% ISDE</option></select>
 <button class="btn sec">＋</button></form>{% endfor %}{% endif %}
 </div></details>{% endfor %}</div></details>{% endfor %}</div>
@@ -1646,7 +1646,7 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <span class=spacer></span>
 <a class="btn sec" href="{{url_for('leads_ontvangst')}}">✉ Ontvangstmail (alle nieuwe, BCC)</a>
 <a class="btn sec" href="{{url_for('leads_csv')}}">⬇ CSV</a></div></form></div>
-{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap lead-list"><table>
+{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap card-table lead-list"><table>
 <tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th>Acties</th></tr>
 {% for l in leads %}<tr>
 <td class="small dt" data-label="Ontvangen">{{l.ontvangen}}</td>
@@ -1657,9 +1657,10 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <select name=status onchange="this.form.submit()">
 {% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
 </select></form>
-<form method=post action="{{url_for('leads_afspraak', lid=l.id)}}" style="display:flex;gap:4px;margin-top:6px">
-<input type=datetime-local name=wanneer value="{{l.afspraak or ''}}" style="min-height:38px;font-size:13px">
-<button class="btn sec" title="Afspraak opslaan (+ project aanmaken)">📅</button></form></td>
+<form method=post action="{{url_for('leads_afspraak', lid=l.id)}}" class=afspraak-form>
+<label class="muted small">Afspraak</label>
+<div class=row><input type=datetime-local name=wanneer value="{{l.afspraak or ''}}">
+<button class="btn sec" title="Afspraak opslaan (+ project aanmaken)">📅</button></div></form></td>
 <td class=act data-label="Acties" style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a>
 {% if l.afspraak %} <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging" title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ bevestiging</a>{% endif %}
 {% if l.project_tag %} <a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
