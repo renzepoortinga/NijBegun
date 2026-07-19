@@ -90,7 +90,9 @@
    RESET / BASIS
    ============================================================ */
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+/* overflow-x ook op <html>: alleen op <body> is niet genoeg — mobiel Safari laat de pagina dan
+   alsnog zijwaarts slepen als een kind te breed is (dat gebeurde met de tabellen). */
+html{-webkit-text-size-adjust:100%;overflow-x:hidden;max-width:100%}
 body{
   margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
@@ -456,8 +458,25 @@ details.acc .acc-body :is(h1,h2,h3){color:var(--ink)}
   .stepper .step.active{font-size:11px}
   .stepper .step.active .bar{margin-bottom:6px}
 
-  /* kale tabellen scrollen zelf (fallback als er geen .table-wrap omheen zit) */
-  .card>table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  /* Kale tabellen scrollen zelf (fallback als er geen .table-wrap omheen zit).
+     GEEN nowrap: dat was de oorzaak van de half zichtbare factuurgegevens — een cel met een lange
+     tekst (e-mailadres, omschrijving) werd dan één regel van 500px breed, en op een telefoon van
+     375px zag je daar de helft van. Tekst mag gewoon afbreken; smalle getalkolommen krijgen hun
+     nowrap terug via .nowrap waar dat nodig is. */
+  .card>table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:normal}
+
+  /* SLEUTEL/WAARDE-tabellen (factuurgegevens, totalen) passend maken i.p.v. laten scrollen.
+     table-layout:fixed is hier de kern: zonder dat rekt de tabel zich uit tot de langste regel
+     (506px bij een e-mailadres) en zie je op een telefoon de helft. Met fixed + width:100% krijgen
+     de kolommen een vaste verhouding en breekt lange tekst netjes af.
+     .card-table valt hierbuiten: die wordt op smal scherm juist een kaartenlijst. */
+  .card>table,
+  .table-wrap:not(.card-table)>table{width:100%;table-layout:fixed}
+  .card>table td,.card>table th,
+  .table-wrap:not(.card-table)>table td,
+  .table-wrap:not(.card-table)>table th{white-space:normal;overflow-wrap:break-word;word-break:break-word}
+  .card>table td:first-child,
+  .table-wrap:not(.card-table)>table td:first-child{width:38%}
 
   /* ---- .card-table: tabel -> KAARTEN op smal scherm (HIG: compacte breedte = lijst, geen tabel) --
      Een meerkoloms tabel is op een telefoon onleesbaar, ook mét zijwaarts scrollen: je ziet nooit

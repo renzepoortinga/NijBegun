@@ -2881,5 +2881,72 @@ try:
 except Exception as _e:
     check("Graph-mailkoppeling: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("\n74. Verwijderde leads blijven weg + mobiele opmaak (telefoon)")
+try:
+    import os as _o74, tempfile as _t74, re as _r74
+    import dashboard.leads as _L74, dashboard.app as _W74
+    _W74.app.config.update(TESTING=True)
+    _c74 = _W74.app.test_client()
+    with _c74.session_transaction() as _s74:
+        _s74["ingelogd"] = True
+
+    _tmp74 = _t74.mkdtemp()
+    _bew74 = (_L74.LEADS_DIR, _L74.LEADS_FILE, _L74.GEWIST_FILE)
+    _L74.LEADS_DIR = _tmp74
+    _L74.LEADS_FILE = _o74.path.join(_tmp74, "leads.json")
+    _L74.GEWIST_FILE = _o74.path.join(_tmp74, "verwijderd.json")
+    try:
+        _lead74 = dict(id=1, naam="Uitgeschreven Bewoner", bag_id="0018200000001", postcode="9601AA",
+                       huisnummer="50", toevoeging="", email="x@x.nl", telefoon="06", status="nieuw",
+                       ontvangen="2026-07-19", notitie="", afspraak="")
+        _L74.save_leads([_lead74])
+        _c74.post("/leads/1/weg", follow_redirects=True)
+        check("verwijderen: lead weg uit de lijst", _L74.load_leads() == [])
+        check("verwijderen: alleen de adres-sleutel onthouden (geen naam/contact)",
+              _L74.load_gewist() == ["0018200000001"])
+
+        # het portaal mailt opnieuw over deze bewoner -> mag NIET terugkomen
+        _rows74, _nieuw74 = _L74.add_lead(dict(bag_id="0018200000001", naam="Uitgeschreven Bewoner",
+                                               postcode="9601AA", huisnummer="50", toevoeging=""),
+                                          _L74.load_leads())
+        check("ophalen: bewust verwijderde bewoner komt NIET terug", _nieuw74 is False and _rows74 == [])
+
+        _h74 = _c74.get("/leads").get_data(as_text=True)
+        check("leads: geblokkeerde adressen zichtbaar op de pagina", "Geblokkeerd (1)" in _h74)
+
+        _c74.post("/leads/geblokkeerd", follow_redirects=True)
+        check("blokkade opheffen: lijst leeg", _L74.load_gewist() == [])
+        _rows74, _nieuw74 = _L74.add_lead(dict(bag_id="0018200000001", naam="Toch Weer Aangemeld",
+                                               postcode="9601AA", huisnummer="50", toevoeging=""),
+                                          _L74.load_leads())
+        check("blokkade opheffen: bewoner kan daarna weer binnenkomen", _nieuw74 is True)
+
+        # een ANDER adres mag nooit meegeblokkeerd raken
+        _L74.onthoud_gewist({"bag_id": "0018200000001"})
+        _rows74, _nieuw74 = _L74.add_lead(dict(bag_id="0018200000099", naam="Buurman",
+                                               postcode="9601AA", huisnummer="52", toevoeging=""), [])
+        check("blokkade raakt alleen het verwijderde adres", _nieuw74 is True)
+    finally:
+        _L74.LEADS_DIR, _L74.LEADS_FILE, _L74.GEWIST_FILE = _bew74
+
+    # ---- mobiele opmaak: de regels die de half zichtbare factuurtabel veroorzaakten ----
+    _css74 = open(_o74.path.join(_o74.path.dirname(_o74.path.dirname(_o74.path.abspath(_W74.__file__))),
+                                 "dashboard", "static", "app.css"), encoding="utf-8").read()
+    check("mobiel: <html> klipt horizontaal (anders sleept iOS de pagina opzij)",
+          _r74.search(r"html\{[^}]*overflow-x:hidden", _css74) is not None)
+    _mob74 = _css74[_css74.index("@media (max-width:700px)"):]
+    check("mobiel: sleutel/waarde-tabellen krijgen table-layout:fixed (tekst breekt af)",
+          "table-layout:fixed" in _mob74)
+    check("mobiel: geen nowrap meer op kale tabellen (dat kapte de factuurgegevens af)",
+          "white-space:nowrap" not in _mob74.split(".card-table")[0])
+    check("voorschot: beide tabellen in een .table-wrap (niet als class op de tabel zelf)",
+          'table class="table-wrap"' not in _W74.VOORSCHOT
+          and _W74.VOORSCHOT.count("<div class=table-wrap") >= 2)
+    check("ophaalknop: toont dat hij bezig is (Graph duurt seconden)",
+          "Bezig met ophalen" in _W74.LEADS and "b.disabled=true" in _W74.LEADS)
+except Exception as _e:
+    check("verwijderde leads + mobiele opmaak: draait zonder fout", False)
+    print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

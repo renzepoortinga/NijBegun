@@ -111,6 +111,47 @@ def _sleutel(lead):
                                               lead.get("huisnummer", ""), lead.get("toevoeging", ""))
 
 
+# ---------------- verwijderde leads onthouden ----------------
+# Wie je bewust hebt weggegooid (bv. bewoner heeft zich uitgeschreven) mag bij de volgende
+# mail-ophaalronde NIET terugkomen. Daarom bewaren we alleen de dedupe-SLEUTEL van verwijderde
+# leads — geen naam, adres of contactgegevens. AVG: dat is het minimum dat nodig is om jouw
+# verwijdering te kunnen respecteren, en het staat lokaal in out/leads/.
+GEWIST_FILE = os.path.join(LEADS_DIR, "verwijderd.json")
+
+
+def load_gewist():
+    if os.path.isfile(GEWIST_FILE):
+        try:
+            with open(GEWIST_FILE, encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:
+            return []
+    return []
+
+
+def onthoud_gewist(lead):
+    """Sleutel van een verwijderde lead bewaren, zodat hij niet opnieuw binnenkomt."""
+    with LOCK:
+        s = _sleutel(lead)
+        lijst = load_gewist()
+        if s and s not in lijst:
+            lijst.append(s)
+            os.makedirs(LEADS_DIR, exist_ok=True)
+            with open(GEWIST_FILE, "w", encoding="utf-8") as fh:
+                json.dump(lijst, fh, ensure_ascii=False, indent=1)
+        return lijst
+
+
+def vergeet_gewist(sleutel=None):
+    """Blokkade opheffen: één sleutel, of alles (sleutel=None) — voor als je iemand tóch terugwilt."""
+    with LOCK:
+        lijst = [] if sleutel is None else [x for x in load_gewist() if x != sleutel]
+        os.makedirs(LEADS_DIR, exist_ok=True)
+        with open(GEWIST_FILE, "w", encoding="utf-8") as fh:
+            json.dump(lijst, fh, ensure_ascii=False, indent=1)
+        return lijst
+
+
 # Velden die het portaal later nog kan wijzigen ("Contact gegevens gewijzigd door gebruiker"-mails).
 # Bij een dubbele lead werken we die BIJ; status, afspraak, notitie en projectkoppeling blijven van jou.
 CONTACTVELDEN = ("naam", "voornaam", "email", "telefoon")
@@ -123,6 +164,8 @@ def add_lead(lead, leads=None):
     het portaal stuurt ook wijzigingsmails, en een nieuw telefoonnummer moet je wél zien. Wat jij zelf
     hebt ingevuld (status/afspraak/notitie/project) blijft ongemoeid."""
     leads = load_leads() if leads is None else leads
+    if _sleutel(lead) in load_gewist():          # bewust verwijderd -> nooit stilletjes terugzetten
+        return leads, False
     bestaand = next((x for x in leads if _sleutel(x) == _sleutel(lead)), None)
     if bestaand is not None:
         for k in CONTACTVELDEN:

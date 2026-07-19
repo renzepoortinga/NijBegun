@@ -729,12 +729,12 @@ VOORSCHOT = """<h1>Voorschot-factuur — specificatie</h1>
 adviestarief). Neem deze regels 1-op-1 over op je factuur; postcode/huisnummer moeten <b>gelijk</b> zijn
 aan het isolatieplan.</p>
 <div class=card><h2>Verplichte factuurgegevens</h2>
-<table class="table-wrap"><tr><td class=muted>Aan</td><td>{{spec.header.aan}}</td></tr>
+<div class=table-wrap><table><tr><td class=muted>Aan</td><td>{{spec.header.aan}}</td></tr>
 <tr><td class=muted>T.a.v.</td><td>{{spec.header.tav}}</td></tr>
 <tr><td class=muted>VPL-nummer</td><td><b>{{spec.header.vpl_nummer}}</b></td></tr>
 <tr><td class=muted>Documentnr. opdracht</td><td><b>{{spec.header.documentnummer_opdracht}}</b></td></tr>
 <tr><td class=muted>Kenmerk</td><td>{{spec.header.kenmerk}}</td></tr>
-<tr><td class=muted>Indienen bij</td><td>{{spec.header.email}} (XML + kopie PDF)</td></tr></table></div>
+<tr><td class=muted>Indienen bij</td><td>{{spec.header.email}} (XML + kopie PDF)</td></tr></table></div></div>
 <div class=card><div class=grp-head><h2>Specificatie ({{spec.regels|length}} plan(nen))</h2>
 <a class="btn sec" href="{{url_for('voorschot_csv')}}">⬇ CSV</a></div>
 <div class="table-wrap card-table"><table>
@@ -743,11 +743,11 @@ aan het isolatieplan.</p>
 <td data-label="Woningtype">{{r.woningtype}}</td>
 <td data-label="Advies">{{'Uitgebreid' if r.uitgebreid else 'Basis'}}</td>
 <td data-label="Tarief">&euro;{{'%.2f'|format(r.tarief_excl)}}</td></tr>{% endfor %}</table></div>
-<table style="margin-top:14px;max-width:420px">
+<div class=table-wrap style="margin-top:14px;max-width:420px"><table>
 <tr><td>Subtotaal (excl. btw)</td><td style="text-align:right">&euro;{{'%.2f'|format(spec.subtotaal_excl)}}</td></tr>
 <tr><td><b>Voorschot 75% (excl. btw)</b></td><td style="text-align:right"><b>&euro;{{'%.2f'|format(spec.voorschot_excl)}}</b></td></tr>
 <tr><td>21% btw</td><td style="text-align:right">&euro;{{'%.2f'|format(spec.btw)}}</td></tr>
-<tr><td><b>Totaal (incl. btw)</b></td><td style="text-align:right"><b>&euro;{{'%.2f'|format(spec.totaal_incl)}}</b></td></tr></table></div>
+<tr><td><b>Totaal (incl. btw)</b></td><td style="text-align:right"><b>&euro;{{'%.2f'|format(spec.totaal_incl)}}</b></td></tr></table></div></div>
 {% if spec.onbekend %}<div class=warn><b>Woningtype niet herkend — zelf tarief bepalen ({{spec.onbekend|length}}):</b>
 {% for o in spec.onbekend %}<div>{{o.adres}} — {{o.woningtype or '(leeg)'}}</div>{% endfor %}</div>{% endif %}
 <p class="muted small">Tarieven excl. btw uit de opdrachtbrief 2026: Vrijstaand &gt;300 m² €750/€825 · Vrijstaand
@@ -1895,9 +1895,12 @@ LEADS = """<h1>Leads</h1>
 <p class=muted>Haalt de <b>{{mailbox_onderwerp}}</b>-mails van de afgelopen <b>{{mailbox_dagen}} dagen</b> op uit
 <b>{{mailbox_gebruiker}}</b> ({{mailbox_map}}) en maakt er leads van. Dubbelen worden overgeslagen, dus je mag
 gerust vaker klikken. De tool <b>leest alleen</b> — er wordt niets gemarkeerd, verplaatst of verwijderd.</p>
-<form method=post action="{{url_for('leads_ophalen')}}">
+<form method=post action="{{url_for('leads_ophalen')}}"
+      onsubmit="var b=this.querySelector('button');b.disabled=true;b.textContent='⏳ Bezig met ophalen…';">
 <div class=btn-row><button class="btn lg">📥 Nieuwe portal-mails ophalen</button>
-<span class="pill gray" title="Welke koppeling wordt gebruikt">{{'Microsoft Graph' if mailbox_bron=='graph' else 'IMAP'}}</span></div></form>
+<span class="pill gray" title="Welke koppeling wordt gebruikt">{{'Microsoft Graph' if mailbox_bron=='graph' else 'IMAP'}}</span></div>
+<p class="muted small" style="margin:8px 0 0">Het ophalen duurt <b>vijf tot vijftien seconden</b> — de knop
+wacht op Microsoft. Even geduld, niet nog een keer tikken.</p></form>
 {% else %}
 <p class=muted>Nog niet ingesteld. Voor het <b>gedeelde info@-postvak</b> (Microsoft 365) is dit een blok
 <code>"graph"</code> in <b>config.json</b> — je beheerder maakt daarvoor een app-registratie aan; de
@@ -1992,7 +1995,15 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
   zoek.addEventListener('input',pas); filt.addEventListener('change',pas);
 })();
 </script>
-{% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
+{% else %}<div class=hint>Nog geen leads. Haal je mails op of plak je eerste portal-mail hierboven.</div>{% endif %}
+{% if gewist %}<div class=card><h2>Geblokkeerd ({{gewist|length}})</h2>
+<p class=muted>Adressen die je bewust hebt verwijderd. Die komen <b>niet</b> terug bij het ophalen van
+mails — ook niet als het portaal er opnieuw over mailt. Er is alleen een adres-sleutel bewaard, geen
+naam of contactgegevens.</p>
+<p class="muted small">{{gewist|join(' · ')}}</p>
+<form method=post action="{{url_for('leads_geblokkeerd')}}"
+      onsubmit="return confirm('Alle blokkades opheffen? Verwijderde bewoners kunnen dan weer als lead binnenkomen.')">
+<div class=btn-row><button class="btn sec">Blokkades opheffen</button></div></form></div>{% endif %}"""
 
 # statuskleur op de leadkaart — in één oogopslag zien waar een lead staat
 STATUS_PILL = {
@@ -2044,7 +2055,7 @@ def leads_pagina():
     rows.sort(key=lambda r: (r.get("status") in ("afgerond", "vervallen"), -r.get("id", 0)))
     cfg = _cfg()
     bron, inst = _mailbron(cfg)
-    return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN,
+    return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN, gewist=leads_mod.load_gewist(),
                 mailbox_klaar=bool(bron), mailbox_bron=bron,
                 mailbox_map=inst.get("map") or "Postvak IN",
                 mailbox_onderwerp=inst.get("onderwerp"), mailbox_dagen=inst.get("dagen"),
@@ -2224,9 +2235,25 @@ def leads_weg(lid):
     if not lead:
         abort(404)
     naam = (lead.get("naam") or lead.get("email") or "lead %d" % lid).strip()
+    # onthoud dat DIT adres bewust weg is, anders zet de volgende mail-ophaalronde 'm zo weer terug
+    # (bewoners die zich hebben uitgeschreven kregen zo opnieuw een kennismakingsmail)
+    leads_mod.onthoud_gewist(lead)
     leads_mod.save_leads([x for x in rows if x.get("id") != lid])
-    flash("Lead '%s' definitief verwijderd%s." % (naam,
-          " (het gekoppelde project %s blijft staan)" % lead["project_tag"] if lead.get("project_tag") else ""))
+    flash("Lead '%s' definitief verwijderd%s. Dit adres komt bij een volgende ophaalronde niet "
+          "terug — via 'Geblokkeerd' kun je dat terugdraaien."
+          % (naam, " (het gekoppelde project %s blijft staan)" % lead["project_tag"]
+             if lead.get("project_tag") else ""))
+    return redirect(url_for("leads_pagina"))
+
+
+@app.route("/leads/geblokkeerd", methods=["POST"])
+@login_required
+def leads_geblokkeerd():
+    """Blokkade van verwijderde adressen opheffen — voor als iemand zich toch weer aanmeldt."""
+    sleutel = (request.form.get("sleutel") or "").strip()
+    rest = leads_mod.vergeet_gewist(sleutel or None)
+    flash("Blokkade opgeheven voor %s. Nog %d adres(sen) geblokkeerd; haal de mails opnieuw op om "
+          "ze terug te halen." % (("dit adres" if sleutel else "ALLE adressen"), len(rest)))
     return redirect(url_for("leads_pagina"))
 
 
