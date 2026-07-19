@@ -7,6 +7,14 @@ geldig) en kiezen per dossier-schildeel de best passende standaard-constructie. 
 <Constructie> is een LETTERLIJKE KLOON van een door-VABI-gekende constructie (alleen Guid + Naam
 worden ververst). Daardoor kan de import niet struikelen op 'enum mismatch'.
 
+De 219 = EPA's VOLLEDIGE forfaitaire Standaard-constructies-set (LIVE geverifieerd 19-7-2026: EPA's
+knop "Standaard constructies" laadt exact 219 — 1-op-1 met deze template). Dimensies: opaak (gevel/
+dak/vloer) isolatie-onbekend + 10..230 mm in 10mm-stappen x met/zonder spouw; glas 7 types (enkel/
+dubbel/HR/HR+/HR++/TripleHR/voorzet) x 3 kozijnmaterialen; deur geisoleerd/niet; paneel 10..100 mm.
+Een GEMETEN/afwijkende Rc/U (detailopname/kwaliteitsverklaring) hoort niet bij een forfaitaire preset
+-> die wordt GEFLAGD (adviseur zet Invoer + Rc/U zelf in VABI); de tool gokt nooit een continue
+Rc-waarde. Dus: forfaitaire mogelijkheden = deze 219 (compleet); custom Rc = bewust handmatig.
+
 De constructiebibliotheek bevat alleen constructie-TYPES (Rc/isolatie/glas), geen oppervlak/
 orientatie -> die geometrie komt later in de Objectenbibliotheek. We leveren dus de UNIEKE set
 types die de woning nodig heeft, plus een mapping schildeel->constructienaam voor de Objecten-stap.
