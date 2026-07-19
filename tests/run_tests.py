@@ -1738,6 +1738,14 @@ try:
     _op = _IG60._find(_r, "VerwarmingOpwekker")
     check("enum: ketel-subtype HR104 NIET auto-geschreven (alleen HR107) + flag",
           _op.findtext("SubType") != "3" and any("subtype" in x.lower() and "HR107" in x for x in _f))
+    # (a2) aanvoertemp 90/70 (oude radiatoren) -> WaterAanvoertemperatuur=11 (19-7 live bevestigd), geen flag
+    _d1b = _D60()
+    _d1b.installaties.verwarming = _V60(type_opwekker="Gasgestookte ketel", subtype="HR107",
+                                        aanvoertemperatuur="90/70")
+    _r1b, _f1b = _IG60.build_tree(_d1b)
+    check("enum: aanvoertemp 90/70 -> WaterAanvoertemperatuur=11 (EPA-bevestigd), geen aanvoertemp-flag",
+          _IG60._find(_r1b, "WaterAanvoertemperatuur").text == "11"
+          and not any("aanvoertemp" in x.lower() for x in _f1b))
     # (b) ventilatie collectief -> NIET geschreven + flag
     _d2 = _D60(); _d2.ventilatie = _Ve60(systeem="C", systeem_soort="collectief")
     _r2, _f2 = _IG60.build_tree(_d2)
@@ -1750,15 +1758,18 @@ try:
     # de foute 'compleet'->TypeToestel=2-mapping is weg; onbevestigd toestel -> LUIDE flag
     check("enum: tapwater 'compleet' niet meer actief gemapt -> LUIDE flag i.p.v. gok",
           any("tapwater-toestel" in x.lower() and "bevestigd" in x.lower() for x in _f3))
-    # (d) objecten: onbevestigde GrenstAan (Water=1) -> luide issue
+    # (d) objecten: GrenstAan 'Water' (code 1) is 19-7 LIVE bevestigd (volledige dropdown 0-9) ->
+    # code 1 wordt geschreven en er is GEEN 'niet probe-bevestigd'-flag meer.
     from core.dossier import SchilDeel as _S60
     from vabi import objecten_generate as _OG60
     _d4 = _D60()
     _d4.schil = [_S60(id="vloer-water", type="vloer", oppervlakte_m2=40.0,
                       isolatie_aanwezig="Onbekend", begrenzing="Water")]
     _root4, _m4, _iss4, _st4 = _OG60.build_tree(_d4)
-    check("enum: GrenstAan 'Water' (code 1, niet probe-bevestigd) -> luide issue",
-          any("niet probe-bevestigd" in str(i).lower() or "NIET probe-bevestigd" in str(i) for i in _iss4))
+    _ga4 = next((e.text for e in _root4.iter()
+                 if e.tag.split("}")[-1] == "GrenstAan" and (e.text or "") == "1"), None)
+    check("enum: GrenstAan 'Water' -> code 1 (EPA-bevestigd), geen 'probe-bevestigd'-flag meer",
+          _ga4 == "1" and not any("probe-bevestigd" in str(i).lower() for i in _iss4))
     # (e) parser: per-vlak helling 95 (direct dakvlak) -> _helling_ok vangt hem
     import tempfile as _t60, os as _o60, csv as _c60
     from magicplan.statistics_csv import build_dossier as _bd60

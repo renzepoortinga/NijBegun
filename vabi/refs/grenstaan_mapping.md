@@ -10,15 +10,19 @@ Dropdown-volgorde "Grens aan (vloer)" = index = code:
 | Code | Begrenzing | Bron |
 |---|---|---|
 | 0 | Buitenlucht | probe ✅ |
-| 1 | Water | dropdown-volgorde (zeldzaam; niet in 14 exports) |
+| 1 | Water | live ✅ (19-7) |
 | 2 | Grond | probe ✅ |
 | 3 | Kruipruimte | probe ✅ |
 | 4 | Aangrenzende onverwarmde ruimte (AOR) | probe ✅ |
 | 5 | Aangrenzende onverwarmde serre (AOS) | probe ✅ |
 | 6 | Aangrenzend sterk geventileerde ruimte (ASGR) | probe ✅ |
-| 7 | Aangrenzende onverwarmde kelder | dropdown-volgorde |
-| 8 | Aangrenzende verwarmde ruimte (AVR) | dropdown-volgorde |
-| 9 | Ander gebouw | dropdown-volgorde |
+| 7 | Aangrenzende onverwarmde kelder | live ✅ (19-7) |
+| 8 | Aangrenzende verwarmde ruimte (AVR) | live ✅ (19-7) |
+| 9 | Ander gebouw | live ✅ (19-7) |
+
+**19-7 STEEKPROEF:** de VOLLEDIGE dropdown "Grens aan (gevel/dak)" is live afgelezen in EPA 12.0.1 en
+matcht deze volgorde exact → 1/7/8/9 zijn nu óók bevestigd. De `_GRENST_ONBEVESTIGD`-flag in
+objecten_generate.py is daarom leeggemaakt (geen "niet probe-bevestigd"-flag meer).
 
 **Basisopname-regel** (officieel NTA8800-opnameformulier p.4 + ISSO §6.3.4): AOR/AOS/ASGR tellen als
 **Buitenlucht (0)**. In de detailopname krijgen ze hun eigen code 4/5/6. AVR (8) is adiabatisch en wordt
@@ -36,8 +40,8 @@ Wiring: `vabi/objecten_generate.py` (`GRENST_AAN_CODE` + `_DETAIL_CODE` + `_gren
 | Code | Daktype | Bron |
 |---|---|---|
 | 0 | Hellend dak / puntdak | probe ✅ (template=0 → "Hellend dak") |
-| 1 | Deels plat dak (gedeeltelijk plat) | dropdown-volgorde |
-| 2 | Plat dak / zonder kap | dropdown-volgorde |
+| 1 | Deels plat dak (gedeeltelijk plat) | live ✅ (19-7, volledige dropdown) |
+| 2 | Plat dak / zonder kap | live ✅ (19-7, volledige dropdown) |
 
 ## Orientatie (Geometrie hoofdvlak) — LIVE GEVERIFIEERD in EPA 12.0.1 (18-7-2026)
 Geometrie-export van het voorbeeldproject 'hoekwoning': Gevel Zuid->0, Noord->4, Oost->6 (+ Dak

@@ -34,7 +34,7 @@ LIVE GEHARVEST 23-6-2026 (dropdowns afgelezen + export `out/installatie_harvest2
 | `Afgiftesysteem` (VerwarmingAfgifte) | afgifte (VOLLEDIG, index=code, export 3=lucht bevestigd) | **0=Radiatoren/convectoren · 1=Ventilator-gedreven radiatoren/convectoren · 2=Vloerverwarming · 3=Luchtverwarming · 4=Overig of onbekend** |
 | `Regeling` (afgifte) | regeling | **0=Hoofdvertrek (kamerthermostaat) · 1=Centraal met naregeling per ruimte · 2=Individueel per ruimte · 3=Overig/onbekend** |
 | `Distributiemedium` (VerwarmingDistributie) | medium | **0=Water · 1=Geen (lokaal)** |
-| `WaterAanvoertemperatuur` | temperatuurklasse | **0=30/27 · 1=35/30 · 2=40/35 · 3=45/40 · 4=50/42 · 5=55/47 · 6=60/50 · 7=65/55 · 8=70/60 °C** (mogelijk nog hoger 90/70 — TE BEVESTIGEN) |
+| `WaterAanvoertemperatuur` | temperatuurklasse | **0=30/27 · 1=35/30 · 2=40/35 · 3=45/40 · 4=50/42 · 5=55/47 · 6=60/50 · 7=65/55 · 8=70/60 · 9=75/65 · 10=80/60 · 11=90/70 °C** (VOLLEDIG live afgelezen 19-7; 9/10/11 waren "TE BEVESTIGEN", nu bevestigd — belangrijk voor oude woningen met 90/70-radiatoren) |
 | `TypeDistributie` | pijpsysteem | **0=Tweepijpssysteem · 1=Eenpijpssysteem** |
 | Flow | conditioneel | TypeOpwekker → SubType (ketel) / TypeWarmtepomp+Bron (WP); Distributiemedium=Water → aanvoertemp+pijpsysteem |
 

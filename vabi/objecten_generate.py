@@ -119,9 +119,10 @@ _DETAIL_CODE = {
     "sterk geventileerd": "6", "sterk geventileerde ruimte": "6",
 }
 _AVR = {"avr", "aangrenzende verwarmde ruimte", "buurwoning", "aangrenzende woning"}
-# codes die NIET direct probe-bevestigd zijn (afgeleid uit de dropdown-volgorde) -> als ze echt
-# geschreven worden een LUIDE flag zodat de adviseur ze in Vabi controleert (audit 13-7).
-_GRENST_ONBEVESTIGD = {"1": "Water", "7": "Onverwarmde kelder", "8": "AVR/buurwoning", "9": "Ander gebouw"}
+# De VOLLEDIGE GrenstAan-dropdown (0-9) is LIVE afgelezen in EPA 12.0.1 (19-7, steekproef) en matcht
+# exact de probe-volgorde 0=Buitenlucht..9=Ander gebouw -> 1/7/8/9 zijn nu óók bevestigd; er is geen
+# 'onbevestigd'-flag meer nodig (leeg gelaten i.p.v. verwijderd zodat de check-plek intact blijft).
+_GRENST_ONBEVESTIGD = {}
 
 
 _KOMPAS8 = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]

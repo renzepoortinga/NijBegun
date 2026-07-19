@@ -227,20 +227,23 @@ def build_tree(dos):
         else:
             flags.append("AFGIFTESYSTEEM ONTBREEKT -> sjabloon-afgifte (LUCHTVERWARMING!) blijft staan; "
                          "zet het echte afgiftesysteem (radiatoren/vloer/...) in Vabi.")
-        # aanvoertemperatuur -> WaterAanvoertemperatuur-enum (audit 15-7 #3: werd geparsed maar STIL
-        # gedropt). Bevestigde klassen 0=30/27..8=70/60; 80/60 en 90/70 zijn NIET bevestigd -> flaggen.
+        # aanvoertemperatuur -> WaterAanvoertemperatuur-enum. LIVE GEVERIFIEERD in EPA 12.0.1 (19-7,
+        # volledige dropdown afgelezen): 0=30/27 1=35/30 2=40/35 3=45/40 4=50/42 5=55/47 6=60/50 7=65/55
+        # 8=70/60 9=75/65 10=80/60 11=90/70. Belangrijk voor oude woningen met 90/70-radiatoren (werd
+        # eerder t/m 70/60 gemapt en daarboven onnodig geflagd).
         _at_raw = (getattr(verw, "aanvoertemperatuur", "") or "").strip()
         if _at_raw:
             _at = _at_raw.replace(".", "/").replace("-", "/").replace(" ", "")
             _AANVOERTEMP = {"30/27": "0", "35/30": "1", "40/35": "2", "45/40": "3", "50/42": "4",
-                            "55/47": "5", "60/50": "6", "65/55": "7", "70/60": "8"}
+                            "55/47": "5", "60/50": "6", "65/55": "7", "70/60": "8", "75/65": "9",
+                            "80/60": "10", "90/70": "11"}
             _atc = _AANVOERTEMP.get(_at)
             _atn = _find(root, "WaterAanvoertemperatuur")
             if _atc is not None and _atn is not None:
                 _atn.text = _atc
             else:
-                flags.append("aanvoertemperatuur '%s': hogere/onbekende klasse nog niet in EPA bevestigd "
-                             "(bevestigd t/m 70/60) -> zet de temperatuurklasse zelf in Vabi." % _at_raw)
+                flags.append("aanvoertemperatuur '%s': onbekende klasse (bevestigd: 30/27 t/m 90/70) "
+                             "-> zet de temperatuurklasse zelf in Vabi." % _at_raw)
         if not getattr(verw, "merk", "") and not getattr(verw, "type", ""):
             flags.append("verwarming uit sjabloon (geen dossier-data); adviseur vult aan in Vabi")
 

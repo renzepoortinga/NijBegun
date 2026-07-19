@@ -107,6 +107,11 @@ Kop-/eind- of hoekligging". Ventilatie: Systeem 0=Individueel · Ventilatiesyste
 3=Platen/buizen · Subsysteem GLOBAAL (D5a=33; blijft bewuste adviseurskeuze/flag). Verwarming/tapwater/PV
 herbevestigd (WP-el 9/Lucht-water 1/Buitenlucht 1/Vloerverwarming 2/aanvoertemp 35-30=1/warmtepompboiler 4).
 Codes in vabi/refs/grenstaan_mapping.md + installatie_enums_EPA.md. Open: overige globale subsysteem-codes.
+STEEKPROEF BESTAANDE ENUMS (19-7, bestaande-bouw voorbeeldproject): Daktype (0/1/2), thermische massa
+(0=Licht/1=Zwaar/2=Zeer zwaar), GrenstAan (VOLLEDIGE dropdown 0-9 → 1/7/8/9 nu óók bevestigd, flag weg),
+ketel-Subtype (CR/VR/HR100/HR104/HR107) en aanvoertemp allemaal live geverifieerd — alles matcht 1-op-1.
+Twee winsten: WaterAanvoertemperatuur is nu VOLLEDIG (t/m 11=90/70; oude 90/70-radiatoren werden eerder
+onnodig geflagd) en de GrenstAan-1/7/8/9-flag verviel. 470/470 groen.
 ## Status (15-7-2026) — 456/456 groen. VABI↔MAGICPLAN-MAPPING-AUDIT + GEOMETRIE-IJKING op de ECHTE EPA.
 ESSENHAGE-IJKING (echte EPA-monitor ernaast): Ag -3%, vloer -4%, achtergevel vrijwel exact (29,4 vs 30,0),
 dak van -63% naar -9%. Gefixt: (a) SCHUIN-DAK-FOOTPRINT gebruikte de BOVENSTE verdieping = de zolder binnen
