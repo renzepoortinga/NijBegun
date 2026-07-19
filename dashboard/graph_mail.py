@@ -123,16 +123,21 @@ def _plat(html_of_tekst):
 
 
 def berichten_naar_teksten(berichten, onderwerp=""):
-    """Graph-berichten -> lijst mailteksten. Filtert op onderwerp (hoofdletterongevoelig)."""
+    """Graph-berichten -> lijst mailteksten.
+
+    Het filter kijkt in ONDERWERP ÉN INHOUD. Dat is geen luxe: het onderwerp van een portalmail luidt
+    'Contact met adviseur door accountid <uuid>' en verschilt dus per aanmelding, terwijl de term
+    AdviseurToegekend altijd in de body staat ("WijzigingsType"). Alleen op onderwerp filteren vond
+    daarom niets. Hoofdletterongevoelig; leeg filter = alles doorlaten."""
     zoek = (onderwerp or "").lower().strip()
     uit = []
     for b in berichten or []:
-        onderw = (b.get("subject") or "")
-        if zoek and zoek not in onderw.lower():
-            continue
         inhoud = _plat(((b.get("body") or {}).get("content")) or "")
-        if inhoud.strip():
-            uit.append(inhoud)
+        if not inhoud.strip():
+            continue
+        if zoek and zoek not in (b.get("subject") or "").lower() and zoek not in inhoud.lower():
+            continue
+        uit.append(inhoud)
     return uit
 
 

@@ -47,17 +47,20 @@ def instellingen(cfg):
 
 # ---------------- pure helpers (offline testbaar) ----------------
 def zoekopdracht(m, vandaag=None):
-    """IMAP-zoekopdracht: alleen mails van de laatste N dagen met de portal-term in het onderwerp.
-    -> lijst met IMAP-argumenten. Datumformaat is IMAP's eigen '01-Jan-2026'."""
+    """IMAP-zoekopdracht: mails van de laatste N dagen die de portal-term bevatten.
+
+    TEXT en niet SUBJECT: het onderwerp van een portalmail is 'Contact met adviseur door accountid
+    <uuid>' en verschilt per aanmelding; de term AdviseurToegekend staat in de BODY. TEXT doorzoekt
+    kop én inhoud. -> lijst met IMAP-argumenten; datumformaat is IMAP's eigen '01-Jan-2026'."""
     vandaag = vandaag or datetime.date.today()
     args = []
     dagen = int(m.get("dagen") or 0)
     if dagen > 0:
         sinds = vandaag - datetime.timedelta(days=dagen)
         args += ["SINCE", sinds.strftime("%d-%b-%Y")]
-    onderwerp = (m.get("onderwerp") or "").strip()
-    if onderwerp:
-        args += ["SUBJECT", onderwerp]
+    term = (m.get("onderwerp") or "").strip()
+    if term:
+        args += ["TEXT", term]
     return args or ["ALL"]
 
 

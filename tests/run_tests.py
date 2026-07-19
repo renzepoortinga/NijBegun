@@ -2688,9 +2688,9 @@ try:
     # (c) IMAP-intake — met een nep-postvak, geen netwerk nodig
     check("mailbox: zonder instellingen een nette uitleg i.p.v. een fout",
           _M72.haal_teksten({})[1].startswith("Mailbox nog niet ingesteld"))
-    check("mailbox: zoekopdracht beperkt op datum + onderwerp",
+    check("mailbox: zoekopdracht beperkt op datum + zoekterm in de hele mail",
           _M72.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"}, _d72.date(2026, 7, 19))
-          == ["SINCE", "19-Jun-2026", "SUBJECT", "AdviseurToegekend"])
+          == ["SINCE", "19-Jun-2026", "TEXT", "AdviseurToegekend"])
     check("mailbox: mapnaam met spatie wordt gequote", _M72._mapnaam("Verwijderde items") == '"Verwijderde items"')
 
     def _mailtje72(naam, pc, hn, bagid):
@@ -2818,6 +2818,33 @@ try:
         _lg73, _fo73 = _G73.haal_teksten(_cfg73, http=_stuk73(_code73))
         check("graph: %d geeft een bruikbare uitleg i.p.v. ruwe JSON" % _code73,
               _lg73 == [] and _woord73 in (_fo73 or ""))
+
+    # ECHTE portalmail (20-7-2026): het ONDERWERP bevat 'AdviseurToegekend' NIET — daar staat een
+    # account-id in, per aanmelding anders. De term staat in de BODY ("WijzigingsType"). Filteren op
+    # alleen het onderwerp vond daardoor niets. Deze test bewaakt dat.
+    _echt73 = {"subject": "Contact met adviseur door accountid 957a6ac7-b664-400d-9c42-c94e51c78380",
+               "body": {"content":
+                        '{"BagAdresId":"1895200000005699","AccountId":"957a6ac7-b664-400d-9c42-c94e51c78380",'
+                        '"Email":"jesjeentesje@gmail.com","Postcode":"9674BW","Huisnummer":28,'
+                        '"HuisnummerToevoeging":"","Voornaam":"tess","Telefoonnummer":"0625494609",'
+                        '"Achternaam":"roupp\\u00e9","Naam":"tess roupp\\u00e9",'
+                        '"WijzigingsType":"AdviseurToegekend",'
+                        '"WijzigingsReden":"Adviseur 39222 toegekend aan gebruiker."}'}}
+    _ruis73 = {"subject": "Nieuwsbrief Nij Begun juli",
+               "body": {"content": "Beste adviseur, hierbij de nieuwsbrief."}}
+    _door73 = _G73.berichten_naar_teksten([_echt73, _ruis73], "AdviseurToegekend")
+    check("graph: term in de BODY telt ook (onderwerp bevat een wisselend account-id)", len(_door73) == 1)
+    _l73 = _L73.parse_leads_bulk("\n".join(_door73))
+    check("graph: echte portalmail -> volledige lead (naam/adres/mail/telefoon/BAG-id)",
+          len(_l73) == 1 and _l73[0]["naam"] == "tess rouppé" and _l73[0]["postcode"] == "9674BW"
+          and _l73[0]["huisnummer"] == "28" and _l73[0]["email"] == "jesjeentesje@gmail.com"
+          and _l73[0]["telefoon"] == "0625494609" and _l73[0]["bag_id"] == "1895200000005699")
+    check("graph: leeg filter laat alles door", len(_G73.berichten_naar_teksten([_echt73, _ruis73], "")) == 2)
+
+    import dashboard.mailbox as _M73b
+    check("imap: zoekt in de hele mail (TEXT), niet alleen het onderwerp",
+          "TEXT" in _M73b.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"})
+          and "SUBJECT" not in _M73b.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"}))
 
     check("graph: zonder instellingen een uitleg met verwijzing naar de beheerdersinstructie",
           "microsoft-graph-mailkoppeling.md" in (_G73.haal_teksten({})[1] or ""))

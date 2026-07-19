@@ -5,8 +5,10 @@
 `info@poortinga-energieadvies.nl`** lezen, zodat die automatisch als lead in de isolatieplan-tool
 komen. Nu gebeurt dat handmatig (mails uit Outlook slepen), bij tientallen mails per batch.
 
-**Wat de toepassing doet:** één keer per klik de berichten van de laatste 30 dagen ophalen, het
-onderwerp filteren op `AdviseurToegekend` en het JSON-blok uit de body lezen.
+**Wat de toepassing doet:** één keer per klik de berichten van de laatste 30 dagen ophalen, daaruit de
+berichten pakken die de term `AdviseurToegekend` bevatten en het JSON-blok uit de body lezen. Die term
+staat in de **inhoud** (`"WijzigingsType"`); het onderwerp luidt "Contact met adviseur door accountid
+…" en verschilt per aanmelding, dus daar valt niet op te filteren.
 **Wat de toepassing niet doet:** niets markeren, verplaatsen, verwijderen of versturen. Alleen lezen.
 De code staat in `dashboard/graph_mail.py` en is in te zien.
 
@@ -110,7 +112,7 @@ JSON-blok gaan naar de leadlijst op die server.
 | 401, aanmelden geweigerd | tenant-id/client-id verkeerd, of het clientgeheim is verlopen |
 | 403, toegang geweigerd | beheerderstoestemming niet verleend, of het postvak valt buiten de Application Access Policy |
 | 404, postvak niet gevonden | adres in `"postvak"` klopt niet |
-| "geen portal-mails gevonden" | verbinding is goed, maar geen berichten met dat onderwerp in de periode |
+| "geen portal-mails gevonden" | verbinding is goed, maar geen berichten met die term in de periode |
 
 ## Alternatief als Graph niet gewenst is
 
