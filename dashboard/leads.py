@@ -111,10 +111,24 @@ def _sleutel(lead):
                                               lead.get("huisnummer", ""), lead.get("toevoeging", ""))
 
 
+# Velden die het portaal later nog kan wijzigen ("Contact gegevens gewijzigd door gebruiker"-mails).
+# Bij een dubbele lead werken we die BIJ; status, afspraak, notitie en projectkoppeling blijven van jou.
+CONTACTVELDEN = ("naam", "voornaam", "email", "telefoon")
+
+
 def add_lead(lead, leads=None):
-    """Voeg toe (dedupe). -> (leads, toegevoegd:bool)."""
+    """Voeg toe (dedupe). -> (leads, toegevoegd:bool).
+
+    Een bekende lead wordt niet opnieuw toegevoegd, maar de CONTACTGEGEVENS worden wel bijgewerkt:
+    het portaal stuurt ook wijzigingsmails, en een nieuw telefoonnummer moet je wél zien. Wat jij zelf
+    hebt ingevuld (status/afspraak/notitie/project) blijft ongemoeid."""
     leads = load_leads() if leads is None else leads
-    if any(_sleutel(x) == _sleutel(lead) for x in leads):
+    bestaand = next((x for x in leads if _sleutel(x) == _sleutel(lead)), None)
+    if bestaand is not None:
+        for k in CONTACTVELDEN:
+            nieuw = (lead.get(k) or "").strip()
+            if nieuw and nieuw != (bestaand.get(k) or "").strip():
+                bestaand[k] = nieuw
         return leads, False
     lead = dict(lead)
     lead["id"] = max([x.get("id", 0) for x in leads] or [0]) + 1

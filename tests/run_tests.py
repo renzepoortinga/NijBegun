@@ -2841,6 +2841,26 @@ try:
           and _l73[0]["telefoon"] == "0625494609" and _l73[0]["bag_id"] == "1895200000005699")
     check("graph: leeg filter laat alles door", len(_G73.berichten_naar_teksten([_echt73, _ruis73], "")) == 2)
 
+    # Het portaal stuurt ook "Contact gegevens gewijzigd"-mails voor een AL bekende bewoner.
+    # Die mogen geen dubbele lead maken, maar het nieuwe telefoonnummer moet wel doorkomen —
+    # zonder de status/afspraak/notitie van de adviseur te overschrijven.
+    _rij73 = [dict(id=1, bag_id="1895200000005699", naam="tess rouppé", email="oud@x.nl",
+                   telefoon="0611111111", status="afspraak gepland", afspraak="2026-07-25T10:00",
+                   notitie="belt liever 's avonds", project_tag="9674BW_28",
+                   postcode="9674BW", huisnummer="28", toevoeging="")]
+    _nw73 = dict(bag_id="1895200000005699", naam="tess rouppé", email="nieuw@x.nl",
+                 telefoon="0625494609", postcode="9674BW", huisnummer="28", toevoeging="")
+    _rij73, _toegevoegd73 = _L73.add_lead(_nw73, _rij73)
+    check("wijzigingsmail: geen dubbele lead", _toegevoegd73 is False and len(_rij73) == 1)
+    check("wijzigingsmail: nieuwe contactgegevens komen wél door",
+          _rij73[0]["email"] == "nieuw@x.nl" and _rij73[0]["telefoon"] == "0625494609")
+    check("wijzigingsmail: eigen werk blijft staan (status/afspraak/notitie/project)",
+          _rij73[0]["status"] == "afspraak gepland" and _rij73[0]["afspraak"] == "2026-07-25T10:00"
+          and _rij73[0]["notitie"] == "belt liever 's avonds"
+          and _rij73[0]["project_tag"] == "9674BW_28")
+    _rij73, _ = _L73.add_lead(dict(_nw73, email="", telefoon=""), _rij73)
+    check("wijzigingsmail: lege waarden wissen niets", _rij73[0]["email"] == "nieuw@x.nl")
+
     import dashboard.mailbox as _M73b
     check("imap: zoekt in de hele mail (TEXT), niet alleen het onderwerp",
           "TEXT" in _M73b.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"})
