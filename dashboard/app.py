@@ -248,7 +248,7 @@ BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
 <title>Nij Begun · isolatieplan</title>
 <link rel="stylesheet" href="{{url_for('static', filename='app.css')}}"></head><body>
 <div class=topbar><a class=brand href="{{url_for('home') if session.ingelogd else url_for('login')}}">🏠 Nij Begun<span class=brand-sub> · isolatieplan</span></a>
-<nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('guide')}}">Guide</a>
+<nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('voorschot_pagina')}}">Voorschot</a><a href="{{url_for('guide')}}">Guide</a>
 <a href="{{url_for('logout')}}">Uitloggen</a>{% endif %}</nav></div>
 <div class="wrap {{wrapclass or ''}}">
 {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class=warn>{{m}}</div>{% endfor %}{% endwith %}
@@ -681,6 +681,89 @@ def home():
                          "voldoet": na.get("voldoet"), "n": len(st.get("keuze", [])),
                          "totaal": st.get("totaal", 0)})
     return page(HOME, projects=rows, woningtypes=WONINGTYPE_OPTS)
+
+
+VOORSCHOT = """<h1>Voorschot-factuur — specificatie</h1>
+<p class=lead>Specificatie op adresniveau voor een voorschot bij de Provincie Groningen (75% van het
+adviestarief). Neem deze regels 1-op-1 over op je factuur; postcode/huisnummer moeten <b>gelijk</b> zijn
+aan het isolatieplan.</p>
+<div class=card><h2>Verplichte factuurgegevens</h2>
+<table class="table-wrap"><tr><td class=muted>Aan</td><td>{{spec.header.aan}}</td></tr>
+<tr><td class=muted>T.a.v.</td><td>{{spec.header.tav}}</td></tr>
+<tr><td class=muted>VPL-nummer</td><td><b>{{spec.header.vpl_nummer}}</b></td></tr>
+<tr><td class=muted>Documentnr. opdracht</td><td><b>{{spec.header.documentnummer_opdracht}}</b></td></tr>
+<tr><td class=muted>Kenmerk</td><td>{{spec.header.kenmerk}}</td></tr>
+<tr><td class=muted>Indienen bij</td><td>{{spec.header.email}} (XML + kopie PDF)</td></tr></table></div>
+<div class=card><div class=grp-head><h2>Specificatie ({{spec.regels|length}} plan(nen))</h2>
+<a class="btn sec" href="{{url_for('voorschot_csv')}}">⬇ CSV</a></div>
+<div class="table-wrap card-table"><table>
+<tr><th>Postcode + huisnr</th><th>Woningtype</th><th>Advies</th><th>Tarief excl. btw</th></tr>
+{% for r in spec.regels %}<tr><td data-label="Adres"><b>{{r.adres}}</b></td>
+<td data-label="Woningtype">{{r.woningtype}}</td>
+<td data-label="Advies">{{'Uitgebreid' if r.uitgebreid else 'Basis'}}</td>
+<td data-label="Tarief">&euro;{{'%.2f'|format(r.tarief_excl)}}</td></tr>{% endfor %}</table></div>
+<table style="margin-top:14px;max-width:420px">
+<tr><td>Subtotaal (excl. btw)</td><td style="text-align:right">&euro;{{'%.2f'|format(spec.subtotaal_excl)}}</td></tr>
+<tr><td><b>Voorschot 75% (excl. btw)</b></td><td style="text-align:right"><b>&euro;{{'%.2f'|format(spec.voorschot_excl)}}</b></td></tr>
+<tr><td>21% btw</td><td style="text-align:right">&euro;{{'%.2f'|format(spec.btw)}}</td></tr>
+<tr><td><b>Totaal (incl. btw)</b></td><td style="text-align:right"><b>&euro;{{'%.2f'|format(spec.totaal_incl)}}</b></td></tr></table></div>
+{% if spec.onbekend %}<div class=warn><b>Woningtype niet herkend — zelf tarief bepalen ({{spec.onbekend|length}}):</b>
+{% for o in spec.onbekend %}<div>{{o.adres}} — {{o.woningtype or '(leeg)'}}</div>{% endfor %}</div>{% endif %}
+<p class="muted small">Tarieven excl. btw uit de opdrachtbrief 2026: Vrijstaand &gt;300 m² €750/€825 · Vrijstaand
+&lt;300 m² €625/€700 · 2-onder-1-kap/hoek €500/€575 · tussen €350/€425 · meergezins €325/€400 ·
+repeterend €250/€325 (Basis/Uitgebreid). Advies volgt uit het type advies in de opname.</p>"""
+
+
+def _voorschot_plannen():
+    """Alle projecten -> plan-dicts voor de voorschot-specificatie (postcode/huisnr/woningtype/Ag/advies)."""
+    plannen = []
+    if os.path.isdir(PROJECTS_DIR):
+        for tag in sorted(os.listdir(PROJECTS_DIR)):
+            dos = _dossier(tag)
+            if not dos:
+                continue
+            idc = getattr(dos, "identificatie", None)
+            adv = (getattr(getattr(dos, "opname", None), "type_advies", "") or "").lower()
+            plannen.append({
+                "tag": tag,
+                "postcode": getattr(idc, "postcode", "") or "",
+                "huisnummer": getattr(idc, "huisnummer", "") or "",
+                "woningtype": getattr(idc, "woningtype", "") or "",
+                "ag_m2": getattr(getattr(dos, "geometrie", None), "gebruiksoppervlakte_ag_m2", 0) or 0,
+                "uitgebreid": ("uitgebreid" in adv or "detail" in adv),
+            })
+    return plannen
+
+
+@app.route("/voorschot")
+@login_required
+def voorschot_pagina():
+    from dashboard.voorschot import build_specificatie
+    return page(VOORSCHOT, spec=build_specificatie(_voorschot_plannen()))
+
+
+@app.route("/voorschot/csv")
+@login_required
+def voorschot_csv():
+    import io, csv as _csv
+    from flask import Response
+    from dashboard.voorschot import build_specificatie
+    spec = build_specificatie(_voorschot_plannen())
+    buf = io.StringIO()
+    w = _csv.writer(buf, delimiter=";")
+    w.writerow(["Postcode+huisnummer", "Woningtype", "Advies", "Tarief excl btw"])
+    for r in spec["regels"]:
+        w.writerow([r["adres"], r["woningtype"], "Uitgebreid" if r["uitgebreid"] else "Basis",
+                    "%.2f" % r["tarief_excl"]])
+    w.writerow([])
+    w.writerow(["Subtotaal excl", "", "", "%.2f" % spec["subtotaal_excl"]])
+    w.writerow(["Voorschot 75% excl", "", "", "%.2f" % spec["voorschot_excl"]])
+    w.writerow(["21% btw", "", "", "%.2f" % spec["btw"]])
+    w.writerow(["Totaal incl", "", "", "%.2f" % spec["totaal_incl"]])
+    w.writerow([])
+    w.writerow(["VPL", spec["header"]["vpl_nummer"], "Documentnr", spec["header"]["documentnummer_opdracht"]])
+    return Response("﻿" + buf.getvalue(), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=voorschot_specificatie.csv"})
 
 
 # Veldgidsen — markdown uit docs/ gerenderd in de webapp (mobiel bij de opname te gebruiken)

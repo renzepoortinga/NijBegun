@@ -353,6 +353,29 @@ _x17 = next((c for c in _cat23 if c["code"] == "V1-1-X17"), None)
 check("catalogus: V1-1-X17 alternatieve verblijfplaats = EUR 151,25 incl",
       _x17 and abs(_x17["prijs_per_eenheid_incl_btw"] - 151.25) < 0.01)
 
+print("23c. Voorschot-factuur-specificatie (opdracht Provincie Groningen)")
+from dashboard.voorschot import tarief_excl as _te, build_specificatie as _bspec
+check("tarief: Tussenwoning basis = 350 excl", _te("Tussenwoning", 90, False) == 350.0)
+check("tarief: Tussenwoning uitgebreid = 425", _te("Tussenwoning", 90, True) == 425.0)
+check("tarief: Vrijstaand >300 m2 basis = 750", _te("Vrijstaand", 320, False) == 750.0)
+check("tarief: Vrijstaand <300 m2 basis = 625", _te("Vrijstaand", 180, False) == 625.0)
+check("tarief: Twee-onder-een-kap = hoek-bucket 500", _te("Twee-onder-een-kap", 140, False) == 500.0)
+check("tarief: onbekend woningtype -> None (flag)", _te("Woonboot", 100, False) is None)
+_spec = _bspec([
+    {"postcode": "9711AB", "huisnummer": "1", "woningtype": "Tussenwoning", "ag_m2": 90, "uitgebreid": False},
+    {"postcode": "9641XY", "huisnummer": "2", "woningtype": "Vrijstaand", "ag_m2": 320, "uitgebreid": True},
+    {"postcode": "9999ZZ", "huisnummer": "9", "woningtype": "Woonboot", "ag_m2": 80, "uitgebreid": False},
+])
+check("voorschot: subtotaal excl = 1175 (2 regels, 1 onbekend geflagd)",
+      _spec["subtotaal_excl"] == 1175.0 and len(_spec["regels"]) == 2 and len(_spec["onbekend"]) == 1)
+check("voorschot: 75% voorschot excl = 881,25", _spec["voorschot_excl"] == 881.25)
+check("voorschot: 21% btw = 185,06", abs(_spec["btw"] - 185.06) < 0.01)
+check("voorschot: adresregel = postcode+huisnr", _spec["regels"][0]["adres"] == "9711AB 1")
+check("voorschot: verplichte header (VPL + documentnr + crediteuren-email)",
+      _spec["header"]["vpl_nummer"] == "VPL-015187"
+      and _spec["header"]["documentnummer_opdracht"] == "2026-102825"
+      and _spec["header"]["email"] == "crediteurenadministratie@provinciegroningen.nl")
+
 print("24. MagicPlan Statistics-CSV -> dossier (parser)")
 from magicplan.statistics_csv import build_dossier as _csvdos, _undot as _ud
 check("undot bouwjaar-klasse", _ud("1992.t.m.2013") == "1992 t/m 2013")
