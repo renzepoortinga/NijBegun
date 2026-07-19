@@ -27,6 +27,7 @@ from dashboard.measures import (laad_catalog, suggesties, bouw_maatregelen,     
                                 catalogus_boom, zoek_maatregel)
 from dashboard import leads as leads_mod                                              # noqa: E402
 from dashboard import bag as bag_mod                                                  # noqa: E402
+from dashboard import mailbox as mailbox_mod                                          # noqa: E402
 from dashboard import security as sec                                                 # noqa: E402
 from dashboard import ai as ai_mod                                                    # noqa: E402
 from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
@@ -626,12 +627,19 @@ plattegrond, extra foto's, offertes)? Upload ze hier — ze gaan mee in de expor
 <div class=svgbox>{{vent_svg|safe}}</div></div>
 <div class=card><h2>Gegenereerde bestanden</h2><ul class=files>
 {% for f in files %}<li>{{f}} <a class="btn sec" href="{{url_for('download', tag=tag, filename=f)}}">download</a></li>{% endfor %}</ul></div>
+<div class=card><h2>Projectmap voor OneDrive</h2>
+<p class=muted>Je krijgt een <b>complete projectmap</b> als zip: pak 'm uit in OneDrive en alles staat
+al gesorteerd (opname · VABI · isolatieplan · foto's), met lege mappen voor <b>correspondentie</b> en
+<b>facturen</b> die je zelf vult. Een LEESMIJ legt de indeling en de bewaartermijn uit.</p>
+<p class="muted small">Let op: een nieuwe export is een <b>verse</b> map — wat jij zelf hebt toegevoegd
+zit er niet in. Voeg nieuwe bestanden dus toe aan je bestaande map in plaats van 'm te vervangen.</p>
 <div class=btn-row><a class="btn sec" href="{{url_for('afronden', tag=tag)}}?regen=1">Opnieuw genereren</a><div class=spacer></div>
-<a class="btn lg green" href="{{url_for('export', tag=tag)}}">⬇ Exporteer de bundel (.zip)</a></div>"""
+<a class="btn lg green" href="{{url_for('export', tag=tag)}}">⬇ Projectmap downloaden (.zip)</a></div></div>"""
 
 GUIDE = """<h1>Guide — zo maak je een Nij Begun-isolatieplan</h1>
 <p class=lead>De volledige werkwijze, met de eisen van de Nij Begun-kennisbank erin verwerkt.</p>
 <div class=card><h2>Veldgidsen (open ze op je telefoon bij de opname)</h2><ul class=files>
+<li>✉ De drie bewonersmails (ontvangst · kennismaking · afspraakbevestiging) <a class="btn sec" href="{{url_for('mails')}}">openen</a></li>
 {% for slug, (titel, _b) in gidsen.items() %}<li>{{titel}} <a class="btn sec" href="{{url_for('gids', slug=slug)}}">openen</a></li>{% endfor %}
 </ul></div>
 <div class=card><h2>De flow in 6 stappen</h2>
@@ -835,6 +843,58 @@ def gids(slug):
 @login_required
 def guide():
     return page(GUIDE, stappen=STAPPEN, gidsen=GIDSEN)
+
+
+MAILS = """<h1>Bewonersmails</h1>
+<p class=lead>De drie mails die de tool voor je opstelt, met voorbeeldgegevens ingevuld. Je verstuurt ze
+altijd <b>zelf</b> vanuit je eigen mailprogramma — de tool mailt nooit namens jou.</p>
+{% for m in mails %}
+<div class=card>
+  <h2>{{loop.index}}. {{m.titel}}</h2>
+  <p class=muted>{{m.wanneer}}</p>
+  <div class=kv><dt>Onderwerp</dt><dd>{{m.onderwerp}}</dd>
+  <dt>Aan</dt><dd>{{m.aan}}</dd></div>
+  <textarea rows=16 readonly id="m{{loop.index}}" style="font-family:inherit;margin-top:12px">{{m.tekst}}</textarea>
+  <div class=btn-row><button class="btn sec" type=button
+    onclick="navigator.clipboard.writeText(document.getElementById('m{{loop.index}}').value);this.textContent='✓ Gekopieerd'">Kopieer tekst</button>
+  {% if m.route %}<a class="btn ghost" href="{{m.route}}">→ naar de leads-pagina</a>{% endif %}</div>
+</div>
+{% endfor %}
+<div class=hint>De teksten staan in <b>dashboard/leads.py</b>. Wil je er iets structureel in wijzigen
+(andere voorbereiding, andere verwachtingen), zeg het dan — dan passen we de bron aan in plaats van
+elke mail met de hand.</div>"""
+
+
+@app.route("/mails")
+@login_required
+def mails():
+    """De drie bewonersmails naast elkaar, met voorbeeldgegevens — zodat je ze kunt nalezen
+    zonder eerst een lead te moeten openen."""
+    adv = _cfg().get("adviseur", {})
+    voorbeeld = {"naam": "Jan de Boer", "straat": "Munsterheerd", "huisnummer": "106",
+                 "woonplaats": "Groningen", "postcode": "9736GL", "toevoeging": "",
+                 "email": "j.deboer@voorbeeld.nl", "afspraak": "2026-07-23T14:30"}
+    ontv_o, ontv_t = leads_mod.ontvangst_mail(adv)
+    ken_o, ken_t = leads_mod.concept_mail(voorbeeld, adv)
+    bev_o, bev_t = leads_mod.bevestiging_mail(voorbeeld, adv)
+    mails_ = [
+        {"titel": "Ontvangstbevestiging", "onderwerp": ontv_o, "tekst": ontv_t,
+         "aan": "alle nieuwe leads tegelijk, in BCC (nooit in Aan/CC — AVG)",
+         "wanneer": "Direct nadat de leads uit het portaal binnenkomen. Eén mail voor de hele batch; "
+                    "alleen de bewoners die je daadwerkelijk mailt gaan op 'mail gestuurd'.",
+         "route": url_for("leads_ontvangst")},
+        {"titel": "Kennismakingsmail", "onderwerp": ken_o, "tekst": ken_t,
+         "aan": "één bewoner (naam en adres worden ingevuld)",
+         "wanneer": "Als je de bewoner persoonlijk gaat benaderen om een afspraak te maken. Vraagt de "
+                    "bewijslast voor de isolatie-opname alvast klaar te leggen.",
+         "route": url_for("leads_pagina")},
+        {"titel": "Afspraakbevestiging", "onderwerp": bev_o, "tekst": bev_t,
+         "aan": "één bewoner, zodra er een datum staat",
+         "wanneer": "Zodra je de afspraak hebt ingepland (📅 op de leadkaart). Bevat de voorbereiding "
+                    "en het verwachtingsmanagement over wat de regeling wel en niet vergoedt.",
+         "route": url_for("leads_pagina")},
+    ]
+    return page(MAILS, mails=mails_)
 
 
 def _split_adres(straat_veld, dos):
@@ -1718,28 +1778,100 @@ def toelichting_assist(tag):
     return redirect(url_for("afronden", tag=tag))
 
 
+# ---------------- export als OneDrive-projectmap ----------------
+# De zip is bewust een COMPLETE projectmap en niet een hoop losse bestanden: pak 'm uit in OneDrive
+# en je hebt meteen de map waarin je zelf mailverkeer, facturen en aanvullende stukken kwijt kunt.
+# De nummering houdt de mappen in de juiste volgorde in Verkenner/Finder.
+ONEDRIVE_MAPPEN = [
+    ("01_Opname", "MagicPlan-export en het opnamedossier (de ruwe woninggegevens)."),
+    ("02_VABI", "Wat je in Vabi EPA-W importeert en wat je eruit exporteert (huidige + toekomstige staat)."),
+    ("03_Isolatieplan", "Het plan zelf: Word/PDF, plan-JSON, ventilatieplan, berekeningen en checklists."),
+    ("04_Fotos", "Foto's van de opname (voorkant + huisnummer verplicht voor het dossier)."),
+    ("05_Correspondentie", "LEEG — hier zet je zelf het mailverkeer met de bewoner en Nij Begun in."),
+    ("06_Facturen", "LEEG — hier zet je zelf de voorschot- en eindfactuur in."),
+    ("07_Overig", "Eigen bijlagen en overige stukken."),
+]
+
+
+def _onedrive_map(bestand, submap=""):
+    """Bepaal in welke projectmap een bestand hoort. Onbekend -> 07_Overig (nooit weglaten:
+    een bestand kwijtraken bij de export is erger dan het in de verkeerde map zetten)."""
+    if submap == "fotos":
+        return "04_Fotos"
+    if submap in ("vabi_huidig", "vabi_na"):
+        return "02_VABI/" + ("huidige_staat" if submap == "vabi_huidig" else "toekomstige_staat")
+    if submap == "bijlagen":
+        return "07_Overig"
+    n = bestand.lower()
+    if n.startswith("dossier_") or n.endswith(".csv"):
+        return "01_Opname"
+    if n.startswith("vabi_export") or n.endswith(".xml"):
+        return "02_VABI"
+    if n.startswith("foto_"):
+        return "04_Fotos"
+    if n.startswith(("isolatieplan_", "ventilatie", "fotochecklist_", "haalbaarheid_", "rapport_",
+                     "beoordeling")):
+        return "03_Isolatieplan"
+    return "07_Overig"
+
+
+def _leesmij(adres, tag):
+    r = ["PROJECTMAP — %s" % adres, "=" * (14 + len(adres)), "",
+         "Gemaakt door de Nij Begun isolatieplan-tool op %s." % datetime.date.today().strftime("%d-%m-%Y"),
+         "Projectcode: %s" % tag, "",
+         "Zet deze map in OneDrive. Je mag er zelf van alles aan toevoegen — de tool leest deze map",
+         "niet terug, dus je kunt niets stukmaken. Bij een volgende export krijg je opnieuw een",
+         "complete map; wat jij zelf hebt toegevoegd zit daar NIET in, dus voeg nieuwe bestanden toe",
+         "in plaats van de oude map te vervangen.", "", "INHOUD", "------"]
+    for naam, uitleg in ONEDRIVE_MAPPEN:
+        r += ["%-20s %s" % (naam + "/", uitleg)]
+    r += ["", "BEWAARTERMIJN", "-------------",
+          "Het projectdossier (BRL 9500-W, Bijlage 3) moet 15 jaar bewaard blijven.",
+          "AVG: deze map bevat adresgegevens — deel 'm niet zonder reden en bewaar 'm in de",
+          "zakelijke OneDrive (EU), niet op een privéschijf."]
+    return "\n".join(r) + "\n"
+
+
 @app.route("/project/<tag>/export")
 @login_required
 def export(tag):
     pdir = _pdir(tag)
     if not os.path.isdir(pdir):
         abort(404)
+    st = _load_state(tag) or {}
+    adres = st.get("adres") or tag
+    # bovenste map in de zip = het adres, leesbaar: 'Testweg 5, Stadskanaal' -> 'Testweg 5 - Stadskanaal'
+    wortel = _veilige_naam(re.sub(r"\s+", " ", adres.replace(",", " -").replace("/", "-"))) or tag
+    gevuld = set()
+
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as z:
-        for p in glob.glob(os.path.join(pdir, "*")):
-            if os.path.isfile(p) and not p.endswith("project.json"):
-                z.write(p, os.path.basename(p))
-        for p in glob.glob(os.path.join(pdir, "vabi_na", "*")):
-            z.write(p, os.path.join("vabi_na", os.path.basename(p)))
-        for p in glob.glob(os.path.join(pdir, "fotos", "*")):    # MagicPlan-foto's (fotoblad)
-            if os.path.isfile(p):
-                z.write(p, os.path.join("fotos", os.path.basename(p)))
-        for p in glob.glob(os.path.join(pdir, "bijlagen", "*")):  # eigen bijlagen (facturen/plattegrond/...)
-            if os.path.isfile(p):
-                z.write(p, os.path.join("bijlagen", os.path.basename(p)))
+        def leg_in(pad, submap=""):
+            naam = os.path.basename(pad)
+            doel = _onedrive_map(naam, submap)
+            gevuld.add(doel.split("/")[0])
+            z.write(pad, "%s/%s/%s" % (wortel, doel, naam))
+
+        for p in sorted(glob.glob(os.path.join(pdir, "*"))):
+            if os.path.isfile(p) and not p.endswith("project.json"):   # project.json = interne status
+                leg_in(p)
+        for sub in ("vabi_huidig", "vabi_na", "fotos", "bijlagen"):
+            for p in sorted(glob.glob(os.path.join(pdir, sub, "*"))):
+                if os.path.isfile(p):
+                    leg_in(p, sub)
+
+        # lege mappen overleven een zip niet: geef ze een uitleg-bestandje mee, anders mist
+        # '05_Correspondentie' straks precies daar waar jij je mail kwijt wilt
+        for naam, uitleg in ONEDRIVE_MAPPEN:
+            if naam not in gevuld:
+                z.writestr("%s/%s/_deze map is nog leeg.txt" % (wortel, naam),
+                           "%s\n\n%s\n\nDit bestandje staat er alleen zodat de map in de zip blijft "
+                           "bestaan; je mag het weggooien.\n" % (naam, uitleg))
+        z.writestr("%s/LEESMIJ.txt" % wortel, _leesmij(adres, tag))
+
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
-                    headers={"Content-Disposition": "attachment; filename=isolatieplan_%s.zip" % tag})
+                    headers={"Content-Disposition": 'attachment; filename="%s.zip"' % wortel})
 
 
 @app.route("/download/<tag>/<path:filename>")
@@ -1756,8 +1888,20 @@ def download(tag, filename):
 
 # ---------------- leads (Nij Begun-portal-toewijzingen) ----------------
 LEADS = """<h1>Leads</h1>
-<p class=lead>Toegewezen bewoners uit het Nij Begun-portal — plak de mail, volg de status, genereer de kennismakingsmail.</p>
-<div class=card><h2>Nieuwe lead toevoegen</h2>
+<p class=lead>Toegewezen bewoners uit het Nij Begun-portal — haal de mails op, volg de status, genereer de kennismakingsmail.</p>
+<div class=card><h2>📥 Mails ophalen uit je mailbox</h2>
+{% if mailbox_klaar %}
+<p class=muted>Haalt de <b>{{mailbox_onderwerp}}</b>-mails van de afgelopen <b>{{mailbox_dagen}} dagen</b> op uit
+<b>{{mailbox_map}}</b> ({{mailbox_gebruiker}}) en maakt er leads van. Dubbelen worden overgeslagen, dus je mag
+gerust vaker klikken. De tool <b>leest alleen</b> — er wordt niets verplaatst of verwijderd.</p>
+<form method=post action="{{url_for('leads_ophalen')}}">
+<div class=btn-row><button class="btn lg">📥 Nieuwe portal-mails ophalen</button></div></form>
+{% else %}
+<p class=muted>Nog niet ingesteld. Zet in <b>config.json</b> een blok <code>"mailbox"</code> met host,
+gebruiker en een <b>app-wachtwoord</b> (geen gewoon wachtwoord) — het voorbeeld staat bovenaan
+<code>dashboard/mailbox.py</code>. Daarna verschijnt hier de ophaalknop en hoef je niets meer te slepen.</p>
+{% endif %}</div>
+<div class=card><h2>Handmatig toevoegen</h2>
 <p class=muted>Plak de <b>portal-mail(s)</b> in het vak, óf <b>selecteer de mails in Outlook en sleep ze naar een map</b>
 (worden .eml-bestanden) en kies ze hieronder — mag met 60 tegelijk. Het JSON-blok wordt eruit gehaald;
 de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
@@ -1769,6 +1913,7 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <span class="muted small">Plakken en uploaden mag door elkaar — elk {...}-blok wordt een lead, dubbelen worden overgeslagen.</span>
 <span class=spacer></span>
 <a class="btn sec" href="{{url_for('leads_ontvangst')}}">✉ Ontvangstmail (alle nieuwe, BCC)</a>
+<a class="btn sec" href="{{url_for('mails')}}" title="De drie bewonersmails nalezen">✉ Alle mails</a>
 <a class="btn sec" href="{{url_for('leads_csv')}}">⬇ CSV</a></div></form></div>
 {% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2>
 <div class=lead-filters>
@@ -1894,7 +2039,59 @@ def leads_pagina():
         r["pill"] = STATUS_PILL.get(r.get("status", ""), "gray")
         r["afspraak_nl"] = leads_mod._afspraak_nl(r["afspraak"]) if r.get("afspraak") else ""
     rows.sort(key=lambda r: (r.get("status") in ("afgerond", "vervallen"), -r.get("id", 0)))
-    return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN)
+    cfg, mb = _cfg(), mailbox_mod.instellingen(_cfg())
+    return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN,
+                mailbox_klaar=mailbox_mod.is_ingesteld(cfg), mailbox_map=mb.get("map"),
+                mailbox_onderwerp=mb.get("onderwerp"), mailbox_dagen=mb.get("dagen"),
+                mailbox_gebruiker=mb.get("gebruiker", ""))
+
+
+def _leads_toevoegen(tekst):
+    """Gedeeld door plakken/uploaden en mail-ophalen: tekst -> leads + BAG-verrijking.
+    -> (aantal nieuw, aantal dubbel)."""
+    gevonden = leads_mod.parse_leads_bulk(tekst)
+    if not gevonden:
+        return 0, 0
+    nieuwe_ids = []
+
+    def toevoegen(rows):
+        n_nieuw = n_dubbel = 0
+        for lead in gevonden:
+            _, nieuw = leads_mod.add_lead(lead, rows)     # muteert rows in plaats
+            if nieuw:
+                n_nieuw += 1
+                nieuwe_ids.append(rows[-1]["id"])
+            else:
+                n_dubbel += 1
+        return n_nieuw, n_dubbel
+
+    n_nieuw, n_dubbel = leads_mod.wijzig(toevoegen)
+    if nieuwe_ids:
+        _bag_verrijk_achtergrond(nieuwe_ids)
+    return n_nieuw, n_dubbel
+
+
+@app.route("/leads/ophalen", methods=["POST"])
+@login_required
+def leads_ophalen():
+    """Haal de portal-mails rechtstreeks uit het postvak (IMAP) en maak er leads van."""
+    teksten, fout = mailbox_mod.haal_teksten(_cfg())
+    if fout:
+        flash(fout)
+        return redirect(url_for("leads_pagina"))
+    if not teksten:
+        flash("Geen portal-mails gevonden in de ingestelde periode. Staat het onderwerp-filter goed, "
+              "en kijk je in de juiste map?")
+        return redirect(url_for("leads_pagina"))
+    n_nieuw, n_dubbel = _leads_toevoegen("\n".join(teksten))
+    if not n_nieuw and not n_dubbel:
+        flash("%d mail(s) opgehaald, maar er zat geen lead-gegevensblok in. Is dit wel de "
+              "toewijzingsmail van het portaal?" % len(teksten))
+    else:
+        flash("%d mail(s) opgehaald → %d nieuwe lead(s)%s.%s" % (
+            len(teksten), n_nieuw, (" · %d al bekend" % n_dubbel) if n_dubbel else "",
+            " BAG-gegevens worden op de achtergrond opgehaald." if n_nieuw else ""))
+    return redirect(url_for("leads_pagina"))
 
 
 @app.route("/leads/add", methods=["POST"])
@@ -1914,31 +2111,15 @@ def leads_add():
     if n_msg:
         flash("%d .msg-bestand(en) overgeslagen — dat is het klassieke Outlook-formaat. Sleep de mails "
               "vanuit de NIEUWE Outlook (geeft .eml), of plak de tekst." % n_msg)
-    gevonden = leads_mod.parse_leads_bulk(tekst)
-    if not gevonden:
+    # BULK: plak gerust 60 mails in één keer. BAG-gegevens komen er in de achtergrond bij, zodat
+    # de pagina direct terugkomt; bij ~60 leads duurt die ronde een minuut (ververs dan even).
+    n_nieuw, n_dubbel = _leads_toevoegen(tekst)
+    if not n_nieuw and not n_dubbel:
         flash("Kon geen lead-gegevens vinden — plak de portal-mail(s) of sleep .eml-bestanden (met {...}-blok).")
         return redirect(url_for("leads_pagina"))
-    nieuwe_ids = []
-
-    def toevoegen(rows):
-        n_nieuw = n_dubbel = 0
-        for lead in gevonden:                # BULK: plak gerust 60 mails in één keer
-            _, nieuw = leads_mod.add_lead(lead, rows)   # muteert rows in plaats
-            if nieuw:
-                n_nieuw += 1
-                nieuwe_ids.append(rows[-1]["id"])
-            else:
-                n_dubbel += 1
-        return n_nieuw, n_dubbel
-
-    n_nieuw, n_dubbel = leads_mod.wijzig(toevoegen)
-    # BAG er meteen bij (straat/woonplaats/bouwjaar/m²) — in de achtergrond, zodat de pagina
-    # direct terugkomt. Bij ~60 leads duurt de ronde een minuut; ververs de pagina om ze te zien.
-    if nieuwe_ids:
-        _bag_verrijk_achtergrond(nieuwe_ids)
     flash("%d lead(s) toegevoegd%s.%s" % (
         n_nieuw, (" · %d dubbel overgeslagen" % n_dubbel) if n_dubbel else "",
-        " BAG-gegevens worden op de achtergrond opgehaald — ververs zo de pagina." if nieuwe_ids else ""))
+        " BAG-gegevens worden op de achtergrond opgehaald — ververs zo de pagina." if n_nieuw else ""))
     return redirect(url_for("leads_pagina"))
 
 

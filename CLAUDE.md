@@ -87,6 +87,14 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - validator/validate.py  KWACO "sluitend"-checklist
 - dashboard/app.py       lokaal single-user Flask-dashboard (login): upload monitor/dossier ->
                          sanity + isolatieplan + VABI-import-XML; per project in out/projects/
+- dashboard/mailbox.py   portal-mails RECHTSTREEKS uit het postvak (IMAP, alleen-lezen): knop
+                         "nieuwe portal-mails ophalen" op /leads -> leads.parse_leads_bulk -> dedupe +
+                         BAG. Instellen via config.json-blok "mailbox" (host/gebruiker/APP-wachtwoord/
+                         map/onderwerp/dagen); verbinding injecteerbaar -> offline testbaar
+- dashboard/make_icons.py huisstijl-iconen uit het OFFICIELE logo (OneDrive Marketing) -> static/
+                         logo.svg (woordmerk=currentColor, dark-mode-proof) + mark.svg + apple-touch-
+                         icon/icon-192/512/favicon-32. Pillow bewust NIET in requirements: PNG's zijn
+                         eenmalig gegenereerd en meegecommit
 - dashboard/voorschot.py  voorschot-factuur-specificatie (opdracht Prov. Groningen): adviestarief per
                          woningtype x Basis/Uitgebreid, 75% voorschot + 21% btw + verplichte
                          factuurgegevens; webapp-pagina /voorschot met CSV-export
@@ -104,6 +112,21 @@ Verifieer ALTIJD de container-view (die telt), niet de host:
 config.json + varianten (.bak) staan in .gitignore -> gaan NOOIT mee met een push; de VPS-config moet je
 dus apart bijwerken (bevat wachtwoordhash + TOTP: eerst `cp config.json config.json.bak`, dan JSON valideren).
 
+## Status (19-7-2026, avond) — 545/545 groen. WEBAPP-SLAG: huisstijl · leads · mails · OneDrive · IMAP.
+HUISSTIJL: login met het volledige logo, eigen favicon + apple-touch-icon + manifest.webmanifest ->
+op het iPad-beginscherm start de webapp standalone met het groene beeldmerk (make_icons.py genereert
+alles uit het bron-SVG; woordmerk op currentColor zodat dark mode klopt).
+LEADS: de tabel liep op ELK device buiten beeld (status/acties onzichtbaar) -> vervangen door kaarten
+op elke breedte (1 kolom telefoon / 2 iPad+desktop) met zoekveld + statusfilter; afgerond/vervallen
+gedempt. BAG-gegevens (straat/woonplaats/bouwjaar/m2) worden nu AUTOMATISCH opgehaald bij binnenkomst
+(achtergrondthread; knop blijft als fallback). Nieuw leads.wijzig() = lees-wijzig-schrijf onder slot.
+MAILS: /mails toont de drie bewonersmails (ontvangst/kennismaking/afspraakbevestiging) met
+voorbeeldgegevens; bron blijft dashboard/leads.py.
+EXPORT: de zip is nu een COMPLETE OneDrive-projectmap "<adres>/" met 01_Opname · 02_VABI (huidige_/
+toekomstige_staat) · 03_Isolatieplan · 04_Fotos · 05_Correspondentie · 06_Facturen · 07_Overig +
+LEESMIJ (indeling, 15-jaar bewaartermijn, AVG). Lege mappen krijgen een plaatshouder zodat ze in de
+zip overleven; onbekende bestanden gaan naar 07_Overig i.p.v. verloren. vabi_huidig/ zat er eerder
+NIET in - nu wel. OPEN (Renze): config.json-blok "mailbox" invullen met een app-wachtwoord.
 ## Status (18-7-2026) — 469/469 groen. EPA ENUM-HARVEST (live, voorbeeldproject 'hoekwoning') + 2 FLAGS WEG.
 Via EPA-exports (Geometrie/Objecten/Installatie) de laatste geometrie- en installatie-enums bevestigd.
 ORIENTATIE (Geometrie hoofdvlak) = 0=Z 1=ZW 2=W 3=NW 4=N 5=NO 6=O 7=ZO (Zuid=0/Noord=4/Oost=6 direct uit de

@@ -2244,10 +2244,11 @@ try:
     # (d) export-zip bevat de eigen bestanden
     _rz59 = _c59.get("/project/%s/export" % _tag59)
     _namen59 = _zip59.ZipFile(_io59.BytesIO(_rz59.data)).namelist()
-    check("opleveren: export-zip bevat eigen ventilatieplan + bijlagen/ + foto voorkant",
-          any("ventilatieplan_eigen" in n for n in _namen59)
-          and any(n.startswith("bijlagen/") for n in _namen59)
-          and any("foto_voorkant" in n for n in _namen59))
+    # de zip is sinds de OneDrive-indeling één projectmap met genummerde submappen
+    check("opleveren: export-zip bevat eigen ventilatieplan + bijlagen + foto voorkant",
+          any("03_Isolatieplan/ventilatieplan_eigen" in n for n in _namen59)
+          and any("07_Overig/factuur.pdf" in n for n in _namen59)
+          and any("04_Fotos/foto_voorkant" in n for n in _namen59))
     # (e) bijlage verwijderen
     _c59.get("/project/%s/bijlage/factuur.pdf/weg" % _tag59, follow_redirects=True)
     check("opleveren: bijlage verwijderen werkt", "factuur.pdf" not in (_W59._load_state(_tag59).get("bijlagen") or []))
@@ -2632,6 +2633,129 @@ try:
 except Exception as _e:
     check("huisstijl + leadkaarten + BAG-automaat: draait zonder fout", False)
     print("     " + repr(_e)[:200])
+
+print("\n72. Mailpagina + OneDrive-projectmap-export + IMAP-intake")
+try:
+    import os as _o72, io as _i72, zipfile as _z72, datetime as _d72, tempfile as _t72
+    import email.message as _em72
+    import dashboard.app as _W72, dashboard.leads as _L72, dashboard.mailbox as _M72
+    _W72.app.config.update(TESTING=True)
+    _c72 = _W72.app.test_client()
+    with _c72.session_transaction() as _s72:
+        _s72["ingelogd"] = True
+
+    # (a) mailpagina toont alle drie de bewonersmails met voorbeeldgegevens
+    _h72 = _c72.get("/mails").get_data(as_text=True)
+    check("mails: alle drie de mails staan erop",
+          all(t in _h72 for t in ("Ontvangstbevestiging", "Kennismakingsmail", "Afspraakbevestiging")))
+    check("mails: voorbeeldgegevens ingevuld (adres + afspraakdatum)",
+          "Munsterheerd 106" in _h72 and "donderdag 23 juli 2026" in _h72)
+    check("mails: vanuit de guide bereikbaar", "/mails" in _c72.get("/guide").get_data(as_text=True))
+
+    # (b) OneDrive-projectmap: indeling, lege mappen blijven bestaan, niets raakt zoek
+    check("export-indeling: dossier -> 01_Opname", _W72._onedrive_map("dossier_x.json") == "01_Opname")
+    check("export-indeling: vabi-export -> 02_VABI", _W72._onedrive_map("vabi_export_huidig_x.xml") == "02_VABI")
+    check("export-indeling: bibliotheken in eigen submap",
+          _W72._onedrive_map("huidig_Constructiebibliotheek.xml", "vabi_huidig") == "02_VABI/huidige_staat"
+          and _W72._onedrive_map("na_Objectenbibliotheek.xml", "vabi_na") == "02_VABI/toekomstige_staat")
+    check("export-indeling: plan/ventilatie/checklist -> 03_Isolatieplan",
+          all(_W72._onedrive_map(n) == "03_Isolatieplan" for n in
+              ("isolatieplan_x.docx", "ventilatieplan_x.svg", "fotochecklist_x.txt",
+               "haalbaarheid_toelichting_x.txt")))
+    check("export-indeling: foto's -> 04_Fotos",
+          _W72._onedrive_map("foto_voorkant_x.jpg") == "04_Fotos"
+          and _W72._onedrive_map("IMG_1.jpg", "fotos") == "04_Fotos")
+    check("export-indeling: onbekend bestand gaat NIET verloren maar naar 07_Overig",
+          _W72._onedrive_map("aantekeningen bewoner.rtf") == "07_Overig")
+
+    _tag72 = "9999ZZ_5"
+    if _o72.path.isdir(_W72._pdir(_tag72)):
+        _r72 = _c72.get("/project/%s/export" % _tag72)
+        _zip72 = _z72.ZipFile(_i72.BytesIO(_r72.get_data()))
+        _namen72 = _zip72.namelist()
+        _wortel72 = _namen72[0].split("/")[0]
+        check("export: zip is één projectmap met het adres als naam",
+              all(n.startswith(_wortel72 + "/") for n in _namen72) and "9999ZZ" not in _wortel72)
+        check("export: LEESMIJ met bewaartermijn en AVG-notitie",
+              any(n.endswith("LEESMIJ.txt") for n in _namen72)
+              and "15 jaar" in _zip72.read(_wortel72 + "/LEESMIJ.txt").decode("utf-8"))
+        check("export: lege correspondentie- en facturenmap blijven bestaan",
+              any("05_Correspondentie" in n for n in _namen72)
+              and any("06_Facturen" in n for n in _namen72))
+        check("export: interne projectstatus gaat NIET mee",
+              not any(n.endswith("project.json") for n in _namen72))
+
+    # (c) IMAP-intake — met een nep-postvak, geen netwerk nodig
+    check("mailbox: zonder instellingen een nette uitleg i.p.v. een fout",
+          _M72.haal_teksten({})[1].startswith("Mailbox nog niet ingesteld"))
+    check("mailbox: zoekopdracht beperkt op datum + onderwerp",
+          _M72.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"}, _d72.date(2026, 7, 19))
+          == ["SINCE", "19-Jun-2026", "SUBJECT", "AdviseurToegekend"])
+    check("mailbox: mapnaam met spatie wordt gequote", _M72._mapnaam("Verwijderde items") == '"Verwijderde items"')
+
+    def _mailtje72(naam, pc, hn, bagid):
+        m = _em72.EmailMessage()
+        m["Subject"] = "AdviseurToegekend"
+        m["From"] = "portal@smarttwin.nl"
+        m.set_content('{"BagAdresId":"%s","Email":"x@x.nl","Postcode":"%s","Huisnummer":%s,'
+                      '"Naam":"%s","WijzigingsType":"AdviseurToegekend"}' % (bagid, pc, hn, naam))
+        return m.as_bytes()
+
+    _post72 = [_mailtje72("Jan de Boer", "9736GL", "106", "0014200000001"),
+               _mailtje72("Ada Vos", "9711RS", "23", "0014200000002")]
+
+    class _NepImap72:
+        gelezen_readonly = None
+
+        def login(self, *a):
+            pass
+
+        def select(self, m, readonly=True):
+            _NepImap72.gelezen_readonly = readonly
+
+        def search(self, *a):
+            return "OK", [b"1 2"]
+
+        def fetch(self, i, spec):
+            return "OK", [(b"1 (RFC822 {n})", _post72[int(i) - 1])]
+
+        def close(self):
+            pass
+
+        def logout(self):
+            pass
+
+    _cfg72 = {"mailbox": {"host": "imap.x.nl", "gebruiker": "info@x.nl", "wachtwoord": "app-pw"}}
+    _tk72, _f72 = _M72.haal_teksten(_cfg72, verbind=lambda m: _NepImap72())
+    check("mailbox: 2 mails opgehaald, geen fout", len(_tk72) == 2 and _f72 is None)
+    check("mailbox: opent het postvak ALLEEN-LEZEN (verplaatst/verwijdert niets)",
+          _NepImap72.gelezen_readonly is True)
+    _lds72 = _L72.parse_leads_bulk("\n".join(_tk72))
+    check("mailbox -> leads: beide bewoners geparsed",
+          [l["naam"] for l in _lds72] == ["Jan de Boer", "Ada Vos"])
+
+    class _StukImap72:
+        def login(self, *a):
+            raise _M72.imaplib.IMAP4.error("AUTHENTICATIONFAILED")
+    _tk73, _f73 = _M72.haal_teksten(_cfg72, verbind=lambda m: _StukImap72().login())
+    check("mailbox: mislukte login -> nette melding, geen crash", _tk73 == [] and "mislukte" in (_f73 or ""))
+
+    # (d) leadkaart-route: ophalen zit erin en de gedeelde toevoeg-functie werkt
+    check("webapp: ophaal-route geregistreerd",
+          "/leads/ophalen" in {r.rule for r in _W72.app.url_map.iter_rules()})
+    _tmp72 = _t72.mkdtemp()
+    _bew72 = (_L72.LEADS_DIR, _L72.LEADS_FILE)
+    _L72.LEADS_DIR, _L72.LEADS_FILE = _tmp72, _o72.path.join(_tmp72, "leads.json")
+    try:
+        _L72.save_leads([])
+        _n72, _d72b = _W72._leads_toevoegen("\n".join(_tk72))
+        check("gedeelde intake: 2 nieuw, 0 dubbel", (_n72, _d72b) == (2, 0))
+        _n72b, _d72c = _W72._leads_toevoegen("\n".join(_tk72))     # nog eens: alles dubbel
+        check("gedeelde intake: tweede keer alles herkend als dubbel", (_n72b, _d72c) == (0, 2))
+    finally:
+        _L72.LEADS_DIR, _L72.LEADS_FILE = _bew72
+except Exception as _e:
+    check("mails/export/IMAP: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
