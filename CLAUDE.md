@@ -87,6 +87,11 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - validator/validate.py  KWACO "sluitend"-checklist
 - dashboard/app.py       lokaal single-user Flask-dashboard (login): upload monitor/dossier ->
                          sanity + isolatieplan + VABI-import-XML; per project in out/projects/
+- dashboard/graph_mail.py MS Graph-koppeling voor het GEDEELDE info@-postvak (M365): client-credentials
+                         (tenant/client/secret uit config-blok "graph"), leest berichten, filtert onderwerp
+                         client-side (Graph kan geen 'contains' op subject). HTTP injecteerbaar -> offline
+                         getest incl. 401/403/404-uitleg. Beheerdersinstructie: docs/microsoft-graph-
+                         mailkoppeling.md (app-registratie + Mail.Read + Application Access Policy)
 - dashboard/mailbox.py   portal-mails RECHTSTREEKS uit het postvak (IMAP, alleen-lezen): knop
                          "nieuwe portal-mails ophalen" op /leads -> leads.parse_leads_bulk -> dedupe +
                          BAG. Instellen via config.json-blok "mailbox" (host/gebruiker/APP-wachtwoord/
@@ -126,7 +131,9 @@ EXPORT: de zip is nu een COMPLETE OneDrive-projectmap "<adres>/" met 01_Opname �
 toekomstige_staat) · 03_Isolatieplan · 04_Fotos · 05_Correspondentie · 06_Facturen · 07_Overig +
 LEESMIJ (indeling, 15-jaar bewaartermijn, AVG). Lege mappen krijgen een plaatshouder zodat ze in de
 zip overleven; onbekende bestanden gaan naar 07_Overig i.p.v. verloren. vabi_huidig/ zat er eerder
-NIET in - nu wel. OPEN (Renze): config.json-blok "mailbox" invullen met een app-wachtwoord.
+NIET in - nu wel. MAILKOPPELING: info@ is een GEDEELD M365-postvak -> IMAP/app-wachtwoord valt af; route = Microsoft
+Graph (dashboard/graph_mail.py, config-blok "graph"). De webapp kiest zelf: graph > imap > handmatig.
+OPEN (Renze): beheerder docs/microsoft-graph-mailkoppeling.md laten uitvoeren -> 3 waarden in config.json.
 ## Status (18-7-2026) — 469/469 groen. EPA ENUM-HARVEST (live, voorbeeldproject 'hoekwoning') + 2 FLAGS WEG.
 Via EPA-exports (Geometrie/Objecten/Installatie) de laatste geometrie- en installatie-enums bevestigd.
 ORIENTATIE (Geometrie hoofdvlak) = 0=Z 1=ZW 2=W 3=NW 4=N 5=NO 6=O 7=ZO (Zuid=0/Noord=4/Oost=6 direct uit de

@@ -2757,5 +2757,82 @@ try:
 except Exception as _e:
     check("mails/export/IMAP: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("\n73. Microsoft Graph-mailkoppeling (gedeeld info@-postvak, Microsoft 365)")
+try:
+    import json as _j73, datetime as _dt73, os as _o73
+    import dashboard.graph_mail as _G73, dashboard.leads as _L73, dashboard.app as _W73
+
+    _cfg73 = {"graph": {"tenant_id": "t-1", "client_id": "c-1", "client_secret": "s-1",
+                        "postvak": "info@poortinga-energieadvies.nl"}}
+    check("graph: herkent een volledig ingevuld blok", _G73.is_ingesteld(_cfg73))
+    check("graph: half ingevuld telt NIET als ingesteld",
+          not _G73.is_ingesteld({"graph": {"tenant_id": "t", "client_id": "c"}}))
+
+    _url73 = _G73.bericht_url(_G73.instellingen(_cfg73), _dt73.date(2026, 7, 19))
+    check("graph: vraagt het juiste postvak op",
+          "/users/info%40poortinga-energieadvies.nl/messages" in _url73)
+    check("graph: filtert op datum (30 dagen terug)", "2026-06-19T00%3A00%3A00Z" in _url73)
+    check("graph: lege instellingen geven geen crash maar een lege URL",
+          _G73.bericht_url({}).endswith("messages?%24select=subject%2CreceivedDateTime%2Cbody&"
+                                        "%24top=200&%24orderby=receivedDateTime+desc")
+          or "/users//messages" in _G73.bericht_url({}))
+
+    _ber73 = {"value": [
+        {"subject": "AdviseurToegekend", "body": {"content":
+            'Beste adviseur,\n{"BagAdresId":"0014200000001","Postcode":"9736GL",'
+            '"Huisnummer":106,"Naam":"Jan de Boer"}'}},
+        {"subject": "AdviseurToegekend", "body": {"content":
+            '<p>{"BagAdresId":"0014200000002","Postcode":"9711RS","Huisnummer":23,"Naam":"Ada Vos"}</p>'}},
+        {"subject": "Nieuwsbrief juli", "body": {"content": "niet relevant"}}]}
+
+    _gezien73 = {}
+
+    def _nep73(m, u, h=None, d=None):
+        if "login.microsoftonline" in u:
+            _gezien73["token_methode"] = m
+            return 200, _j73.dumps({"access_token": "TOK"}).encode()
+        _gezien73["auth"] = (h or {}).get("Authorization")
+        _gezien73["prefer"] = (h or {}).get("Prefer")
+        _gezien73["methode"] = m
+        return 200, _j73.dumps(_ber73).encode()
+
+    _t73, _f73 = _G73.haal_teksten(_cfg73, http=_nep73)
+    check("graph: 2 portal-mails, nieuwsbrief eruit gefilterd", len(_t73) == 2 and _f73 is None)
+    check("graph: token via POST, berichten via GET (leest alleen)",
+          _gezien73["token_methode"] == "POST" and _gezien73["methode"] == "GET")
+    check("graph: token wordt meegestuurd", _gezien73["auth"] == "Bearer TOK")
+    check("graph: vraagt platte tekst op i.p.v. HTML", "text" in (_gezien73["prefer"] or ""))
+    check("graph: HTML-mail wordt van tags ontdaan", "<p>" not in _t73[1])
+    check("graph -> leads: beide bewoners geparsed",
+          [l["naam"] for l in _L73.parse_leads_bulk("\n".join(_t73))] == ["Jan de Boer", "Ada Vos"])
+
+    def _stuk73(code):
+        def http(m, u, h=None, d=None):
+            if "login" in u:
+                return ((401, b'{"error_description":"AADSTS7000222 secret expired"}') if code == 401
+                        else (200, _j73.dumps({"access_token": "TOK"}).encode()))
+            return code, b'{"error":{"message":"Access denied"}}'
+        return http
+
+    for _code73, _woord73 in ((401, "secret"), (403, "Access Policy"), (404, "postvak")):
+        _lg73, _fo73 = _G73.haal_teksten(_cfg73, http=_stuk73(_code73))
+        check("graph: %d geeft een bruikbare uitleg i.p.v. ruwe JSON" % _code73,
+              _lg73 == [] and _woord73 in (_fo73 or ""))
+
+    check("graph: zonder instellingen een uitleg met verwijzing naar de beheerdersinstructie",
+          "microsoft-graph-mailkoppeling.md" in (_G73.haal_teksten({})[1] or ""))
+    check("beheerdersinstructie bestaat",
+          _o73.path.isfile(_o73.path.join(_o73.path.dirname(_o73.path.dirname(
+              _o73.path.abspath(_W73.__file__))), "docs", "microsoft-graph-mailkoppeling.md")))
+
+    # keuze van de bron: Graph gaat vóór IMAP, en zonder beide -> geen knop
+    check("bron: graph wint van imap",
+          _W73._mailbron(dict(_cfg73, mailbox={"host": "h", "gebruiker": "g", "wachtwoord": "w"}))[0] == "graph")
+    check("bron: alleen imap ingesteld -> imap",
+          _W73._mailbron({"mailbox": {"host": "h", "gebruiker": "g", "wachtwoord": "w"}})[0] == "imap")
+    check("bron: niets ingesteld -> geen ophaalknop", _W73._mailbron({})[0] is None)
+except Exception as _e:
+    check("Graph-mailkoppeling: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

@@ -28,6 +28,7 @@ from dashboard.measures import (laad_catalog, suggesties, bouw_maatregelen,     
 from dashboard import leads as leads_mod                                              # noqa: E402
 from dashboard import bag as bag_mod                                                  # noqa: E402
 from dashboard import mailbox as mailbox_mod                                          # noqa: E402
+from dashboard import graph_mail as graph_mod                                         # noqa: E402
 from dashboard import security as sec                                                 # noqa: E402
 from dashboard import ai as ai_mod                                                    # noqa: E402
 from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
@@ -1892,14 +1893,16 @@ LEADS = """<h1>Leads</h1>
 <div class=card><h2>📥 Mails ophalen uit je mailbox</h2>
 {% if mailbox_klaar %}
 <p class=muted>Haalt de <b>{{mailbox_onderwerp}}</b>-mails van de afgelopen <b>{{mailbox_dagen}} dagen</b> op uit
-<b>{{mailbox_map}}</b> ({{mailbox_gebruiker}}) en maakt er leads van. Dubbelen worden overgeslagen, dus je mag
-gerust vaker klikken. De tool <b>leest alleen</b> — er wordt niets verplaatst of verwijderd.</p>
+<b>{{mailbox_gebruiker}}</b> ({{mailbox_map}}) en maakt er leads van. Dubbelen worden overgeslagen, dus je mag
+gerust vaker klikken. De tool <b>leest alleen</b> — er wordt niets gemarkeerd, verplaatst of verwijderd.</p>
 <form method=post action="{{url_for('leads_ophalen')}}">
-<div class=btn-row><button class="btn lg">📥 Nieuwe portal-mails ophalen</button></div></form>
+<div class=btn-row><button class="btn lg">📥 Nieuwe portal-mails ophalen</button>
+<span class="pill gray" title="Welke koppeling wordt gebruikt">{{'Microsoft Graph' if mailbox_bron=='graph' else 'IMAP'}}</span></div></form>
 {% else %}
-<p class=muted>Nog niet ingesteld. Zet in <b>config.json</b> een blok <code>"mailbox"</code> met host,
-gebruiker en een <b>app-wachtwoord</b> (geen gewoon wachtwoord) — het voorbeeld staat bovenaan
-<code>dashboard/mailbox.py</code>. Daarna verschijnt hier de ophaalknop en hoef je niets meer te slepen.</p>
+<p class=muted>Nog niet ingesteld. Voor het <b>gedeelde info@-postvak</b> (Microsoft 365) is dit een blok
+<code>"graph"</code> in <b>config.json</b> — je beheerder maakt daarvoor een app-registratie aan; de
+volledige instructie voor hem staat in <b>docs/microsoft-graph-mailkoppeling.md</b>. Een gewoon postvak
+kan ook via IMAP (blok <code>"mailbox"</code>). Zolang er niets staat, blijft slepen en plakken werken.</p>
 {% endif %}</div>
 <div class=card><h2>Handmatig toevoegen</h2>
 <p class=muted>Plak de <b>portal-mail(s)</b> in het vak, óf <b>selecteer de mails in Outlook en sleep ze naar een map</b>
@@ -2039,11 +2042,23 @@ def leads_pagina():
         r["pill"] = STATUS_PILL.get(r.get("status", ""), "gray")
         r["afspraak_nl"] = leads_mod._afspraak_nl(r["afspraak"]) if r.get("afspraak") else ""
     rows.sort(key=lambda r: (r.get("status") in ("afgerond", "vervallen"), -r.get("id", 0)))
-    cfg, mb = _cfg(), mailbox_mod.instellingen(_cfg())
+    cfg = _cfg()
+    bron, inst = _mailbron(cfg)
     return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN,
-                mailbox_klaar=mailbox_mod.is_ingesteld(cfg), mailbox_map=mb.get("map"),
-                mailbox_onderwerp=mb.get("onderwerp"), mailbox_dagen=mb.get("dagen"),
-                mailbox_gebruiker=mb.get("gebruiker", ""))
+                mailbox_klaar=bool(bron), mailbox_bron=bron,
+                mailbox_map=inst.get("map") or "Postvak IN",
+                mailbox_onderwerp=inst.get("onderwerp"), mailbox_dagen=inst.get("dagen"),
+                mailbox_gebruiker=inst.get("postvak") or inst.get("gebruiker", ""))
+
+
+def _mailbron(cfg):
+    """Welke mailkoppeling is ingesteld? -> ('graph'|'imap'|None, instellingen).
+    Graph gaat voor: dat is de route voor het GEDEELDE info@-postvak (Microsoft 365)."""
+    if graph_mod.is_ingesteld(cfg):
+        return "graph", graph_mod.instellingen(cfg)
+    if mailbox_mod.is_ingesteld(cfg):
+        return "imap", mailbox_mod.instellingen(cfg)
+    return None, {}
 
 
 def _leads_toevoegen(tekst):
@@ -2074,8 +2089,13 @@ def _leads_toevoegen(tekst):
 @app.route("/leads/ophalen", methods=["POST"])
 @login_required
 def leads_ophalen():
-    """Haal de portal-mails rechtstreeks uit het postvak (IMAP) en maak er leads van."""
-    teksten, fout = mailbox_mod.haal_teksten(_cfg())
+    """Haal de portal-mails rechtstreeks uit het postvak en maak er leads van."""
+    cfg = _cfg()
+    bron, _ = _mailbron(cfg)
+    if bron == "graph":
+        teksten, fout = graph_mod.haal_teksten(cfg)
+    else:
+        teksten, fout = mailbox_mod.haal_teksten(cfg)
     if fout:
         flash(fout)
         return redirect(url_for("leads_pagina"))
