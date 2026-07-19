@@ -122,8 +122,20 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
   padding-top:max(12px, env(safe-area-inset-top));
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.topbar .brand{font-weight:700;font-size:17px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.topbar .brand{font-weight:700;font-size:17px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+  display:inline-flex;align-items:center;gap:9px}
 .topbar a.brand:hover{text-decoration:none}
+.brand-mark{width:24px;height:24px;flex:none;display:block} /* huisstijl-beeldmerk (groen blijft groen in beide modi) */
+
+/* ============================================================
+   LOGIN — logo boven de kaart, verticaal gecentreerd
+   ============================================================ */
+.login{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - 220px);gap:var(--s6);padding-top:6vh}
+.login-logo{width:min(270px,72vw);height:auto;color:var(--ink)} /* woordmerk = currentColor -> ook leesbaar in dark mode */
+.login .card{width:100%;max-width:400px;margin:0}
+.login-voet{text-align:center;margin:0}
+@media (max-width:480px){ .login{padding-top:2vh;min-height:auto} }
 .topbar nav{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:4px 2px}
 .topbar nav a{
   color:var(--ink2);font-size:14px;
@@ -243,12 +255,56 @@ input:focus,select:focus,textarea:focus{
 }
 .file-drop input{margin-top:10px}
 
-/* afspraak-invoer op de leadregel: label + datumveld + opslaan-knop naast elkaar */
-.afspraak-form{margin-top:10px}
-.afspraak-form label{margin-top:0}
-.afspraak-form .row{display:flex;gap:6px;align-items:center}
-.afspraak-form .row input{flex:1 1 auto;min-width:0}
-.afspraak-form .row .btn{width:auto;flex:0 0 auto;padding:0 14px}
+/* ============================================================
+   LEADS — kaarten (op ELKE schermbreedte, niet alleen mobiel).
+   Een lead heeft zes soorten informatie (naam · adres · BAG · contact · status/afspraak · acties);
+   in een tabel valt de helft buiten beeld. Als kaart past alles altijd, ook op de telefoon.
+   ============================================================ */
+.lead-filters{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 var(--s4)}
+.lead-filters #zoek{flex:2 1 240px;min-width:0;margin:0}
+.lead-filters #statusfilter{flex:1 1 170px;min-width:0;margin:0}
+
+/* 300px = de smalste kaart waarin naam+status, adres en de knoppenrij nog netjes passen;
+   daarmee staan er op iPad-portret (768) twee naast elkaar i.p.v. één halflege brede kaart. */
+.lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.lead-card{
+  display:flex;flex-direction:column;gap:10px;
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:16px 18px;box-shadow:var(--shadow-sm);
+}
+.lead-card.is-klaar{opacity:.62}                        /* afgerond/vervallen: aanwezig, maar niet luid */
+.lead-kop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.lead-titel{min-width:0}
+.lead-titel h3{margin:0;font-size:18px;line-height:1.25;letter-spacing:-.01em}
+.lead-adres{margin:3px 0 0;color:var(--ink2);font-size:14px;line-height:1.4}
+.lead-kop .pill{flex:none;white-space:nowrap}
+
+.lead-feiten{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lead-datum{margin-left:auto}
+
+.lead-contact{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.lead-contact a{color:var(--blue-ink)}
+
+.lead-invoer{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  padding-top:10px;border-top:1px solid var(--line)}
+.lead-veld{min-width:0}
+.lead-veld label{display:block;margin:0 0 3px}
+.lead-veld select,.lead-veld input{width:100%;min-width:0;margin:0;min-height:44px}
+.lead-veld .row{display:flex;gap:6px;align-items:center}
+.lead-veld .row input{flex:1 1 auto;min-width:0}
+.lead-veld .row .btn{flex:none;width:auto;padding:0 14px}
+
+.lead-acties{display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  padding-top:10px;border-top:1px solid var(--line)}
+.lead-acties form{display:inline-flex;margin:0}
+.lead-acties .btn{width:auto;min-height:44px;padding:0 14px;font-size:14px}
+.lead-acties .spacer{flex:1;min-width:0}
+
+@media (max-width:480px){
+  .lead-grid{grid-template-columns:1fr;gap:12px}
+  .lead-invoer{grid-template-columns:1fr}
+  .lead-datum{margin-left:0;flex-basis:100%}
+}
 
 /* ============================================================
    PILLS / BADGES
@@ -426,17 +482,7 @@ details.acc .acc-body :is(h1,h2,h3){color:var(--ink)}
   /* een cel die alleen een actieknop bevat: knop links, geen volle breedte */
   .card-table td .btn{width:auto}
 
-  /* leads-specifiek: naam = kop van de kaart; datum klein erboven; acties als knoppenrij onderaan */
-  .lead-list td.nm{padding:0;font-size:19px;line-height:1.3}
-  .lead-list td.nm::before,.lead-list td.dt::before,.lead-list td.act::before{display:none}
-  .lead-list td.dt{padding:0 0 2px;font-size:12px;color:var(--sub)}
-  .lead-list td[data-label="Adres"]{padding-top:8px}
-  .lead-list td.act{
-    white-space:normal!important;display:flex;flex-wrap:wrap;gap:8px;
-    padding-top:12px;margin-top:6px;border-top:1px solid var(--line);
-  }
-  .lead-list td.act .btn{width:auto;flex:0 0 auto;min-height:44px}
-  .lead-list td.act form{display:inline-flex!important}
+  /* (de leads-tabel is vervangen door .lead-card — die is al kaart op elke breedte) */
 
   /* maatregelen op smal scherm: bucket-select vol; catalogus-omschrijving op eigen regel, daaronder
      hoeveelheid + bucket + knop compact op één regel (90+130+knop past op 375px) */

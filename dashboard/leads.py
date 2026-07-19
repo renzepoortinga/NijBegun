@@ -10,11 +10,16 @@ Deze module: mail-tekst plakken -> lead parsen -> lokaal bewaren (out/leads/lead
 lokaal, out/ is git-ignored) -> status volgen -> CONCEPT-kennismakingsmail genereren (de adviseur
 verstuurt 'm ZELF vanuit de eigen mailclient; de tool verstuurt niets) -> CSV-export (Excel).
 """
-import os, json, re, datetime
+import os, json, re, datetime, threading
 
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEADS_DIR = os.path.join(TOOL_DIR, "out", "leads")
 LEADS_FILE = os.path.join(LEADS_DIR, "leads.json")
+
+# leads.json wordt ook vanuit achtergrondwerk bijgewerkt (BAG-verrijking, mail-ophalen) terwijl de
+# adviseur in de webapp klikt. Zonder slot kan een trage lees-wijzig-schrijf een verse statuswijziging
+# overschrijven; wijzig() maakt van dat drietal één ondeelbare stap.
+LOCK = threading.RLock()
 
 STATUSSEN = ["nieuw", "mail gestuurd", "gebeld", "afspraak gepland",
              "opname gedaan", "plan ingediend", "afgerond", "vervallen"]
@@ -35,6 +40,16 @@ def save_leads(leads):
     os.makedirs(LEADS_DIR, exist_ok=True)
     with open(LEADS_FILE, "w", encoding="utf-8") as fh:
         json.dump(leads, fh, ensure_ascii=False, indent=1)
+
+
+def wijzig(fn):
+    """Lees -> wijzig -> schrijf als één ondeelbare stap. fn(leads) mag de lijst aanpassen; de
+    returnwaarde van fn wordt doorgegeven. Gebruik dit vanuit achtergrondwerk (BAG/mail-ophalen)."""
+    with LOCK:
+        leads = load_leads()
+        uit = fn(leads)
+        save_leads(leads)
+        return uit
 
 
 def set_project_tag(lid, tag, leads=None):

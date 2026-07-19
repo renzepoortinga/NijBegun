@@ -13,7 +13,7 @@ Draaien:
 Gouden regel: de tool rekent NTA 8800 nooit zelf — Vabi EPA-W bevestigt de Standaard. De webapp blijft
 lokaal (AVG) en is de handmatige adviseur-route.
 """
-import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math
+import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, TOOL_DIR)
 from flask import (Flask, request, session, redirect, url_for, send_from_directory,  # noqa: E402
@@ -246,8 +246,19 @@ def _beoordeling(tag, st, dossier):
 BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nij Begun · isolatieplan</title>
-<link rel="stylesheet" href="{{url_for('static', filename='app.css')}}"></head><body>
-<div class=topbar><a class=brand href="{{url_for('home') if session.ingelogd else url_for('login')}}">🏠 Nij Begun<span class=brand-sub> · isolatieplan</span></a>
+<link rel="stylesheet" href="{{url_for('static', filename='app.css')}}">
+<link rel="icon" type="image/svg+xml" href="{{url_for('static', filename='mark.svg')}}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{url_for('static', filename='favicon-32.png')}}">
+<link rel="apple-touch-icon" href="{{url_for('static', filename='apple-touch-icon.png')}}">
+<link rel="manifest" href="{{url_for('manifest')}}">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nij Begun">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head><body>
+<div class=topbar><a class=brand href="{{url_for('home') if session.ingelogd else url_for('login')}}"><img class=brand-mark src="{{url_for('static', filename='mark.svg')}}" alt="" width=24 height=24>Nij Begun<span class=brand-sub> · isolatieplan</span></a>
 <nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('voorschot_pagina')}}">Voorschot</a><a href="{{url_for('guide')}}">Guide</a>
 <a href="{{url_for('logout')}}">Uitloggen</a>{% endif %}</nav></div>
 <div class="wrap {{wrapclass or ''}}">
@@ -293,7 +304,9 @@ def page(body_tmpl, wrapclass="", **ctx):
     return render_template_string(BASE, body=body, wrapclass=wrapclass)
 
 
-LOGIN = """<div class=card style="max-width:400px;margin:10vh auto">
+LOGIN = """<div class=login>
+<img class=login-logo src="{{url_for('static', filename='logo.svg')}}" alt="Poortinga Energieadvies" width=270 height=63>
+<div class=card>
 <h1>Inloggen</h1><p class=lead>Je persoonlijke isolatieplan-werkplek.</p>
 <form method=post>
 {% if vraag_email %}<label>E-mailadres</label>
@@ -301,7 +314,8 @@ LOGIN = """<div class=card style="max-width:400px;margin:10vh auto">
 <label>Wachtwoord</label>
 <input type=password name=wachtwoord autocomplete=current-password {{'' if vraag_email else 'autofocus'}}>
 {% if mfa %}<label>Code uit je authenticator-app (MFA)</label><input name=code inputmode=numeric autocomplete=one-time-code placeholder="123 456">{% endif %}
-<div class=btn-row><button class="btn lg">Inloggen</button></div></form></div>"""
+<div class=btn-row><button class="btn lg">Inloggen</button></div></form></div>
+<p class="login-voet muted small">Nij Begun · isolatieplan — werkomgeving van Poortinga Energieadvies</p></div>"""
 
 HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ingediend Nij Begun-isolatieplan — stap voor stap.</p>
 <div class=card><h2>Nieuw project</h2>
@@ -643,6 +657,24 @@ Inhoud: doeltreffend (haalt de Standaard) · juiste set (uit de opname) · uitvo
 
 
 # ---------------- routes ----------------
+@app.route("/manifest.webmanifest")
+def manifest():
+    """PWA-manifest: op het iPad-beginscherm start de app dan zonder browserbalk (standalone),
+    met het huisstijl-icoon. Geen login vereist — het bevat geen gegevens."""
+    return app.response_class(json.dumps({
+        "name": "Nij Begun · isolatieplan", "short_name": "Nij Begun",
+        "description": "Werkomgeving voor Nij Begun-isolatieplannen (Poortinga Energieadvies)",
+        "start_url": "/", "scope": "/", "display": "standalone",
+        "background_color": "#0b3c49", "theme_color": "#0b3c49", "lang": "nl",
+        "icons": [
+            {"src": url_for("static", filename="icon-192.png"), "sizes": "192x192", "type": "image/png"},
+            {"src": url_for("static", filename="icon-512.png"), "sizes": "512x512", "type": "image/png"},
+            {"src": url_for("static", filename="icon-512.png"), "sizes": "512x512",
+             "type": "image/png", "purpose": "maskable"},
+        ],
+    }, ensure_ascii=False), mimetype="application/manifest+json")
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     dash = _dash_cfg()
@@ -1738,29 +1770,88 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <span class=spacer></span>
 <a class="btn sec" href="{{url_for('leads_ontvangst')}}">✉ Ontvangstmail (alle nieuwe, BCC)</a>
 <a class="btn sec" href="{{url_for('leads_csv')}}">⬇ CSV</a></div></form></div>
-{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2><div class="table-wrap card-table lead-list"><table>
-<tr><th>Ontvangen</th><th>Naam</th><th>Adres</th><th>Contact</th><th>Status</th><th>Acties</th></tr>
-{% for l in leads %}<tr>
-<td class="small dt" data-label="Ontvangen">{{l.ontvangen}}</td>
-<td class=nm data-label="Naam"><b>{{l.naam}}</b></td>
-<td data-label="Adres">{{l.adres}}{% if l.bouwjaar %}<br><span class="pill blue">{{l.bouwjaar}}</span> <span class="pill gray">{{l.oppervlakte_m2}} m²</span>{% endif %}</td>
-<td class=small data-label="Contact">{% if l.telefoon %}<a href="tel:{{l.telefoon}}">{{l.telefoon}}</a><br>{% endif %}{% if l.email %}<a href="mailto:{{l.email}}">{{l.email}}</a>{% endif %}</td>
-<td data-label="Status"><form method=post action="{{url_for('leads_status', lid=l.id)}}">
-<select name=status onchange="this.form.submit()">
-{% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
-</select></form>
-<form method=post action="{{url_for('leads_afspraak', lid=l.id)}}" class=afspraak-form>
-<label class="muted small">Afspraak</label>
-<div class=row><input type=datetime-local name=wanneer value="{{l.afspraak or ''}}">
-<button class="btn sec" title="Afspraak opslaan (+ project aanmaken)">📅</button></div></form></td>
-<td class=act data-label="Acties" style="white-space:nowrap">{% if not l.bouwjaar %}<form method=post style="display:inline" action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat + bouwjaar + m² uit de BAG halen">🏛 BAG</button></form> {% endif %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ mail</a>
-{% if l.afspraak %} <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging" title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ bevestiging</a>{% endif %}
-{% if l.project_tag %} <a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
-{% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %} <form method=post style="display:inline" action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
-<form method=post style="display:inline" action="{{url_for('leads_weg', lid=l.id)}}" onsubmit="return confirm('Deze lead DEFINITIEF verwijderen (naam, adres, e-mail, telefoon)? Dit kan niet ongedaan worden gemaakt. Gebruik status \'vervallen\' als je 'm wilt bewaren.')"><button class="btn sec" title="Lead definitief verwijderen — bv. aanvraag geannuleerd (AVG)">🗑</button></form>
-</td></tr>{% endfor %}</table></div>
+{% if leads %}<div class=card><h2>{{leads|length}} lead(s)</h2>
+<div class=lead-filters>
+<input id=zoek type=search placeholder="Zoek op naam, adres, e-mail of telefoon…" aria-label="Leads zoeken">
+<select id=statusfilter aria-label="Filter op status"><option value="">Alle statussen</option>
+{% for s in statussen %}<option value="{{s}}">{{s}}</option>{% endfor %}</select></div>
+<p class="muted small" id=filtermelding hidden></p>
+
+<div class=lead-grid>
+{% for l in leads %}
+<article class="lead-card{{' is-klaar' if l.status in ('afgerond','vervallen') else ''}}"
+         data-status="{{l.status}}" data-zoek="{{(l.naam ~ ' ' ~ l.adres ~ ' ' ~ (l.email or '') ~ ' ' ~ (l.telefoon or ''))|lower}}">
+  <header class=lead-kop>
+    <div class=lead-titel><h3>{{l.naam}}</h3><p class=lead-adres>{{l.adres}}</p></div>
+    <span class="pill {{l.pill}}">{{l.status}}</span>
+  </header>
+
+  <div class=lead-feiten>
+    {% if l.bouwjaar %}<span class="pill blue" title="Bouwjaar volgens de BAG">{{l.bouwjaar}}</span>
+      <span class="pill gray" title="Gebruiksoppervlakte volgens de BAG">{{l.oppervlakte_m2}} m²</span>
+    {% else %}<span class="pill gray" title="Nog geen BAG-gegevens — klik op 🏛 om het opnieuw te proberen">BAG onbekend</span>{% endif %}
+    <span class="lead-datum muted small" title="Datum binnengekomen">binnen {{l.ontvangen}}</span>
+  </div>
+
+  <div class=lead-contact>
+    {% if l.telefoon %}<a href="tel:{{l.telefoon}}">📞 {{l.telefoon}}</a>{% endif %}
+    {% if l.email %}<a href="mailto:{{l.email}}">✉ {{l.email}}</a>{% endif %}
+    {% if not l.telefoon and not l.email %}<span class="muted small">Geen contactgegevens in de portal-mail</span>{% endif %}
+  </div>
+
+  <div class=lead-invoer>
+    <form method=post action="{{url_for('leads_status', lid=l.id)}}" class=lead-veld>
+      <label class="muted small">Status</label>
+      <select name=status onchange="this.form.submit()">
+      {% for s in statussen %}<option value="{{s}}" {{'selected' if s==l.status else ''}}>{{s}}</option>{% endfor %}
+      </select></form>
+    <form method=post action="{{url_for('leads_afspraak', lid=l.id)}}" class=lead-veld>
+      <label class="muted small">Afspraak{% if l.afspraak_nl %} — {{l.afspraak_nl}}{% endif %}</label>
+      <div class=row><input type=datetime-local name=wanneer value="{{l.afspraak or ''}}">
+      <button class="btn sec" title="Afspraak opslaan (maakt ook het project aan)">📅</button></div></form>
+  </div>
+
+  <div class=lead-acties>
+    <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ Kennismaking</a>
+    {% if l.afspraak %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging"
+       title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ Bevestiging</a>{% endif %}
+    {% if l.project_tag %}<a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
+    {% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %}
+      <form method=post action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
+    <span class=spacer></span>
+    {% if not l.bouwjaar %}<form method=post action="{{url_for('leads_bag', lid=l.id)}}"><button class="btn sec" title="Straat, bouwjaar en m² alsnog uit de BAG halen">🏛</button></form>{% endif %}
+    <form method=post action="{{url_for('leads_weg', lid=l.id)}}" onsubmit="return confirm('Deze lead DEFINITIEF verwijderen (naam, adres, e-mail, telefoon)? Dit kan niet ongedaan worden gemaakt. Gebruik status \'vervallen\' als je 'm wilt bewaren.')"><button class="btn sec" title="Lead definitief verwijderen — bv. aanvraag geannuleerd (AVG)">🗑</button></form>
+  </div>
+</article>
+{% endfor %}
+</div>
 <p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
+<script>
+/* Zoeken + statusfilter: puur in de browser, geen herladen. 52 leads blijven zo werkbaar. */
+(function(){
+  var zoek=document.getElementById('zoek'), filt=document.getElementById('statusfilter'),
+      melding=document.getElementById('filtermelding'), kaarten=[].slice.call(document.querySelectorAll('.lead-card'));
+  function pas(){
+    var q=(zoek.value||'').toLowerCase().trim(), s=filt.value, n=0;
+    kaarten.forEach(function(k){
+      var toon=(!q||k.dataset.zoek.indexOf(q)>=0)&&(!s||k.dataset.status===s);
+      k.hidden=!toon; if(toon)n++;
+    });
+    var actief=q||s;
+    melding.hidden=!actief;
+    melding.textContent=actief?(n+' van '+kaarten.length+' lead(s) getoond'):'';
+  }
+  zoek.addEventListener('input',pas); filt.addEventListener('change',pas);
+})();
+</script>
 {% else %}<div class=hint>Nog geen leads. Plak je eerste portal-mail hierboven.</div>{% endif %}"""
+
+# statuskleur op de leadkaart — in één oogopslag zien waar een lead staat
+STATUS_PILL = {
+    "nieuw": "blue", "mail gestuurd": "gray", "gebeld": "gray",
+    "afspraak gepland": "amber", "opname gedaan": "amber",
+    "plan ingediend": "blue", "afgerond": "green", "vervallen": "gray",
+}
 
 LEADS_ONTVANGST = """<h1>Ontvangstbevestiging — bulk</h1>
 <p class=lead>{{n}} lead(s) met status <b>nieuw</b>. Maak in je mailprogramma één mail: plak de adressen in het
@@ -1800,6 +1891,8 @@ def leads_pagina():
     rows = leads_mod.load_leads()
     for r in rows:
         r["adres"] = leads_mod.adres(r)
+        r["pill"] = STATUS_PILL.get(r.get("status", ""), "gray")
+        r["afspraak_nl"] = leads_mod._afspraak_nl(r["afspraak"]) if r.get("afspraak") else ""
     rows.sort(key=lambda r: (r.get("status") in ("afgerond", "vervallen"), -r.get("id", 0)))
     return page(LEADS, leads=rows, statussen=leads_mod.STATUSSEN)
 
@@ -1825,14 +1918,27 @@ def leads_add():
     if not gevonden:
         flash("Kon geen lead-gegevens vinden — plak de portal-mail(s) of sleep .eml-bestanden (met {...}-blok).")
         return redirect(url_for("leads_pagina"))
-    rows = leads_mod.load_leads()
-    n_nieuw = n_dubbel = 0
-    for lead in gevonden:                    # BULK: plak gerust 60 mails in één keer
-        rows, nieuw = leads_mod.add_lead(lead, rows)
-        n_nieuw += 1 if nieuw else 0
-        n_dubbel += 0 if nieuw else 1
-    leads_mod.save_leads(rows)
-    flash("%d lead(s) toegevoegd%s." % (n_nieuw, (" · %d dubbel overgeslagen" % n_dubbel) if n_dubbel else ""))
+    nieuwe_ids = []
+
+    def toevoegen(rows):
+        n_nieuw = n_dubbel = 0
+        for lead in gevonden:                # BULK: plak gerust 60 mails in één keer
+            _, nieuw = leads_mod.add_lead(lead, rows)   # muteert rows in plaats
+            if nieuw:
+                n_nieuw += 1
+                nieuwe_ids.append(rows[-1]["id"])
+            else:
+                n_dubbel += 1
+        return n_nieuw, n_dubbel
+
+    n_nieuw, n_dubbel = leads_mod.wijzig(toevoegen)
+    # BAG er meteen bij (straat/woonplaats/bouwjaar/m²) — in de achtergrond, zodat de pagina
+    # direct terugkomt. Bij ~60 leads duurt de ronde een minuut; ververs de pagina om ze te zien.
+    if nieuwe_ids:
+        _bag_verrijk_achtergrond(nieuwe_ids)
+    flash("%d lead(s) toegevoegd%s.%s" % (
+        n_nieuw, (" · %d dubbel overgeslagen" % n_dubbel) if n_dubbel else "",
+        " BAG-gegevens worden op de achtergrond opgehaald — ververs zo de pagina." if nieuwe_ids else ""))
     return redirect(url_for("leads_pagina"))
 
 
@@ -1854,10 +1960,45 @@ def leads_status(lid):
     return redirect(url_for("leads_pagina"))
 
 
+BAG_VELDEN = ("straat", "woonplaats", "bouwjaar", "oppervlakte_m2", "gebruiksdoel", "verblijfsobject_id")
+
+
+def _bag_toepassen(lead, info):
+    """Alleen gevulde BAG-velden overnemen — nooit iets overschrijven met leeg."""
+    for k in BAG_VELDEN:
+        if info.get(k) not in (None, ""):
+            lead[k] = info[k]
+
+
+def _bag_verrijk_achtergrond(ids):
+    """Haal voor deze leads de BAG-gegevens op ZONDER de gebruiker te laten wachten.
+    Elke lead wordt apart weggeschreven: één traag of onvindbaar adres houdt de rest niet op.
+    Het netwerkverkeer gebeurt buiten het slot; alleen het wegschrijven zit erin."""
+    def werk():
+        for lid in ids:
+            try:
+                rows = leads_mod.load_leads()
+                r = next((x for x in rows if x.get("id") == lid), None)
+                if not r or r.get("bouwjaar"):        # al verrijkt (of intussen verwijderd)
+                    continue
+                info, fout = bag_mod.bag_info(r.get("postcode", ""), r.get("huisnummer", ""),
+                                              r.get("toevoeging", ""))
+                if fout or not info:
+                    continue                          # stil overslaan: de 🏛-knop blijft als fallback
+                def zet(leads, _lid=lid, _info=info):
+                    doel = next((x for x in leads if x.get("id") == _lid), None)
+                    if doel:
+                        _bag_toepassen(doel, _info)
+                leads_mod.wijzig(zet)
+            except Exception:
+                continue                              # verrijking mag NOOIT een lead kwijtmaken
+    threading.Thread(target=werk, daemon=True, name="bag-verrijking").start()
+
+
 @app.route("/leads/<int:lid>/bag", methods=["POST"])
 @login_required
 def leads_bag(lid):
-    """Verrijk de lead met openbare BAG-gegevens (straat/woonplaats/bouwjaar/m²) — internet nodig."""
+    """Handmatig alsnog verrijken — fallback voor adressen die de automatische ronde niet vond."""
     rows = leads_mod.load_leads()
     r = next((x for x in rows if x.get("id") == lid), None)
     if not r:
@@ -1866,10 +2007,8 @@ def leads_bag(lid):
     if fout:
         flash(fout)
     else:
-        for k in ("straat", "woonplaats", "bouwjaar", "oppervlakte_m2", "gebruiksdoel", "verblijfsobject_id"):
-            if info.get(k) not in (None, ""):
-                r[k] = info[k]
-        leads_mod.save_leads(rows)
+        leads_mod.wijzig(lambda leads: _bag_toepassen(
+            next((x for x in leads if x.get("id") == lid), {}), info))
     return redirect(url_for("leads_pagina"))
 
 

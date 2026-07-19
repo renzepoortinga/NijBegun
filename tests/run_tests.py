@@ -2567,5 +2567,71 @@ try:
 except Exception as _e:
     check("login met e-mailadres: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("\n71. Huisstijl (logo/favicon/PWA) + leads als kaarten + automatische BAG-verrijking")
+try:
+    import os as _o71, tempfile as _t71, json as _j71
+    import dashboard.app as _W71, dashboard.leads as _L71
+    _W71.app.config.update(TESTING=True)
+    _c71 = _W71.app.test_client()
+
+    # (a) huisstijl-bestanden bestaan en zitten in de <head> (iPad-beginscherm heeft PNG nodig, geen SVG)
+    _st71 = _o71.path.join(_o71.path.dirname(_o71.path.dirname(_o71.path.abspath(_W71.__file__))),
+                           "dashboard", "static")
+    for _f71 in ("logo.svg", "mark.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png"):
+        check("huisstijl: %s aanwezig" % _f71, _o71.path.isfile(_o71.path.join(_st71, _f71)))
+    _hl71 = _c71.get("/login").get_data(as_text=True)
+    check("login: volledig logo staat op de pagina", "logo.svg" in _hl71 and "class=login" in _hl71)
+    check("head: favicon + apple-touch-icon + manifest", all(
+        _s in _hl71 for _s in ("mark.svg", "apple-touch-icon", "manifest")))
+    _mf71 = _c71.get("/manifest.webmanifest")
+    check("manifest: geldige JSON, standalone, 512px-icoon",
+          _mf71.status_code == 200 and _j71.loads(_mf71.get_data(as_text=True))["display"] == "standalone"
+          and any(i["sizes"] == "512x512" for i in _j71.loads(_mf71.get_data(as_text=True))["icons"]))
+
+    # (b) leads-pagina = kaarten (geen tabel meer) — geïsoleerd van de echte leads.json (AVG)
+    _tmp71 = _t71.mkdtemp()
+    _bew71 = (_L71.LEADS_DIR, _L71.LEADS_FILE)
+    _L71.LEADS_DIR, _L71.LEADS_FILE = _tmp71, _o71.path.join(_tmp71, "leads.json")
+    try:
+        _L71.save_leads([
+            dict(id=1, naam="J.T. Klok", postcode="9541AB", huisnummer="21", toevoeging="",
+                 telefoon="0631623134", email="k@x.nl", straat="Harpelerweg", woonplaats="Vlagtwedde",
+                 bouwjaar=1992, oppervlakte_m2=232, status="nieuw", ontvangen="2026-07-17",
+                 notitie="", afspraak=""),
+            dict(id=2, naam="A. Kroeze", postcode="9561XY", huisnummer="52", toevoeging="",
+                 telefoon="", email="", status="afgerond", ontvangen="2026-07-17", notitie="",
+                 afspraak="2026-07-23T14:30"),
+        ])
+        with _c71.session_transaction() as _s71:
+            _s71["ingelogd"] = True
+        _h71 = _c71.get("/leads").get_data(as_text=True)
+        check("leads: elke lead is een kaart", _h71.count('class="lead-card') == 2)
+        check("leads: oude afgekapte tabel is weg", "lead-list" not in _h71 and "<th>Adres</th>" not in _h71)
+        check("leads: adres + BAG-pills op de kaart",
+              "Harpelerweg 21 in Vlagtwedde" in _h71 and "1992" in _h71 and "232 m" in _h71)
+        check("leads: statuskleur per status", 'class="pill blue">nieuw' in _h71
+              and 'class="pill green">afgerond' in _h71)
+        check("leads: afgeronde lead gedempt", "is-klaar" in _h71)
+        check("leads: afspraak leesbaar in het Nederlands", "donderdag 23 juli 2026 om 14:30" in _h71)
+        check("leads: zoek + statusfilter aanwezig", 'id=zoek' in _h71 and 'id=statusfilter' in _h71)
+        check("leads: zonder BAG een duidelijke melding i.p.v. lege plek", "BAG onbekend" in _h71)
+
+        # (c) automatische BAG-verrijking: alleen gevulde velden, nooit iets leegmaken
+        _ld71 = {"straat": "Oud", "bouwjaar": 1900}
+        _W71._bag_toepassen(_ld71, {"straat": "Nieuw", "woonplaats": "", "oppervlakte_m2": 120})
+        check("BAG-verrijking: vult aan, overschrijft nooit met leeg",
+              _ld71["straat"] == "Nieuw" and _ld71["bouwjaar"] == 1900
+              and _ld71["oppervlakte_m2"] == 120 and "woonplaats" not in _ld71)
+
+        # (d) leads.wijzig(): lees-wijzig-schrijf als één stap (achtergrondwerk vs. de webapp)
+        _L71.wijzig(lambda rows: rows.append(dict(id=9, naam="Test", status="nieuw", ontvangen="x",
+                                                  postcode="", huisnummer="", notitie="", afspraak="")))
+        check("leads.wijzig: schrijft de wijziging weg", any(r["id"] == 9 for r in _L71.load_leads()))
+    finally:
+        _L71.LEADS_DIR, _L71.LEADS_FILE = _bew71
+except Exception as _e:
+    check("huisstijl + leadkaarten + BAG-automaat: draait zonder fout", False)
+    print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
