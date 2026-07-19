@@ -98,9 +98,10 @@ opnameklasse + gebouwtype expliciet, (3) BRL-projectdossier/bewijslast-laag. Roa
 ## Wat je nog in Vabi controleert/aanvult (bewust geflagd — golden rule: nooit gokken)
 1. **Begrenzing 5/6** (AOS/ASGR) in een **detailopname** — in de basisopname tellen AOR/AOS/ASGR als
    buitenlucht (0, ISSO §6.3.4); 0/2/3/4 + kelder(7) + ander gebouw(9) gaan auto.
-2. **Woningpositie/infiltratie** in VABI — woningtype stuurt de gevel-toeslag; de infiltratie-positie
-   (Gebouwtype/Ligging-enum nog niet bevestigd) bevestig je in Vabi (party-walls modelleren we door ze
-   uit de schil te laten).
+2. **Hart-op-hart gevel-toeslag** — die telt de tool sinds 19-7 **niet meer** automatisch mee; hij geeft
+   er een luide *"ZELF TOEVOEGEN IN VABI"*-melding voor (ISSO 8.2: +0,11 m per gebouwscheidende wand op
+   voor- én achtergevel). De **woningpositie** zelf is 18-7 live geverifieerd en wordt wél automatisch
+   geschreven (Gebouwtype 0 + Subtype 0-3); party-walls modelleren we door ze uit de schil te laten.
 3. **Installatie-detailcodes** (warmtepomp-bron/temperatuurklasse, koeling, biomassa, WKK, ventilatie-
    subsystemen+WTW, tapwater-warmtepompboiler) — voor het *energielabel* aanvullen; voor *Nij Begun*
    volstaat ventilatie + schil. PV + verwarming-opwekker(gasketel) + tapwater(combi) komen wél door.

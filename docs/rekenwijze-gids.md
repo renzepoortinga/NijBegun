@@ -265,7 +265,8 @@ de ruimtenaam geclassificeerd (keuken/badkamer/toilet/wasruimte/verkeer/slaapkam
 | qv;10 | "Qv10-waarde" + "Qv10 gemeten?" | Alleen geschreven als **gemeten** (blowerdoor, ISSO 7.1.5); anders genegeerd + flag → VABI rekent forfaitair op bouwjaar/renovatiejaar. |
 | Thermische massa | "Gevel/Vloer - thermische massa" | TypeBouwwijzeWanden/-Vloeren: Licht=0, Zwaar=1, Zeer zwaar=2 (live geverifieerd). Onbekende klasse → flag. |
 | Daktype (gebouwniveau) | "Type dak" | 0=Hellend, 1=Deels plat, 2=Plat (live geverifieerd); niet herkend → sjabloon-default + flag. |
-| Woningtype/Ligging | formveld | Enum-code nog **niet** bevestigd → sjabloon-default + flag; woningpositie handmatig in Vabi zetten. |
+| Woningtype/woningpositie | formveld | **Live geverifieerd (18-7)**: Gebouwtype 0=Eengezinswoning; Subtype (woningpositie) 0=Vrijstaand · 1=Kop-/eind-/hoek · 2=Tussen · 3=Twee-onder-een-kap → de tool **schrijft deze codes** (re-import foutloos bewezen). Alleen meergezins/onbekende positie → sjabloon-default + flag. |
+| Oriëntatie (geometrie) | gevelnaam + "Oriëntatie voorgevel" | **Live geverifieerd (18-7)**: 0=Z · 1=ZW · 2=W · 3=NW · 4=N · 5=NO · 6=O · 7=ZO (vloer/plat = −1). Let op: dit is een **andere** enum dan de PV-oriëntatie (0=N…7=NW). Geen flag meer. |
 | Rc-bron "Kwaliteitsverklaring" | Bouwdeelboom "… - invoer" | De tool kiest een forfaitaire constructie en **flagt**: zet Invoer=Kwaliteitsverklaring + de Rc/U-waarde zelf in VABI (golden rule: niet gokken). |
 | Extra installaties / 2e ventilatiesysteem | "Verwarming 2 - …", "Ventilatie 2 - …" | Exemplaar 1 gaat volledig door; extra's worden geflagd en handmatig in Vabi toegevoegd. Meerdere PV-systemen (PV-2…PV-5) gaan wél allemaal mee. |
 

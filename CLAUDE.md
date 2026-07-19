@@ -77,11 +77,19 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
                          ontbrekende orientatie/begrenzing, dubbele ruimtenamen) -> "nameten"-lijst
 - ventilatie/            ventilatieberekening + balans (0,7 dm3/s.m2; keuken21/bad14/toilet7)
 - foto/checklist.py      foto-checklist per maatregel (Fotowerkwijze)
-- isolatieplan/fill_template.py  vult officieel Word-template: gegevens, maatregelen A-E,
-                         HUIDIGE STAAT V1-V6, warmteverlies
+- isolatieplan/fill_template.py  vult officieel Word-template (23-04-2026): gegevens, maatregelen A-E,
+                         HUIDIGE STAAT V1-V6 (ALLE regels waar data is: deuren/panelen/kozijnmateriaal/
+                         voorzet-/vacuumglas/zoldervloer/dakraam/plat dak/kierdichting), warmteverlies.
+                         huidige_staat_gaten(dos) = welke regels de opname NIET kan onderbouwen
+- core/gedoogbeleid.py   eDNA/vleermuizen-gedoogbeleid (Groningen, 1-7-2026): provincie_uit_postcode
+                         (default Groningen, Drenthe apart) + reminder bij spouwmuurisolatie. De tool
+                         voegt de codes V1-1-X13..X17 NIET automatisch toe (besluit Renze), alleen melden
 - validator/validate.py  KWACO "sluitend"-checklist
 - dashboard/app.py       lokaal single-user Flask-dashboard (login): upload monitor/dossier ->
                          sanity + isolatieplan + VABI-import-XML; per project in out/projects/
+- dashboard/voorschot.py  voorschot-factuur-specificatie (opdracht Prov. Groningen): adviestarief per
+                         woningtype x Basis/Uitgebreid, 75% voorschot + 21% btw + verplichte
+                         factuurgegevens; webapp-pagina /voorschot met CSV-export
 - run.py                 orchestrator; config.json = per-adviseur instellingen
 - MagicPlan-opnameschema + bouwgids: ../MagicPlan_Forms_Fields_schema_v0.3.json (+ -bouwgids.md)
   in de map "Nij Begun & EPA" (twee templates: Energielabel vs Nij Begun; VABI-getrouw)

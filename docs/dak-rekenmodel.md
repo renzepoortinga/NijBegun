@@ -13,7 +13,7 @@
 A_dak = F_top  (+ hartmaat-opslag)
 ```
 - **CSV-bron:** `Ground surface without walls` van de **bovenste niet-kelder-verdieping** — dit is wat de parser al doet (`magicplan/statistics_csv.py` r296: kolom `Ground surface without walls…`; r609–610: `top_fp` = laatste niet-kelder-vloer). **NIET** `Ground surface with all walls`: ISSO meet binnenwerks; "with all walls" ≈ buitenwerks en overschat het dak met de eigen-muurdikte-rand.
-- **Hartmaat-correctie (ISSO §8.2, opslag +11 cm):** bij hoek-/tussenwoning de footprint-maat **loodrecht op elke gebouwscheidende wand** met +0,11 m verlengen: `ΔA = n_buurwanden × 0,11 × (lengte langs de buurwand)`. Vrijstaand: 0. *Gap: de parser past dit op gevels toe (`woningscheidende_wand_toeslag_m2`) maar nog niet op de dak-footprint — toevoegen.*
+- **Hartmaat-correctie (ISSO §8.2, opslag +11 cm):** bij hoek-/tussenwoning de footprint-maat **loodrecht op elke gebouwscheidende wand** met +0,11 m verlengen: `ΔA = n_buurwanden × 0,11 × (lengte langs de buurwand)`. Vrijstaand: 0. **De tool past deze correctie NERGENS automatisch toe** (besluit 19-7-2026) — niet op de gevel én niet op de dak-footprint. Hij geeft er een luide *"ZELF TOEVOEGEN IN VABI"*-melding voor; de adviseur verwerkt de opslag zelf in VABI.
 - Oriëntatie = **Horizontaal**; VABI Objecten-`Hellingshoek`-enum = **6** ("Dak plat"); begrenzing Buitenlucht (`vabi/objecten_generate.py` r153–156, r241–248).
 
 ### 2. ZADELDAK (symmetrisch, nok in het midden)

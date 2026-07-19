@@ -108,6 +108,23 @@ de run toont de 4 afgeleide oriëntaties ter controle. De oude per-wand kompasko
 Bij **Kwaliteitsverklaring** kiest de tool een forfaitaire constructie en **vlagt** het; de adviseur zet
 `Invoer=Kwaliteitsverklaring` + de Rc/U in VABI (golden rule).
 
+## ⭐ Huidige woningstaat — isolatieplan sectie 3 (V1/V3/V4/V6) — TOEGEVOEGD 19-7-2026
+Het isolatieplan-template splitst de huidige staat op naar **zijde** en kent regels die niet uit de
+geometrie volgen. Zonder deze velden blijven die template-regels **leeg**. Form **Constructies**:
+
+| Veldnaam (exact) | Sectie | Type | Opties | Vult template-regel |
+|---|---|---|---|---|
+| `Gevel - isolatie aan zijde` | GEVEL | List | Spouw (na-isolatie) · Binnenzijde (voorzetwand) · Buitenzijde (buitengevelisolatie) · Geen · Onbekend | **V1**: Spouwmuur isolatie / Gevel isolatie binnenzijde / buitenzijde |
+| `Kierdichting` | GEVEL | List | Onbekend · Slecht (veel kieren/tocht) · Redelijk · Goed (recent gekit / tochtstrips) | **V6** Kierdichting (een qv10-meting wint) |
+| `Bodemisolatie kruipruimte` | VLOER | List | Nee · Ja - folie · Ja - chips/schelpen · Ja - anders · Onbekend · n.v.t. (geen kruipruimte) | **V3** Bodemisolatie |
+| `Dak - isolatie aan zijde` | DAK | List | Binnenzijde · Buitenzijde · Onbekend | **V4**: binnen-/buitenzijde hellend én plat dak |
+
+Leeg laten mag: dan valt de gevel terug op de **spouwmuur**-regel en het hellend dak op de
+**binnenzijde**-regel. De tool meldt wat er ontbreekt via `isolatieplan.fill_template.huidige_staat_gaten()`.
+**Nog te pushen** — staan in `magicplan/forms/additions.json`; draai `magicplan/push_forms.bat`.
+
+> `Vierpansraam in dakvlak` is bewust **niet** geautomatiseerd: die vul je zelf in het plan in.
+
 ## Meerdere installaties (genummerde velden)
 | Voor | Veldnamen (exact) |
 |---|---|

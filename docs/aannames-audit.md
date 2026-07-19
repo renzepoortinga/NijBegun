@@ -9,6 +9,17 @@
 > Dubbel · de ventilatie-subsysteem-flag (stuurt de Standaard) vuurde niet altijd · lege thermische massa
 > lekte stil 'Zwaar'. Zie commits `78693ac` + `e38b2d4` en tests **sectie 67/68**.
 >
+> **UPDATE 18/19-7-2026 — twee dingen hieronder zijn ACHTERHAALD:**
+> 1. **Hart-op-hart-toeslag is ERUIT.** Bevindingen over de automatisch toegepaste hartmaat-toeslag
+>    (o.a. r65, r166, r205, r292) beschrijven de OUDE situatie. Besluit Renze 19-7: de tool telt de
+>    +0,11 m/buurwand-toeslag **niet meer** mee (verdeling over de juiste gevels te foutgevoelig) →
+>    één luide *"ZELF TOEVOEGEN IN VABI"*-melding. Zie `docs/rekenwijze-gids.md` §1.4.
+> 2. **Enum-gokken zijn opgelost door de EPA-harvest (18/19-7).** Bevindingen als "GrenstAan 1/7/8/9
+>    niet probe-bevestigd" (r754) en "Gebouwtype/Ligging bewust niet gezet" (r802) zijn ingehaald: de
+>    volledige GrenstAan-dropdown (0-9), de oriëntatie (0=Z…7=ZO), Gebouwtype/woningpositie en de
+>    aanvoertemperatuur (t/m 11=90/70) zijn live in EPA geverifieerd en worden nu geschreven.
+>    Zie `vabi/refs/grenstaan_mapping.md` + `installatie_enums_EPA.md`.
+>
 > **Waarschuwing bij dit document:** een aantal `*Status:*`-regels hieronder was **copy-paste-fout**
 > (hetzelfde "GEFIXT 13-7: per-dak klasse"-label stond op 9 ongerelateerde bevindingen). Die zijn 15-7
 > gemarkeerd als onbetrouwbaar. **De code en de testsuite zijn leidend, niet de statuslabels hier.**

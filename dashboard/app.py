@@ -769,6 +769,7 @@ def voorschot_csv():
 # Veldgidsen — markdown uit docs/ gerenderd in de webapp (mobiel bij de opname te gebruiken)
 GIDSEN = {
     "opnameformulier": ("📋 Nij Begun opnameformulier (alles per project)", "nijbegun-opnameformulier.md"),
+    "gedoogbeleid": ("🦇 Gedoogbeleid vleermuizen & eDNA (spouwisolatie, Groningen)", "gedoogbeleid-edna-gids.md"),
     "inmeten": ("📐 MagicPlan-inmeetgids (controlematen geometrie)", "magicplan-inmeetgids.md"),
     "dak": ("⛰ Dak invoeren — types, geometrie & rekenmodel", "dak-rekenmodel.md"),
     "rekenwijze": ("🧮 Rekenwijze — hoe de tool alles berekent", "rekenwijze-gids.md"),

@@ -101,10 +101,12 @@ uitgangspunt wand = 22 cm). Die breedte geldt voor de **voor- én achtergevel**,
 gevel-toeslag is **2 × n × 0,11 × gevelhoogte**:
 - **Tussenwoning:** 0,44 × gevelhoogte · **Hoekwoning:** 0,22 × gevelhoogte · **Vrijstaand:** 0.
 
-MagicPlan meet binnenwerks, dus de tool past (B) **automatisch** toe in `assemble.py`
-(`core/geometry.py: woningscheidende_wand_toeslag_m2`, constante
-`HARTMAAT_GEBOUWSCHEIDENDE_WAND_M = 0,11`). Zet `dossier.opname.gevel_tot_hartmaat_gemeten = True`
-om de toeslag uit te zetten (bij een meting die al tot hartmaat is uitgevoerd).
+**De tool past (B) BEWUST NIET automatisch toe** (besluit Renze 19-7-2026): de verdeling van de
+toeslag over de juiste gevels bleek te foutgevoelig om altijd goed te doen. In plaats daarvan geeft
+de tool één **luide melding** met de geschatte m² — *"HART-OP-HART GEVEL-TOESLAG (ISSO 8.2) — ZELF
+TOEVOEGEN IN VABI"* — in beide parser-paden (`magicplan/statistics_csv.py` + `magicplan/assemble.py`).
+De adviseur zet de toeslag zelf op de voor- én achtergevel in VABI. `core/geometry.py:
+woningscheidende_wand_toeslag_m2` bestaat nog, maar levert alleen de geschatte m² vóór die melding.
 > Verticaal geldt analoog (ISSO §8.2): scheidingsvloer +0,10 m per laag (tussenlaag +0,20 = 2×0,10;
 > uitgangspunt vloer = 20 cm) — relevant bij meerdere bouwlagen/rekenzones.
 > NB: de gevel-basis is nu nog `omtrek × hoogte` (party-walls nog niet uitgefilterd) → adviseur

@@ -147,6 +147,21 @@ element** en vul de bijbehorende **Field** in — alleen het afwijkende veld:
 > **Kwaliteitsverklaring?** Kies bij Rc-bron "Kwaliteitsverklaring". De tool kiest dan een forfaitaire constructie
 > én **vlagt het**, zodat jij in VABI `Invoer = Kwaliteitsverklaring` + de Rc/U-waarde invult. (De tool gokt nooit een Rc/U.)
 
+### ⭐ Vier velden voor de HUIDIGE STAAT in het isolatieplan (sectie 3) — vergeet ze niet
+Deze bepalen op welke regel van het plan de staat terechtkomt. Laat je ze leeg, dan blijven die
+regels **leeg** in het plan (form **Constructies**):
+
+| Veld | Waarom |
+|---|---|
+| `Gevel - isolatie aan zijde` | Spouw / binnenzijde (voorzetwand) / buitenzijde → **V1** |
+| `Dak - isolatie aan zijde` | Binnen- of buitenzijde, hellend én plat → **V4** |
+| `Bodemisolatie kruipruimte` | Bodem van de kruipruimte (niet de vloer) → **V3** |
+| `Kierdichting` | Alleen nodig als er géén qv10-meting is → **V6** |
+
+> **Spouwmuurisolatie in provincie Groningen?** Dan moeten sinds 1-7-2026 ook **eDNA-onderzoek,
+> natuurvrij maken en een alternatieve verblijfplaats** in het plan (V1-1-X13 t/m X17). De tool
+> herinnert je eraan in de stap Maatregelen — zie de gids *Gedoogbeleid vleermuizen & eDNA*.
+
 ---
 
 ## STAP 5 — Meerdere installaties (bv. 2 soorten zonnepanelen)
