@@ -112,6 +112,10 @@ STEEKPROEF BESTAANDE ENUMS (19-7, bestaande-bouw voorbeeldproject): Daktype (0/1
 ketel-Subtype (CR/VR/HR100/HR104/HR107) en aanvoertemp allemaal live geverifieerd — alles matcht 1-op-1.
 Twee winsten: WaterAanvoertemperatuur is nu VOLLEDIG (t/m 11=90/70; oude 90/70-radiatoren werden eerder
 onnodig geflagd) en de GrenstAan-1/7/8/9-flag verviel. 470/470 groen.
+HART-OP-HART GEVEL-TOESLAG ERUIT (besluit Renze 19-7): de tool telt de +0,11 m/buurwand-toeslag (ISSO 8.2)
+NIET meer automatisch mee bij de gevel-m2 (de verdeling over de juiste gevels was te foutgevoelig) ->
+vervangen door één LUIDE "HART-OP-HART GEVEL-TOESLAG — ZELF TOEVOEGEN IN VABI"-melding in beide parser-
+paden (statistics_csv.py + assemble.py). De adviseur zet de toeslag zelf in EPA. Rekenwijze-gids §1.4 bij.
 ## Status (15-7-2026) — 456/456 groen. VABI↔MAGICPLAN-MAPPING-AUDIT + GEOMETRIE-IJKING op de ECHTE EPA.
 ESSENHAGE-IJKING (echte EPA-monitor ernaast): Ag -3%, vloer -4%, achtergevel vrijwel exact (29,4 vs 30,0),
 dak van -63% naar -9%. Gefixt: (a) SCHUIN-DAK-FOOTPRINT gebruikte de BOVENSTE verdieping = de zolder binnen

@@ -83,20 +83,20 @@ def build_dossier(p, kozijnen, plan):
     # gevel (algemeen-tags uit report + benaderd oppervlak)
     win_area = sum(w["area"] for w in windows)
     gevel_area = round(max(perimeter * total_h - win_area, 0.0), 2)
-    # hart-op-hart-gevel-toeslag (ISSO 82.1 par. 8.2): MagicPlan meet binnenwerks, dus voor een
-    # hoek-/tussenwoning telt de tool +0,11 m per gebouwscheidende wand bij de gevelbreedte
-    # (geldt voor voor- en achtergevel). Niet doen als de gevel al tot hartmaat is gemeten.
-    # NB: het woningtype stuurt daarnaast (in VABI) de forfaitaire infiltratie (ISSO 7.1.1).
-    _wsw = 0.0
-    if not dos.opname.gevel_tot_hartmaat_gemeten:
-        from core.geometry import woningscheidende_wand_toeslag_m2
-        _wsw = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, dos.identificatie.woningtype)
-        gevel_area = round(gevel_area + _wsw, 2)
+    # HART-OP-HART GEVEL-TOESLAG (ISSO 82.1 par. 8.2): de tool telt dit BEWUST NIET automatisch mee
+    # (besluit Renze 19-7: te foutgevoelig om altijd goed te doen). Bij een hoek-/tussenwoning voegt
+    # de adviseur de toeslag zelf toe in VABI. NB: het woningtype stuurt daarnaast (in VABI) de
+    # forfaitaire infiltratie (ISSO 7.1.1).
+    from core.geometry import aantal_woningscheidende_wanden, woningscheidende_wand_toeslag_m2
+    if aantal_woningscheidende_wanden(dos.identificatie.woningtype):
+        _hoh = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, dos.identificatie.woningtype)
+        _hoh_txt = ("ca. +%.2f m2 (0,11 m/gebouwscheidende wand x voor+achtergevel)" % _hoh if _hoh
+                    else "0,11 m per gebouwscheidende wand x gevelhoogte op voor- EN achtergevel")
+        dos.validatie.issues.append(
+            "HART-OP-HART GEVEL-TOESLAG (ISSO 8.2) — ZELF TOEVOEGEN IN VABI (%s): %s. De tool telt "
+            "dit bewust NIET automatisch mee." % (dos.identificatie.woningtype, _hoh_txt))
     _gevel_opm = ("benaderd (omtrek x hoogte - openingen; party-walls nog niet uitgefilterd); "
                   "verifieer in Vabi. " + (_g(p, "gevel_afwijking", default="") or "")).strip()
-    if _wsw > 0:
-        _gevel_opm += " | hart-op-hart-toeslag +%.2f m2 (%s, ISSO 8.2: 0,11 m/buurwand x voor+achtergevel)" % (
-            _wsw, dos.identificatie.woningtype)
     schil.append(SchilDeel(
         id="gevel", type="gevel", subtype=_g(p, "geveltype", default="") or "",
         begrenzing=_g(p, "gevel_begrenzing", default="Buitenlucht") or "Buitenlucht",

@@ -62,21 +62,18 @@ buitengevel in het resultaat, dan flagt de tool dit expliciet.
 
 MagicPlan meet binnenwerks; ISSO schrijft voor dat je bij een gebouwscheidende wand tot de
 **hartmaat** meet. Is de wanddikte niet gemeten, dan geldt +11 cm gevelbreedte per buurwand
-(uitgangspunt: 22 cm dikke scheidingswand, halve dikte 0,11 m), voor zowel voor- als achtergevel.
-De tool past dit toe als m²-toeslag:
+(uitgangspunt: 22 cm dikke scheidingswand, halve dikte 0,11 m), voor zowel voor- als achtergevel:
 
 > **toeslag_totaal (m²) = 2 × n_buur × 0,11 × gevelhoogte**
 
 met `n_buur` uit het woningtype: vrijstaand = 0 · hoekwoning/eindwoning/2-onder-1-kap = 1 ·
 tussenwoning = 2. Dus: tussenwoning = 0,44 × gevelhoogte; hoekwoning = 0,22 × gevelhoogte.
 
-**Benadering (wees hierop alert):** de toeslag wordt **gelijk verdeeld over alle gevel-groepen**
-(toeslag_totaal / aantal groepen per groep), niet exclusief op voor- en achtergevel gelegd. Bij een
-tussenwoning met alleen voor- en achtergevel klopt dat vanzelf; bij een hoekwoning met drie gevels
-krijgt ook de zijgevel een derde van de toeslag. Het totaal is correct, de verdeling per oriëntatie
-is een benadering. Elke gevel-regel vermeldt de toeslag in de opmerking ("+x,xx m² hart-op-hart").
-Voorwaarde: gevelhoogte bekend en woningtype ingevuld — ontbreekt het woningtype, dan is de toeslag
-0 en flagt de tool dit.
+**De tool past deze toeslag BEWUST NIET automatisch toe** (besluit 19-7): de correcte verdeling over
+de juiste gevels is te foutgevoelig om altijd goed te doen. In plaats daarvan geeft de tool één
+**luide melding** ("HART-OP-HART GEVEL-TOESLAG — ZELF TOEVOEGEN IN VABI") met de geschatte m², zodat
+de adviseur de toeslag zelf op de voor- én achtergevel in VABI zet. Ontbreekt het woningtype, dan
+kan de tool de positie niet bepalen en volgt er een aparte flag.
 
 ### 1.5 Volledigheidscheck
 
@@ -97,7 +94,7 @@ geen gevelnaam/oriëntatie kreeg.
 ### 1.7 Waar het in VABI belandt
 
 Elk gevel-schildeel wordt één **Hoofdvlak** in Rekenzone > Geometrie van de Objectenbibliotheek:
-`Oppervlakte` = `BrutoOppervlakte` = `NettoOppervlakte` = het gesommeerde m² (incl. toeslag);
+`Oppervlakte` = `BrutoOppervlakte` = `NettoOppervlakte` = het gesommeerde gevel-m²;
 `Orientatie` via de VABI-enum (**Z=0, ZW=1, W=2, NW=3, N=4, NO=5, O=6, ZO=7**; horizontaal = −1);
 `GrenstAan` via de live-geverifieerde enum (0=Buitenlucht, 1=Water, 2=Grond, 3=Kruipruimte, 4=AOR,
 5=AOS, 6=ASGR, 7=Onverwarmde kelder, 8=AVR, 9=Ander gebouw). **Let op:** in de *basisopname*
@@ -277,7 +274,7 @@ de ruimtenaam geclassificeerd (keuken/badkamer/toilet/wasruimte/verkeer/slaapkam
 ## 10. Samenvattend: waar je als adviseur altijd op controleert
 
 1. De **afgeleide gevel-oriëntaties** in de run-output (voor/rechts/achter/links).
-2. De **hart-op-hart-toeslag-verdeling** bij een hoekwoning met zijgevel (totaal klopt, verdeling is gelijkmatig).
+2. De **hart-op-hart-toeslag** zelf op voor+achtergevel toevoegen (de tool doet dit NIET automatisch — zie §1.4).
 3. **Vloer-perimeter** bij hoek-/tussenwoning (buurwand eruit halen) en de m²-verdeling bij room-based vloersplits.
 4. **Dak**: schilddak-verdeling, lessenaars-zijgeveldriehoeken, footprint-fallback-flags, terugliggende verdiepingen.
 5. **Deelvlak-plaatsing** van ramen/deuren zonder gevel op dezelfde oriëntatie (round-robin).

@@ -657,10 +657,18 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     gevel_rc, vloer_rc, dak_rc = g_b["rc_bron"], v_b["rc_bron"], d_b["rc_bron"]
     isol = g_b["isolatie"] or "Onbekend"          # projectdefault gevel (wand-loop gebruikt dit)
     dikte_onbekend = g_b["dikte_onbekend"]
-    # gevels per oriëntatie + ISSO 8.2 hart-op-hart-toeslag (woningtype-afhankelijk)
+    # gevels per oriëntatie. HART-OP-HART GEVEL-TOESLAG (ISSO 8.2) wordt BEWUST NIET automatisch
+    # toegepast (besluit Renze 19-7: te foutgevoelig om altijd goed te doen). De adviseur voegt de
+    # toeslag zelf toe in VABI; de tool geeft er hieronder één luide melding voor.
     n_buur = aantal_woningscheidende_wanden(woningtype)
-    toeslag_tot = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, woningtype) if n_buur else 0.0
-    n_gevel = max(len(gevel_per), 1)
+    if n_buur:
+        _hoh = woningscheidende_wand_toeslag_m2(dos.opname.gevelhoogte_m, woningtype)
+        _hoh_txt = ("ca. +%.2f m2 (0,11 m/gebouwscheidende wand x voor+achtergevel bij gevelhoogte "
+                    "%.2f m)" % (_hoh, dos.opname.gevelhoogte_m) if _hoh else
+                    "0,11 m per gebouwscheidende wand x gevelhoogte op voor- EN achtergevel "
+                    "(gevelhoogte ontbreekt -> zelf berekenen)")
+        notes.append("HART-OP-HART GEVEL-TOESLAG (ISSO 8.2) — ZELF TOEVOEGEN IN VABI (%s): %s. De tool "
+                     "telt dit bewust NIET automatisch mee bij de gevel-m2." % (woningtype, _hoh_txt))
     verd_hoogte = {v.naam: v.hoogte_m for v in geo.vloeren if v.hoogte_m}
     # DIRECTE GEVELBREEDTE-INVOER (methode Renze 14-7, meest robuust): meet je de breedte van een
     # gevel, dan doet de tool breedte x verdiepingshoogte per bouwlaag — geen wandsom, geen dubbeltel.
@@ -693,7 +701,6 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             opp = gevel_bruto.get(key, opp_netto)
             notes.append("Gevel %s: b x h-methode niet mogelijk (wandbreedte of verdiepingshoogte "
                          "ontbreekt) -> bruto wandsom %.2f m2 gebruikt; controleer in Vabi." % (orient, opp))
-        extra = round(toeslag_tot / n_gevel, 2) if toeslag_tot else 0.0
         suffix = "" if begr == "Buitenlucht" else "-" + begr[:3].lower()
         if isol_ov or nareken:
             suffix += "-ov"
@@ -704,19 +711,18 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         wand_isol = isol_ov or isol   # per-wand override wint van de projectdefault
         _gevel_s = SchilDeel(
             id=gid, type="gevel", subtype="", begrenzing=begr,
-            orientatie=orient, gevel_naam=gnaam, oppervlakte_m2=round(opp + extra, 2),
+            orientatie=orient, gevel_naam=gnaam, oppervlakte_m2=round(opp, 2),
             isolatie_aanwezig=wand_isol, rekenzone=rz, rc_bron=gevel_rc,
             isolatiedikte_mm=g_b["dikte_mm"], spouw_aanwezig=g_b["spouw"],
             opmerkingen=((("%sgevel" % gnaam + " | ") if gnaam else "")
                          + "BRUTO (ramen/deuren als deelvlak); AVR/party-walls uitgefilterd"
                          + (" | begrenzing %s (naamconventie)" % begr if begr != "Buitenlucht" else "")
-                         + (" | +%.2f m2 hart-op-hart (ISSO 8.2)" % extra if extra else "")
                          + (" | isolatie %s (per-wand override)" % isol_ov if isol_ov else "")
                          + (" | Rc/U via kwaliteitsverklaring (zet Invoer in Vabi)" if gevel_rc == "Kwaliteitsverklaring" else "")
                          + (" | NAREKENEN in Vabi (gemarkeerd: deels buiten/binnen of bijzonder)" if nareken else "")))
         schil.append(_gevel_s)
         if _is_bxh:
-            gevel_refs.append({"s": _gevel_s, "orient": orient, "bxh": dict(bxh), "extra": extra})
+            gevel_refs.append({"s": _gevel_s, "orient": orient, "bxh": dict(bxh)})
     if orientatie_voorgevel:
         afg = lambda gn: _orient_afleiden(gn, orientatie_voorgevel) or "?"
         notes.append("Voorgevel-oriëntatie %s -> afgeleid: voorgevel=%s, rechtergevel=%s, achtergevel=%s, "
@@ -1366,12 +1372,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     _top_verd = _verd_volgorde[-1] if _verd_volgorde else ""
     _schuin_oris = {s.orientatie for s in schil if s.type == "dak" and (s.hellingshoek or 0) > 0 and s.orientatie}
     for _ref in gevel_refs:
-        _s, _ori, _bxh, _ex = _ref["s"], _ref["orient"], _ref["bxh"], _ref["extra"]
+        _s, _ori, _bxh = _ref["s"], _ref["orient"], _ref["bxh"]
         _excl = {vd for vd in _bxh if _ori in _schuin_oris and vd == _top_verd}
         _counted = {vd: br for vd, br in _bxh.items() if vd not in _excl}
         _opp = round(sum(br * verd_hoogte[vd] for vd, br in _counted.items()), 2)
-        # hart-op-hart-toeslag alleen op een gevel die ECHT bestaat (niet als hij volledig zolder is)
-        _s.oppervlakte_m2 = round(_opp + (_ex if _counted else 0.0), 2)
+        _s.oppervlakte_m2 = _opp
         _opbouw = " + ".join("%s %.2fx%.2f" % (vd, br, verd_hoogte[vd]) for vd, br in sorted(_counted.items())) or "—"
         _n = ("Gevel %s (%s): %s = %.2f m² BRUTO (breedte x verdiepingshoogte; ramen/deuren = deelvlak "
               "in Vabi)." % (_ori, orient_naam.get(_ori, "?"), _opbouw, _opp))
@@ -1506,8 +1511,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
 
     # ---- gaten/flags ----
     if not woningtype:
-        notes.append("Woningtype ONTBREEKT -> infiltratie-positie onbekend en hart-op-hart-toeslag = 0 "
-                     "(voeg 'Woningtype' toe in MagicPlan).")
+        notes.append("Woningtype ONTBREEKT -> infiltratie-positie onbekend; ook geen hart-op-hart-"
+                     "toeslag-melding mogelijk (voeg 'Woningtype' toe in MagicPlan, zet de positie in Vabi).")
     if dos.opname.qv10_waarde is not None and not dos.opname.qv10_gemeten:
         notes.append("qv10 %.2f staat ingevuld maar 'Qv10 gemeten?'=Nee (ISSO 7.1.5: alleen meenemen als "
                      "GEMETEN met blowerdoor; anders rekent VABI forfaitair op bouwjaar/renovatiejaar)." % dos.opname.qv10_waarde)

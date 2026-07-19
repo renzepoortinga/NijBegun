@@ -390,8 +390,9 @@ check("csv: gevelhoogte uit veld", _vd.opname.gevelhoogte_m == 5.4)
 check("csv: renovatiejaar uit veld", _vd.identificatie.renovatiejaar == 2015)
 check("csv: thermische massa wanden=Zwaar", _vd.opname.thermische_massa_wanden == "Zwaar")
 check("csv: thermische massa vloeren=Licht", _vd.opname.thermische_massa_vloeren == "Licht")
-check("csv: tussenwoning hart-op-hart-toeslag toegepast",
-      any("hart-op-hart" in (s.opmerkingen or "") for s in _vd.schil if s.type == "gevel"))
+check("csv: tussenwoning -> hart-op-hart-toeslag NIET auto-toegepast maar GEFLAGD (zelf in Vabi)",
+      any("HART-OP-HART GEVEL-TOESLAG" in n and "ZELF TOEVOEGEN IN VABI" in n for n in _vn)
+      and not any("hart-op-hart" in (s.opmerkingen or "") for s in _vd.schil if s.type == "gevel"))
 check("csv: thermische massa gevuld zonder handmatig-flag", not any("HANDMATIG" in n for n in _vn))
 # CLI-arg overrulet het CSV-veld
 _vd2, _ = _csvdos(_vp.name, woningtype="Vrijstaand", gevelhoogte_m=3.0)
