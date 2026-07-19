@@ -265,7 +265,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         qv10_gemeten=qv10_gem,
         gevelhoogte_m=gevelhoogte_m,
         thermische_massa_wanden=_undot(G("Gevel - thermische massa") or G("Thermische massa wanden")),
-        thermische_massa_vloeren=_undot(G("Vloer - thermische massa") or G("Thermische massa vloeren")))
+        thermische_massa_vloeren=_undot(G("Vloer - thermische massa") or G("Thermische massa vloeren")),
+        # huidige woningstaat (isolatieplan sectie 3 V1/V3/V4/V6) die NIET uit de geometrie volgt
+        gevel_isolatie_zijde=_undot(G("Gevel - isolatie aan zijde")),
+        dak_isolatie_zijde=_undot(G("Dak - isolatie aan zijde")),
+        bodemisolatie=_undot(G("Bodemisolatie kruipruimte")),
+        kierdichting=_undot(G("Kierdichting")))
 
     # ---- geometrie: ruimtes (Ag) + verdiepingen ----
     geo = Geometrie()

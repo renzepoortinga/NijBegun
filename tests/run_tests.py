@@ -376,6 +376,66 @@ check("voorschot: verplichte header (VPL + documentnr + crediteuren-email)",
       and _spec["header"]["documentnummer_opdracht"] == "2026-102825"
       and _spec["header"]["email"] == "crediteurenadministratie@provinciegroningen.nl")
 
+print("23d. Isolatieplan sectie 3 (Huidige woningstaat V1-V6) — volledigheid")
+from core.dossier import SchilDeel as _SD71, build_sample as _bs71
+import isolatieplan.fill_template as _FT71
+_d71 = _bs71()
+_d71.schil = [
+    _SD71(id="gevel", type="gevel", oppervlakte_m2=40, rc_huidig=0.36, spouw_aanwezig=True),
+    _SD71(id="raam", type="kozijn", subtype="Raam", glastype="Dubbel", u_huidig=2.9, kozijnmateriaal="Hout"),
+    _SD71(id="voorzet", type="kozijn", subtype="Raam", glastype="Voorzetglas", u_huidig=2.5),
+    _SD71(id="deur", type="kozijn", subtype="Deur", u_huidig=3.4),
+    _SD71(id="paneel", type="kozijn", subtype="Paneel in kozijn", rc_huidig=0.5),
+    _SD71(id="dakraam", type="kozijn", subtype="Dakraam", u_huidig=2.8),
+    _SD71(id="vloerbg", type="vloer", subtype="Begane grondvloer", rc_huidig=0.15),
+    _SD71(id="zolder", type="vloer", subtype="Zoldervloer", rc_huidig=1.3),
+    _SD71(id="dakh", type="dak", subtype="Hellend dak", hellingshoek=45, rc_huidig=1.3),
+    _SD71(id="dakp", type="dak", subtype="Plat dak", hellingshoek=0, rc_huidig=2.0),
+]
+_sub71 = _FT71._staat_subsets(_d71)
+check("staat V2: raam-bucket = alleen echte ramen (geen deur/paneel/dakraam/voorzet)",
+      [s.id for s in _sub71["raam"]] == ["raam"])
+check("staat V2: voor-/achterzetbeglazing apart", [s.id for s in _sub71["voorzet"]] == ["voorzet"])
+check("staat V2: deuren apart", [s.id for s in _sub71["deur"]] == ["deur"])
+check("staat V2: panelen in kozijn apart", [s.id for s in _sub71["paneel"]] == ["paneel"])
+check("staat V4: dakraam/tuimelvenster apart", [s.id for s in _sub71["dakraam"]] == ["dakraam"])
+check("staat V3: begane-grondvloer vs zolder-/vlieringvloer gescheiden",
+      [s.id for s in _sub71["vloer_bg"]] == ["vloerbg"] and [s.id for s in _sub71["vloer_zolder"]] == ["zolder"])
+check("staat V4: hellend vs plat dak gescheiden",
+      [s.id for s in _sub71["dak_hellend"]] == ["dakh"] and [s.id for s in _sub71["dak_plat"]] == ["dakp"])
+_gat71 = _FT71.huidige_staat_gaten(_d71)
+check("staat: gaten wijzen naar de ontbrekende MagicPlan-velden (gevel-/dak-zijde, bodem, kier)",
+      any("Gevelisolatie" in g for g in _gat71) and any("Dakisolatie" in g for g in _gat71)
+      and any("Bodemisolatie" in g for g in _gat71) and any("Kierdichting" in g for g in _gat71))
+check("staat: vierpansraam blijft altijd een handmatige regel", any("Vierpansraam" in g for g in _gat71))
+_d71.opname.gevel_isolatie_zijde = "Binnenzijde"
+_d71.opname.dak_isolatie_zijde = "Buitenzijde"
+_d71.opname.bodemisolatie = "Nee"
+_d71.opname.kierdichting = "Redelijk (tochtstrips aanwezig)"
+_gat71b = _FT71.huidige_staat_gaten(_d71)
+check("staat: opnamevelden ingevuld -> alleen vierpansraam blijft over",
+      len(_gat71b) == 1 and "Vierpansraam" in _gat71b[0])
+# de 4 nieuwe MagicPlan-velden moeten via de CSV-parser in het dossier landen
+import tempfile as _t71, os as _o71, csv as _c71
+from magicplan.statistics_csv import build_dossier as _bd71
+_rows71 = [["PLAN ATTRIBUTES"], ["Total living area: m²", "40"], ["Woningtype", "Tussenwoning"],
+           ["Gevel - isolatie aan zijde", "Binnenzijde (voorzetwand)"],
+           ["Dak - isolatie aan zijde", "Buitenzijde"],
+           ["Bodemisolatie kruipruimte", "Ja - folie"],
+           ["Kierdichting", "Redelijk"], [],
+           ["FLOOR ATTRIBUTES", "Ground surface without walls: m²", "Ceiling Height"],
+           ["Ground Floor", "40", "2.60 m"], []]
+with _t71.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as _fh71:
+    _c71.writer(_fh71).writerows(_rows71)
+    _p71 = _fh71.name
+_dp71, _np71 = _bd71(_p71)
+_o71.unlink(_p71)
+check("parser: 4 nieuwe sectie-3-velden landen in het dossier",
+      _dp71.opname.gevel_isolatie_zijde.startswith("Binnenzijde")
+      and _dp71.opname.dak_isolatie_zijde == "Buitenzijde"
+      and _dp71.opname.bodemisolatie.startswith("Ja")
+      and _dp71.opname.kierdichting == "Redelijk")
+
 print("24. MagicPlan Statistics-CSV -> dossier (parser)")
 from magicplan.statistics_csv import build_dossier as _csvdos, _undot as _ud
 check("undot bouwjaar-klasse", _ud("1992.t.m.2013") == "1992 t/m 2013")

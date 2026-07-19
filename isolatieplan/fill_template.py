@@ -105,36 +105,160 @@ def _summary(schils, is_glas, rc_threshold):
         waarde = ""
     return (niveau, waarde)
 
+def _pick(schils, sub_any=None, sub_none=None, glas_any=None, glas_none=None, hellend=None):
+    """Filter schildelen op subtype-/glastype-trefwoorden en (voor daken) hellend vs plat."""
+    out = []
+    for s in schils:
+        sub = (s.subtype or "").lower()
+        gl = (s.glastype or "").lower()
+        if sub_any and not any(k in sub for k in sub_any):
+            continue
+        if sub_none and any(k in sub for k in sub_none):
+            continue
+        if glas_any and not any(k in gl for k in glas_any):
+            continue
+        if glas_none and any(k in gl for k in glas_none):
+            continue
+        if hellend is True and not ((s.hellingshoek or 0) > 0):
+            continue
+        if hellend is False and ((s.hellingshoek or 0) > 0):
+            continue
+        out.append(s)
+    return out
+
+
+def _staat_subsets(dos):
+    """Schildeel-subsets per template-regel van sectie 3 (Huidige woningstaat V1-V6)."""
+    S = dos.schil
+    gevels = [s for s in S if s.type == "gevel"]
+    vloeren = [s for s in S if s.type == "vloer"]
+    daken = [s for s in S if s.type == "dak"]
+    kozijnen = [s for s in S if s.type == "kozijn"]
+    panelen = [s for s in S if s.type == "paneel"] + _pick(kozijnen, sub_any=("paneel",))
+    _niet_raam = ("deur", "paneel", "dakraam", "tuimel", "vierpans")
+    return {
+        "gevel": gevels,
+        "raam": _pick(kozijnen, sub_none=_niet_raam, glas_none=("voorzet", "achterzet", "vacu")),
+        "voorzet": _pick(kozijnen, glas_any=("voorzet", "achterzet")),
+        "vacuum": _pick(kozijnen, glas_any=("vacu",)),
+        "deur": _pick(kozijnen, sub_any=("deur",)),
+        "paneel": panelen,
+        "kozijn_alle": kozijnen,
+        "vloer_bg": _pick(vloeren, sub_none=("zolder", "vliering")),
+        "vloer_zolder": _pick(vloeren, sub_any=("zolder", "vliering")),
+        "dak_hellend": _pick(daken, hellend=True),
+        "dak_plat": _pick(daken, hellend=False),
+        "dakraam": _pick(kozijnen, sub_any=("dakraam", "tuimel")),
+    }
+
+
+def huidige_staat_gaten(dos):
+    """Template-regels uit sectie 3 die de tool NIET kan vullen omdat de OPNAME de gegevens mist ->
+    de adviseur vult ze bewust zelf in. Vul je de opnamevelden (gevel-/dak-isolatiezijde,
+    bodemisolatie, kierdichting) wél in, dan verdwijnen deze meldingen vanzelf."""
+    sub = _staat_subsets(dos)
+    o = dos.opname
+    gaten = []
+    if not (o.gevel_isolatie_zijde or "").strip():
+        gaten.append("V1 Gevelisolatie: aan welke zijde (spouw / binnenzijde / buitenzijde)? "
+                     "-> MagicPlan-veld 'Gevel - isolatie aan zijde'")
+    if (sub["dak_hellend"] or sub["dak_plat"]) and not (o.dak_isolatie_zijde or "").strip():
+        gaten.append("V4 Dakisolatie: binnen- of buitenzijde? -> MagicPlan-veld 'Dak - isolatie aan zijde'")
+    if not (o.bodemisolatie or "").strip():
+        gaten.append("V3 Bodemisolatie (kruipruimte) -> MagicPlan-veld 'Bodemisolatie kruipruimte'")
+    if not (o.kierdichting or "").strip() and not (o.qv10_gemeten or o.qv10_waarde):
+        gaten.append("V6 Kierdichting: geen qv10 en geen omschrijving -> MagicPlan-veld 'Kierdichting'")
+    gaten.append("V4 Vierpansraam in dakvlak — niet in de opname; vul zelf in indien aanwezig")
+    return gaten
+
+
 def fill_huidige_staat(doc, dos):
-    by = {"gevel": [], "vloer": [], "dak": [], "kozijn": []}
-    for s in dos.schil:
-        if s.type in by: by[s.type].append(s)
-    gevel = _summary(by["gevel"], False, 2.5)
-    vloer = _summary(by["vloer"], False, 2.5)
-    dak = _summary(by["dak"], False, 3.5)
-    glas = _summary(by["kozijn"], True, 1.6)
+    """Vult sectie 3 'Huidige woningstaat' (V1-V6). Elke regel krijgt (isolatieniveau, isolatiewaarde)
+    uit de bijbehorende schildelen. Regels waarvoor de opname geen gegevens heeft blijven leeg — het
+    template staat dat expliciet toe — en komen terug via huidige_staat_gaten()."""
+    sub = _staat_subsets(dos)
     vent_letter = ""
     syss = (dos.ventilatie.systeem or "")
     for L in ("A", "B", "C", "D"):
         if syss.strip().upper().startswith(L) or (L + ":") in syss:
             vent_letter = L; break
+
     def _fillable(txt):
         t = txt.strip().lower()
         return t == "" or t.startswith("wel/niet") or "in het geval van" in t or "gedeeltelijk ge" in t
+
     def put(row, niveau, waarde):
         c = row.cells
         if len(c) > 1 and _fillable(c[1].text): set_cell(c[1], niveau)
         if len(c) > 2 and _fillable(c[2].text): set_cell(c[2], waarde)
+
+    def put_set(row, key, is_glas, drempel):
+        s = sub.get(key) or []
+        if s:
+            n, w = _summary(s, is_glas, drempel)
+            put(row, n, w)
+
+    o = dos.opname
+    zijde_g = (o.gevel_isolatie_zijde or "").strip().lower()      # spouw | binnenzijde | buitenzijde
+    zijde_d = (o.dak_isolatie_zijde or "").strip().lower()        # binnenzijde | buitenzijde
     for t in doc.tables:
         for row in t.rows:
             lbl = first_cell(row).lower()
-            if "spouwmuur isolatie" in lbl: put(row, gevel[0], gevel[1])
-            elif "beglazing (enkel" in lbl or lbl.startswith("beglazing"): put(row, glas[0], glas[1])
-            elif "onderzijde begane grond" in lbl: put(row, vloer[0], vloer[1])
-            elif "binnenzijde hellend dak" in lbl: put(row, dak[0], dak[1])
+            # --- V1 Gevel: de gevelstaat gaat naar de regel die bij de isolatiezijde hoort ---
+            if "spouwmuur isolatie" in lbl:
+                if "binnenzijde" not in zijde_g and "buitenzijde" not in zijde_g:
+                    put_set(row, "gevel", False, 2.5)     # leeg/spouw -> spouwmuur-regel
+            elif "gevel isolatie" in lbl and "binnenzijde" in lbl:
+                if "binnenzijde" in zijde_g:
+                    put_set(row, "gevel", False, 2.5)
+            elif "gevel isolatie" in lbl and "buitenzijde" in lbl:
+                if "buitenzijde" in zijde_g:
+                    put_set(row, "gevel", False, 2.5)
+            # --- V2 Glas en kozijnen ---
+            elif "beglazing (enkel" in lbl or (lbl.startswith("beglazing") and "zet" not in lbl):
+                put_set(row, "raam", True, 1.6)
+            elif "zet beglazing" in lbl or "voor- of achterzet" in lbl:
+                put_set(row, "voorzet", True, 1.6)
+            elif lbl.startswith("deuren"):
+                put_set(row, "deur", True, 1.6)
+            elif "panelen in kozijn" in lbl:
+                put_set(row, "paneel", False, 2.5)
+            elif lbl.startswith("kozijnen"):
+                mats = sorted({s.kozijnmateriaal for s in sub["kozijn_alle"] if s.kozijnmateriaal})
+                if mats:
+                    put(row, ", ".join(mats), "")
+            elif "vacu" in lbl:
+                put_set(row, "vacuum", True, 1.6)
+            # --- V3 Vloeren ---
+            elif "onderzijde begane grond" in lbl:
+                put_set(row, "vloer_bg", False, 2.5)
+            elif "zolder" in lbl or "vliering" in lbl:
+                put_set(row, "vloer_zolder", False, 2.5)
+            elif "bodemisolatie" in lbl:
+                bi = (o.bodemisolatie or "").strip()
+                if bi and len(row.cells) > 1 and _fillable(row.cells[1].text):
+                    set_cell(row.cells[1], bi)
+            # --- V4 Daken: hellend/plat naar de regel die bij de isolatiezijde hoort ---
+            elif "hellend dak" in lbl:
+                rij_buiten, zij_buiten = ("buitenzijde" in lbl), ("buitenzijde" in zijde_d)
+                if (zijde_d and zij_buiten == rij_buiten) or (not zijde_d and not rij_buiten):
+                    put_set(row, "dak_hellend", False, 3.5)   # leeg -> binnenzijde-regel
+            elif "plat dak" in lbl:
+                if zijde_d and ("buitenzijde" in zijde_d) == ("buitenzijde" in lbl):
+                    put_set(row, "dak_plat", False, 3.5)
+            elif "tuimelvenster" in lbl or "dakraam" in lbl:
+                put_set(row, "dakraam", True, 1.6)
+            # --- V5 Ventilatie / V6 Kierdichting / warmteverlies ---
             elif "huidig warmteverlies in de" in lbl:
                 if len(row.cells) > 1 and row.cells[1].text.strip() == "":
                     set_cell(row.cells[1], num_nl(dos.berekening.kwh_m2_huidig))
+            elif "kierdichting" in lbl:
+                qv = o.qv10_waarde
+                txt = (o.kierdichting or "").strip() or (
+                    ("qv10 = %s dm3/s.m2 (%s)" % (num_nl(qv), "gemeten" if o.qv10_gemeten else "forfaitair"))
+                    if qv else "")
+                if txt and len(row.cells) > 1 and _fillable(row.cells[1].text):
+                    set_cell(row.cells[1], txt)
             elif vent_letter and lbl.startswith("type " + vent_letter.lower()):
                 if len(row.cells) > 1 and row.cells[1].text.strip() == "":
                     set_cell(row.cells[1], "Aanwezig (huidige situatie): " + syss)

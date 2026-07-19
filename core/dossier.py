@@ -50,11 +50,16 @@ class Opname:
     gebouwhoogte_m: Optional[float] = None         # hoogte GEBOUW (tot de nok); VABI Gebouwhoogte. UITSLUITEND
                                                    # handmatige invoer: leeg -> generator schrijft 0 + LUIDE flag
                                                    # (bewust GEEN berekende fallback; zie geen-aannames-beleid)
-    gevel_tot_hartmaat_gemeten: bool = False       # True = gevel al tot hartmaat gemeten -> geen toeslag.
-                                                   # False (MagicPlan = binnenwerks) -> tool telt +0,11 m/buurwand
-                                                   #        (voor+achtergevel) bij de gevel; woningtype stuurt ook de infiltratie
+    gevel_tot_hartmaat_gemeten: bool = False       # True = gevel al tot hartmaat gemeten. De tool telt de
+                                                   # hart-op-hart-toeslag NIET automatisch mee (besluit 19-7):
+                                                   # hij geeft er een melding voor, jij zet 'm zelf in VABI
     thermische_massa_wanden: str = ""              # Licht | Zwaar | Zeer zwaar (EPA Rekenzone>Algemeen, geen "Half zwaar")
     thermische_massa_vloeren: str = ""             # Licht | Zwaar | Zeer zwaar (kan afwijken van de wanden)
+    # --- Huidige woningstaat (isolatieplan sectie 3, V1-V6) die NIET uit de geometrie volgt ---
+    gevel_isolatie_zijde: str = ""     # V1: Spouw | Binnenzijde | Buitenzijde | Geen | Onbekend
+    dak_isolatie_zijde: str = ""       # V4: Binnenzijde | Buitenzijde | Onbekend (hellend én plat dak)
+    bodemisolatie: str = ""            # V3: Ja | Nee | Onbekend (kruipruimte-bodemisolatie)
+    kierdichting: str = ""             # V6: omschrijving/klasse van de huidige kierdichting
 
 @dataclass
 class VloerInfo:
