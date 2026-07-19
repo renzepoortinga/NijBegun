@@ -1208,6 +1208,19 @@ try:
           "paneel-1" in _map9 and not any("onbekend type" in x for x in _iss9))
     _ct = next((_CG9._t(c, "ConstructieType") for c in _clones9), None)
     check("paneel: gekozen constructie is ConstructieType=1", _ct == "1")
+    # (b2) TYPE_CODE-mapping 1-op-1 tegen de ECHTE EPA-export-template (19-7 bevestigd): elke
+    # ConstructieType-code hoort bij het juiste bouwdeel (0=Gevel 1=Paneel 2=glas 3=Deur 4=Dak 7=Vloer).
+    import os as _os9, xml.etree.ElementTree as _ET9
+    _tpl9 = _ET9.parse(_os9.path.join(_os9.path.dirname(_CG9.__file__), "refs",
+                                      "standaard_constructies_v120001001.xml")).getroot()
+    _byct9 = {}
+    for _c9 in _tpl9.iter():
+        if _c9.tag.rsplit("}", 1)[-1] == "Constructie":
+            _cc9 = {x.tag.rsplit("}", 1)[-1]: (x.text or "") for x in _c9}
+            _byct9.setdefault(_cc9.get("ConstructieType", ""), []).append((_cc9.get("Naam", "") or "").lower())
+    _verwacht9 = {"0": "gevel", "1": "paneel", "2": "glas", "3": "deur", "4": "dak", "7": "vloer"}
+    check("constructie: TYPE_CODE-mapping matcht de echte EPA-template (0=gevel..7=vloer)",
+          all(_kw in " ".join(_byct9.get(_code, [])) for _code, _kw in _verwacht9.items()))
     # (c) webapp: paneel toevoegen -> valt in de dichte-branch (Rc/isolatie), niet glas
     import dashboard.app as _WP9
     _WP9.app.config.update(TESTING=True)
