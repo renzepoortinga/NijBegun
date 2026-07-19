@@ -2948,5 +2948,35 @@ except Exception as _e:
     check("verwijderde leads + mobiele opmaak: draait zonder fout", False)
     print("     " + repr(_e)[:200])
 
+print("\n75. Smalle-iPhone-opmaak (320px) — de regels die de uitstekende leadkaarten veroorzaakten")
+try:
+    import os as _o75, re as _r75
+    import dashboard.app as _W75
+    _css75 = open(_o75.path.join(_o75.path.dirname(_o75.path.dirname(_o75.path.abspath(_W75.__file__))),
+                                 "dashboard", "static", "app.css"), encoding="utf-8").read()
+    check("lead-grid: kolom nooit breder dan de container (min(300px,100%))",
+          "minmax(min(300px,100%),1fr)" in _css75)
+    check("lead-card: mag krimpen onder z'n inhoud (min-width:0)",
+          _r75.search(r"\.lead-card\{[^}]*min-width:0", _css75, _r75.S) is not None)
+    check("lead-contact: overflow-wrap ANYWHERE (break-word verkleint min-breedte niet)",
+          _r75.search(r"\.lead-contact a[^{]*\{overflow-wrap:anywhere", _css75) is not None)
+    check("topbar-nav mobiel: krimpt en wrapt (geen flex:none/nowrap meer — 5e link paste niet)",
+          "flex:none;flex-wrap:nowrap" not in _css75
+          and _r75.search(r"\.topbar nav\{[^}]*min-width:0", _css75) is not None)
+    check("accordeon-kop wrapt (titel + pills pasten niet op één regel op 320px)",
+          _r75.search(r"details\.acc>summary\{[^}]*flex-wrap:wrap", _css75, _r75.S) is not None)
+    check("grid2: kolommen minmax(0,1fr) + bestand-kiezers begrensd (foto-upload stak uit)",
+          "grid-template-columns:minmax(0,1fr) minmax(0,1fr)" in _css75
+          and "input[type=file]{max-width:100%}" in _css75)
+    check("gids-tabellen scrollen in eigen vak (width:100% is bij tabellen slechts een minimum)",
+          _r75.search(r"\.gids-inhoud table\{[^}]*overflow-x:auto", _css75) is not None
+          and 'class="card gids-inhoud"' in _W75.GIDS_TMPL)
+    check("ventilatieplan-SVG: schaalt mee + eigen scroll-vak",
+          _r75.search(r"\.svgbox\{[^}]*overflow-x:auto", _css75) is not None)
+    check("datum/tijd-veld: iOS-eigen breedte uitgezet (appearance:none)",
+          "input[type=datetime-local]" in _css75 and "-webkit-appearance:none" in _css75)
+except Exception as _e:
+    check("smalle-iPhone-opmaak: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

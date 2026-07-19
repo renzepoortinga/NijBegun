@@ -103,6 +103,13 @@ body{
 a{color:var(--blue);text-decoration:none}
 a:hover{text-decoration:underline}
 img,svg{max-width:100%}
+input[type=file]{max-width:100%} /* bestand-kiezers hebben een eigen breedte die anders uitsteekt */
+/* SVG's (ventilatieplan) schalen mee; steekt er tekst buiten het tekengebied, dan scrollt de box zelf */
+.svgbox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.svgbox svg{max-width:100%;height:auto}
+/* markdown-tabellen in de gidsen: bredere tabellen scrollen in hun eigen vak (width:100% is bij
+   tabellen slechts een MINIMUM — de inhoud duwde 'm alsnog de kaart uit) */
+.gids-inhoud table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 
 /* zichtbare, toegankelijke focus (alleen bij toetsenbord-navigatie) */
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
@@ -138,7 +145,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 .login .card{width:100%;max-width:400px;margin:0}
 .login-voet{text-align:center;margin:0}
 @media (max-width:480px){ .login{padding-top:2vh;min-height:auto} }
-.topbar nav{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:4px 2px}
+/* min-width:0 is essentieel: als flex-item weigert de nav anders te krimpen onder z'n
+   inhoudsbreedte, waardoor 'Uitloggen' op een smalle iPhone 45px buiten beeld hing.
+   Met min-width:0 krimpt hij en zorgt flex-wrap dat de links netjes doorschuiven. */
+.topbar nav{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:4px 2px;min-width:0}
 .topbar nav a{
   color:var(--ink2);font-size:14px;
   display:inline-flex;align-items:center;min-height:44px;padding:0 10px;margin:0;border-radius:9px;
@@ -249,7 +259,11 @@ input:focus,select:focus,textarea:focus{
 }
 ::placeholder{color:var(--sub);opacity:1}
 
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+/* minmax(0,1fr) + min-width:0 op de kinderen: een grid-kolom weigert anders te krimpen onder de
+   eigen breedte van z'n inhoud (bestand-kiezers!), waardoor foto-uploadvelden buiten beeld staken. */
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px}
+.grid2>*{min-width:0}
+.grid2 input{max-width:100%}
 
 .file-drop{
   border:2px dashed var(--line-strong);border-radius:14px;padding:26px;
@@ -268,12 +282,20 @@ input:focus,select:focus,textarea:focus{
 
 /* 300px = de smalste kaart waarin naam+status, adres en de knoppenrij nog netjes passen;
    daarmee staan er op iPad-portret (768) twee naast elkaar i.p.v. één halflege brede kaart. */
-.lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+/* min(300px,100%) en NIET kaal 300px: op een smalle iPhone (SE/mini/ingezoomde weergave = 320pt,
+   binnenruimte ~280px) weigert een kale minmax(300px,1fr) te krimpen en steken de kaarten buiten
+   de pagina. min(...,100%) betekent: nooit breder dan de container zelf. */
+.lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:14px}
 .lead-card{
   display:flex;flex-direction:column;gap:10px;
   background:var(--card);border:1px solid var(--line);border-radius:16px;
   padding:16px 18px;box-shadow:var(--shadow-sm);
+  min-width:0; /* grid-item mag krimpen onder z'n inhoud (lang e-mailadres) */
 }
+/* overflow-wrap:ANYWHERE en niet break-word: break-word breekt wel af maar verkleint de
+   minimale inhoudsbreedte NIET — de grid-kolom bleef daardoor rekenen met het volledige
+   e-mailadres en de kaart stak op een smalle iPhone buiten de pagina. */
+.lead-contact a,.lead-titel h3,.lead-adres{overflow-wrap:anywhere}
 .lead-card.is-klaar{opacity:.62}                        /* afgerond/vervallen: aanwezig, maar niet luid */
 .lead-kop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .lead-titel{min-width:0}
@@ -287,11 +309,16 @@ input:focus,select:focus,textarea:focus{
 .lead-contact{display:flex;flex-direction:column;gap:2px;font-size:14px}
 .lead-contact a{color:var(--blue-ink)}
 
-.lead-invoer{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+/* minmax(0,1fr) i.p.v. 1fr: een grid-kolom mag standaard niet smaller dan zijn inhoud, en het
+   datum/tijd-veld heeft op iOS een flinke eigen breedte -> kolom groeide de kaart uit. */
+.lead-invoer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;
   padding-top:10px;border-top:1px solid var(--line)}
 .lead-veld{min-width:0}
 .lead-veld label{display:block;margin:0 0 3px}
 .lead-veld select,.lead-veld input{width:100%;min-width:0;margin:0;min-height:44px}
+/* iOS Safari geeft datum/tijd-velden een vaste eigen breedte die width:100% negeert;
+   -webkit-appearance:none + max-width dwingt 'm binnen de kaart te blijven */
+.lead-veld input[type=datetime-local]{-webkit-appearance:none;appearance:none;max-width:100%}
 .lead-veld .row{display:flex;gap:6px;align-items:center}
 .lead-veld .row input{flex:1 1 auto;min-width:0}
 .lead-veld .row .btn{flex:none;width:auto;padding:0 14px}
@@ -434,6 +461,7 @@ details.acc{border:1px solid var(--line);border-radius:12px;padding:0;margin-bot
 details.acc>summary{
   cursor:pointer;padding:14px 16px;min-height:44px;font-weight:600;list-style:none;
   display:flex;align-items:center;gap:2px;
+  flex-wrap:wrap; /* titel + m²/begrenzing-pills passen niet op één regel op een smalle telefoon */
 }
 details.acc>summary::-webkit-details-marker{display:none}
 details.acc>summary::before{content:"›";display:inline-block;margin-right:10px;transition:transform .2s;color:var(--sub);flex:none}
@@ -517,8 +545,11 @@ details.acc .acc-body :is(h1,h2,h3){color:var(--ink)}
   .topbar{padding-left:max(16px, env(safe-area-inset-left));padding-right:max(16px, env(safe-area-inset-right));gap:8px}
   /* merk-achtervoegsel weg op smal scherm -> nav past zonder scrollstrip */
   .brand-sub{display:none}
-  .topbar nav{flex:none;flex-wrap:nowrap}
-  .topbar nav a{padding:0 8px;font-size:14px}
+  /* NIET flex:none/nowrap: sinds de vijfde link (Voorschot) is de nav breder dan het scherm en
+     drukte hij het merk naar breedte 0. Merk = vast; nav krimpt en wrapt naar een tweede regel. */
+  .topbar .brand{flex:none}
+  .topbar nav{flex:1 1 auto;min-width:0;flex-wrap:wrap;justify-content:flex-end}
+  .topbar nav a{padding:0 8px;font-size:14px;min-height:38px}
 
   .wrap{padding-left:max(16px, env(safe-area-inset-left));padding-right:max(16px, env(safe-area-inset-right))}
   .card{padding:16px;border-radius:16px}

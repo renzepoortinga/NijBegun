@@ -823,7 +823,7 @@ GIDSEN = {
 }
 
 GIDS_TMPL = """<p><a class="btn ghost" href="{{url_for('guide')}}">← alle gidsen</a></p>
-<div class=card><h1 style="font-size:24px">{{titel}}</h1>{{inhoud|safe}}</div>
+<div class="card gids-inhoud"><h1 style="font-size:24px">{{titel}}</h1>{{inhoud|safe}}</div>
 <p class="muted small">Bron: docs/{{bestand}} — ook offline in de repo beschikbaar.</p>"""
 
 
