@@ -230,6 +230,51 @@
       "prijs_per_eenheid_incl_btw": 5.462
     },
     {
+      "code": "V1-1-X13",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Natuurvrij maken tussen- of rijwoning (gedoogbeleid Groningen, bij spouwmuurisolatie)",
+      "eenheid": "woning",
+      "prijs_per_eenheid_excl": 360.0,
+      "prijs_per_eenheid_incl_btw": 435.6
+    },
+    {
+      "code": "V1-1-X14",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Natuurvrij maken hoek- of vrijstaande woning (gedoogbeleid Groningen, bij spouwmuurisolatie)",
+      "eenheid": "woning",
+      "prijs_per_eenheid_excl": 410.0,
+      "prijs_per_eenheid_incl_btw": 496.1
+    },
+    {
+      "code": "V1-1-X15",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "eDNA sporenonderzoek tussen- of rijwoning (conform BRL IC-200, gedoogbeleid Groningen)",
+      "eenheid": "woning",
+      "prijs_per_eenheid_excl": 400.0,
+      "prijs_per_eenheid_incl_btw": 484.0
+    },
+    {
+      "code": "V1-1-X16",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "eDNA sporenonderzoek hoek- of vrijstaande woning (conform BRL IC-200, gedoogbeleid Groningen)",
+      "eenheid": "woning",
+      "prijs_per_eenheid_excl": 400.0,
+      "prijs_per_eenheid_incl_btw": 484.0
+    },
+    {
+      "code": "V1-1-X17",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Alternatieve verblijfplaats (stelpost, gedoogbeleid Groningen; altijd opnemen bij spouwmuurisolatie)",
+      "eenheid": "stuks",
+      "prijs_per_eenheid_excl": 125.0,
+      "prijs_per_eenheid_incl_btw": 151.25
+    },
+    {
       "code": "V1-2-A1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",

@@ -327,6 +327,32 @@ check("toeslag hoek = 0,22*h (2*1*0,11)", abs(_wswt(2.6, "Hoekwoning") - 0.22 * 
 check("toeslag vrijstaand = 0", _wswt(2.6, "Vrijstaand") == 0.0)
 check("toeslag zonder hoogte = 0", _wswt(None, "Tussenligging") == 0.0)
 
+print("23b. Gedoogbeleid vleermuizen/eDNA (provincie Groningen, per 1-7-2026)")
+from core.gedoogbeleid import provincie_uit_postcode as _pup, gedoogbeleid_reminders as _gbr
+check("provincie: 9711 (Groningen stad) -> Groningen", _pup("9711AB")[0] == "Groningen")
+check("provincie: 9641 (Veendam) -> Groningen", _pup("9641")[0] == "Groningen")
+check("provincie: 7811 (Emmen) -> Drenthe", _pup("7811")[0] == "Drenthe")
+check("provincie: 9401 (Assen) -> Drenthe", _pup("9401KL")[0] == "Drenthe")
+check("provincie: 9301 (grensgebied) -> Groningen + onzeker",
+      _pup("9301")[0] == "Groningen" and _pup("9301")[1] is True)
+check("provincie: leeg -> Groningen + onzeker (veilige default)",
+      _pup("")[0] == "Groningen" and _pup("")[1] is True)
+check("reminder: geen spouw -> geen reminder", _gbr("9711AB", False) == [])
+_gG = _gbr("9711AB", True)
+check("reminder: Groningen + spouw -> eDNA/natuurvrij/X17 + BRL IC-200 genoemd",
+      bool(_gG) and any("V1-1-X15" in m and "V1-1-X17" in m and "BRL IC-200" in m for m in _gG))
+_gD = _gbr("7811AB", True)
+check("reminder: Drenthe + spouw -> SMP-melding i.p.v. eDNA-verplichting",
+      bool(_gD) and any("DRENTHE" in m and "SMP" in m for m in _gD))
+import json as _json23
+_cat23 = _json23.load(open("catalog/catalog.json", encoding="utf-8"))["maatregelen"]
+_codes23 = {c["code"] for c in _cat23}
+check("catalogus: eDNA-codes V1-1-X13..X17 aanwezig",
+      all(c in _codes23 for c in ("V1-1-X13", "V1-1-X14", "V1-1-X15", "V1-1-X16", "V1-1-X17")))
+_x17 = next((c for c in _cat23 if c["code"] == "V1-1-X17"), None)
+check("catalogus: V1-1-X17 alternatieve verblijfplaats = EUR 151,25 incl",
+      _x17 and abs(_x17["prijs_per_eenheid_incl_btw"] - 151.25) < 0.01)
+
 print("24. MagicPlan Statistics-CSV -> dossier (parser)")
 from magicplan.statistics_csv import build_dossier as _csvdos, _undot as _ud
 check("undot bouwjaar-klasse", _ud("1992.t.m.2013") == "1992 t/m 2013")

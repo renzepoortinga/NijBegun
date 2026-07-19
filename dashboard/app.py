@@ -489,6 +489,9 @@ Exporteer de woning daarna uit Vabi — die laad je in de volgende stap terug al
 
 MAATREGELEN = """{{stepper|safe}}<h1>Maatregelen kiezen</h1>
 <p class=lead>Vink aan wat je toepast. De goedkoopste passende maatregel is voorgeselecteerd; je kunt per bouwdeel wisselen.</p>
+{% if gedoog %}<div class=warn style="border:2px solid var(--warn-line)"><b>🦇 Gedoogbeleid vleermuizen / eDNA (per 1-7-2026):</b>
+{% for g in gedoog %}<div style="margin-top:6px">{{g}}</div>{% endfor %}
+<div class="muted small" style="margin-top:6px">Zoek de codes op via “Zelf kiezen uit de catalogus” hieronder (hoofdcategorie 1 Gevel).</div></div>{% endif %}
 <div class=hint><b>Nij Begun-regel:</b> maatregelen die nódig zijn voor de <b>Standaard</b> staan in de <b>subsidietabel</b> (50/100%).
 Bouwfysisch wenselijke extra's (bv. dakkapel-wangen, deur) adviseer je wél, maar die vallen onder <b>30% ISDE</b> — zet die op “advies”.</div>
 <form method=post id=mf>
@@ -1319,8 +1322,13 @@ def maatregelen(tag):
         return redirect(url_for("vabi", tag=tag))
     vrij = st.get("vrij") or []
     vrij_tot = round(sum(v.get("kosten", 0) for v in vrij if v.get("bucket") == "standaard"), 2)
+    from core.gedoogbeleid import gedoogbeleid_reminders
+    _spouw = any(getattr(s, "spouw_aanwezig", None) is True
+                 for s in (dos.schil or []) if getattr(s, "type", "") == "gevel")
+    _pc = getattr(getattr(dos, "identificatie", None), "postcode", "") or ""
     return page(MAATREGELEN, stepper=stepper("maatregelen", st), groepen=suggesties(dos, catalog),
-                boom=catalogus_boom(catalog), vrij=vrij, vrij_tot=vrij_tot, tag=tag, st=st)
+                boom=catalogus_boom(catalog), vrij=vrij, vrij_tot=vrij_tot, tag=tag, st=st,
+                gedoog=gedoogbeleid_reminders(_pc, _spouw))
 
 
 @app.route("/project/<tag>/maatregelen/add", methods=["POST"])
