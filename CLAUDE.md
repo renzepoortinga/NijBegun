@@ -124,6 +124,11 @@ HART-OP-HART GEVEL-TOESLAG ERUIT (besluit Renze 19-7): de tool telt de +0,11 m/b
 NIET meer automatisch mee bij de gevel-m2 (de verdeling over de juiste gevels was te foutgevoelig) ->
 vervangen door één LUIDE "HART-OP-HART GEVEL-TOESLAG — ZELF TOEVOEGEN IN VABI"-melding in beide parser-
 paden (statistics_csv.py + assemble.py). De adviseur zet de toeslag zelf in EPA. Rekenwijze-gids §1.4 bij.
+MAGICPLAN-VELDEN LIVE GEZET (19-7): form **Constructies** 33 -> 37 vragen — 'Gevel - isolatie aan zijde',
+'Kierdichting', 'Bodemisolatie kruipruimte', 'Dak - isolatie aan zijde' (vullen isolatieplan-sectie 3 V1/V3/V4/V6).
+Save + publish geverifieerd (code=success, 4/4 aanwezig, originelen intact). LET OP: `push_forms.bat` KAN DIT NIET
+(de forms-editor-API weigert de app-key uit .env) -> werkende route = browserconsole met sessie-cookie +
+X-CSRF-Token; stap-voor-stap in magicplan/forms/LIVE-WIJZIGINGEN.md (bovenaan).
 ## Status (15-7-2026) — 456/456 groen. VABI↔MAGICPLAN-MAPPING-AUDIT + GEOMETRIE-IJKING op de ECHTE EPA.
 ESSENHAGE-IJKING (echte EPA-monitor ernaast): Ag -3%, vloer -4%, achtergevel vrijwel exact (29,4 vs 30,0),
 dak van -63% naar -9%. Gefixt: (a) SCHUIN-DAK-FOOTPRINT gebruikte de BOVENSTE verdieping = de zolder binnen

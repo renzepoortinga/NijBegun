@@ -121,7 +121,10 @@ geometrie volgen. Zonder deze velden blijven die template-regels **leeg**. Form 
 
 Leeg laten mag: dan valt de gevel terug op de **spouwmuur**-regel en het hellend dak op de
 **binnenzijde**-regel. De tool meldt wat er ontbreekt via `isolatieplan.fill_template.huidige_staat_gaten()`.
-**Nog te pushen** — staan in `magicplan/forms/additions.json`; draai `magicplan/push_forms.bat`.
+**LIVE sinds 19-7-2026** — gepusht + gepubliceerd naar workspace R.poortinga (form **Constructies** ging van
+33 naar 37 vragen). Bron blijft `magicplan/forms/additions.json`. LET OP: `push_forms.bat` werkt hier **niet**
+(de forms-editor-API weigert de app-key uit `.env`) — de push liep via de browserconsole-route met de
+ingelogde sessie-cookie + `X-CSRF-Token`; zie `magicplan/forms/LIVE-WIJZIGINGEN.md`.
 
 > `Vierpansraam in dakvlak` is bewust **niet** geautomatiseerd: die vul je zelf in het plan in.
 

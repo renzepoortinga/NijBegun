@@ -5,6 +5,23 @@ Forms: **Object · Constructies · Installaties** + element-field-groepen **Geve
 in-sessie `window.__BK_FORMS__/__BK_FIELDS__`. Geldige dataTypes: **list/number/image/bool** (GEEN vrije tekst →
 Bron/Opmerkingen niet mogelijk in een custom-form). Section-node = minimaal `{id,name,type:'section',children,comparisonValue}`.
 
+## 19-7-2026 — 4 huidige-staat-velden LIVE gezet (form Constructies: 33 → 37 vragen)
+Voor isolatieplan sectie 3 (V1/V3/V4/V6) toegevoegd + **gepubliceerd** naar workspace R.poortinga:
+`Gevel - isolatie aan zijde` · `Kierdichting` (sectie GEVEL) · `Bodemisolatie kruipruimte` (VLOER) ·
+`Dak - isolatie aan zijde` (DAK). Opties: zie `docs/magicplan-form-spec.md`. Parser leest ze
+(`magicplan/statistics_csv.py` → `Opname.gevel_isolatie_zijde` / `dak_isolatie_zijde` / `bodemisolatie` /
+`kierdichting`), `isolatieplan/fill_template.py` vult er de V-regels mee.
+
+**PUSH-ROUTE (belangrijk):** `push_forms.bat` / `form_push.py` kan dit **niet** — de custom-forms-editor-API
+weigert de app-key uit `.env` (live geverifieerd). Werkende route = **browserconsole in een ingelogde
+cloud.magicplan.app-tab**:
+1. `GET /api/custom-forms/list/` → record van form `Constructies` (id `7527c352-…`); back-up wegschrijven.
+2. Nieuwe vragen als **flat siblings** ná de section-node invoegen (sections zijn kopjes, geen containers);
+   ids = nieuwe uuid's, `type:'question'`, `dataType:'list'`, `name_escaped` strippen.
+3. `POST /api/custom-forms/save` (JSON-body = het hele record) met `X-CSRF-Token` uit de `csrfToken`-cookie.
+4. `POST /api/custom-forms/publish/<recId>` met body = **rauwe array van workgroup-ids** (uit `publish_to[].id`).
+5. Verifiëren: opnieuw `list/` → vraag-namen aanwezig + `publish_history[].publish_date` bijgewerkt.
+
 ## Constructies = VABI-beslisboom (FORM = standaard, ELEMENT = override) — KERN
 Per bouwdeel (GEVEL / VLOER / DAK) identiek opgebouwd, 1-op-1 als VABI EPA:
 ```
