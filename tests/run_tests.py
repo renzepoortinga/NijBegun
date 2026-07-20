@@ -3033,5 +3033,74 @@ try:
 except Exception as _e:
     check("leads-telefoonfixes: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("\n77. Boven-/onderlicht bij ramen + deur-bovenlicht-glas + toevoerroosters (1e echte opname)")
+try:
+    import tempfile as _tf77
+    from magicplan.statistics_csv import build_dossier as _csvdos77
+
+    _KOP77 = ("WALL ATTRIBUTES,c1,c2,Surface,SurfNoOpen,c5,c6,c7,Type,Isol,c10,Orientatie,Bron,c13,c14,"
+              "Kozijn,Type glas,RaamOrient,Type constructie (deur),Oppervlakte raam in deur,"
+              "Type glas (indien glas in deur),Bovenlicht aanwezig?,Bovenlicht - constructie,"
+              "Bovenlicht - oppervlak (m²),Bovenlicht - type glas,Bovenlicht - isolatie aanwezig?,"
+              "Bovenlicht - isolatiedikte (mm),Onderlicht aanwezig?,Onderlicht - constructie,"
+              "Onderlicht - oppervlak (m²),Onderlicht - type glas,Toevoerrooster aanwezig?,"
+              "Bovenlicht - oppervlak glas,Bovenlicht deur - type glas,Toevoerrooster deur aanwezig?")
+
+    def _rij77(d, n=35):
+        rr = [""] * n
+        for kk, vv in d.items():
+            rr[kk] = str(vv)
+        return ",".join(rr)
+
+    _csv77 = "\n".join([
+        "PLAN ATTRIBUTES", "Bouwjaar,1975 t/m 1982", "Woningtype,Tussenwoning", "Gevelhoogte (m),6", "",
+        "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing",
+        "Ground Floor,60,2.60 m,Kruipruimte", "",
+        _KOP77, "Ground Floor",
+        _rij77({0: "Voorgevel", 3: 20, 4: 20, 8: "Wall", 11: "ZW"}),
+        # raam 3,0 m2 HR++ met BOVENLICHT 0,5 m2 ENKEL glas -> 2,5 HR++ + 0,5 Enkel
+        _rij77({0: "raam bovenlicht", 3: 3.0, 8: "Window", 16: "HR++", 21: "Ja",
+                22: "Raam (glas)", 23: 0.5, 24: "Enkel", 31: "Ja"}),
+        # raam 2,0 m2 Dubbel met ONDERLICHT-PANEEL (borstwering) 0,6 m2 -> 1,4 glas + 0,6 paneel
+        _rij77({0: "raam borstwering", 3: 2.0, 8: "Window", 16: "Dubbel", 27: "Ja",
+                28: "Paneel (dicht)", 29: 0.6}),
+        # raam met bovenlicht=Ja maar ZONDER oppervlak -> niet splitsen, LUIDE flag
+        _rij77({0: "raam zonder m2", 3: 1.5, 8: "Window", 16: "HR++", 21: "Ja", 22: "Raam (glas)"}),
+        # deur met raam (0,4 Dubbel) + bovenlicht 0,3 m2 met EIGEN glastype Enkel -> apart kozijn
+        _rij77({0: "voordeur", 3: 2.2, 8: "Door", 17: "ZW", 18: "Deur met raam", 19: 0.4,
+                20: "Dubbel", 32: 0.3, 33: "Enkel", 34: "Ja"}),
+        # deur met bovenlicht ZONDER glastype -> legacy: optellen bij het deurglas
+        _rij77({0: "achterdeur", 3: 2.2, 8: "Door", 17: "ZW", 18: "Deur met raam", 19: 0.4,
+                20: "Dubbel", 32: 0.3}), "",
+    ])
+    _f77 = _tf77.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8")
+    _f77.write(_csv77); _f77.close()
+    _d77, _n77 = _csvdos77(_f77.name)
+
+    _koz77 = [s for s in _d77.schil if s.type == "kozijn" and s.subtype == "Raam"]
+    _opp77 = lambda glas: round(sum(s.oppervlakte_m2 for s in _koz77 if (s.glastype or "") == glas), 2)
+    check("bovenlicht (glas): 0,5 m2 ENKEL als eigen kozijnregel", _opp77("Enkel") >= 0.65)  # <0,65-regel bumpt
+    _enkel77 = [s for s in _koz77 if s.glastype == "Enkel"]
+    check("bovenlicht: 2 aparte enkel-glas-vlakken (raam-bovenlicht + deur-bovenlicht)",
+          len(_enkel77) == 2)
+    check("hoofdraam 1: 3,0 - 0,5 = 2,5 m2 HR++ over",
+          any(abs(s.oppervlakte_m2 - 2.5) < 0.01 for s in _koz77 if s.glastype == "HR++"))
+    check("onderlicht-paneel: 0,6 m2 dichte constructie + hoofdraam 1,4 m2 Dubbel",
+          any(abs(s.oppervlakte_m2 - 0.6) < 0.01 and "paneel" in (s.opmerkingen or "").lower()
+              for s in _d77.schil)
+          and any(abs(s.oppervlakte_m2 - 1.4) < 0.01 for s in _koz77 if s.glastype == "Dubbel"))
+    check("bovenlicht zonder oppervlak: NIET gesplitst + luide flag",
+          any(abs(s.oppervlakte_m2 - 1.5) < 0.01 for s in _koz77 if s.glastype == "HR++")
+          and any("OPPERVLAK ontbreekt" in n for n in _n77))
+    _deur77 = [s for s in _d77.schil if s.subtype == "Deur"]
+    check("deur met eigen bovenlicht-glastype: bovenlicht gaat van het deurvlak af (2,2-0,3=1,9)",
+          any(abs(s.oppervlakte_m2 - 1.9) < 0.01 for s in _deur77))
+    check("deur zonder bovenlicht-glastype (legacy): deurvlak blijft 2,2 (glas telt in de deur)",
+          any(abs(s.oppervlakte_m2 - 2.2) < 0.01 for s in _deur77))
+    check("toevoerroosters: raam + deur geteld (2) in de notes",
+          any("2 kozijn(en)/deur(en) met TOEVOERROOSTER" in n for n in _n77))
+except Exception as _e:
+    check("boven-/onderlicht-parser: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

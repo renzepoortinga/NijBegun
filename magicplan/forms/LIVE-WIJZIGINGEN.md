@@ -1,5 +1,17 @@
 # MagicPlan live forms — stand 25-6-2026 (via custom-forms/-fields API, geverifieerd)
 
+## NOG TE PUSHEN (20-7-2026, na 1e echte opname): boven-/onderlicht + deur-glas/rooster
+Definities staan in `additions.json` onder `field_groups` (form_match Raam/Deur), `_doc_bovenonderlicht`.
+Dit zijn custom-FIELDS (element-context **windows** resp. **doors**) -> endpoint `/api/custom-fields/`
+(list/save/publish, zelfde vorm als forms; zie memory magicplan-form-api). Route: browserconsole in een
+ingelogde cloud.magicplan.app-tab; Claude voert 'm uit zodra MagicPlan openstaat.
+- **Raam-groep** ("Raam/paneel"): `Bovenlicht aanwezig?` en `Onderlicht aanwezig?` (Nee/Ja) ->
+  conditioneel: `- constructie` (Raam (glas)/Paneel (dicht)) · `- oppervlak (m²)` · `- type glas`
+  (Enkel..TripleHR/Onbekend, bij Raam) · `- isolatie aanwezig?` + `- isolatiedikte (mm)` (bij Paneel).
+- **Deur-groep**: `Bovenlicht deur - type glas` + `Toevoerrooster deur aanwezig?` (namen bewust met
+  'deur' erin: de parser zoekt op naam en mag nooit de raamkolom pakken).
+De PARSER leest dit alles al (statistics_csv, tests 77) — de velden live zetten is de enige reststap.
+
 Forms: **Object · Constructies · Installaties** + element-field-groepen **Gevel per wand · Vloer · Raam/paneel · Deur**
 (workspace R.poortinga). Save/publish-roundtrip live bewezen. Backup: `magicplan_*_backup.json` (eerdere sessie) +
 in-sessie `window.__BK_FORMS__/__BK_FIELDS__`. Geldige dataTypes: **list/number/image/bool** (GEEN vrije tekst →

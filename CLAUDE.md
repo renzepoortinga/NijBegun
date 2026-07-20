@@ -154,6 +154,15 @@ HART-OP-HART GEVEL-TOESLAG ERUIT (besluit Renze 19-7): de tool telt de +0,11 m/b
 NIET meer automatisch mee bij de gevel-m2 (de verdeling over de juiste gevels was te foutgevoelig) ->
 vervangen door één LUIDE "HART-OP-HART GEVEL-TOESLAG — ZELF TOEVOEGEN IN VABI"-melding in beide parser-
 paden (statistics_csv.py + assemble.py). De adviseur zet de toeslag zelf in EPA. Rekenwijze-gids §1.4 bij.
+BOVEN-/ONDERLICHT (20-7, na 1e echte opname): ramen hebben vaak een boven- of onderlicht met ANDER glas
+(enkel) of een dicht paneel (borstwering) — raam dupliceren paste niet in de gevel. Nieuw per raam:
+Bovenlicht/Onderlicht aanwezig? -> constructie (Raam/Paneel) + oppervlak (m2) + type glas OF paneel-
+isolatie; parser splitst het van het hoofdraam af naar een eigen kozijn-/paneelregel (aanwezig zonder
+oppervlak = LUIDE flag). Deur: 'Bovenlicht deur - type glas' (apart kozijn, gaat van het deurvlak af;
+zonder type = legacy optellen) + 'Toevoerrooster deur aanwezig?'. Bestaand raam-veld 'Toevoerrooster
+aanwezig?' wordt nu OOK gelezen (werd genegeerd) -> rooster-telling in notes voor het ventilatieplan.
+Parser + tests (77) klaar; VELDEN NOG LIVE ZETTEN via browserconsole (custom-FIELDS /api/custom-fields/,
+definities additions.json field_groups; zie forms/LIVE-WIJZIGINGEN.md bovenaan).
 MAGICPLAN-VELDEN LIVE GEZET (19-7): form **Constructies** 33 -> 37 vragen — 'Gevel - isolatie aan zijde',
 'Kierdichting', 'Bodemisolatie kruipruimte', 'Dak - isolatie aan zijde' (vullen isolatieplan-sectie 3 V1/V3/V4/V6).
 Save + publish geverifieerd (code=success, 4/4 aanwezig, originelen intact). LET OP: `push_forms.bat` KAN DIT NIET
