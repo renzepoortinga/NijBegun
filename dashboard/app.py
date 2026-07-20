@@ -1964,8 +1964,9 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 
   <div class=lead-acties>
     <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}">✉ Kennismaking</a>
-    {% if l.afspraak %}<a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging"
-       title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ Bevestiging</a>{% endif %}
+    {# ALTIJD tonen — verstopt achter het datumveld was 'ie onvindbaar; zonder datum legt de app het uit #}
+    <a class="btn sec" href="{{url_for('leads_mail', lid=l.id)}}?soort=bevestiging"
+       title="Afspraak-bevestigingsmail (voorbereiding + verwachtingen)">✉ Bevestiging</a>
     {% if l.project_tag %}<a class="btn green" href="{{url_for('project', tag=l.project_tag)}}" title="Open het gekoppelde project">📂 Project</a>
     {% elif l.status in ('afspraak gepland','opname gedaan','plan ingediend','afgerond') %}
       <form method=post action="{{url_for('leads_project', lid=l.id)}}"><button class="btn" title="Maak een project met dit adres en ga naar de opname">➕ Project</button></form>{% endif %}
@@ -2060,7 +2061,8 @@ niet deze webapp. Opent hij in je persoonlijke account? Wissel dan in het opstel
 Van-veld), of zet info@ als standaardaccount in de Outlook-instellingen. Of gebruik <b>Kopieer tekst</b>
 en plak 'm in een mail die je vanuit info@ start.</div>
 <div class=card><div class=kv><dt>Aan</dt><dd>{{l.email or '—'}}</dd>
-<dt>Onderwerp</dt><dd>{{onderwerp}}</dd><dt>Telefoon</dt><dd>{{l.telefoon or '—'}}</dd></div></div>
+<dt>Onderwerp</dt><dd>{{onderwerp}}</dd><dt>Telefoon</dt><dd>{{l.telefoon or '—'}}</dd>
+{% if soort=='bevestiging' %}<dt>Afspraak</dt><dd><b>{{afspraak_nl}}</b> — klopt dit niet, pas 'm dan eerst aan op de leadkaart (📅)</dd>{% endif %}</div></div>
 <div class=card><textarea id=mailbody rows=22 style="font-family:inherit">{{tekst}}</textarea>
 <div class=btn-row>
 <a class="btn lg" href="mailto:{{l.email}}?subject={{onderwerp|urlencode}}&body={{tekst|urlencode}}">✉ Open in mailprogramma</a>
@@ -2421,10 +2423,17 @@ def leads_mail(lid):
         abort(404)
     soort = request.args.get("soort", "")
     if soort == "bevestiging":
+        if not (r.get("afspraak") or "").strip():
+            # zonder datum zou de mail "nader te bepalen" zeggen — dat wil je nooit versturen
+            flash("Voor de bevestigingsmail is eerst een afspraakdatum nodig: vul die in op de "
+                  "leadkaart van %s en druk op 📅. Daarna staat de datum vanzelf in de mail."
+                  % (r.get("naam") or "deze lead"))
+            return redirect(url_for("leads_pagina"))
         onderwerp, tekst = leads_mod.bevestiging_mail(r, _cfg().get("adviseur", {}))
     else:
         onderwerp, tekst = leads_mod.concept_mail(r, _cfg().get("adviseur", {}))
-    return page(LEAD_MAIL, l=r, onderwerp=onderwerp, tekst=tekst, soort=soort)
+    return page(LEAD_MAIL, l=r, onderwerp=onderwerp, tekst=tekst, soort=soort,
+                afspraak_nl=leads_mod._afspraak_nl(r.get("afspraak", "")))
 
 
 @app.route("/leads/export.csv")

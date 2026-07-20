@@ -3015,6 +3015,19 @@ try:
               "Kennismakingsmail — Jan de Boer" in _hk76)
         check("mailpagina: uitleg dat mailto het standaardaccount opent (Van-adres wisselen)",
               "standaard-mailaccount" in _hb76 and "Van" in _hb76)
+        check("bevestigingspagina: afspraakdatum prominent ter controle",
+              "donderdag 23 juli 2026 om 14:30" in _hb76)
+
+        # de Bevestiging-knop zat verstopt achter het datumveld -> mail 3 was onvindbaar
+        _hl76 = _c76.get("/leads").get_data(as_text=True)
+        check("leadkaart: Bevestiging-knop ALTIJD zichtbaar (niet meer achter het datumveld)",
+              "soort=bevestiging" in _hl76)
+        _L76.save_leads([dict(id=1, naam="Zonder Datum", postcode="9736GL", huisnummer="106",
+                              toevoeging="", email="j@x.nl", telefoon="06", status="afspraak gepland",
+                              ontvangen="2026-07-19", notitie="", afspraak="")])
+        _hz76 = _c76.get("/leads/1/mail?soort=bevestiging", follow_redirects=True).get_data(as_text=True)
+        check("bevestiging zonder datum: terug naar leads met uitleg (nooit 'nader te bepalen' mailen)",
+              "eerst een afspraakdatum nodig" in _hz76)
     finally:
         _L76.LEADS_DIR, _L76.LEADS_FILE, _L76.GEWIST_FILE = _bew76
 except Exception as _e:
