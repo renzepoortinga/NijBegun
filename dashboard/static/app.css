@@ -286,6 +286,12 @@ input:focus,select:focus,textarea:focus{
    binnenruimte ~280px) weigert een kale minmax(300px,1fr) te krimpen en steken de kaarten buiten
    de pagina. min(...,100%) betekent: nooit breder dan de container zelf. */
 .lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:14px}
+/* [hidden] moet WINNEN van display:flex — anders telt het zoekfilter wel ("2 resultaten")
+   maar blijft de hele lijst gewoon staan (live gebeurd; de test mat alleen de property). */
+.lead-card[hidden]{display:none}
+/* na een status-/afspraakwijziging springt de pagina terug naar deze kaart en licht hij even op */
+@keyframes kaart-flits{from{box-shadow:0 0 0 3px var(--focus)}to{box-shadow:var(--shadow-sm)}}
+.lead-card.is-net-gewijzigd{animation:kaart-flits 1.6s ease-out}
 .lead-card{
   display:flex;flex-direction:column;gap:10px;
   background:var(--card);border:1px solid var(--line);border-radius:16px;

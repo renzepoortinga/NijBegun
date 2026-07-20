@@ -2978,5 +2978,47 @@ try:
 except Exception as _e:
     check("smalle-iPhone-opmaak: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("\n76. Leads op de telefoon: filter verbergt echt, plek blijft bewaard, juiste mailtitel")
+try:
+    import os as _o76, tempfile as _t76
+    import dashboard.app as _W76, dashboard.leads as _L76
+    _css76 = open(_o76.path.join(_o76.path.dirname(_o76.path.dirname(_o76.path.abspath(_W76.__file__))),
+                                 "dashboard", "static", "app.css"), encoding="utf-8").read()
+    # het zoekfilter telde wel maar verborg niets: display:flex won van [hidden]
+    check("filter: [hidden] wint van display:flex", ".lead-card[hidden]{display:none}" in _css76)
+    check("filter: zoek + status overleven het herladen (sessionStorage)",
+          "leads_zoek" in _W76.LEADS and "leads_status" in _W76.LEADS)
+    check("na wijziging: terugspringen naar de kaart die je aanraakte",
+          'data-lid="{{l.id}}"' in _W76.LEADS and "leads_focus" in _W76.LEADS
+          and "scrollIntoView" in _W76.LEADS and "is-net-gewijzigd" in _css76)
+
+    # de bevestigingsmail-pagina heette 'Kennismakingsmail' — verwarrend of hij wel/niet werkte
+    _tmp76 = _t76.mkdtemp()
+    _bew76 = (_L76.LEADS_DIR, _L76.LEADS_FILE, _L76.GEWIST_FILE)
+    _L76.LEADS_DIR = _tmp76
+    _L76.LEADS_FILE = _o76.path.join(_tmp76, "leads.json")
+    _L76.GEWIST_FILE = _o76.path.join(_tmp76, "verwijderd.json")
+    try:
+        _L76.save_leads([dict(id=1, naam="Jan de Boer", postcode="9736GL", huisnummer="106",
+                              toevoeging="", email="j@x.nl", telefoon="06", status="afspraak gepland",
+                              ontvangen="2026-07-19", notitie="", afspraak="2026-07-23T14:30")])
+        _W76.app.config.update(TESTING=True)
+        _c76 = _W76.app.test_client()
+        with _c76.session_transaction() as _s76:
+            _s76["ingelogd"] = True
+        _hb76 = _c76.get("/leads/1/mail?soort=bevestiging").get_data(as_text=True)
+        check("bevestigingsmail-pagina: eigen titel + juiste inhoud",
+              "Afspraakbevestiging — Jan de Boer" in _hb76
+              and "Bevestiging afspraak woningopname" in _hb76)
+        _hk76 = _c76.get("/leads/1/mail").get_data(as_text=True)
+        check("kennismakingsmail-pagina: titel blijft Kennismakingsmail",
+              "Kennismakingsmail — Jan de Boer" in _hk76)
+        check("mailpagina: uitleg dat mailto het standaardaccount opent (Van-adres wisselen)",
+              "standaard-mailaccount" in _hb76 and "Van" in _hb76)
+    finally:
+        _L76.LEADS_DIR, _L76.LEADS_FILE, _L76.GEWIST_FILE = _bew76
+except Exception as _e:
+    check("leads-telefoonfixes: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

@@ -1931,7 +1931,7 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 <div class=lead-grid>
 {% for l in leads %}
 <article class="lead-card{{' is-klaar' if l.status in ('afgerond','vervallen') else ''}}"
-         data-status="{{l.status}}" data-zoek="{{(l.naam ~ ' ' ~ l.adres ~ ' ' ~ (l.email or '') ~ ' ' ~ (l.telefoon or ''))|lower}}">
+         data-lid="{{l.id}}" data-status="{{l.status}}" data-zoek="{{(l.naam ~ ' ' ~ l.adres ~ ' ' ~ (l.email or '') ~ ' ' ~ (l.telefoon or ''))|lower}}">
   <header class=lead-kop>
     <div class=lead-titel><h3>{{l.naam}}</h3><p class=lead-adres>{{l.adres}}</p></div>
     <span class="pill {{l.pill}}">{{l.status}}</span>
@@ -1978,7 +1978,10 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
 </div>
 <p class="muted small">Status wisselen slaat direct op. Volgorde: nieuw → mail gestuurd → gebeld → afspraak gepland → opname gedaan → plan ingediend → afgerond.</p></div>
 <script>
-/* Zoeken + statusfilter: puur in de browser, geen herladen. 52 leads blijven zo werkbaar. */
+/* Zoeken + statusfilter: puur in de browser, geen herladen. 52 leads blijven zo werkbaar.
+   Het filter en de plek waar je werkte OVERLEVEN een statuswijziging: elke wijziging herlaadt de
+   pagina (bewust — de server is de waarheid), dus filter in sessionStorage + terugspringen naar
+   de kaart die je net aanraakte. Anders zoek je op je telefoon elke lead opnieuw op. */
 (function(){
   var zoek=document.getElementById('zoek'), filt=document.getElementById('statusfilter'),
       melding=document.getElementById('filtermelding'), kaarten=[].slice.call(document.querySelectorAll('.lead-card'));
@@ -1991,8 +1994,31 @@ de gegevens blijven <b>lokaal</b> op deze computer (AVG).</p>
     var actief=q||s;
     melding.hidden=!actief;
     melding.textContent=actief?(n+' van '+kaarten.length+' lead(s) getoond'):'';
+    try{sessionStorage.setItem('leads_zoek',zoek.value);sessionStorage.setItem('leads_status',s);}catch(e){}
   }
   zoek.addEventListener('input',pas); filt.addEventListener('change',pas);
+  try{
+    zoek.value=sessionStorage.getItem('leads_zoek')||'';
+    filt.value=sessionStorage.getItem('leads_status')||'';
+  }catch(e){}
+  if(zoek.value||filt.value)pas();
+  // onthoud bij elke wijziging (status/afspraak/knop) WELKE kaart het was...
+  kaarten.forEach(function(k){
+    [].slice.call(k.querySelectorAll('form')).forEach(function(f){
+      f.addEventListener('submit',function(){
+        try{sessionStorage.setItem('leads_focus',k.dataset.lid);}catch(e){}
+      });
+    });
+  });
+  // ...en spring er na het herladen naartoe, met een korte oplichting
+  try{
+    var terug=sessionStorage.getItem('leads_focus');
+    if(terug){
+      sessionStorage.removeItem('leads_focus');
+      var k=document.querySelector('.lead-card[data-lid="'+terug+'"]');
+      if(k&&!k.hidden){k.scrollIntoView({block:'center'});k.classList.add('is-net-gewijzigd');}
+    }
+  }catch(e){}
 })();
 </script>
 {% else %}<div class=hint>Nog geen leads. Haal je mails op of plak je eerste portal-mail hierboven.</div>{% endif %}
@@ -2026,8 +2052,13 @@ LEADS_ONTVANGST = """<h1>Ontvangstbevestiging — bulk</h1>
 <button class="btn green">✓ Verstuurd — markeer deze {{n}}</button></form>
 <a class="btn ghost" href="{{url_for('leads_pagina')}}">← terug</a></div></div>"""
 
-LEAD_MAIL = """<h1>Kennismakingsmail — {{l.naam}}</h1>
+LEAD_MAIL = """<h1>{{'Afspraakbevestiging' if soort=='bevestiging' else 'Kennismakingsmail'}} — {{l.naam}}</h1>
 <p class=lead>Concept. Kopieer of open 'm in je mailprogramma, lees 'm even na en <b>verstuur zelf</b>.</p>
+<div class=hint>⚠ "Open in mailprogramma" opent je <b>standaard-mailaccount</b> — dat bepaalt je telefoon,
+niet deze webapp. Opent hij in je persoonlijke account? Wissel dan in het opstelvenster het
+<b>Van</b>-adres naar info@poortinga-energieadvies.nl (in de Outlook-app: tik op je adres in het
+Van-veld), of zet info@ als standaardaccount in de Outlook-instellingen. Of gebruik <b>Kopieer tekst</b>
+en plak 'm in een mail die je vanuit info@ start.</div>
 <div class=card><div class=kv><dt>Aan</dt><dd>{{l.email or '—'}}</dd>
 <dt>Onderwerp</dt><dd>{{onderwerp}}</dd><dt>Telefoon</dt><dd>{{l.telefoon or '—'}}</dd></div></div>
 <div class=card><textarea id=mailbody rows=22 style="font-family:inherit">{{tekst}}</textarea>
@@ -2388,11 +2419,12 @@ def leads_mail(lid):
     r = next((x for x in leads_mod.load_leads() if x.get("id") == lid), None)
     if not r:
         abort(404)
-    if request.args.get("soort") == "bevestiging":
+    soort = request.args.get("soort", "")
+    if soort == "bevestiging":
         onderwerp, tekst = leads_mod.bevestiging_mail(r, _cfg().get("adviseur", {}))
     else:
         onderwerp, tekst = leads_mod.concept_mail(r, _cfg().get("adviseur", {}))
-    return page(LEAD_MAIL, l=r, onderwerp=onderwerp, tekst=tekst)
+    return page(LEAD_MAIL, l=r, onderwerp=onderwerp, tekst=tekst, soort=soort)
 
 
 @app.route("/leads/export.csv")
