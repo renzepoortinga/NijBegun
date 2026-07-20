@@ -336,128 +336,154 @@
    ]
   },
   {
-   "form_match": "Raam",
-   "_waarom": "1e echte opname (20-7): veel ramen hebben een boven- of onderlicht met ANDER glas (enkel) of een dicht paneel (borstwering). Raam dupliceren paste niet in de gevel; dit hoort als eigenschap van het raam, niet als extra element.",
+   "form_match": "Raam/paneel",
+   "_waarom": "1e echte opname (20-7): boven-/onderlicht met ander glas (enkel) of dicht paneel (borstwering). Zelfde patroon als het deur-bovenlicht; namen met 'kozijn' erin zodat de naam-gebaseerde parser nooit de deur-kolommen pakt.",
    "attach": [
     {
-     "name": "Bovenlicht aanwezig?",
+     "name": "Bovenlicht in het kozijn? (leeg = geen)",
      "dataType": "list",
      "required": false,
      "options": [
       "Nee",
-      "Ja"
+      "Ja, met eigen glas",
+      "Ja, met dicht paneel"
      ],
-     "help": "Bovenlicht = apart vlak in hetzelfde kozijn (ander glas of dicht paneel). Bij Ja: constructie en OPPERVLAK invullen — zonder oppervlak kan de tool niet splitsen.",
-     "children_show_when": "Ja",
      "children": [
       {
-       "name": "Bovenlicht - constructie",
-       "dataType": "list",
-       "required": false,
-       "options": [
-        "Raam (glas)",
-        "Paneel (dicht)"
-       ]
-      },
-      {
-       "name": "Bovenlicht - oppervlak (m²)",
+       "name": "Bovenlicht kozijn - oppervlak glas (m²)",
        "dataType": "number",
-       "required": false,
-       "help": "Wordt van het hoofdraam afgetrokken; meet B x H van alleen dit deel."
+       "comparisonValue": "Ja, met eigen glas"
       },
       {
-       "name": "Bovenlicht - type glas",
+       "name": "Bovenlicht kozijn - type glas",
        "dataType": "list",
-       "required": false,
        "options": [
         "Enkel",
+        "Voorzetglas",
         "Dubbel",
-        "HR",
+        "HR (dubbel glas met coating)",
         "HR+",
         "HR++",
         "TripleHR",
+        "Vacuümglas",
         "Onbekend"
        ],
-       "show_when": "Raam (glas)",
-       "help": "Vaak ENKEL glas terwijl het hoofdraam beter glas heeft — daarom apart."
+       "comparisonValue": "Ja, met eigen glas"
       },
       {
-       "name": "Bovenlicht - isolatie aanwezig?",
+       "name": "Bovenlicht kozijn-paneel - oppervlak (m²)",
+       "dataType": "number",
+       "comparisonValue": "Ja, met dicht paneel"
+      },
+      {
+       "name": "Bovenlicht kozijn-paneel - isolatie aanwezig?",
        "dataType": "list",
-       "required": false,
        "options": [
         "Ja",
         "Nee",
         "Onbekend"
        ],
-       "show_when": "Paneel (dicht)"
+       "comparisonValue": "Ja, met dicht paneel",
+       "children": [
+        {
+         "name": "Bovenlicht kozijn-paneel - bouwjaarklasse",
+         "dataType": "list",
+         "options": [
+          "Tot 1965",
+          "Van 1965 t/m 1974",
+          "Van 1975 t/m 1982",
+          "Van 1983 t/m 1987",
+          "Van 1988 t/m 1991",
+          "Van 1992 t/m 2013",
+          "2014",
+          "Van 2015 t/m 2017",
+          "Vanaf 2018 t/m 2020 (1 jan in gebruik)",
+          "Vanaf 2018 t/m 2020 (Overig)",
+          "Vanaf 2021 (1 jan in gebruik)",
+          "Vanaf 2021 (Overig)"
+         ],
+         "comparisonValue": "Onbekend"
+        }
+       ]
       },
       {
-       "name": "Bovenlicht - isolatiedikte (mm)",
+       "name": "Bovenlicht kozijn-paneel - isolatiedikte (mm)",
        "dataType": "number",
-       "required": false,
-       "show_when": "Paneel (dicht)"
+       "comparisonValue": "Ja, met dicht paneel"
       }
      ]
     },
     {
-     "name": "Onderlicht aanwezig?",
+     "name": "Onderlicht in het kozijn? (leeg = geen)",
      "dataType": "list",
      "required": false,
      "options": [
       "Nee",
-      "Ja"
+      "Ja, met eigen glas",
+      "Ja, met dicht paneel"
      ],
-     "help": "Onderlicht = apart vlak in hetzelfde kozijn (ander glas of dicht paneel). Bij Ja: constructie en OPPERVLAK invullen — zonder oppervlak kan de tool niet splitsen.",
-     "children_show_when": "Ja",
      "children": [
       {
-       "name": "Onderlicht - constructie",
-       "dataType": "list",
-       "required": false,
-       "options": [
-        "Raam (glas)",
-        "Paneel (dicht)"
-       ]
-      },
-      {
-       "name": "Onderlicht - oppervlak (m²)",
+       "name": "Onderlicht kozijn - oppervlak glas (m²)",
        "dataType": "number",
-       "required": false,
-       "help": "Wordt van het hoofdraam afgetrokken; meet B x H van alleen dit deel."
+       "comparisonValue": "Ja, met eigen glas"
       },
       {
-       "name": "Onderlicht - type glas",
+       "name": "Onderlicht kozijn - type glas",
        "dataType": "list",
-       "required": false,
        "options": [
         "Enkel",
+        "Voorzetglas",
         "Dubbel",
-        "HR",
+        "HR (dubbel glas met coating)",
         "HR+",
         "HR++",
         "TripleHR",
+        "Vacuümglas",
         "Onbekend"
        ],
-       "show_when": "Raam (glas)",
-       "help": "Vaak ENKEL glas terwijl het hoofdraam beter glas heeft — daarom apart."
+       "comparisonValue": "Ja, met eigen glas"
       },
       {
-       "name": "Onderlicht - isolatie aanwezig?",
+       "name": "Onderlicht kozijn-paneel - oppervlak (m²)",
+       "dataType": "number",
+       "comparisonValue": "Ja, met dicht paneel"
+      },
+      {
+       "name": "Onderlicht kozijn-paneel - isolatie aanwezig?",
        "dataType": "list",
-       "required": false,
        "options": [
         "Ja",
         "Nee",
         "Onbekend"
        ],
-       "show_when": "Paneel (dicht)"
+       "comparisonValue": "Ja, met dicht paneel",
+       "children": [
+        {
+         "name": "Onderlicht kozijn-paneel - bouwjaarklasse",
+         "dataType": "list",
+         "options": [
+          "Tot 1965",
+          "Van 1965 t/m 1974",
+          "Van 1975 t/m 1982",
+          "Van 1983 t/m 1987",
+          "Van 1988 t/m 1991",
+          "Van 1992 t/m 2013",
+          "2014",
+          "Van 2015 t/m 2017",
+          "Vanaf 2018 t/m 2020 (1 jan in gebruik)",
+          "Vanaf 2018 t/m 2020 (Overig)",
+          "Vanaf 2021 (1 jan in gebruik)",
+          "Vanaf 2021 (Overig)"
+         ],
+         "comparisonValue": "Onbekend"
+        }
+       ]
       },
       {
-       "name": "Onderlicht - isolatiedikte (mm)",
+       "name": "Onderlicht kozijn-paneel - isolatiedikte (mm)",
        "dataType": "number",
-       "required": false,
-       "show_when": "Paneel (dicht)"
+       "comparisonValue": "Ja, met dicht paneel"
       }
      ]
     }
@@ -465,35 +491,36 @@
   },
   {
    "form_match": "Deur",
-   "_waarom": "1e echte opname (20-7): bij een deur-met-raam was geen glastype en geen rooster te kiezen, en het deur-bovenlicht had geen eigen glastype. Namen bewust ANDERS dan de raamvelden ('deur' erin) zodat de naam-gebaseerde parser nooit de verkeerde kolom pakt.",
+   "_waarom": "Deur-bovenlicht had geen eigen glastype (vaak enkel) en de deur geen rooster.",
    "attach": [
     {
      "name": "Bovenlicht deur - type glas",
      "dataType": "list",
-     "required": false,
      "options": [
       "Enkel",
+      "Voorzetglas",
       "Dubbel",
-      "HR",
+      "HR (dubbel glas met coating)",
       "HR+",
       "HR++",
       "TripleHR",
+      "Vacuümglas",
       "Onbekend"
      ],
-     "help": "Glastype van het bovenlicht boven de deur. Ingevuld -> apart kozijn in Vabi; leeg -> het glas telt bij het deurglas (oude gedrag)."
+     "comparisonValue": "Ja, met glas",
+     "_plek": "als KIND van 'Bovenlicht boven de deur?', na 'Bovenlicht - oppervlak glas (m²)'"
     },
     {
-     "name": "Toevoerrooster deur aanwezig?",
+     "name": "Toevoerrooster deur aanwezig? (leeg = geen)",
      "dataType": "list",
-     "required": false,
      "options": [
       "Nee",
       "Ja"
      ],
-     "help": "Rooster in of boven de deur/het bovenlicht — telt als toevoervoorziening in het ventilatieplan."
+     "_plek": "top-level, achteraan"
     }
    ]
   }
  ],
- "_doc_bovenonderlicht": "BOVEN-/ONDERLICHT + DEUR-GLAS/ROOSTER (20-7-2026, na 1e echte opname): RAAM-groep krijgt per raam 'Bovenlicht aanwezig?' en 'Onderlicht aanwezig?' -> constructie (Raam (glas)/Paneel (dicht)) + oppervlak (m2) + type glas OF paneel-isolatie. DEUR-groep krijgt 'Bovenlicht deur - type glas' en 'Toevoerrooster deur aanwezig?'. Parser (statistics_csv) splitst het oppervlak van het hoofdraam af -> eigen kozijn-/paneelregel; aanwezig=Ja zonder oppervlak = LUIDE flag, nooit stil. Het bestaande raam-veld 'Toevoerrooster aanwezig?' wordt nu OOK gelezen (werd genegeerd) -> rooster-telling in de notes. LET OP: dit zijn custom-FIELDS (element-context windows/doors) -> live zetten via de browserconsole-route (/api/custom-fields/), zie forms/LIVE-WIJZIGINGEN.md."
+ "_doc_bovenonderlicht": "BOVEN-/ONDERLICHT + DEUR-GLAS/ROOSTER (20-7-2026): definitief ontwerp = DEUR-patroon. Raam/paneel-groep: 'Bovenlicht/Onderlicht in het kozijn? (leeg = geen)' -> Ja, met eigen glas (oppervlak+type glas) | Ja, met dicht paneel (oppervlak+isolatie+bouwjaarklasse+dikte). Deur: 'Bovenlicht deur - type glas' (kind van Bovenlicht boven de deur?, cmp 'Ja, met glas') + 'Toevoerrooster deur aanwezig?'. Optielijsten LIVE afgelezen (glas incl. Voorzetglas/Vacuümglas). Parser: statistics_csv Window/Door-tak; oppervlak wordt van hoofdraam/deurvlak afgesplitst; Ja zonder oppervlak = luide flag. Live zetten: custom-FIELDS via browserconsole (/api/custom-fields/)."
 }

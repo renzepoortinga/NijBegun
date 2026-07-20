@@ -537,31 +537,32 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             _hk = (_wn("kozijnmateriaal", exact=True)
                    or ((r[15] or "").strip() if len(r) > 15 else ""))
             # BOVEN-/ONDERLICHT (na 1e echte opname): een apart vlak in hetzelfde kozijn met ander
-            # glas (bv. enkel glas boven) of een dicht paneel (borstwering onder). De adviseur geeft
-            # constructie + oppervlak op; dat deel gaat van het hoofdraam af en wordt een eigen
-            # kozijn- of paneel-regel. Zonder oppervlak wordt er NIETS gesplitst — dan een luide flag.
+            # glas (bv. enkel glas boven) of een dicht paneel (borstwering onder). Zelfde patroon als
+            # het deur-bovenlicht ('Ja, met eigen glas' / 'Ja, met dicht paneel' + per tak eigen
+            # velden). Veldnamen bevatten 'kozijn' zodat ze nooit botsen met de DEUR-kolommen
+            # ('Bovenlicht - oppervlak glas'). Zonder oppervlak wordt er NIETS gesplitst — luide flag.
             _tot = _f(r[3]) or 0.0
             _sub_af = 0.0
             for _pref in ("bovenlicht", "onderlicht"):
-                _sopp = _f(_wn(_pref + " - oppervlak", exact=True))
-                _aanw = (_wn(_pref + " aanwezig") or "").strip().lower()
-                _scon = (_wn(_pref + " - constructie") or "").strip().lower()
-                if not _sopp:
-                    if _aanw.startswith("ja"):
-                        notes.append("raam '%s' (%s): %s aanwezig maar OPPERVLAK ontbreekt -> niet "
-                                     "gesplitst; splits het kozijn zelf in Vabi."
-                                     % ((r[0] or "?").strip(), orient, _pref))
-                    continue
-                if "paneel" in _scon:
-                    panelen.append({"area": _sopp, "orient": orient, "begr": cur_begr,
-                                    "isolatie": _undot(_wn(_pref + " - isolatie aanwezig") or "") or "Onbekend",
-                                    "dikte": _f(_wn(_pref + " - isolatiedikte")),
-                                    "bouwjaarklasse": ""})
-                else:
-                    kozijnen.append({"area": _sopp,
-                                     "glas": _undot(_wn(_pref + " - type glas", exact=True) or ""),
+                _aanw = (_wn(_pref + " in het kozijn") or "").strip().lower()
+                _gopp = _f(_wn(_pref + " kozijn - oppervlak glas", exact=True))
+                _popp = _f(_wn(_pref + " kozijn-paneel - oppervlak", exact=True))
+                if _gopp:
+                    kozijnen.append({"area": _gopp,
+                                     "glas": _undot(_wn(_pref + " kozijn - type glas", exact=True) or ""),
                                      "orient": orient, "begr": cur_begr, "kozijn_hk": _hk})
-                _sub_af += _sopp
+                    _sub_af += _gopp
+                elif _popp:
+                    panelen.append({"area": _popp, "orient": orient, "begr": cur_begr,
+                                    "isolatie": _undot(_wn(_pref + " kozijn-paneel - isolatie aanwezig")
+                                                       or "") or "Onbekend",
+                                    "dikte": _f(_wn(_pref + " kozijn-paneel - isolatiedikte")),
+                                    "bouwjaarklasse": _wn(_pref + " kozijn-paneel - bouwjaarklasse") or ""})
+                    _sub_af += _popp
+                elif _aanw.startswith("ja"):
+                    notes.append("raam '%s' (%s): %s aanwezig maar OPPERVLAK ontbreekt -> niet "
+                                 "gesplitst; splits het kozijn zelf in Vabi."
+                                 % ((r[0] or "?").strip(), orient, _pref))
             if _sub_af:
                 if _tot and _sub_af >= _tot:
                     notes.append("raam '%s' (%s): boven-/onderlicht (%.2f m2) >= het hele element "

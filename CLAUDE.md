@@ -161,8 +161,10 @@ isolatie; parser splitst het van het hoofdraam af naar een eigen kozijn-/paneelr
 oppervlak = LUIDE flag). Deur: 'Bovenlicht deur - type glas' (apart kozijn, gaat van het deurvlak af;
 zonder type = legacy optellen) + 'Toevoerrooster deur aanwezig?'. Bestaand raam-veld 'Toevoerrooster
 aanwezig?' wordt nu OOK gelezen (werd genegeerd) -> rooster-telling in notes voor het ventilatieplan.
-Parser + tests (77) klaar; VELDEN NOG LIVE ZETTEN via browserconsole (custom-FIELDS /api/custom-fields/,
-definities additions.json field_groups; zie forms/LIVE-WIJZIGINGEN.md bovenaan).
+Parser + tests (77) klaar; VELDEN LIVE GEZET 20-7 14:44 (custom-FIELDS via browserconsole: Raam/paneel
+11->25 vragen, Deur 14->16, save+publish success, originelen intact; zie forms/LIVE-WIJZIGINGEN.md).
+Definitief patroon = DEUR-stijl: 'Bovenlicht/Onderlicht in het kozijn?' -> 'Ja, met eigen glas'|'Ja, met
+dicht paneel' + per tak eigen velden ('kozijn' in de naam = geen clash met deur-kolommen).
 MAGICPLAN-VELDEN LIVE GEZET (19-7): form **Constructies** 33 -> 37 vragen — 'Gevel - isolatie aan zijde',
 'Kierdichting', 'Bodemisolatie kruipruimte', 'Dak - isolatie aan zijde' (vullen isolatieplan-sectie 3 V1/V3/V4/V6).
 Save + publish geverifieerd (code=success, 4/4 aanwezig, originelen intact). LET OP: `push_forms.bat` KAN DIT NIET

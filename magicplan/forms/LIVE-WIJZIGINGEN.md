@@ -1,6 +1,17 @@
 # MagicPlan live forms — stand 25-6-2026 (via custom-forms/-fields API, geverifieerd)
 
-## NOG TE PUSHEN (20-7-2026, na 1e echte opname): boven-/onderlicht + deur-glas/rooster
+## 20-7-2026 LIVE GEZET: boven-/onderlicht bij ramen + deur-glas/rooster (custom-FIELDS)
+Beide element-groepen via de browserconsole gepusht EN gepubliceerd (14:44, save+publish code=success,
+originelen intact; backup localStorage `__mp_fields_backup_2026-07-20`):
+- **Raam/paneel** (windows): 11 -> 25 vragen — per raam `Bovenlicht/Onderlicht in het kozijn? (leeg =
+  geen)` -> 'Ja, met eigen glas' (oppervlak + type glas) | 'Ja, met dicht paneel' (oppervlak +
+  isolatie + bouwjaarklasse + dikte). Zelfde patroon als het deur-bovenlicht.
+- **Deur** (doors): 14 -> 16 vragen — `Bovenlicht deur - type glas` (kind van 'Bovenlicht boven de
+  deur?', zichtbaar bij 'Ja, met glas') + `Toevoerrooster deur aanwezig? (leeg = geen)`.
+Endpoint = `/api/custom-fields/` (list/save/publish, zelfde vorm als forms; ids zijn 9-teken-strings,
+opties platte strings, context plat naar ["windows"]/["doors"]). Parser leest alles (tests 77).
+
+## (uitgevoerd — origineel plan hieronder)
 Definities staan in `additions.json` onder `field_groups` (form_match Raam/Deur), `_doc_bovenonderlicht`.
 Dit zijn custom-FIELDS (element-context **windows** resp. **doors**) -> endpoint `/api/custom-fields/`
 (list/save/publish, zelfde vorm als forms; zie memory magicplan-form-api). Route: browserconsole in een

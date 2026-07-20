@@ -3038,19 +3038,24 @@ try:
     import tempfile as _tf77
     from magicplan.statistics_csv import build_dossier as _csvdos77
 
+    # kolomnamen = de LIVE veldnamen (deur-patroon; 'kozijn' in de naam voorkomt deur-kolom-clash)
     _KOP77 = ("WALL ATTRIBUTES,c1,c2,Surface,SurfNoOpen,c5,c6,c7,Type,Isol,c10,Orientatie,Bron,c13,c14,"
               "Kozijn,Type glas,RaamOrient,Type constructie (deur),Oppervlakte raam in deur,"
-              "Type glas (indien glas in deur),Bovenlicht aanwezig?,Bovenlicht - constructie,"
-              "Bovenlicht - oppervlak (m²),Bovenlicht - type glas,Bovenlicht - isolatie aanwezig?,"
-              "Bovenlicht - isolatiedikte (mm),Onderlicht aanwezig?,Onderlicht - constructie,"
-              "Onderlicht - oppervlak (m²),Onderlicht - type glas,Toevoerrooster aanwezig?,"
-              "Bovenlicht - oppervlak glas,Bovenlicht deur - type glas,Toevoerrooster deur aanwezig?")
+              "Type glas (indien glas in deur),Bovenlicht in het kozijn? (leeg = geen),"
+              "Bovenlicht kozijn - oppervlak glas (m²),Bovenlicht kozijn - type glas,"
+              "Bovenlicht kozijn-paneel - oppervlak (m²),Bovenlicht kozijn-paneel - isolatie aanwezig?,"
+              "Bovenlicht kozijn-paneel - isolatiedikte (mm),Onderlicht in het kozijn? (leeg = geen),"
+              "Onderlicht kozijn - oppervlak glas (m²),Onderlicht kozijn-paneel - oppervlak (m²),"
+              "Onderlicht kozijn-paneel - isolatie aanwezig?,Toevoerrooster aanwezig? (leeg = geen),"
+              "Bovenlicht - oppervlak glas (m²),Bovenlicht deur - type glas,"
+              "Toevoerrooster deur aanwezig? (leeg = geen)")
 
     def _rij77(d, n=35):
         rr = [""] * n
         for kk, vv in d.items():
             rr[kk] = str(vv)
-        return ",".join(rr)
+        # waarden met komma's ('Ja, met eigen glas') horen gequote — zoals de echte export doet
+        return ",".join('"%s"' % v if "," in v else v for v in rr)
 
     _csv77 = "\n".join([
         "PLAN ATTRIBUTES", "Bouwjaar,1975 t/m 1982", "Woningtype,Tussenwoning", "Gevelhoogte (m),6", "",
@@ -3059,13 +3064,13 @@ try:
         _KOP77, "Ground Floor",
         _rij77({0: "Voorgevel", 3: 20, 4: 20, 8: "Wall", 11: "ZW"}),
         # raam 3,0 m2 HR++ met BOVENLICHT 0,5 m2 ENKEL glas -> 2,5 HR++ + 0,5 Enkel
-        _rij77({0: "raam bovenlicht", 3: 3.0, 8: "Window", 16: "HR++", 21: "Ja",
-                22: "Raam (glas)", 23: 0.5, 24: "Enkel", 31: "Ja"}),
+        _rij77({0: "raam bovenlicht", 3: 3.0, 8: "Window", 16: "HR++",
+                21: "Ja, met eigen glas", 22: 0.5, 23: "Enkel", 31: "Ja"}),
         # raam 2,0 m2 Dubbel met ONDERLICHT-PANEEL (borstwering) 0,6 m2 -> 1,4 glas + 0,6 paneel
-        _rij77({0: "raam borstwering", 3: 2.0, 8: "Window", 16: "Dubbel", 27: "Ja",
-                28: "Paneel (dicht)", 29: 0.6}),
+        _rij77({0: "raam borstwering", 3: 2.0, 8: "Window", 16: "Dubbel",
+                27: "Ja, met dicht paneel", 29: 0.6, 30: "Nee"}),
         # raam met bovenlicht=Ja maar ZONDER oppervlak -> niet splitsen, LUIDE flag
-        _rij77({0: "raam zonder m2", 3: 1.5, 8: "Window", 16: "HR++", 21: "Ja", 22: "Raam (glas)"}),
+        _rij77({0: "raam zonder m2", 3: 1.5, 8: "Window", 16: "HR++", 21: "Ja, met eigen glas"}),
         # deur met raam (0,4 Dubbel) + bovenlicht 0,3 m2 met EIGEN glastype Enkel -> apart kozijn
         _rij77({0: "voordeur", 3: 2.2, 8: "Door", 17: "ZW", 18: "Deur met raam", 19: 0.4,
                 20: "Dubbel", 32: 0.3, 33: "Enkel", 34: "Ja"}),
