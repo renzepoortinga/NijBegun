@@ -2688,9 +2688,9 @@ try:
     # (c) IMAP-intake — met een nep-postvak, geen netwerk nodig
     check("mailbox: zonder instellingen een nette uitleg i.p.v. een fout",
           _M72.haal_teksten({})[1].startswith("Mailbox nog niet ingesteld"))
-    check("mailbox: zoekopdracht beperkt op datum + zoekterm in de hele mail",
+    check("mailbox: zoekopdracht op datum + portaal-marker (OR met de configterm)",
           _M72.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"}, _d72.date(2026, 7, 19))
-          == ["SINCE", "19-Jun-2026", "TEXT", "AdviseurToegekend"])
+          == ["SINCE", "19-Jun-2026", "OR", "TEXT", "AdviseurToegekend", "TEXT", "WijzigingsType"])
     check("mailbox: mapnaam met spatie wordt gequote", _M72._mapnaam("Verwijderde items") == '"Verwijderde items"')
 
     def _mailtje72(naam, pc, hn, bagid):
@@ -2748,10 +2748,11 @@ try:
     _L72.LEADS_DIR, _L72.LEADS_FILE = _tmp72, _o72.path.join(_tmp72, "leads.json")
     try:
         _L72.save_leads([])
-        _n72, _d72b = _W72._leads_toevoegen("\n".join(_tk72))
-        check("gedeelde intake: 2 nieuw, 0 dubbel", (_n72, _d72b) == (2, 0))
-        _n72b, _d72c = _W72._leads_toevoegen("\n".join(_tk72))     # nog eens: alles dubbel
-        check("gedeelde intake: tweede keer alles herkend als dubbel", (_n72b, _d72c) == (0, 2))
+        _res72 = _W72._leads_toevoegen("\n".join(_tk72))
+        check("gedeelde intake: 2 nieuw, 0 dubbel", (_res72["nieuw"], _res72["dubbel"]) == (2, 0))
+        _res72b = _W72._leads_toevoegen("\n".join(_tk72))          # nog eens: alles dubbel
+        check("gedeelde intake: tweede keer alles herkend als dubbel",
+              (_res72b["nieuw"], _res72b["dubbel"]) == (0, 2))
     finally:
         _L72.LEADS_DIR, _L72.LEADS_FILE = _bew72
 except Exception as _e:
@@ -3149,6 +3150,60 @@ try:
         _L78.LEADS_DIR, _L78.LEADS_FILE, _L78.GEWIST_FILE = _bewL
 except Exception as _e:
     check("project verwijderen: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print("\n79. Portaal-annulering: bestaande lead op 'vervallen' i.p.v. opnieuw benaderen")
+try:
+    import os as _o79, tempfile as _t79, datetime as _dt79
+    import dashboard.app as _W79, dashboard.leads as _L79, dashboard.mailbox as _M79, dashboard.graph_mail as _G79
+
+    _TOE79 = ('{"BagAdresId":"1895200000005699","Email":"t@x.nl","Postcode":"9674BW","Huisnummer":28,'
+              '"Naam":"tess rouppe","Telefoonnummer":"0625494609",'
+              '"WijzigingsType":"AdviseurToegekend","WijzigingsReden":"toegekend"}')
+    _ANN79 = ('{"BagAdresId":"1895200000005699","Email":"t@x.nl","Postcode":"9674BW","Huisnummer":28,'
+              '"Naam":"tess rouppe","WijzigingsType":"AdviseurGeannuleerd",'
+              '"WijzigingsReden":"Adviseur 39222 geannuleerd door gebruiker. Reden anders: "}')
+
+    check("parse: WijzigingsType wordt meegelezen",
+          _L79.parse_lead(_ANN79).get("wijzigingstype") == "AdviseurGeannuleerd")
+    check("annulering herkend, toewijzing niet",
+          _L79.is_annulering(_L79.parse_lead(_ANN79)) is True
+          and _L79.is_annulering(_L79.parse_lead(_TOE79)) is False)
+
+    _W79.app.config.update(TESTING=True)
+    _tmp79 = _t79.mkdtemp()
+    _bew79 = (_L79.LEADS_DIR, _L79.LEADS_FILE, _L79.GEWIST_FILE)
+    _L79.LEADS_DIR = _tmp79
+    _L79.LEADS_FILE = _o79.path.join(_tmp79, "leads.json")
+    _L79.GEWIST_FILE = _o79.path.join(_tmp79, "verwijderd.json")
+    try:
+        _L79.save_leads([])
+        _r1 = _W79._leads_toevoegen(_TOE79)
+        check("toewijzing -> nieuwe lead", _r1["nieuw"] == 1 and _L79.load_leads()[0]["status"] == "nieuw")
+        _r2 = _W79._leads_toevoegen(_ANN79)
+        _ld79 = _L79.load_leads()
+        check("annulering -> bestaande lead op 'vervallen', niet verwijderd",
+              _r2["geannuleerd"] == 1 and len(_ld79) == 1 and _ld79[0]["status"] == "vervallen")
+        check("annulering: reden + datum in de notitie",
+              "Geannuleerd door bewoner" in (_ld79[0].get("notitie") or ""))
+        _r3 = _W79._leads_toevoegen(_ANN79.replace("1895200000005699", "0000000000000000")
+                                          .replace("9674BW", "1111AA"))
+        check("annulering voor onbekend adres -> gemeld, niets aangemaakt",
+              _r3["annul_onbekend"] == 1 and len(_L79.load_leads()) == 1)
+        check("melding noemt de annuleringen", "vervallen" in _W79._annulering_melding(_r2))
+    finally:
+        _L79.LEADS_DIR, _L79.LEADS_FILE, _L79.GEWIST_FILE = _bew79
+
+    # fetch-filters: annuleringen komen nu ook binnen (marker WijzigingsType), ook al zegt de config
+    # alleen 'AdviseurToegekend'
+    _imap79 = _M79.zoekopdracht({"dagen": 30, "onderwerp": "AdviseurToegekend"}, _dt79.date(2026, 7, 20))
+    check("IMAP-zoek vangt portaalmails breed (OR met WijzigingsType)",
+          "WijzigingsType" in _imap79)
+    _ber79 = [{"subject": "Contact met adviseur geannuleerd door accountid abc",
+               "body": {"content": _ANN79}}]
+    check("graph-filter laat een annulering door ook al staat alleen AdviseurToegekend in de config",
+          len(_G79.berichten_naar_teksten(_ber79, "AdviseurToegekend")) == 1)
+except Exception as _e:
+    check("portaal-annulering: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

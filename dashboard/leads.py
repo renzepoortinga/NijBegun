@@ -2,9 +2,11 @@
 Nij Begun leads — portal-toewijzingen ("AdviseurToegekend"-mails van smarttwin.nl) beheren.
 
 De portal mailt per toegewezen bewoner een JSON-blok:
-    {"BagAdresId":"0014...","AccountId":"...","Email":"...","Postcode":"9736GL","Huisnummer":106,
-     "HuisnummerToevoeging":"","Voornaam":"Jan","Telefoonnummer":"06...","Achternaam":"de Boer",
-     "Naam":"Jan de Boer","WijzigingsType":"AdviseurToegekend","WijzigingsReden":"Adviseur ... toegekend"}
+    {"BagAdresId":"0014...","Email":"...","Postcode":"9736GL","Huisnummer":106,"Naam":"Jan de Boer",
+     "WijzigingsType":"AdviseurToegekend","WijzigingsReden":"Adviseur ... toegekend"}
+
+WijzigingsType stuurt de actie: AdviseurToegekend = nieuwe lead, AdviseurGeannuleerd = bestaande lead
+op 'vervallen' (bewoner trekt de toewijzing in), contactwijziging = contactvelden bijwerken.
 
 Deze module: mail-tekst plakken -> lead parsen -> lokaal bewaren (out/leads/leads.json — AVG: blijft
 lokaal, out/ is git-ignored) -> status volgen -> CONCEPT-kennismakingsmail genereren (de adviseur
@@ -114,6 +116,10 @@ def parse_lead(text):
         "huisnummer": str(d.get("Huisnummer", "")).strip(),
         "toevoeging": str(d.get("HuisnummerToevoeging", "")).strip(),
         "reden": str(d.get("WijzigingsReden", "")).strip(),
+        # het portaal stuurt verschillende soorten mails: AdviseurToegekend (nieuwe lead),
+        # AdviseurGeannuleerd (bewoner trekt de toewijzing in) en contactwijzigingen. Dit veld
+        # stuurt in de webapp de juiste actie aan (toevoegen / op 'vervallen' zetten / bijwerken).
+        "wijzigingstype": str(d.get("WijzigingsType", "")).strip(),
     }
     if not (lead["naam"] or lead["postcode"] or lead["bag_id"]):
         return None
@@ -124,6 +130,31 @@ def _sleutel(lead):
     """Dedupe-sleutel: BAG-id, anders postcode+huisnummer+toevoeging."""
     return lead.get("bag_id") or "%s-%s%s" % (lead.get("postcode", ""),
                                               lead.get("huisnummer", ""), lead.get("toevoeging", ""))
+
+
+def is_annulering(lead):
+    """Portaalmail waarin de bewoner de toewijzing intrekt (WijzigingsType AdviseurGeannuleerd)."""
+    return "annul" in (lead.get("wijzigingstype", "") or "").lower() \
+        or "geannuleerd" in (lead.get("wijzigingstype", "") or "").lower()
+
+
+def annuleer_lead(lead, leads=None):
+    """Zet de BESTAANDE lead op 'vervallen' zodat je 'm niet meer benadert. -> (leads, resultaat)
+    waarbij resultaat = 'gevonden' | 'onbekend'. De lead wordt NOOIT verwijderd en een gekoppeld
+    project blijft staan (de opname kan al gedaan zijn — dat besluit jij zelf)."""
+    leads = load_leads() if leads is None else leads
+    bestaand = next((x for x in leads if _sleutel(x) == _sleutel(lead)), None)
+    if bestaand is None:
+        return leads, "onbekend"
+    bestaand["status"] = "vervallen"
+    reden = (lead.get("reden") or "").strip()
+    stempel = "Geannuleerd door bewoner op %s" % datetime.date.today().isoformat()
+    if reden:
+        stempel += " — %s" % reden
+    oud = (bestaand.get("notitie") or "").strip()
+    bestaand["notitie"] = (oud + "\n" + stempel).strip() if oud else stempel
+    save_leads(leads)
+    return leads, "gevonden"
 
 
 # ---------------- verwijderde leads onthouden ----------------

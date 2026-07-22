@@ -128,14 +128,21 @@ def berichten_naar_teksten(berichten, onderwerp=""):
     Het filter kijkt in ONDERWERP ÉN INHOUD. Dat is geen luxe: het onderwerp van een portalmail luidt
     'Contact met adviseur door accountid <uuid>' en verschilt dus per aanmelding, terwijl de term
     AdviseurToegekend altijd in de body staat ("WijzigingsType"). Alleen op onderwerp filteren vond
-    daarom niets. Hoofdletterongevoelig; leeg filter = alles doorlaten."""
+    daarom niets.
+
+    Naast de geconfigureerde term laten we ELKE mail met de portaal-marker `WijzigingsType` door: die
+    zit in de JSON van iedere portaalmail (toewijzing, ANNULERING én contactwijziging). Zo komen
+    annuleringen binnen ook al staat er alleen 'AdviseurToegekend' in de config. Hoofdletterongevoelig;
+    leeg filter = alles doorlaten."""
     zoek = (onderwerp or "").lower().strip()
     uit = []
     for b in berichten or []:
         inhoud = _plat(((b.get("body") or {}).get("content")) or "")
         if not inhoud.strip():
             continue
-        if zoek and zoek not in (b.get("subject") or "").lower() and zoek not in inhoud.lower():
+        is_portaal = "wijzigingstype" in inhoud.lower()
+        if zoek and not is_portaal \
+                and zoek not in (b.get("subject") or "").lower() and zoek not in inhoud.lower():
             continue
         uit.append(inhoud)
     return uit

@@ -2128,28 +2128,48 @@ def _mailbron(cfg):
 
 
 def _leads_toevoegen(tekst):
-    """Gedeeld door plakken/uploaden en mail-ophalen: tekst -> leads + BAG-verrijking.
-    -> (aantal nieuw, aantal dubbel)."""
+    """Gedeeld door plakken/uploaden en mail-ophalen. Het portaal stuurt drie soorten mails; we
+    handelen ze los af op basis van WijzigingsType:
+      - toewijzing  -> nieuwe lead (of contactgegevens bijwerken bij een bekende)
+      - annulering  -> bestaande lead op 'vervallen' zetten, zodat je 'm niet meer benadert
+    -> dict met de tellingen."""
     gevonden = leads_mod.parse_leads_bulk(tekst)
     if not gevonden:
-        return 0, 0
+        return {"nieuw": 0, "dubbel": 0, "geannuleerd": 0, "annul_onbekend": 0}
     nieuwe_ids = []
 
-    def toevoegen(rows):
-        n_nieuw = n_dubbel = 0
+    def verwerk(rows):
+        r = {"nieuw": 0, "dubbel": 0, "geannuleerd": 0, "annul_onbekend": 0}
         for lead in gevonden:
+            if leads_mod.is_annulering(lead):
+                _, res = leads_mod.annuleer_lead(lead, rows)
+                r["geannuleerd" if res == "gevonden" else "annul_onbekend"] += 1
+                continue
             _, nieuw = leads_mod.add_lead(lead, rows)     # muteert rows in plaats
             if nieuw:
-                n_nieuw += 1
+                r["nieuw"] += 1
                 nieuwe_ids.append(rows[-1]["id"])
             else:
-                n_dubbel += 1
-        return n_nieuw, n_dubbel
+                r["dubbel"] += 1
+        return r
 
-    n_nieuw, n_dubbel = leads_mod.wijzig(toevoegen)
+    res = leads_mod.wijzig(verwerk)
     if nieuwe_ids:
         _bag_verrijk_achtergrond(nieuwe_ids)
-    return n_nieuw, n_dubbel
+    return res
+
+
+def _annulering_melding(res):
+    """Zichtbare terugkoppeling over annuleringen: hoeveel leads op 'vervallen' gezet, en of er een
+    annulering binnenkwam voor een adres dat we (nog) niet kennen. -> extra tekst voor de flash."""
+    stukjes = []
+    if res.get("geannuleerd"):
+        stukjes.append("%d annulering(en) verwerkt → op 'vervallen' gezet (niet meer benaderen)"
+                       % res["geannuleerd"])
+    if res.get("annul_onbekend"):
+        stukjes.append("%d annulering(en) voor een onbekend adres — geen lead gevonden om te "
+                       "annuleren" % res["annul_onbekend"])
+    return (" " + ". ".join(stukjes) + "." if stukjes else "")
 
 
 @app.route("/leads/ophalen", methods=["POST"])
@@ -2169,14 +2189,15 @@ def leads_ophalen():
         flash("Geen portal-mails gevonden in de ingestelde periode. Staat het onderwerp-filter goed, "
               "en kijk je in de juiste map?")
         return redirect(url_for("leads_pagina"))
-    n_nieuw, n_dubbel = _leads_toevoegen("\n".join(teksten))
-    if not n_nieuw and not n_dubbel:
+    res = _leads_toevoegen("\n".join(teksten))
+    if not any(res.values()):
         flash("%d mail(s) opgehaald, maar er zat geen lead-gegevensblok in. Is dit wel de "
               "toewijzingsmail van het portaal?" % len(teksten))
     else:
-        flash("%d mail(s) opgehaald → %d nieuwe lead(s)%s.%s" % (
-            len(teksten), n_nieuw, (" · %d al bekend" % n_dubbel) if n_dubbel else "",
-            " BAG-gegevens worden op de achtergrond opgehaald." if n_nieuw else ""))
+        flash("%d mail(s) opgehaald → %d nieuwe lead(s)%s.%s%s" % (
+            len(teksten), res["nieuw"], (" · %d al bekend" % res["dubbel"]) if res["dubbel"] else "",
+            " BAG-gegevens worden op de achtergrond opgehaald." if res["nieuw"] else "",
+            _annulering_melding(res)))
     return redirect(url_for("leads_pagina"))
 
 
@@ -2199,13 +2220,14 @@ def leads_add():
               "vanuit de NIEUWE Outlook (geeft .eml), of plak de tekst." % n_msg)
     # BULK: plak gerust 60 mails in één keer. BAG-gegevens komen er in de achtergrond bij, zodat
     # de pagina direct terugkomt; bij ~60 leads duurt die ronde een minuut (ververs dan even).
-    n_nieuw, n_dubbel = _leads_toevoegen(tekst)
-    if not n_nieuw and not n_dubbel:
+    res = _leads_toevoegen(tekst)
+    if not any(res.values()):
         flash("Kon geen lead-gegevens vinden — plak de portal-mail(s) of sleep .eml-bestanden (met {...}-blok).")
         return redirect(url_for("leads_pagina"))
-    flash("%d lead(s) toegevoegd%s.%s" % (
-        n_nieuw, (" · %d dubbel overgeslagen" % n_dubbel) if n_dubbel else "",
-        " BAG-gegevens worden op de achtergrond opgehaald — ververs zo de pagina." if n_nieuw else ""))
+    flash("%d lead(s) toegevoegd%s.%s%s" % (
+        res["nieuw"], (" · %d dubbel overgeslagen" % res["dubbel"]) if res["dubbel"] else "",
+        " BAG-gegevens worden op de achtergrond opgehaald — ververs zo de pagina." if res["nieuw"] else "",
+        _annulering_melding(res)))
     return redirect(url_for("leads_pagina"))
 
 

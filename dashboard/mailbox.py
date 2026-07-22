@@ -58,9 +58,14 @@ def zoekopdracht(m, vandaag=None):
     if dagen > 0:
         sinds = vandaag - datetime.timedelta(days=dagen)
         args += ["SINCE", sinds.strftime("%d-%b-%Y")]
+    # Zoek op de portaal-marker WijzigingsType (in ELKE portaalmail: toewijzing, ANNULERING én
+    # contactwijziging) i.p.v. alleen op de geconfigureerde term — anders komen annuleringen niet
+    # binnen. Staat er een eigen term ingesteld, dan OR'en we die erbij zodat die ook blijft werken.
     term = (m.get("onderwerp") or "").strip()
-    if term:
-        args += ["TEXT", term]
+    if term and term.lower() != "wijzigingstype":
+        args += ["OR", "TEXT", term, "TEXT", "WijzigingsType"]
+    else:
+        args += ["TEXT", "WijzigingsType"]
     return args or ["ALL"]
 
 
