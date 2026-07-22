@@ -64,6 +64,21 @@ def set_project_tag(lid, tag, leads=None):
     return leads
 
 
+def wis_project_tag(tag):
+    """Verwijder de koppeling naar een project bij ALLE leads die eraan hingen — te gebruiken
+    zodra dat project wordt verwijderd, zodat de lead geen dode 'Project'-knop houdt."""
+    with LOCK:
+        leads = load_leads()
+        n = 0
+        for r in leads:
+            if r.get("project_tag") == tag:
+                r.pop("project_tag", None)
+                n += 1
+        if n:
+            save_leads(leads)
+        return n
+
+
 # ---------------- parsen ----------------
 def parse_lead(text):
     """Geplakte mail-tekst -> lead-dict, of None. Pakt het eerste {...}-blok (de mail bevat het

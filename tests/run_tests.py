@@ -3107,5 +3107,48 @@ try:
 except Exception as _e:
     check("boven-/onderlicht-parser: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("\n78. Project verwijderen (map weg + lead-koppeling los + pad-veiligheid)")
+try:
+    import os as _o78, json as _j78, tempfile as _t78
+    import dashboard.app as _W78, dashboard.leads as _L78
+    _W78.app.config.update(TESTING=True)
+    _bewP = _W78.PROJECTS_DIR
+    _bewL = (_L78.LEADS_DIR, _L78.LEADS_FILE, _L78.GEWIST_FILE)
+    _tmpP78, _tmpL78 = _t78.mkdtemp(), _t78.mkdtemp()
+    _W78.PROJECTS_DIR = _tmpP78
+    _L78.LEADS_DIR = _tmpL78
+    _L78.LEADS_FILE = _o78.path.join(_tmpL78, "leads.json")
+    _L78.GEWIST_FILE = _o78.path.join(_tmpL78, "verwijderd.json")
+    try:
+        _tag78 = "9999ZZ_7"
+        _pdir78 = _o78.path.join(_tmpP78, _tag78)
+        _o78.makedirs(_o78.path.join(_pdir78, "fotos"))
+        _j78.dump({"tag": _tag78, "adres": "Testlaan 7, Groningen", "stap": "opname"},
+                  open(_o78.path.join(_pdir78, "project.json"), "w"))
+        open(_o78.path.join(_pdir78, "dossier_%s.json" % _tag78), "w").write("{}")
+        open(_o78.path.join(_pdir78, "fotos", "voor.jpg"), "w").write("x")
+        _L78.save_leads([dict(id=1, naam="Jan", postcode="9999ZZ", huisnummer="7", toevoeging="",
+                              status="opname gedaan", ontvangen="2026-07-20", notitie="", afspraak="",
+                              project_tag=_tag78)])
+        _c78 = _W78.app.test_client()
+        with _c78.session_transaction() as _s78:
+            _s78["ingelogd"] = True
+        check("verwijder-route geregistreerd",
+              "/project/<tag>/verwijder" in {r.rule for r in _W78.app.url_map.iter_rules()})
+        check("home: project + verwijderknop zichtbaar",
+              "Testlaan 7" in (_h := _c78.get("/").get_data(as_text=True)) and "verwijder" in _h)
+        _r78 = _c78.post("/project/%s/verwijder" % _tag78, follow_redirects=True)
+        check("verwijderen: hele projectmap weg", not _o78.path.isdir(_pdir78))
+        check("verwijderen: lead-koppeling losgemaakt, lead blijft",
+              _L78.load_leads()[0].get("project_tag") is None and len(_L78.load_leads()) == 1)
+        check("verwijderen: bevestiging getoond", "definitief verwijderd" in _r78.get_data(as_text=True))
+        check("pad-veiligheid: onbekend project -> 404",
+              _c78.post("/project/bestaatniet/verwijder").status_code == 404)
+    finally:
+        _W78.PROJECTS_DIR = _bewP
+        _L78.LEADS_DIR, _L78.LEADS_FILE, _L78.GEWIST_FILE = _bewL
+except Exception as _e:
+    check("project verwijderen: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

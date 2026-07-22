@@ -13,7 +13,7 @@ Draaien:
 Gouden regel: de tool rekent NTA 8800 nooit zelf — Vabi EPA-W bevestigt de Standaard. De webapp blijft
 lokaal (AVG) en is de handmatige adviseur-route.
 """
-import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading
+import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading, shutil
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, TOOL_DIR)
 from flask import (Flask, request, session, redirect, url_for, send_from_directory,  # noqa: E402
@@ -336,7 +336,11 @@ HOME = """<h1>Projecten</h1><p class=lead>Van kloppende VABI-export naar een ing
 <td data-label="Stap"><span class="pill gray">{{p.stap}}</span></td>
 <td data-label="Standaard">{% if p.voldoet is none %}<span class=muted>—</span>{% elif p.voldoet %}<span class="pill green">voldoet</span>{% else %}<span class="pill amber">nog niet</span>{% endif %}</td>
 <td data-label="Maatregelen">{{p.n}}{% if p.totaal %} · &euro;{{'%.0f'|format(p.totaal)}}{% endif %}</td>
-<td data-label="Actie"><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a></td></tr>{% endfor %}</table></div></div>
+<td data-label="Actie" style="white-space:nowrap"><a class="btn sec" href="{{url_for('project', tag=p.tag)}}">openen →</a>
+<form method=post action="{{url_for('project_verwijder', tag=p.tag)}}" style="display:inline"
+  onsubmit="return confirm('Project {{p.adres}} DEFINITIEF verwijderen? Alle bestanden (dossier, VABI-export, isolatieplan, foto\'s) gaan weg. Dit kan niet ongedaan worden gemaakt.')">
+<button class="btn sec" title="Project definitief verwijderen">🗑</button></form></td></tr>{% endfor %}</table></div>
+<p class="muted small">Verwijderen wist de hele projectmap uit out/projects/. Wil je de bestanden bewaren, exporteer dan eerst de projectmap-zip (op de afrond-pagina).</p></div>
 {% endif %}"""
 
 HUIDIG = """{{stepper|safe}}<h1>Huidige staat — nulmeting</h1>
@@ -974,6 +978,24 @@ def project(tag):
     doelen = {"opname", "huidig", "maatregelen", "vabi", "afronden"}
     doel = "afronden" if stap == "klaar" else (stap if stap in doelen else "opname")
     return redirect(url_for(doel, tag=tag))
+
+
+@app.route("/project/<tag>/verwijder", methods=["POST"])
+@login_required
+def project_verwijder(tag):
+    """Verwijder een heel project (de map out/projects/<tag> met alles erin). Onomkeerbaar —
+    het formulier vraagt om bevestiging. Een eventuele lead-koppeling wordt netjes losgemaakt
+    zodat er geen dode 'Project'-knop achterblijft; de lead zelf blijft staan."""
+    pdir = _pdir(tag)
+    # pad-veiligheid: tag mag niet uit de projects-map wijzen (../ e.d.)
+    if ".." in tag or "/" in tag or "\\" in tag or not os.path.isdir(pdir):
+        abort(404)
+    adres = (_load_state(tag) or {}).get("adres", tag)
+    shutil.rmtree(pdir, ignore_errors=True)
+    losgemaakt = leads_mod.wis_project_tag(tag)
+    flash("Project '%s' definitief verwijderd (alle bestanden weg%s)."
+          % (adres, ", lead-koppeling losgemaakt" if losgemaakt else ""))
+    return redirect(url_for("home"))
 
 
 @app.route("/project/<tag>/huidig", methods=["GET", "POST"])
