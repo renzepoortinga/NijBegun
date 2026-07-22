@@ -117,6 +117,44 @@ Verifieer ALTIJD de container-view (die telt), niet de host:
 config.json + varianten (.bak) staan in .gitignore -> gaan NOOIT mee met een push; de VPS-config moet je
 dus apart bijwerken (bevat wachtwoordhash + TOTP: eerst `cp config.json config.json.bak`, dan JSON valideren).
 
+## Status (22-7-2026) — 625/625 groen. HANDOFF-punt voor een nieuw gesprek.
+Sinds 19-7 gedaan (allemaal getest, gecommit; check `git log --oneline` voor de exacte commits):
+- MAILKOPPELING LIVE-ROUTE = **Microsoft Graph** (dashboard/graph_mail.py, config-blok "graph"): info@ is
+  een GEDEELD M365-postvak, dus IMAP/app-wachtwoord viel af. tenant/client/secret staan in config.json op
+  de VPS; beheerder heeft de app-registratie + Mail.Read + Application Access Policy gedaan. LIVE bewezen:
+  71 portaalmails opgehaald. Filter matcht op de marker `WijzigingsType` (niet meer op 'AdviseurToegekend'),
+  want het onderwerp verschilt per mail. dashboard/mailbox.py (IMAP) blijft als fallback; webapp kiest
+  graph > imap > handmatig. Geheim erin zetten: `python dashboard/zet_geheim.py graph.client_secret`.
+- PORTAAL-MAILSOORTEN worden nu per WijzigingsType afgehandeld (leads.py + app._leads_toevoegen):
+  AdviseurToegekend = nieuwe lead (of contactvelden bijwerken bij bekende), **AdviseurGeannuleerd = bestaande
+  lead op status 'vervallen'** + notitie (bewoner trekt toewijzing in → niet meer benaderen; lead/project
+  blijven staan). Contactwijziging = e-mail/telefoon bijwerken. Verwijderde leads komen niet terug
+  (out/leads/verwijderd.json bewaart alleen de dedupe-sleutel).
+- WEBAPP: **projecten verwijderen** (🗑 op de home; wist out/projects/<tag>, maakt lead-koppeling los,
+  pad-veilig). Leads-filter verbergt nu écht (`.lead-card[hidden]`), zoek/filter + scrollplek overleven een
+  herlaad (sessionStorage). Bevestigingsmail-knop stond verstopt achter het datumveld → nu altijd zichtbaar,
+  zonder datum een uitleg-redirect. Mobiel: alle 12 pagina's schoon op 320/375/768 (leadkaarten staken uit
+  op smalle iPhone → min(300px,100%); voorschot-tabel table-layout:fixed). Huisstijl-logo op login + favicon +
+  PWA-manifest (dashboard/make_icons.py).
+- MAGICPLAN: **boven-/onderlicht LIVE** (Raam/paneel 11→25 vragen, Deur 14→16) via de browserconsole-route
+  (custom-FIELDS /api/custom-fields/). Per raam 'Bovenlicht/Onderlicht in het kozijn?' → eigen glas | dicht
+  paneel; deur-bovenlicht-glastype + toevoerrooster. Parser splitst het van het hoofdvlak af (statistics_csv,
+  test 77). Bestaand 'Toevoerrooster aanwezig?' wordt nu ook gelezen.
+- WEBSITE poortinga-energieadvies.nl (aparte repo **renzepoortinga/poortinga-energieadvies**, Next.js/Vercel,
+  auto-deploy op push; lokaal gekloond in C:\Users\Renze Poortinga\Projects\poortinga-energieadvies): prijs
+  €300→**€425**, wachtlijst eruit → aanmelden via het Nij Begun-portaal + bewonersinstructies (opname 1-1,5u,
+  wel/geen subsidie, voorbereiding). LIVE. LET OP: de losse map ...\poortinga-energieadvies-**site** is een
+  verouderde parallel — niet gebruiken.
+- VERKENNING (docs/constructie-rc-tool-verkenning.md): Rc-calculator/constructiedoorsnede voor de aannemer.
+  Conclusie: zelf berekende lagen-Rc is GEEN labelinvoer (basisopname-route); wél nuttig als advies + tekening.
+  Advies: toetsen kopen (FysicalC €145/jr, NTA 8800) + het constructieblad per maatregel zelf in het plan
+  bouwen. NOG NIET GEBOUWD — eerste stap voorgesteld (spouw/dak/vloer-doorsnede).
+- Voorschot-tarief hoek/eind/kop = 2-onder-1-kap = €500/€575 (uit opdrachtbrief; klopt).
+OPEN VOOR RENZE: git push + VPS-update (ssh renzepoortinga@37.97.195.196; cd /opt/nijbegun && git pull &&
+sudo docker compose -f deploy/docker-compose.yml up -d --build). Website apart: push in de site-repo → Vercel.
+OPEN ROADMAP: ventilatieplan in de docx (#39); constructieblad-tool bouwen (verkenning ligt klaar);
+2 MagicPlan-installatievelden (Meerdere PV / hybride) staan nog in additions.json.
+
 ## Status (19-7-2026, avond) — 545/545 groen. WEBAPP-SLAG: huisstijl · leads · mails · OneDrive · IMAP.
 HUISSTIJL: login met het volledige logo, eigen favicon + apple-touch-icon + manifest.webmanifest ->
 op het iPad-beginscherm start de webapp standalone met het groene beeldmerk (make_icons.py genereert
