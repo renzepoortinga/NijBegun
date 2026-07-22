@@ -563,6 +563,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     notes.append("raam '%s' (%s): %s aanwezig maar OPPERVLAK ontbreekt -> niet "
                                  "gesplitst; splits het kozijn zelf in Vabi."
                                  % ((r[0] or "?").strip(), orient, _pref))
+                # ook een boven-/onderlicht kan een toevoerrooster hebben (los van het hoofdraam)
+                if _aanw.startswith("ja") \
+                        and (_wn(_pref + " kozijn - toevoerrooster") or "").strip().lower().startswith("ja"):
+                    roosters_tel += 1
             if _sub_af:
                 if _tot and _sub_af >= _tot:
                     notes.append("raam '%s' (%s): boven-/onderlicht (%.2f m2) >= het hele element "

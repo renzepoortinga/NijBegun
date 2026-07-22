@@ -410,6 +410,14 @@
        "name": "Bovenlicht kozijn-paneel - isolatiedikte (mm)",
        "dataType": "number",
        "comparisonValue": "Ja, met dicht paneel"
+      },
+      {
+       "name": "Bovenlicht kozijn - toevoerrooster aanwezig? (leeg = geen)",
+       "dataType": "list",
+       "options": [
+        "Nee",
+        "Ja"
+       ]
       }
      ]
     },
@@ -484,6 +492,14 @@
        "name": "Onderlicht kozijn-paneel - isolatiedikte (mm)",
        "dataType": "number",
        "comparisonValue": "Ja, met dicht paneel"
+      },
+      {
+       "name": "Onderlicht kozijn - toevoerrooster aanwezig? (leeg = geen)",
+       "dataType": "list",
+       "options": [
+        "Nee",
+        "Ja"
+       ]
       }
      ]
     }
@@ -522,5 +538,5 @@
    ]
   }
  ],
- "_doc_bovenonderlicht": "BOVEN-/ONDERLICHT + DEUR-GLAS/ROOSTER (20-7-2026): definitief ontwerp = DEUR-patroon. Raam/paneel-groep: 'Bovenlicht/Onderlicht in het kozijn? (leeg = geen)' -> Ja, met eigen glas (oppervlak+type glas) | Ja, met dicht paneel (oppervlak+isolatie+bouwjaarklasse+dikte). Deur: 'Bovenlicht deur - type glas' (kind van Bovenlicht boven de deur?, cmp 'Ja, met glas') + 'Toevoerrooster deur aanwezig?'. Optielijsten LIVE afgelezen (glas incl. Voorzetglas/Vacuümglas). Parser: statistics_csv Window/Door-tak; oppervlak wordt van hoofdraam/deurvlak afgesplitst; Ja zonder oppervlak = luide flag. Live zetten: custom-FIELDS via browserconsole (/api/custom-fields/)."
+ "_doc_bovenonderlicht": "BOVEN-/ONDERLICHT + DEUR-GLAS/ROOSTER (20-7-2026): definitief ontwerp = DEUR-patroon. Raam/paneel-groep: 'Bovenlicht/Onderlicht in het kozijn? (leeg = geen)' -> Ja, met eigen glas (oppervlak+type glas) | Ja, met dicht paneel (oppervlak+isolatie+bouwjaarklasse+dikte). Deur: 'Bovenlicht deur - type glas' (kind van Bovenlicht boven de deur?, cmp 'Ja, met glas') + 'Toevoerrooster deur aanwezig?'. Optielijsten LIVE afgelezen (glas incl. Voorzetglas/Vacuümglas). Parser: statistics_csv Window/Door-tak; oppervlak wordt van hoofdraam/deurvlak afgesplitst; Ja zonder oppervlak = luide flag. Live zetten: custom-FIELDS via browserconsole (/api/custom-fields/). 22-7: per boven-/onderlicht ook 'toevoerrooster aanwezig?' (roosters kunnen in het boven-/onderlicht zitten, los van het hoofdraam) -> parser telt ze mee (roosters_tel)."
 }

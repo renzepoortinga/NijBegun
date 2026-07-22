@@ -3049,9 +3049,10 @@ try:
               "Onderlicht kozijn - oppervlak glas (m²),Onderlicht kozijn-paneel - oppervlak (m²),"
               "Onderlicht kozijn-paneel - isolatie aanwezig?,Toevoerrooster aanwezig? (leeg = geen),"
               "Bovenlicht - oppervlak glas (m²),Bovenlicht deur - type glas,"
-              "Toevoerrooster deur aanwezig? (leeg = geen)")
+              "Toevoerrooster deur aanwezig? (leeg = geen),"
+              "Bovenlicht kozijn - toevoerrooster aanwezig? (leeg = geen)")
 
-    def _rij77(d, n=35):
+    def _rij77(d, n=36):
         rr = [""] * n
         for kk, vv in d.items():
             rr[kk] = str(vv)
@@ -3064,9 +3065,10 @@ try:
         "Ground Floor,60,2.60 m,Kruipruimte", "",
         _KOP77, "Ground Floor",
         _rij77({0: "Voorgevel", 3: 20, 4: 20, 8: "Wall", 11: "ZW"}),
-        # raam 3,0 m2 HR++ met BOVENLICHT 0,5 m2 ENKEL glas -> 2,5 HR++ + 0,5 Enkel
+        # raam 3,0 m2 HR++ met BOVENLICHT 0,5 m2 ENKEL glas -> 2,5 HR++ + 0,5 Enkel.
+        # 31 = hoofdraam-rooster Ja; 35 = rooster IN het bovenlicht Ja (los geteld)
         _rij77({0: "raam bovenlicht", 3: 3.0, 8: "Window", 16: "HR++",
-                21: "Ja, met eigen glas", 22: 0.5, 23: "Enkel", 31: "Ja"}),
+                21: "Ja, met eigen glas", 22: 0.5, 23: "Enkel", 31: "Ja", 35: "Ja"}),
         # raam 2,0 m2 Dubbel met ONDERLICHT-PANEEL (borstwering) 0,6 m2 -> 1,4 glas + 0,6 paneel
         _rij77({0: "raam borstwering", 3: 2.0, 8: "Window", 16: "Dubbel",
                 27: "Ja, met dicht paneel", 29: 0.6, 30: "Nee"}),
@@ -3103,8 +3105,8 @@ try:
           any(abs(s.oppervlakte_m2 - 1.9) < 0.01 for s in _deur77))
     check("deur zonder bovenlicht-glastype (legacy): deurvlak blijft 2,2 (glas telt in de deur)",
           any(abs(s.oppervlakte_m2 - 2.2) < 0.01 for s in _deur77))
-    check("toevoerroosters: raam + deur geteld (2) in de notes",
-          any("2 kozijn(en)/deur(en) met TOEVOERROOSTER" in n for n in _n77))
+    check("toevoerroosters: hoofdraam + bovenlicht + deur geteld (3) in de notes",
+          any("3 kozijn(en)/deur(en) met TOEVOERROOSTER" in n for n in _n77))
 except Exception as _e:
     check("boven-/onderlicht-parser: draait zonder fout", False); print("     " + repr(_e)[:200])
 
