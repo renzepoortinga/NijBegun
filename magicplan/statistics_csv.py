@@ -497,6 +497,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     _bijdrage = _buiten_m2
                     _w_breed = _bm
                     k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
+                    cur_nareken = False   # split via 'Grenst aan buiten (m)' heeft het OPGELOST ->
+                    # geen "HANDMATIG NAREKENEN"-melding meer (regel ~521); dit was de tegenstrijdigheid
                 elif cur_nareken:
                     # deels-buiten GEMARKEERD maar geen meters ingevuld -> FOUT (eis Renze 15-7): de hele
                     # wand telt nu mee (waarschijnlijk te veel). Vul de buitenlengte in.

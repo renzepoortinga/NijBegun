@@ -1488,6 +1488,8 @@ try:
     _d, _n = _csvdos(_p); _os53.unlink(_p)
     check("buiten-splitsing: 3m x 2.5m = 7.5 m2 als gevel geteld",
           any("7.5" in str(x) and "gevel geteld" in str(x) for x in _n))
+    check("buiten-splitsing: gesplitste wand NIET meer als HANDMATIG NAREKENEN gemeld (geen tegenstrijdigheid)",
+          not any("HANDMATIG NAREKENEN" in str(x) for x in _n))
     check("plat dak: footprint bovenste verdieping (48) gebruikt",
           any(s2.type == "dak" and abs((s2.oppervlakte_m2 or 0) - 48) < 0.1 for s2 in _d.schil))
 except Exception as _e:
