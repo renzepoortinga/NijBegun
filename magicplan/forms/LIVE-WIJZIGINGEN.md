@@ -1,5 +1,22 @@
 # MagicPlan live forms — stand 25-6-2026 (via custom-forms/-fields API, geverifieerd)
 
+> **Actuele live veldenlijst: zie [`../../docs/magicplan-forms-live.md`](../../docs/magicplan-forms-live.md)** —
+> dat is sinds 23-7 de ENIGE waarheidsbron. Dit bestand blijft het chronologische logboek.
+
+## 23-7-2026 LIVE GEZET + OPGESCHOOND (browserconsole-API, backup localStorage `__nb_backup_*`)
+Alles save+publish `code=success`, geverifieerd, originelen intact:
+- **Toevoerrooster onder boven-/onderlicht** toegevoegd aan Raam/paneel (`Bovenlicht/Onderlicht kozijn -
+  toevoerrooster aanwezig?`, verschijnt bij 'Ja, met eigen glas'). Parser leest 'm al (regel ~570).
+- **Paneel-bouwjaar** (bovenlicht/onderlicht dicht paneel → isolatie Onbekend → bouwjaarklasse) stond
+  sinds 20-7 wél opgeslagen maar was **nooit gepubliceerd** → nu herpubliceerd (was de oorzaak dat-ie
+  niet toonde). Alle 4 element-groepen + Object opnieuw gepubliceerd.
+- **Begrenzing** uitgebreid met **ASGR (sterk geventileerd) + Water + Onverwarmde kelder** (laatste 2/3
+  op Gevel + Vloer; ASGR + Water op alle 4). Tool-kant: `_grenst_aan_code` mapt beschrijvende labels nu
+  (commit begrenzing-labels).
+- **Object**: `Gebouwhoogte tot de nok (m)` toegevoegd (stond wel in additions.json, was nooit live).
+- **DAK VERWIJDERD uit Constructies** (211 velden: type dak/Extra dak A/B, m²-per-oriëntatie, dakramen).
+  Constructies = nu alleen **GEVEL + VLOER**. Dak + dakramen gaan via de **webapp-wizard** (besluit 15-7).
+
 ## 20-7-2026 LIVE GEZET: boven-/onderlicht bij ramen + deur-glas/rooster (custom-FIELDS)
 Beide element-groepen via de browserconsole gepusht EN gepubliceerd (14:44, save+publish code=success,
 originelen intact; backup localStorage `__mp_fields_backup_2026-07-20`):

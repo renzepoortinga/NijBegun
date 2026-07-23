@@ -7,6 +7,12 @@ Geschreven voor wie de tool nog niet kent. Naslag op veld-niveau (exacte keuzeli
 
 > **In één zin:** teken de woning, markeer de buitengevels met een oriëntatie, en vul daarna
 > **alléén de afwijkingen** in. De rest vult de tool met slimme defaults.
+>
+> **Let op (23-7-2026):** MagicPlan = de **schil** (gevels/vloer/ramen/deuren/installaties/object).
+> Het **dak doe je in de webapp** (Dak toevoegen-wizard). De exacte, actuele live veldenlijst staat
+> in [`magicplan-forms-live.md`](magicplan-forms-live.md) — dát is de waarheidsbron, niet dit how-to
+> (dit document noemt op sommige plekken nog het oude "Schil & zone"-form; dat heet nu Object /
+> Constructies / Installaties).
 
 ---
 
@@ -78,16 +84,16 @@ Default-begrenzing is **Kruipruimte/Grond** (níet buitenlucht). Alleen afwijkin
 Isolatie: **Ja → dikte (mm)** · **Onbekend → bouwjaar-klasse** · **Nee**. Een vloer heeft **nooit
 spouwdikte**.
 
-### Stap E — Dak & zolder
-- **Type dak** (zadeldak · lessenaar · plat) + **hellingshoek**. De tool rekent het schuine vlak
-  = footprint / cos(hellingshoek) en zet de **kopgevel-driehoek bij de gevel** — net als VABI.
-- **Zolder (1,5 m-regel):** alleen vloer met hoogte ≥ 1,5 m telt mee voor het gebruiksoppervlak.
-  Twee manieren:
-  - (a) teken de Ag-contour **op de 1,5 m-lijn** (MagicPlan geeft dan direct het juiste oppervlak), óf
-  - (b) teken de volle vloer + geef **hellingshoek + kniewandhoogte** → de tool trekt de strook
-    < 1,5 m eraf.
-- **Dakkapel:** geef breedte × hoogte × diepte → de tool telt extra gevel (voor + 2 zijkanten) +
-  een plat dakje.
+### Stap E — Dak: in de WEBAPP, niet in MagicPlan
+Sinds **23-7-2026 doe je het dak (én de dakramen) in de webapp**, niet meer in MagicPlan — de
+dak-velden zijn daar verwijderd (waren te omslachtig: 211 velden). In MagicPlan teken je alléén de
+**schil** (gevels, vloer, ramen, deuren). Na de CSV-import kies je in de webapp-opname-editor
+**"Dak toevoegen"**: plat / zadeldak (overspanning + noklengte + helling) / de overige types, met
+**dakramen per dakvlak**. De tool rekent het schuine vlak = footprint / cos(helling) + kopgevel-driehoek.
+- **Zolder (1,5 m-regel)** blijft wél in MagicPlan — dat gaat om het gebruiksoppervlak (Ag), niet om
+  het dak. Alleen vloer met hoogte ≥ 1,5 m telt mee: teken de Ag-contour op de 1,5 m-lijn, óf vul
+  `Ag-aftrek zolder (m²)` in het Object-form in.
+- **Dakkapel** geef je bij het dakvlak in de webapp op (breedte × hoogte × diepte → extra gevel + plat dakje).
 
 ### Stap F — Ruimtes: gebruiksoppervlakte + rekenzone (Rooms)
 Per ruimte: **"Telt mee voor gebruiksoppervlakte?"** (Ja default) + **Rekenzone** (default 1).

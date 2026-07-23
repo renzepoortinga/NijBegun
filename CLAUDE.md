@@ -117,6 +117,27 @@ Verifieer ALTIJD de container-view (die telt), niet de host:
 config.json + varianten (.bak) staan in .gitignore -> gaan NOOIT mee met een push; de VPS-config moet je
 dus apart bijwerken (bevat wachtwoordhash + TOTP: eerst `cp config.json config.json.bak`, dan JSON valideren).
 
+## Status (23-7-2026) — 643/643 groen. NTA 8800-analyse + MagicPlan live opgeschoond.
+Volledige NTA 8800:2025+C1:2026 gelezen (`docs/nta8800-analyse-vs-tool.md` + memory nta8800-analyse):
+gouden regel bevestigd, eigen rekenkern afgeraden, 7 verbeterpunten. Doorgevoerd + gepusht:
+- **fls-weging verliesoppervlak** (§6.7.3: grond/kruipruimte ×0,7, AVR ×0) + **Standaard-eis zelf
+  voorrekenen** (§5.3.2) als 0-meting + sanity-check → `engine/standaard.py`, getoond in webapp.
+- **narekenen-bug**: een via 'Grenst aan buiten (m)' gesplitste wand werd tegelijk als HANDMATIG
+  NAREKENEN gemeld (cur_nareken bleef True) → gefixt (`statistics_csv.py`).
+- **begrenzing-labels**: beschrijvende MagicPlan-labels ('AOR (onverwarmd)', 'ASGR (sterk
+  geventileerd)') mapten naar None → `_grenst_aan_code` pakt nu ook de kale afkorting vóór ' ('
+  (`objecten_generate.py`); + 'asv' tolerante alias voor ASGR.
+- **LIVE MagicPlan opgeschoond** (browserconsole-API, backup in localStorage `__nb_backup_*`):
+  (1) toevoerrooster onder boven-/onderlicht toegevoegd; (2) paneel-bouwjaar stond opgeslagen maar
+  NOOIT gepubliceerd → herpubliceerd; (3) **ASGR + Water + Onverwarmde kelder** aan alle 4 begrenzing-
+  dropdowns; (4) **Gebouwhoogte tot de nok** aan Object; (5) **DAK VERWIJDERD uit MagicPlan** (211
+  velden weg — Constructies = nu alleen GEVEL + VLOER). Dak + dakramen gaan via de **webapp-wizard**
+  (besluit 15-7 uitgevoerd). HR+ bleek al in alle glasvelden aanwezig (geen wijziging).
+- **Centralisatie**: `docs/magicplan-forms-live.md` = nieuwe ENIGE waarheidsbron voor de live forms
+  (additions.json/LIVE-WIJZIGINGEN.md/how-to waren uit elkaar gelopen). how-to dak-stap bijgewerkt.
+OPEN: VPS-deploy van de code-fixes (narekenen + begrenzing-labels + standaard); webapp dak-wizard
+mobiel/compleet maken (nu leidend); overige how-to-staleness (oude 'Schil & zone'-naam) opschonen.
+
 ## Status (22-7-2026) — 625/625 groen. HANDOFF-punt voor een nieuw gesprek.
 Sinds 19-7 gedaan (allemaal getest, gecommit; check `git log --oneline` voor de exacte commits):
 - MAILKOPPELING LIVE-ROUTE = **Microsoft Graph** (dashboard/graph_mail.py, config-blok "graph"): info@ is
