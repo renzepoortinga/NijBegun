@@ -3207,5 +3207,35 @@ try:
 except Exception as _e:
     check("portaal-annulering: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("N. Standaard + verliesoppervlak (NTA 8800 §5.3.2 / §6.7.3)")
+try:
+    from engine.standaard import fls, verliesoppervlak, standaard_eis, is_grondgebonden
+    from core.dossier import SchilDeel as _SD
+    check("fls grond/kruipruimte 0,7", fls("Grond") == 0.7 and fls("Kruipruimte") == 0.7)
+    check("fls AVR/woningscheidend 0", fls("AVR") == 0.0 and fls("Aangrenzende woning") == 0.0)
+    check("fls buitenlucht/AOR 1,0", fls("Buitenlucht") == 1.0 and fls("AOR") == 1.0)
+    check("is_grondgebonden tussenwoning=True, appartement=False",
+          is_grondgebonden("Tussenwoning") and not is_grondgebonden("Appartement (tussen)"))
+    _std = Dossier()
+    _std.schil = [_SD(id="G1", type="gevel", begrenzing="Buitenlucht", oppervlakte_m2=50),
+                  _SD(id="V1", type="vloer", begrenzing="Kruipruimte", oppervlakte_m2=40),
+                  _SD(id="W1", type="gevel", begrenzing="AVR", oppervlakte_m2=30),
+                  _SD(id="K1", type="kozijn", begrenzing="Buitenlucht", oppervlakte_m2=10)]
+    # 50x1 + 40x0,7 + 30x0 + kozijn uitgesloten = 78
+    check("Als gewogen (grond x0,7, AVR x0, kozijn uit) = 78",
+          abs(verliesoppervlak(_std) - 78.0) < 1e-6, str(verliesoppervlak(_std)))
+    _std.geometrie.gebruiksoppervlakte_ag_m2 = 100.0
+    _std.identificatie.bouwjaar = 1970                 # grondgebonden (default), na 1945, Als/Ag=0,78<1 -> 43
+    check("Standaard grondgebonden na1945 ratio<1 -> 43", standaard_eis(_std) == 43, str(standaard_eis(_std)))
+    _std.geometrie.gebruiksoppervlakte_ag_m2 = 50.0    # Als/Ag=1,56 -> 43 + 40x0,56 = 65,4 -> 65
+    check("Standaard grondgebonden na1945 ratio1,56 -> 65", standaard_eis(_std) == 65, str(standaard_eis(_std)))
+    _std.identificatie.woningtype = "Appartement (tussen)"
+    _std.identificatie.bouwjaar = 1930                 # woongebouw t/m 1945 -> 95 + 70x0,56 = 134,2 -> 134
+    check("Standaard woongebouw t/m1945 ratio1,56 -> 134", standaard_eis(_std) == 134, str(standaard_eis(_std)))
+    _std.identificatie.bouwjaar = None
+    check("Standaard None zonder bouwjaar", standaard_eis(_std) is None)
+except Exception as _e:
+    check("Standaard/verliesoppervlak: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

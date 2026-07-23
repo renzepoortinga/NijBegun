@@ -33,6 +33,7 @@ from dashboard import security as sec                                           
 from dashboard import ai as ai_mod                                                    # noqa: E402
 from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
 from engine.advies_text import genereer_advies                                        # noqa: E402
+from engine.standaard import verliesoppervlak, standaard_eis                          # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken, rapport as vent_rapport    # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
@@ -496,10 +497,12 @@ Je vult ze in Vabi in; hier invullen is optioneel en wordt alleen als sjabloon-h
 <div class=btn-row><button class=btn>Ventilatie opslaan</button></div></form></div>
 
 <div class=card><div class=kv>
-<dt>Totaal verliesoppervlak</dt><dd>{{'%.2f'|format(verlies)}} m²</dd>
+<dt>Totaal verliesoppervlak (Als)</dt><dd>{{'%.2f'|format(verlies)}} m²</dd>
 <dt>Gebruiksoppervlak (Ag)</dt><dd>{{'%.2f'|format(ag) if ag else '—'}} m²</dd>
-<dt>Compactheid (verlies/Ag)</dt><dd>{{'%.2f'|format(verlies/ag) if ag else '—'}}</dd></div>
-<p class="muted small">AVR-vlakken tellen niet mee in het verliesoppervlak (adiabatisch).</p></div>
+<dt>Compactheid (Als/Ag)</dt><dd>{{'%.2f'|format(verlies/ag) if ag else '—'}}</dd>
+<dt>Standaard-eis (verwachting)</dt><dd>{{std_eigen ~ ' kWh/m²·jr' if std_eigen is not none else '— (bouwjaar/Ag nodig)'}}</dd></div>
+<p class="muted small">Weging NTA 8800 §6.7.3: grond/kruipruimte ×0,7, AVR/woningscheidend ×0 (adiabatisch), overige ×1.
+De Standaard-eis is <b>zelf voorgerekend</b> (§5.3.2) als 0-meting-verwachting; Vabi geeft de definitieve waarde.</p></div>
 
 <div class=card><h2>③ Exporteer naar Vabi</h2>
 <p class=muted>Genereer de VABI-import (3 bibliotheken) van de <b>huidige</b> woning, importeer die in EPA-W en reken door.
@@ -576,7 +579,7 @@ VABI = """{{stepper|safe}}<h1>VABI-toets met maatregelen</h1>
 <p class=muted>De toekomstige staat (maatregelen verwerkt) als 3 bibliotheken. Importeer in EPA-W → <b>Constructies → Objecten → Installaties</b> → Rekenen.</p>
 <ul class=files>{% for f in vabi_files %}<li>{{f}} <a class="btn sec" href="{{url_for('download', tag=tag, filename='vabi_na/'+f)}}">download</a></li>{% endfor %}</ul></div>
 <div class=card><h2>Berekening</h2><div class=kv>
-<dt>Isolatiestandaard (eis)</dt><dd>{{h.standaard if h.standaard is not none else '—'}} kWh/m²·jr</dd>
+<dt>Isolatiestandaard (eis, uit Vabi)</dt><dd>{{h.standaard if h.standaard is not none else '—'}} kWh/m²·jr{% if std_eigen is not none %} <span class="muted small">(zelf voorgerekend: {{std_eigen}}{% if std_afwijking is not none and std_afwijking > 2 %} — <b>afwijking {{std_afwijking}}, loop geometrie/woningtype na</b>{% endif %})</span>{% endif %}</dd>
 <dt>Netto warmtebehoefte (huidig)</dt><dd>{{h.behoefte if h.behoefte is not none else '—'}} kWh/m²·jr</dd>
 <dt>Netto warmtebehoefte (met maatregelen)</dt><dd>{{na.behoefte if na and na.behoefte is not none else '— (upload de export)'}} kWh/m²·jr</dd>
 <dt>Totale kosten (subsidietabel)</dt><dd>€{{'%.2f'|format(st.totaal or 0)}}</dd>
@@ -1096,17 +1099,18 @@ def opname(tag):
     for rz in sorted(per_zone):
         rows = sorted(per_zone[rz], key=lambda t: (orde.get((t[1].type or "").lower(), 9), t[1].id))
         zones.append((rz, rows))
-    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil
-                  if (s.begrenzing or "") != "AVR" and s.type not in ("kozijn", "paneel"))
+    # gewogen verliesoppervlakte Als (NTA 8800 §6.7.3: grond/kruipruimte x0,7, AVR/woningscheidend x0)
+    verlies = verliesoppervlak(dos)
     # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen
     ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
+    std_eigen = standaard_eis(dos)          # Standaard-eis zelf voorgerekend (§5.3.2) als 0-meting-verwachting
     bj_titel, bj_html = bouwjaar_mod.hint(dos.identificatie.bouwjaar)
     # dakvlakken (voor de 'dakraam toevoegen'-keuze): label + oriëntatie-waarde
     dak_vlakken = [("%s · %s · %.1f m²" % (s.id, s.orientatie or "Horizontaal", s.oppervlakte_m2 or 0),
                     s.orientatie or "") for s in dos.schil if (s.type or "") == "dak"]
     n_dakraam = sum(1 for s in dos.schil if "dakraam" in (s.subtype or "").lower())
     return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
-                elementen=elementen, zones=zones, verlies=verlies, ag=ag,
+                elementen=elementen, zones=zones, verlies=verlies, ag=ag, std_eigen=std_eigen,
                 bj_titel=bj_titel, bj_html=bj_html, woningtypes=WONINGTYPE_OPTS, dak_vlakken=dak_vlakken,
                 n_dakraam=n_dakraam, begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
                 koz_opts=KOZ_OPTS, ico=TYPE_ICO)
@@ -1600,12 +1604,18 @@ def vabi(tag):
     except Exception as e:
         flash("VABI-import genereren mislukte: %s" % e)
     vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(outdir, "*.xml")))
-    verlies = sum((s.oppervlakte_m2 or 0) for s in dos.schil
-                  if (s.begrenzing or "") != "AVR" and s.type not in ("kozijn", "paneel"))
+    # gewogen verliesoppervlakte Als (NTA 8800 §6.7.3)
+    verlies = verliesoppervlak(dos)
     # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen
     ag = dos.geometrie.gebruiksoppervlakte_ag_m2 or 0
+    std_eigen = standaard_eis(dos)          # zelf voorgerekend (§5.3.2) -> kruiscontrole met de Vabi-Standaard
+    std_vabi = (st.get("huidig") or {}).get("standaard")
+    std_afwijking = None
+    if std_eigen is not None and std_vabi is not None:
+        std_afwijking = round(abs(std_eigen - float(std_vabi)), 1)   # >2 kWh/m²·jr = geometrie/woningtype nalopen
     return page(VABI, stepper=stepper("vabi", st), tag=tag, vabi_files=vabi_files, na=st.get("na"),
-                h=st.get("huidig") or {}, st=st, verlies=verlies, ag=ag, renojaar=renojaar)
+                h=st.get("huidig") or {}, st=st, verlies=verlies, ag=ag, renojaar=renojaar,
+                std_eigen=std_eigen, std_afwijking=std_afwijking)
 
 
 @app.route("/project/<tag>/afronden")
