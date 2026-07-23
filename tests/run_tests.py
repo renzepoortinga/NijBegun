@@ -3249,6 +3249,11 @@ try:
           _begrenzing_uit_naam("Zijgevel ASGR") == "Sterk geventileerd")
     check("ASV -> GrenstAan 6 (detailopname)", _grenst_aan_code("ASV", basis=False) == "6")
     check("ASV -> GrenstAan 0 (basisopname, telt als buiten)", _grenst_aan_code("ASV", basis=True) == "0")
+    # beschrijvende MagicPlan-labels (met '(...)') moeten nu ook mappen (was None vóór de fix)
+    check("MagicPlan-label 'ASGR (sterk geventileerd)' -> 6", _grenst_aan_code("ASGR (sterk geventileerd)", basis=False) == "6")
+    check("MagicPlan-label 'AOR (onverwarmd)' -> 4", _grenst_aan_code("AOR (onverwarmd)", basis=False) == "4")
+    check("MagicPlan-label 'AOS (serre)' -> 5", _grenst_aan_code("AOS (serre)", basis=False) == "5")
+    check("MagicPlan-label 'AVR (aangrenzend verwarmd)' -> 8", _grenst_aan_code("AVR (aangrenzend verwarmd)", basis=False) == "8")
 except Exception as _e:
     check("ASGR/ASV-alias: draait zonder fout", False); print("     " + repr(_e)[:200])
 

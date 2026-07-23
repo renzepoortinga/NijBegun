@@ -161,11 +161,17 @@ def _grenst_aan_code(begrenzing, basis=True):
     b = (begrenzing or "").strip().lower()
     if not b:
         return None
-    if b in _DETAIL_CODE:
-        return "0" if basis else _DETAIL_CODE[b]
-    if b in _AVR:
-        return "8"
-    return GRENST_AAN_CODE.get(b)
+    # MagicPlan labelt beschrijvend ('AOR (onverwarmd)', 'ASGR (sterk geventileerd)') -> pak ook de
+    # kale afkorting vóór ' (' zodat die labels net zo goed mappen als de kale ('AOR', 'ASGR').
+    for key in (b, b.split(" (")[0].strip()):
+        if key in _DETAIL_CODE:
+            return "0" if basis else _DETAIL_CODE[key]
+        if key in _AVR:
+            return "8"
+        code = GRENST_AAN_CODE.get(key)
+        if code is not None:
+            return code
+    return None
 
 
 class GeoTemplates:
