@@ -72,7 +72,7 @@ _BEGR_TOKENS = [
     ("Kruipruimte", ("kruipruimte", "kruip")),
     ("Grond", ("grond", "talud", "souterrain")),
     ("AOS", ("aos", "serre")),
-    ("Sterk geventileerd", ("sterk geventileerd", "asgr")),
+    ("Sterk geventileerd", ("sterk geventileerd", "asgr", "asv")),   # 'asv' = tolerante alias (officieel ASGR)
     ("AOR", ("aor", "garage", "onverwarmd")),
     ("Water", ("water",)),
 ]

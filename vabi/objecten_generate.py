@@ -115,7 +115,7 @@ GRENST_AAN_CODE = {
 _DETAIL_CODE = {
     "aor": "4", "aangrenzende onverwarmde ruimte": "4", "onverwarmde ruimte": "4",
     "aos": "5", "aangrenzende onverwarmde serre": "5", "serre": "5",
-    "asgr": "6", "aangrenzend sterk geventileerde ruimte": "6",
+    "asgr": "6", "asv": "6", "aangrenzend sterk geventileerde ruimte": "6",   # 'asv' = tolerante alias (officieel ASGR)
     "sterk geventileerd": "6", "sterk geventileerde ruimte": "6",
 }
 _AVR = {"avr", "aangrenzende verwarmde ruimte", "buurwoning", "aangrenzende woning"}
