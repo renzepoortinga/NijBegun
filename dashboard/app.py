@@ -378,6 +378,11 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <div class=file-drop>Sleep hier de MagicPlan-CSV of dossier (.csv / .json)<br><input type=file name=bestand accept=".csv,.json"></div>
 <div class=btn-row><button class=btn>Inladen in de opname</button>
 <span class="muted small">Al ingeladen? Loop de gegevens hieronder na en pas aan waar nodig.</span></div></form></div>
+{% if st.import_historie %}<div class=card><h2>🕓 Import-historie</h2>
+<p class="muted small">Elke MagicPlan-import met datum/tijd — zo zie je (ook vanaf een ander device) of dit de meest recente opname is.</p>
+<div class=table-wrap><table><thead><tr><th>Wanneer</th><th>Bestand</th><th>Vlakken</th></tr></thead><tbody>
+{% for h in st.import_historie|reverse %}<tr><td>{{h.tijd}}{% if loop.first %} <span class="pill green">meest recent</span>{% endif %}</td><td data-label="Bestand">{{h.bestand}}</td><td data-label="Vlakken">{{h.vlakken}}</td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
 {% if st.vabi_acties %}<div class=card style="border:2px solid var(--warn-line);background:var(--warn-bg)">
 <h2>📋 Zelf doen in Vabi — {{st.vabi_acties|length}} actiepunt(en)</h2>
 <ul class=check>{% for a in st.vabi_acties %}<li><span class="mk no2">→</span>{{a}}</li>{% endfor %}</ul>
@@ -1165,6 +1170,12 @@ def opname_magicplan(tag):
     save_json(nieuw, os.path.join(_pdir(tag), st["dossier_file"]))
     st["adres"] = "%s %s, %s" % (nieuw.identificatie.straat or "", nieuw.identificatie.huisnummer or "",
                                  nieuw.identificatie.plaats or "")
+    # import-historie: datum/tijd + bestand + #vlakken, zodat je (ook op een ander device) ziet
+    # welke opname de meest recente is (laatste 12 bewaard)
+    st.setdefault("import_historie", []).append(
+        {"tijd": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+         "bestand": f.filename, "vlakken": len(nieuw.schil)})
+    st["import_historie"] = st["import_historie"][-12:]
     _save_state(tag, st)
     flash("MagicPlan-opname ingeladen (%d vlakken)%s — loop de gegevens na." % (len(nieuw.schil),
           (" · %d actiepunt(en) voor Vabi — zie de gele kaart" % len(acties)) if acties else ""))

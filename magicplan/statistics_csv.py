@@ -492,8 +492,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 if _bm and _wh:
                     _buiten_m2 = round(min(_bm * _wh, _bijdrage or (_bm * _wh)), 2)
                     notes.append("Wand '%s': gesplitst via 'Grenst aan buiten (m)' = %.2f m x %.2f m hoogte "
-                                 "-> %.2f m2 als gevel geteld (rest binnen/AVR, niet in de schil)."
-                                 % (_wnaam.strip(), _bm, _wh, _buiten_m2))
+                                 "-> %.2f m2 opgeteld bij de gevel op orientatie %s%s (rest binnen/AVR, "
+                                 "niet in de schil)."
+                                 % (_wnaam.strip(), _bm, _wh, _buiten_m2, cur_orient or "onbekend",
+                                    (" / %s" % cur_gevel_naam) if cur_gevel_naam else ""))
                     _bijdrage = _buiten_m2
                     _w_breed = _bm
                     k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
@@ -659,6 +661,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             _d_bxh = gevel_bxh.setdefault(_gk, {})
             _d_bxh[_vd] = round(_d_bxh.get(_vd, 0.0) + _be, 2)
 
+    # ---- AUTO-PERIMETER (begane-grond buitengevel-breedtes) ----
+    # De vloer-perimeter (randverlies, NEN-EN-ISO 13370) = de lengte van de begane-grondvloerrand die aan
+    # buiten grenst. Dat is precies de som van de op de begane grond getikte BUITENgevel-breedtes: die zijn
+    # al ontdubbeld voor tegenoverliggende wanden, en woningscheidende (AVR) wanden zitten er NIET in ->
+    # de buurwand-correctie die de MagicPlan 'Exterior perimeter' vergt, is hiermee al gedaan. Bij een
+    # deels-buiten-wand telt de 'Grenst aan buiten (m)'-lengte (breedte_eff), niet de hele wand.
+    auto_perimeter = round(sum(_br for _verd in gevel_bxh.values()
+                               for _vd, _br in _verd.items() if _is_bg(_vd or "")), 2)
+
     # ---- schil opbouwen ----
     schil = []
 
@@ -817,16 +828,32 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     bg_floor_area = footprint_bg or _f(G("Above grade living area"))  # begane-grond-footprint (niet de meerlaagse som)
     split_tot = round(sum(vloer_split.values()), 2)
     hoofd_area = round(max(0.0, (bg_floor_area or 0.0) - split_tot), 2) if split_tot else (bg_floor_area or 0.0)
-    if n_buur:
-        notes.append("Vloer-perimeter = volledige buitenomtrek (%.1f m), maar de WONINGSCHEIDENDE wand(en) "
-                     "tellen NIET mee in de perimeter (opname-handleiding §3.4) — corrigeer de perimeter "
-                     "in Vabi voor dit woningtype (%s, %d buurwand(en))."
-                     % (geo.perimeter_m or 0, woningtype, n_buur))
+    # perimeter: liefst AUTO (som begane-grond buitengevel-breedtes; buurwanden zitten er al niet in en
+    # deels-buiten-wanden tellen via hun buitenlengte), MAAR alleen als de tagging plausibel COMPLEET is —
+    # anders onderschat je de perimeter fors. Compleet = auto >= 60% van de verwachte buitenomtrek
+    # (sqrt(footprint) x aantal buitengevels; buitengevels = 4 - #buurwanden). Anders: MagicPlan-omtrek.
+    _verwacht_perim = ((bg_floor_area or 0) ** 0.5) * max(4 - n_buur, 1) if bg_floor_area else 0
+    _auto_compleet = bool(auto_perimeter and _verwacht_perim and auto_perimeter >= 0.6 * _verwacht_perim)
+    vloer_perimeter = auto_perimeter if _auto_compleet else geo.perimeter_m
+    if _auto_compleet:
+        notes.append("Vloer-perimeter AUTOMATISCH berekend uit de begane-grond buitengevel-breedtes: %.1f m "
+                     "(woningscheidende wanden tellen al niet mee; deels-buiten-wanden via hun buitenlengte). "
+                     "Verifieer in Vabi." % auto_perimeter)
+    else:
+        if auto_perimeter:
+            notes.append("Vloer-perimeter: som van de getikte begane-grond gevelbreedtes (%.1f m) lijkt "
+                         "ONVOLLEDIG (verwacht ~%.0f m) -> MagicPlan-buitenomtrek %.1f m gebruikt. Tik álle "
+                         "buitengevels op de begane grond voor een automatische perimeter."
+                         % (auto_perimeter, _verwacht_perim, geo.perimeter_m or 0))
+        if n_buur:
+            notes.append("Vloer-perimeter = MagicPlan-buitenomtrek (%.1f m); de WONINGSCHEIDENDE wand(en) "
+                         "tellen NIET mee in de perimeter (opname-handleiding §3.4) -> corrigeer 'm in Vabi "
+                         "(%s, %d buurwand(en))." % (geo.perimeter_m or 0, woningtype, n_buur))
     schil.append(SchilDeel(id="vloer", type="vloer", subtype="Begane grondvloer",
                            begrenzing=vloer_begr, oppervlakte_m2=hoofd_area or 0.0,
                            isolatie_aanwezig=v_b["isolatie"], rekenzone=1,
                            isolatiedikte_mm=v_b["dikte_mm"],
-                           perimeter_m=geo.perimeter_m,   # randverlies begane-grondvloer (= buitenomtrek)
+                           perimeter_m=vloer_perimeter,   # randverlies begane-grondvloer (auto of MagicPlan-fallback)
                            rc_bron=vloer_rc,
                            opmerkingen="opp = begane-grond-footprint (benadering); verifieer in Vabi"))
     for rb, rba in sorted(vloer_split.items()):

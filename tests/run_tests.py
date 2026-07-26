@@ -1486,8 +1486,8 @@ try:
                     ["Deels binnen/deels buiten? (narekenen)", "Grenst aan buiten (m) — meet de buitenlengte"],
                     [["Woonkamer", "Wall 5", "Wall", "10.0", "10.0", "4.0", "2.5", "", "Wall", "Voorgevel", "Yes", "3.0"]])
     _d, _n = _csvdos(_p); _os53.unlink(_p)
-    check("buiten-splitsing: 3m x 2.5m = 7.5 m2 als gevel geteld",
-          any("7.5" in str(x) and "gevel geteld" in str(x) for x in _n))
+    check("buiten-splitsing: 3m x 2.5m = 7.5 m2 opgeteld bij de gevel (met orientatie)",
+          any("7.5" in str(x) and "opgeteld bij de gevel" in str(x) for x in _n))
     check("buiten-splitsing: gesplitste wand NIET meer als HANDMATIG NAREKENEN gemeld (geen tegenstrijdigheid)",
           not any("HANDMATIG NAREKENEN" in str(x) for x in _n))
     check("plat dak: footprint bovenste verdieping (48) gebruikt",
@@ -3256,6 +3256,30 @@ try:
     check("MagicPlan-label 'AVR (aangrenzend verwarmd)' -> 8", _grenst_aan_code("AVR (aangrenzend verwarmd)", basis=False) == "8")
 except Exception as _e:
     check("ASGR/ASV-alias: draait zonder fout", False); print("     " + repr(_e)[:200])
+
+print("P. Auto-perimeter uit begane-grond gevelbreedtes (volledig getagd)")
+try:
+    import tempfile as _tfP
+    from magicplan.statistics_csv import build_dossier as _bdP
+    # vrijstaand 6x6 (footprint 36), 4 buitengevels van 6 m getikt -> auto = 24 m; MagicPlan-omtrek staat
+    # bewust op 20 zodat we auto (24) van fallback (20) kunnen onderscheiden.
+    _pcsv = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Vrijstaand\n"
+             "Gevelhoogte (m),3\nTotal living area,36\n\n"
+             "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+             "Ground Floor,36,2.60 m,Kruipruimte\n\n"
+             "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+             "Ground Floor,\n"
+             "Room,Wall 0,Wall,15,15,6,2.6,1,Wall,,1,N\nRoom,Wall 1,Wall,15,15,6,2.6,1,Wall,,1,O\n"
+             "Room,Wall 2,Wall,15,15,6,2.6,1,Wall,,1,Z\nRoom,Wall 3,Wall,15,15,6,2.6,1,Wall,,1,W\n")
+    _fP = _tfP.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fP.write(_pcsv); _fP.close()
+    _dP, _nP = _bdP(_fP.name); _os = __import__("os"); _os.unlink(_fP.name)
+    _vlP = next((s for s in _dP.schil if s.type == "vloer"), None)
+    check("auto-perimeter: volledig getagd -> perimeter = 24 (auto), niet 20 (MagicPlan-fallback)",
+          _vlP is not None and _vlP.perimeter_m == 24.0, str(getattr(_vlP, "perimeter_m", None)))
+    check("auto-perimeter: note vermeldt 'AUTOMATISCH berekend'",
+          any("AUTOMATISCH berekend" in n for n in _nP))
+except Exception as _e:
+    check("auto-perimeter: draait zonder fout", False); print("     " + repr(_e)[:200])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
