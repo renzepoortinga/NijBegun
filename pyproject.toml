@@ -1,0 +1,31 @@
+[project]
+name = "nijbegun-engine"
+version = "0.1.0"
+description = "Nij Begun isolatieplan domain engine — shared package (see docs/engine-package.md)."
+requires-python = ">=3.11"
+dependencies = [
+    "python-docx>=1.1",
+    "lxml>=5.0",
+    "openpyxl>=3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# The engine's public API is `nijbegun_engine`; the other dirs are its internal modules,
+# imported top-level (e.g. `from core.dossier import ...`). Package data (vabi/refs/*.xml,
+# catalog/catalog.json, the Word template) lives inside these dirs and ships with them.
+[tool.hatch.build.targets.wheel]
+packages = [
+    "nijbegun_engine",
+    "core",
+    "vabi",
+    "magicplan",
+    "engine",
+    "catalog",
+    "validator",
+    "ventilatie",
+    "isolatieplan",
+    "foto",
+]
