@@ -44,9 +44,17 @@ _GESTAPELD = ("galerij", "portiek", "maisonnette", "appartement", "flat", "meerg
 
 
 def is_grondgebonden(woningtype):
-    """True = grondgebonden woning (vrijstaand/2^1kap/hoek/tussen); False = woning in een woongebouw."""
+    """True = grondgebonden woning (vrijstaand/2^1kap/hoek/tussen); False = woning in een woongebouw.
+    LET OP: bij een LEEG woningtype is dit niet vast te stellen — gebruik `woningtype_onbekend()` om
+    dat te signaleren i.p.v. stil op grondgebonden uit te komen (de Standaard-eis verschilt fors)."""
     w = (woningtype or "").lower()
     return not any(k in w for k in _GESTAPELD)
+
+
+def woningtype_onbekend(woningtype):
+    """True als het woningtype ontbreekt -> de Standaard-eis (§5.3.2) en de qv10-ftype (tabel 11.14)
+    kunnen niet betrouwbaar bepaald worden; de aanroeper hoort dit LUID te melden."""
+    return not (woningtype or "").strip()
 
 
 # (basiswaarde, helling) per categorie — sleutel = (grondgebonden, bouwjaar t/m 1945)
@@ -71,6 +79,9 @@ def standaard_eis(dos):
     if not ag or bouwjaar is None:
         return None
     ratio = verliesoppervlak(dos) / ag
-    base, slope = _STANDAARD[(is_grondgebonden(dos.identificatie.woningtype), bouwjaar <= 1945)]
+    wtype = dos.identificatie.woningtype
+    if woningtype_onbekend(wtype):
+        return None          # zonder woningtype geen betrouwbare eis (grondgebonden 43/60 vs woongebouw 45/95)
+    base, slope = _STANDAARD[(is_grondgebonden(wtype), bouwjaar <= 1945)]
     eis = base if ratio < 1.0 else base + slope * (ratio - 1.0)
     return round(eis)               # NTA §5.3.2: afronden op een geheel getal

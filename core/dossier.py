@@ -60,6 +60,7 @@ class Opname:
     dak_isolatie_zijde: str = ""       # V4: Binnenzijde | Buitenzijde | Onbekend (hellend én plat dak)
     bodemisolatie: str = ""            # V3: Ja | Nee | Onbekend (kruipruimte-bodemisolatie)
     kierdichting: str = ""             # V6: omschrijving/klasse van de huidige kierdichting
+    dak_standaard: "BouwdeelStandaard" = field(default_factory=lambda: BouwdeelStandaard())
 
 @dataclass
 class VloerInfo:
@@ -81,6 +82,20 @@ class Geometrie:
     perimeter_m: Optional[float] = None
     vloeren: List[VloerInfo] = field(default_factory=list)
     ruimtes: List[Ruimte] = field(default_factory=list)
+
+@dataclass
+class BouwdeelStandaard:
+    """Projectbrede standaard voor één bouwdeel, uit de MagicPlan-form 'Constructies'.
+    Gebruikt voor het DAK: de isolatie voer je op form-niveau in, de AFMETINGEN in de webapp-wizard.
+    Elk nieuw dakvlak erft deze waarden; per vlak kun je ze daarna overrulen in de gebouwboom."""
+    isolatie_aanwezig: str = ""
+    isolatiedikte_mm: Optional[float] = None
+    bouwjaarklasse: str = ""
+    spouw_aanwezig: Optional[bool] = None
+    rc_bron: str = ""
+    begrenzing: str = ""
+    isolatie_zijde: str = ""                       # binnen- of buitenzijde (isolatieplan V4)
+    riet_dikte_mm: Optional[float] = None          # rieten dak -> Rc-toeslag d/0,105 (NTA bijlage I)
 
 @dataclass
 class SchilDeel:
@@ -108,6 +123,8 @@ class SchilDeel:
     rekenzone: int = 1                             # rekenzone-nummer (default 1; >1 bij meerdere zones)
     deur_met_raam_glas65: bool = False             # deur met raam >=65% glas -> telt als raam in VABI
     toevoerrooster: str = ""                       # ventilatie-toevoer via raam: Zelfregelend (ZR)|Niet-zelfregelend|Geen
+    zonwering: str = ""                            # luik/rolluik/zonwering (NTA 8800 §8.2.2.3.4: bij een
+                                                   # woonfunctie tellen bedienbare luiken/rolluiken mee in Uw)
     opmerkingen: str = ""
 
 @dataclass
@@ -330,7 +347,7 @@ _DATACLASS_FIELDS = {
     "geometrie": Geometrie, "ventilatie": Ventilatie, "berekening": Berekening,
     "validatie": Validatie, "meta": Meta,
     "installaties": Installaties, "verwarming": Verwarming, "tapwater": Tapwater,
-    "koeling": Koeling,
+    "koeling": Koeling, "dak_standaard": BouwdeelStandaard,
 }
 _LIST_FIELDS = {
     "schil": SchilDeel, "maatregelen": Maatregel, "haalbaarheid": Haalbaarheid,

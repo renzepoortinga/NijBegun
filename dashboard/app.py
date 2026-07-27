@@ -1314,8 +1314,16 @@ def opname_dak_plat(tag):
         flash("Vul een oppervlak in voor het platte dak.")
         return redirect(url_for("opname", tag=tag))
     nr = _volgend_dak_nr(dos)
-    dos.schil.append(SchilDeel(id="dak%d-plat" % nr, type="dak", subtype="plat dak", begrenzing="Buitenlucht",
-                               orientatie="", oppervlakte_m2=m2, hellingshoek=0, isolatie_aanwezig="Onbekend",
+    _ds = getattr(dos.opname, "dak_standaard", None)
+    dos.schil.append(SchilDeel(id="dak%d-plat" % nr, type="dak", subtype="plat dak",
+                               begrenzing=((_ds.begrenzing if _ds else "") or "Buitenlucht"),
+                               orientatie="", oppervlakte_m2=m2, hellingshoek=0,
+                               # isolatie erft de Constructies-form-standaard (MagicPlan); leeg -> Onbekend
+                               isolatie_aanwezig=((_ds.isolatie_aanwezig if _ds else "") or "Onbekend"),
+                               isolatiedikte_mm=(_ds.isolatiedikte_mm if _ds else None),
+                               bouwjaarklasse=((_ds.bouwjaarklasse if _ds else "") or ""),
+                               spouw_aanwezig=(_ds.spouw_aanwezig if _ds else None),
+                               rc_bron=((_ds.rc_bron if _ds else "") or ""),
                                rekenzone=int(request.form.get("rekenzone") or 1),
                                opmerkingen="Dak %d (plat) — webapp-invoer" % nr))
     _dos_save(tag, st, dos)

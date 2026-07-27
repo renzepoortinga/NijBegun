@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, Ruimte, VloerInfo,
                           SchilDeel, Ventilatie, Verwarming, Installaties,
-                          Koeling, Tapwater, ZonneEnergieSysteem)
+                          Koeling, Tapwater, ZonneEnergieSysteem, BouwdeelStandaard)
 from core.geometry import (woningscheidende_wand_toeslag_m2, aantal_woningscheidende_wanden,
                            hellingshoek_uit_nok, dak_vlakken_zadeldak, dak_vlakken_lessenaar,
                            dak_vlakken_schilddak, dakkapel_vlakken)
@@ -655,7 +655,9 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 _g = _wn("type glas", exact=True)      # 'Type glas' (raam) — niet '(indien glas in deur)'
                 kozijnen.append({"area": _tot,
                                  "glas": (_g if _g is not None else ((r[16] or "").strip() if len(r) > 16 else "")),
-                                 "orient": orient, "begr": cur_begr, "kozijn_hk": _hk})
+                                 "orient": orient, "begr": cur_begr, "kozijn_hk": _hk,
+                                 # NTA 8800 §8.2.2.3.4: bedienbaar luik/rolluik verlaagt de effectieve Uw
+                                 "zonwering": _undot(_wn("zonwering/luik aanwezig") or "")})
         elif typ == "Door":
             orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
             # deur-kolommen op NAAM (Deur-groep is 8-7 geherstructureerd: glas-velden conditioneel
@@ -786,6 +788,26 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     g_b = _bouwdeel("Gevel", "Rc-bron gevel", "Isolatie aanwezig")
     v_b = _bouwdeel("Vloer", "Rc-bron vloer", "", "Begrenzing (vloer)")
     d_b = _bouwdeel("Dakvlak 1", "Rc-bron dak")
+    # DAK-ISOLATIE op FORM-niveau (Constructies, sinds 27-7): de afmetingen doe je in de webapp-wizard,
+    # de isolatie hier. Elk nieuw dakvlak in de webapp erft deze standaard.
+    _dak_form = _bouwdeel("Dak", "Rc-bron dak")
+    if _dak_form["ingevuld"]:
+        dos.opname.dak_standaard = BouwdeelStandaard(
+            isolatie_aanwezig=_dak_form["isolatie"], isolatiedikte_mm=_dak_form["dikte_mm"],
+            bouwjaarklasse=_dak_form["bouwjaar"], spouw_aanwezig=_dak_form["spouw"],
+            rc_bron=_dak_form["rc_bron"], begrenzing=_dak_form["begrenzing"],
+            isolatie_zijde=_undot(G("Dak - isolatie aan zijde")))
+        notes.append("Dak-ISOLATIE uit de Constructies-form gelezen (isolatie %s%s) — elk dakvlak dat je "
+                     "in de webapp toevoegt erft dit; de AFMETINGEN voer je in de webapp-dakwizard in."
+                     % (_dak_form["isolatie"],
+                        (", %s mm" % _dak_form["dikte_mm"]) if _dak_form["dikte_mm"] else ""))
+    # rieten dak: NTA 8800 bijlage I geeft een Rc-toeslag d/0,105 -> Vabi rekent, wij signaleren
+    if _undot(G("Rieten dak?")).strip().lower().startswith("ja"):
+        _rd = _f(G("Rietdikte (mm)"))
+        dos.opname.dak_standaard.riet_dikte_mm = _rd
+        notes.append("RIETEN DAK opgegeven%s -> NTA 8800 bijlage I geeft een extra warmteweerstand "
+                     "Rm;riet = d/0,105. Zet de rietlaag in Vabi bij de dakconstructie."
+                     % ((" (%.0f mm)" % _rd) if _rd else " (dikte niet ingevuld)"))
     gevel_rc, vloer_rc, dak_rc = g_b["rc_bron"], v_b["rc_bron"], d_b["rc_bron"]
     isol = g_b["isolatie"] or "Onbekend"          # projectdefault gevel (wand-loop gebruikt dit)
     dikte_onbekend = g_b["dikte_onbekend"]
@@ -1394,8 +1416,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             begrenzing=k.get("begr", "Buitenlucht"),
             orientatie=k["orient"], oppervlakte_m2=(0.65 if klein else area),
             glastype=_undot(k["glas"]) or "", kozijnmateriaal=_norm_kozijn_mat(k.get("kozijn_hk", "")),
+            zonwering=k.get("zonwering", ""),
             opmerkingen=(("klein raam %.2f m2 -> 0,65 m2 (Nij Begun-regel)" % area if klein else "")
-                         + ("" if k["glas"] else " GLASTYPE ONTBREEKT")).strip()))
+                         + ("" if k["glas"] else " GLASTYPE ONTBREEKT")
+                         + (" | zonwering/luik: %s (NTA 8.2.2.3.4 -> zet 'm in Vabi bij het raam)"
+                            % k["zonwering"] if k.get("zonwering") and
+                            not k["zonwering"].lower().startswith("nee") else "")).strip()))
     # panelen-in-kozijn: dichte constructie (ConstructieType=1), zelfde isolatie-beslisschema als een gevel.
     # De CSV geeft geen Rc/isolatie voor het venster -> isolatie Onbekend (forfaitair via bouwjaar); de
     # adviseur verfijnt Rc/isolatie in de webapp-opname of in Vabi.
@@ -1610,8 +1636,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # --- tapwater ---
     tw = G2("Tapwater - toestel", "Tapwater – toestel")
     if tw:
+        _dwtw = G2("Douche-WTW (DWTW) aanwezig?", "DWTW aanwezig?").strip().lower()
         inst.tapwater = Tapwater(type_installatie="Individueel", type_toestel=tw,
-                                 installatiejaar=_int2(G2("Tapwater - installatiejaar")))
+                                 installatiejaar=_int2(G2("Tapwater - installatiejaar")),
+                                 # NTA 8800 bijlage U: douche-WTW verlaagt de tapwaterbehoefte fors
+                                 dwtw_aanwezig=(True if _dwtw.startswith("ja")
+                                                else (False if _dwtw.startswith("nee") else None)))
     # --- zonne-energie / PV (uitgebreid; MEERDERE PV-systemen: 'PV-2 - ...', 'PV-3 - ...' enz.) ---
     def _pv_from(detail_prefix, systeem_label):
         pt = G2(detail_prefix + "paneeltype")
@@ -1624,7 +1654,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             fabricagejaar=G2(detail_prefix + "fabricagejaar"),
             bouwintegratie=G2(detail_prefix + "bouwintegratie"),
             orientatie=ori, hellingshoek=_f(G2(detail_prefix + "hellingshoek (graden)")),
-            aantal=aant, oppervlak_per_paneel_m2=_f(G2(detail_prefix + "oppervlak per paneel (m2)")))
+            aantal=aant, oppervlak_per_paneel_m2=_f(G2(detail_prefix + "oppervlak per paneel (m2)")),
+            # beschaduwing (NTA 8800 §17.3) — Vabi rekent de reductie, wij leggen de waarneming vast
+            belemmering=(True if G2(detail_prefix + "belemmering/beschaduwing?",
+                                    "PV - belemmering/beschaduwing?").strip().lower().startswith("ja")
+                         else None))
     ze = G2("Zonne-energie aanwezig?")
     if ze and ze.strip().lower() not in ("geen", "nee", ""):
         inst.zonne_energie = [ZonneEnergieSysteem(
@@ -1635,7 +1669,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             orientatie=G2("PV - orientatie", "PV - oriëntatie"),
             hellingshoek=_f(G2("PV - hellingshoek (graden)")),
             aantal=_int2(G2("PV - aantal panelen")),
-            oppervlak_per_paneel_m2=_f(G2("PV - oppervlak per paneel (m2)")))]
+            oppervlak_per_paneel_m2=_f(G2("PV - oppervlak per paneel (m2)")),
+            # beschaduwing (NTA 8800 §17.3) — Vabi rekent de reductie, wij leggen de waarneming vast
+            belemmering=(True if G2("PV - belemmering/beschaduwing?").strip().lower().startswith("ja")
+                         else None))]
         for i in range(2, 6):   # extra PV-systemen (2e paneeltype/oriëntatie); leeg = overslaan
             extra = _pv_from("PV-%d - " % i, "PV-panelen")
             if extra:

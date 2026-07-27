@@ -3227,7 +3227,8 @@ try:
     check("Als gewogen (grond x0,7, AVR x0, kozijn uit) = 78",
           abs(verliesoppervlak(_std) - 78.0) < 1e-6, str(verliesoppervlak(_std)))
     _std.geometrie.gebruiksoppervlakte_ag_m2 = 100.0
-    _std.identificatie.bouwjaar = 1970                 # grondgebonden (default), na 1945, Als/Ag=0,78<1 -> 43
+    _std.identificatie.woningtype = "Tussenwoning"     # zonder woningtype = geen betrouwbare eis (None)
+    _std.identificatie.bouwjaar = 1970                 # grondgebonden, na 1945, Als/Ag=0,78<1 -> 43
     check("Standaard grondgebonden na1945 ratio<1 -> 43", standaard_eis(_std) == 43, str(standaard_eis(_std)))
     _std.geometrie.gebruiksoppervlakte_ag_m2 = 50.0    # Als/Ag=1,56 -> 43 + 40x0,56 = 65,4 -> 65
     check("Standaard grondgebonden na1945 ratio1,56 -> 65", standaard_eis(_std) == 65, str(standaard_eis(_std)))
@@ -3236,6 +3237,10 @@ try:
     check("Standaard woongebouw t/m1945 ratio1,56 -> 134", standaard_eis(_std) == 134, str(standaard_eis(_std)))
     _std.identificatie.bouwjaar = None
     check("Standaard None zonder bouwjaar", standaard_eis(_std) is None)
+    from engine.standaard import woningtype_onbekend
+    _std.identificatie.bouwjaar = 1970; _std.identificatie.woningtype = ""
+    check("Standaard None zonder woningtype (niet stil grondgebonden aannemen)",
+          standaard_eis(_std) is None and woningtype_onbekend(""))
 except Exception as _e:
     check("Standaard/verliesoppervlak: draait zonder fout", False); print("     " + repr(_e)[:200])
 
@@ -3320,6 +3325,44 @@ try:
           any("telt NIET mee voor het gebruiksoppervlak" in n for n in _nQ))
 except Exception as _e:
     check("element-overrides: draait zonder fout", False); print("     " + repr(_e)[:220])
+
+print("R. Dak-isolatie op form-niveau + riet/DWTW/zonwering/PV-belemmering (NTA-aanvullingen)")
+try:
+    import tempfile as _tfR, os as _osR
+    from magicplan.statistics_csv import build_dossier as _bdR
+    _r = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Vrijstaand\n"
+          "Oriëntatie voorgevel,N\nGevelhoogte (m),3\nTotal living area,60\n"
+          "Dak - isolatie aanwezig?,Ja\nDak - isolatiedikte (mm),140\nDak - begrenzing,Buitenlucht\n"
+          "Dak - isolatie aan zijde,Binnenzijde\nRieten dak?,Ja\nRietdikte (mm),150\n"
+          "Tapwater - toestel,Gasgestookt combitoestel\nDouche-WTW (DWTW) aanwezig?,Ja\n"
+          "Zonne-energie aanwezig?,Ja\nPV - paneeltype,Monokristallijn\nPV - aantal panelen,8\n"
+          "PV - orientatie,Z\nPV - belemmering/beschaduwing?,Ja deels\n\n"
+          "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+          "Ground Floor,60,2.60 m,Kruipruimte\n\n"
+          "ROOM ATTRIBUTES\nWoonkamer,60\n\n"
+          "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Gevelnaam (leeg = binnenwand),"
+          "Type glas,Zonwering/luik aanwezig? (leeg = geen)\n"
+          "Ground Floor,\nRoom,Wall 0,Wall,15,15,6,2.6,1,Wall,Voorgevel,,\n"
+          "Room,Wall 0,Window,2.0,2.0,1.5,1.3,1,Window,,HR++,Rolluik of luik (bedienbaar)\n")
+    _fR = _tfR.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fR.write(_r); _fR.close()
+    _dR, _nR = _bdR(_fR.name); _osR.unlink(_fR.name)
+    _ds = _dR.opname.dak_standaard
+    check("D: dak-isolatie uit de form (Ja + 140 mm + zijde) in dak_standaard",
+          _ds.isolatie_aanwezig == "Ja" and _ds.isolatiedikte_mm == 140.0
+          and _ds.isolatie_zijde == "Binnenzijde",
+          str((_ds.isolatie_aanwezig, _ds.isolatiedikte_mm, _ds.isolatie_zijde)))
+    check("D: melding dat de webapp-dakvlakken dit erven",
+          any("elk dakvlak dat je" in n for n in _nR))
+    check("4: riet -> dikte vastgelegd + NTA-bijlage-I-melding",
+          _ds.riet_dikte_mm == 150.0 and any("RIETEN DAK" in n for n in _nR))
+    check("4: DWTW aanwezig doorgezet naar tapwater", _dR.installaties.tapwater.dwtw_aanwezig is True)
+    check("4: PV-belemmering doorgezet",
+          bool(_dR.installaties.zonne_energie) and _dR.installaties.zonne_energie[0].belemmering is True)
+    _rm = next((s for s in _dR.schil if s.type == "kozijn" and s.subtype == "Raam"), None)
+    check("4: zonwering/luik per raam vastgelegd",
+          _rm is not None and "Rolluik" in (_rm.zonwering or ""), str(getattr(_rm, "zonwering", None)))
+except Exception as _e:
+    check("dak-form/NTA-aanvullingen: draait zonder fout", False); print("     " + repr(_e)[:220])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

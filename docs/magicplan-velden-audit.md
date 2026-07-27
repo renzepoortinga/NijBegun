@@ -1,5 +1,9 @@
 # MagicPlan-velden audit — live vs. parser vs. NTA 8800 / Nij Begun (27-7-2026)
 
+> **STATUS: alle bevindingen zijn dezelfde dag opgelost.** A/B (element-overrides) zitten in de parser,
+> C (alle gebouwtypen), D (dak-isolatie op form-niveau) en de 4 ontbrekende NTA-velden staan live in
+> MagicPlan én worden gelezen. 657 tests groen. Zie "Doorgevoerd 27-7" onderaan.
+
 Deep dive: komen de live MagicPlan-velden overeen met wat de tool leest, en dekken ze samen alles
 wat NTA 8800 (basisopname) en Nij Begun / Maatregel 29 nodig hebben?
 
@@ -125,3 +129,36 @@ Ontbreekt bovendien in de editor: **bouwjaarklasse per dakvlak** en **rc_bron (k
 > Werkwijze bij wijzigingen: live via de browserconsole-route (zie `magicplan/forms/LIVE-WIJZIGINGEN.md`),
 > en werk daarna `docs/magicplan-forms-live.md` bij. De parser-veldnamen in `statistics_csv.py` zijn
 > leidend voor de exacte naamgeving.
+
+---
+
+## 6. Doorgevoerd 27-7-2026 (alle 5 punten)
+
+**A — per-wand overrides worden gelezen.** `statistics_csv.py` leest nu `Gevel - isolatie aanwezig?/
+isolatiedikte onbekend?/isolatiedikte (mm)/bouwjaar/spouw/invoer/begrenzing/rekenzone` per wand via
+kolomKOP. Prioriteit: **veld op de wand > naam-token > Constructies-standaard**. De override zit in de
+groeperingssleutel, dus een afwijkende wand wordt een **eigen schildeel**.
+
+**B — per-kamer overrides worden gelezen.** `Vloer - begrenzing/rekenzone/telt mee voor
+gebruiksoppervlakte?`. "Nee" → ruimte buiten de thermische zone (NTA §6.3) mét melding. `Ruimte` heeft
+een `rekenzone`-veld gekregen.
+
+**C — alle gebouwtypen live.** Woningtype: 4 → **10** opties (incl. galerij/portiek/maisonnette/
+appartement/woning boven bedrijfsruimte). `standaard_eis()` geeft nu **None** bij een leeg woningtype
+in plaats van stil grondgebonden aan te nemen (`woningtype_onbekend()`).
+
+**D — dak-isolatie terug op form-niveau.** Nieuwe sectie **"DAK — alleen isolatie (afmetingen via de
+webapp)"** in Constructies: 11 velden (invoer/KV-foto/isolatie/dikte/bouwjaar/spouw/zijde/begrenzing),
+**geen geometrie**. De parser zet ze in `Opname.dak_standaard` (nieuw dataclass `BouwdeelStandaard`) en
+elk dakvlak dat je in de **webapp-wizard** toevoegt **erft** die isolatie. Rolverdeling blijft:
+MagicPlan = isolatie, webapp = afmetingen.
+
+**4 — ontbrekende NTA-velden toegevoegd en gelezen:**
+- **Rieten dak? + Rietdikte (mm)** (Constructies) → `dak_standaard.riet_dikte_mm` + melding over de
+  Rc-toeslag `d/0,105` (bijlage I).
+- **Douche-WTW (DWTW) aanwezig?** (Installaties) → `tapwater.dwtw_aanwezig` (bijlage U).
+- **PV - belemmering/beschaduwing?** (Installaties) → `ZonneEnergieSysteem.belemmering` (§17.3).
+- **Zonwering/luik aanwezig?** (Windows) → nieuw `SchilDeel.zonwering` + melding (§8.2.2.3.4).
+
+Alles live opgeslagen én gepubliceerd (save/publish `code=success`, geverifieerd), backup in
+localStorage `__nb_backup_2026-07-27T06-38-53Z`. Tests: 657 groen (12 nieuwe).
