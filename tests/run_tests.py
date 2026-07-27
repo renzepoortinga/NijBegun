@@ -3281,5 +3281,45 @@ try:
 except Exception as _e:
     check("auto-perimeter: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("Q. Element-overrides: per WAND en per KAMER (drielaagse overerving)")
+try:
+    import tempfile as _tfQ, os as _osQ
+    from magicplan.statistics_csv import build_dossier as _bdQ
+    # Project-standaard (Constructies): gevel isolatie Nee, vloer begrenzing Kruipruimte.
+    # Wand 'Achtergevel' krijgt een AFWIJKENDE per-wand override (isolatie Ja + 120 mm + AOR + zone 2).
+    _q = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Vrijstaand\n"
+          "Oriëntatie voorgevel,N\n"
+          "Gevelhoogte (m),3\nTotal living area,60\nGevel - isolatie aanwezig?,Nee\n"
+          "Begrenzing (vloer),Kruipruimte\n\n"
+          "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+          "Ground Floor,60,2.60 m,Kruipruimte\n\n"
+          "ROOM ATTRIBUTES,Ground surface without walls,Vloer - begrenzing,"
+          "Vloer - telt mee voor gebruiksoppervlakte?,Vloer - rekenzone\n"
+          "Woonkamer,40,,,\nBerging,20,Grond,Nee,\n\n"
+          "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Gevelnaam (leeg = binnenwand),"
+          "Gevel - isolatie aanwezig?,Gevel - isolatiedikte (mm),Gevel - begrenzing,Gevel - rekenzone\n"
+          "Ground Floor,\n"
+          "Room,Wall 0,Wall,15,15,6,2.6,1,Wall,Voorgevel,,,,\n"
+          "Room,Wall 1,Wall,15,15,6,2.6,1,Wall,Achtergevel,Ja,120,AOR,2\n")
+    _fQ = _tfQ.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fQ.write(_q); _fQ.close()
+    _dQ, _nQ = _bdQ(_fQ.name); _osQ.unlink(_fQ.name)
+    _gev = [s for s in _dQ.schil if s.type == "gevel"]
+    _ov = next((s for s in _gev if s.begrenzing == "AOR"), None)
+    _std = next((s for s in _gev if s.begrenzing != "AOR"), None)
+    check("A: wand-override maakt een EIGEN schildeel (niet samengevoegd)", len(_gev) >= 2, str(len(_gev)))
+    check("A: override-wand heeft isolatie Ja + 120 mm + AOR + rekenzone 2",
+          _ov is not None and _ov.isolatie_aanwezig == "Ja" and _ov.isolatiedikte_mm == 120.0
+          and _ov.rekenzone == 2,
+          str((getattr(_ov, "isolatie_aanwezig", None), getattr(_ov, "isolatiedikte_mm", None),
+               getattr(_ov, "rekenzone", None))))
+    check("A: NIET-override wand volgt de Constructies-standaard (isolatie Nee)",
+          _std is not None and _std.isolatie_aanwezig == "Nee", str(getattr(_std, "isolatie_aanwezig", None)))
+    check("B: kamer met 'telt mee voor Ag' = Nee valt buiten de zone (niet in ruimtes)",
+          all("berging" not in (r.naam or "").lower() for r in _dQ.geometrie.ruimtes))
+    check("B: melding over de buiten-de-zone gelaten ruimte",
+          any("telt NIET mee voor het gebruiksoppervlak" in n for n in _nQ))
+except Exception as _e:
+    check("element-overrides: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

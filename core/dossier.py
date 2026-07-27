@@ -72,6 +72,7 @@ class Ruimte:
     naam: str = ""
     functie: str = ""        # verblijfsruimte | keuken | badkamer | toilet | wasruimte | verkeer | overig
     oppervlakte_m2: float = 0.0
+    rekenzone: int = 1       # per-kamer override ('Vloer - rekenzone' op het room-element); default 1
 
 @dataclass
 class Geometrie:

@@ -275,6 +275,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # ---- geometrie: ruimtes (Ag) + verdiepingen ----
     geo = Geometrie()
     room_rows = sec.get("ROOM ATTRIBUTES", [])
+    _room_kop = room_rows[0] if room_rows else []   # kolomkoppen voor de per-kamer element-fields
     floor_names = set()
     for r in sec.get("FLOOR ATTRIBUTES", [])[1:]:
         if r and r[0].strip():
@@ -295,9 +296,25 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         ag = _f(r[1]) if len(r) > 1 else None
         if ag is None:
             continue
-        geo.ruimtes.append(Ruimte(naam=naam, functie=_functie_uit_naam(naam), oppervlakte_m2=ag))
-        rb = _begrenzing_uit_naam(naam)
-        if rb not in ("Buitenlucht", "AVR"):   # ruimtenaam-token grond/kruip/kelder/... -> apart vloerdeel
+        # PER-KAMER element-fields (override op de Constructies-vloerstandaard). Kolom op KOP zoeken
+        # (positie-onafhankelijk); leeg -> ruimtenaam-token, anders de projectstandaard.
+        def _rv(*frags):
+            for frag in frags:
+                for k2, h in enumerate(_room_kop):
+                    if frag in (h or "").strip().lower() and len(r) > k2 and (r[k2] or "").strip():
+                        return _undot((r[k2] or "").strip())
+            return ""
+        _telt_mee = _rv("telt mee voor gebruiksoppervlakte")
+        if _telt_mee and _telt_mee.strip().lower() in ("nee", "no", "false"):
+            # buiten de thermische zone (NTA 8800 §6.3) -> niet in Ag en geen vloerdeel
+            notes.append("Ruimte '%s' telt NIET mee voor het gebruiksoppervlak (veld 'Vloer - telt mee "
+                         "voor gebruiksoppervlakte?' = Nee) -> buiten de thermische zone gelaten." % naam)
+            continue
+        _rz_room = _rv("vloer - rekenzone")
+        geo.ruimtes.append(Ruimte(naam=naam, functie=_functie_uit_naam(naam), oppervlakte_m2=ag,
+                                  rekenzone=(int(_rz_room) if _rz_room.strip().isdigit() else 1)))
+        rb = _rv("vloer - begrenzing") or _begrenzing_uit_naam(naam)
+        if rb not in ("Buitenlucht", "AVR"):   # veld-override of ruimtenaam-token -> apart vloerdeel
             vloer_split[rb] = round(vloer_split.get(rb, 0.0) + ag, 2)
     geo.gebruiksoppervlakte_ag_m2 = _f(G("Total living area")) or sum(r.oppervlakte_m2 for r in geo.ruimtes)
     # ISSO 7.2.1: vloeroppervlak waarboven de netto hoogte < 1,5 m telt NIET mee voor Ag (schuin dak).
@@ -397,6 +414,43 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                             if "raam/paneel" in (h or "").lower()
                             or ("raam" in (h or "").lower() and "paneel" in (h or "").lower())
                             or (h or "").strip().lower() == "paneel"), None)
+    def _colv(r, *frags):
+        """Waarde uit DEZE rij op kolomKOP-fragment (element-override). Eerste NIET-lege match wint;
+        '' als de kolom ontbreekt of leeg is. Positie-onafhankelijk (kolommen kunnen schuiven)."""
+        for frag in frags:
+            for k, h in enumerate(_kop):
+                if frag in (h or "").strip().lower() and len(r) > k and (r[k] or "").strip():
+                    return _undot((r[k] or "").strip())
+        return ""
+
+    def _wand_override(r):
+        """PER-WAND element-fields = override op de Constructies-standaard (drielaagse overerving:
+        project-form = standaard, element-veld = afwijking op DIT vlak). None = niets ingevuld ->
+        de projectstandaard blijft gelden. Zelfde vorm als _bouwdeel() zodat ze inwisselbaar zijn."""
+        iso = _colv(r, "gevel - isolatie aanwezig")
+        dikte_onb = _colv(r, "gevel - isolatiedikte onbekend").lower() in ("ja", "yes", "true")
+        dikte = _f(_colv(r, "gevel - isolatiedikte (mm)"))
+        bouwjaar = _colv(r, "gevel - bouwjaar (onbekend)", "gevel - bouwjaar")
+        spouw_s = _colv(r, "gevel - spouw aanwezig")
+        invoer = _colv(r, "gevel - invoer")
+        if not (iso or dikte or bouwjaar or spouw_s or invoer or dikte_onb):
+            return None
+        rcl = invoer.lower()
+        if "verklaring" in rcl:
+            rc = "Kwaliteitsverklaring"
+        elif dikte and not dikte_onb:
+            rc = "Opgemeten dikte"
+        elif dikte_onb or bouwjaar or "onbek" in iso.lower():
+            rc = "Dikte onbekend"
+        else:
+            rc = ""
+        # 'Onbekend' -> None (niet False): False = geverifieerd géén spouw (audit F4 15-7)
+        spouw = (None if (not spouw_s or "onbek" in spouw_s.lower())
+                 else (spouw_s.lower() in ("ja", "yes", "true")))
+        return {"isolatie": {"ja": "Ja", "nee": "Nee", "onbekend": "Onbekend"}.get(iso.lower(), iso) or "",
+                "dikte_mm": (dikte if not dikte_onb else None), "spouw": spouw,
+                "bouwjaar": bouwjaar, "rc_bron": rc}
+
     gevel_per = {}      # (orientatie, begrenzing) -> m2 (binnenwerks, zonder openingen)
     gevel_bruto = {}    # idem mét openingen (voor volledigheidscheck + fallback)
     # GEVEL = BREEDTE x VERDIEPINGSHOOGTE per bouwlaag (methode Renze 14-7, NTA8800-getrouw):
@@ -455,9 +509,14 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 col_orient = _c11 if _norm_kompas(_c11) else ""
             cur_orient = (_undot(col_orient) or _orient_uit_naam(_wnaam)
                           or _orient_afleiden(cur_gevel_naam, orientatie_voorgevel))
+            # PER-WAND OVERRIDE (element-fields) — wint van naam-token én van de projectstandaard.
+            _wov = _wand_override(r)
+            _ov_begr = _colv(r, "gevel - begrenzing")
             _wtok = _begrenzing_uit_naam(_wnaam)   # 'Buitenlucht' = géén expliciet token op de wand
-            cur_begr = _wtok if (_wtok and _wtok != "Buitenlucht") else (_gevel_begr_default or "Buitenlucht")  # F2: form-standaard als fallback
-            cur_isol = _isolatie_uit_naam(_wnaam)    # per-wand isolatie-override (None = projectdefault)
+            cur_begr = (_ov_begr or                                    # 1) veld op de wand
+                        (_wtok if (_wtok and _wtok != "Buitenlucht")   # 2) token in de naam
+                         else (_gevel_begr_default or "Buitenlucht")))  # 3) Constructies-standaard
+            cur_isol = ((_wov or {}).get("isolatie") or _isolatie_uit_naam(_wnaam))
             _chk = ((r[_idx_nareken] or "").strip().lower()
                     if (_idx_nareken is not None and len(r) > _idx_nareken) else "")
             cur_nareken = (_narekenen_uit_naam(_wnaam)          # naam-token (blijft werken) ...
@@ -469,7 +528,12 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             _bm = _f(r[_ibm]) if (_ibm is not None and len(r) > _ibm) else None
             _ih = next((i for i, h in enumerate(_kop) if (h or "").strip().lower().startswith("height")), 6)
             _wh = _f(r[_ih]) if len(r) > _ih else None
-            cur_rz = _rekenzone_uit_naam(_wnaam)    # rekenzone uit de naam (default 1)
+            _ov_rz = _colv(r, "gevel - rekenzone")
+            cur_rz = (int(_ov_rz) if _ov_rz.strip().isdigit()          # veld op de wand wint ...
+                      else _rekenzone_uit_naam(_wnaam))                 # ... anders het naam-token
+            # signatuur van de per-wand override -> onderdeel van de groeperingssleutel, zodat een wand
+            # met afwijkende isolatie/dikte/spouw/bron een EIGEN schildeel wordt (niet samengevoegd).
+            _ovsig = ((_wov["dikte_mm"], _wov["spouw"], _wov["bouwjaar"], _wov["rc_bron"]) if _wov else None)
             if cur_begr == "AVR":      # buurwoning/woningscheidend -> NIET in de schil (ISSO p.66/75)
                 cur_orient = ""        # ramen/deuren in deze wand vallen ook weg
                 continue
@@ -484,7 +548,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                 (" met buitenlengte %.2f m" % _bm) if _bm else ""))
             if cur_orient:  # oriëntatie bekend (ingevuld of afgeleid) = buitengevel (telt mee)
                 n_wall_ext += 1
-                k = (cur_orient, cur_begr, cur_isol or "", cur_nareken, cur_rz)
+                k = (cur_orient, cur_begr, cur_isol or "", cur_nareken, cur_rz, _ovsig)
                 _bijdrage = _f(r[4]) or 0.0
                 _w_breed = _f(r[5]) if len(r) > 5 else None    # effectieve gevelbreedte van dit segment
                 # buitenlengte ingevuld -> ALTIJD splitsen (ook zonder het deels-buiten-vinkje): de
@@ -498,7 +562,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                     (" / %s" % cur_gevel_naam) if cur_gevel_naam else ""))
                     _bijdrage = _buiten_m2
                     _w_breed = _bm
-                    k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz)   # geen nareken-flag meer nodig
+                    k = (cur_orient, cur_begr, cur_isol or "", False, cur_rz, _ovsig)   # geen nareken-flag meer nodig
                     cur_nareken = False   # split via 'Grenst aan buiten (m)' heeft het OPGELOST ->
                     # geen "HANDMATIG NAREKENEN"-melding meer (regel ~521); dit was de tegenstrijdigheid
                 elif cur_nareken:
@@ -749,8 +813,10 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         if _bm2 and _oo:
             gevelbreedte_per_orient[_oo] = _bm2
     gevel_refs = []     # {s, orient, bxh, extra} -> post-pass haalt de ZOLDER eruit (schuin dakvlak)
-    for (orient, begr, isol_ov, nareken, rz), opp_netto in sorted(gevel_per.items()):
-        key = (orient, begr, isol_ov, nareken, rz)
+    # sorteren op de string-vorm: de sleutel bevat None/bool/str door elkaar (niet direct vergelijkbaar)
+    for (orient, begr, isol_ov, nareken, rz, ovsig), opp_netto in sorted(gevel_per.items(),
+                                                                        key=lambda kv: str(kv[0])):
+        key = (orient, begr, isol_ov, nareken, rz, ovsig)
         # GEVEL-m2 = breedte x verdiepingshoogte per bouwlaag (BRUTO; ramen/deuren = deelvlakken
         # in Vabi). Voorkeur: de DIRECT GEMETEN gevelbreedte (rock-solid); anders de wandsom-breedte
         # per verdieping (met dedup); anders fallback bruto wandsom + note.
@@ -777,16 +843,24 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         gnaam = orient_naam.get(orient, "")
         gid = "gevel-%s%s" % (gnaam or orient, suffix)
         wand_isol = isol_ov or isol   # per-wand override wint van de projectdefault
+        # per-wand override (element-fields) wint van de Constructies-standaard; leeg -> projectwaarde
+        _ov_d, _ov_sp, _ov_bj, _ov_rc = ovsig if ovsig else (None, None, "", "")
+        _w_dikte = _ov_d if _ov_d is not None else g_b["dikte_mm"]
+        _w_spouw = _ov_sp if _ov_sp is not None else g_b["spouw"]
+        _w_rcbron = _ov_rc or gevel_rc
         _gevel_s = SchilDeel(
             id=gid, type="gevel", subtype="", begrenzing=begr,
             orientatie=orient, gevel_naam=gnaam, oppervlakte_m2=round(opp, 2),
-            isolatie_aanwezig=wand_isol, rekenzone=rz, rc_bron=gevel_rc,
-            isolatiedikte_mm=g_b["dikte_mm"], spouw_aanwezig=g_b["spouw"],
+            isolatie_aanwezig=wand_isol, rekenzone=rz, rc_bron=_w_rcbron,
+            bouwjaarklasse=_ov_bj,
+            isolatiedikte_mm=_w_dikte, spouw_aanwezig=_w_spouw,
             opmerkingen=((("%sgevel" % gnaam + " | ") if gnaam else "")
                          + "BRUTO (ramen/deuren als deelvlak); AVR/party-walls uitgefilterd"
                          + (" | begrenzing %s (naamconventie)" % begr if begr != "Buitenlucht" else "")
                          + (" | isolatie %s (per-wand override)" % isol_ov if isol_ov else "")
-                         + (" | Rc/U via kwaliteitsverklaring (zet Invoer in Vabi)" if gevel_rc == "Kwaliteitsverklaring" else "")
+                         + (" | per-wand override: dikte/spouw/bron afwijkend van de Constructies-standaard"
+                            if ovsig else "")
+                         + (" | Rc/U via kwaliteitsverklaring (zet Invoer in Vabi)" if _w_rcbron == "Kwaliteitsverklaring" else "")
                          + (" | NAREKENEN in Vabi (gemarkeerd: deels buiten/binnen of bijzonder)" if nareken else "")))
         schil.append(_gevel_s)
         if _is_bxh:
