@@ -352,8 +352,84 @@ def fill(dos, template_path, out_path):
     if t_wv: fill_warmteverlies(t_wv, ber, idf.renovatiejaar)
     fill_huidige_staat(doc, dos)
     fill_prijsopbouw(doc, dos)
+    voeg_bijlagen_4_7_toe(doc, dos)
     os.makedirs(os.path.dirname(out_path), exist_ok=True); doc.save(out_path)
     return sum(len(v) for v in per_letter.values()), totaal
+
+
+# Standaardtekst van bijlage 4, letterlijk naar de strekking van de goedgekeurde voorbeeldplannen
+# (Voorbeeldplannen/Voorbeeld isolatieplan bouwjaar 1970.pdf).
+_BIJLAGE4 = [
+    ("Over het isolatieplan",
+     "Voor de berekeningen in dit plan gaan we uit van een standaard energieverbruik en standaard "
+     "bewonersgedrag. Het werkelijke energiegebruik kan daarvan afwijken. Voor de investeringskosten "
+     "gebruiken we de Groninger Maatregelen Catalogus; waar bedragen ontbreken hanteren we de "
+     "kostenkengetallen van kostenkengetallen.rvo.nl. Voor de energietarieven volgen we Milieu "
+     "Centraal (per kwartaal bijgewerkt). Kosten en besparingen kunnen dus afwijken van de "
+     "werkelijkheid. Alle bedragen zijn inclusief 21 % btw."),
+    ("Isoleren en koudebruggen",
+     "Door te isoleren kunnen (grotere) koudebruggen ontstaan. Een koudebrug is een plek in de "
+     "buitenschil waar warmte makkelijker ontsnapt dan via de omliggende constructie: de isolatie is "
+     "daar onderbroken, dunner of afwezig, of materialen met een hoge warmtegeleiding (beton, staal) "
+     "voeren de warmte af. De oppervlaktetemperatuur aan de binnenzijde daalt, waardoor condensatie "
+     "kan optreden met schimmel en vochtplekken tot gevolg. Dat tast het binnenklimaat aan en kan op "
+     "termijn de constructie beschadigen. In bijlage 7 staan de aansluitdetails die bij de "
+     "voorgestelde maatregelen aandacht vragen."),
+]
+
+
+def voeg_bijlagen_4_7_toe(doc, dos):
+    """Bijlage 4 t/m 7 ACHTER de bestaande inhoud zetten (de goedgekeurde voorbeeldplannen hebben
+    bijlage 1 t/m 7; het officiële template bevat 1 t/m 3). Puur additief — de M29-lay-out van het
+    template zelf blijft ongemoeid (Beoordelingsformulier-eis)."""
+    from engine.psi_lookup import relevante_details
+
+    def kop(tekst):
+        p = doc.add_paragraph()
+        r = p.add_run(tekst)
+        r.bold = True
+        return p
+
+    doc.add_page_break()
+    kop("Bijlage 4: Informatie over dit isolatieplan")
+    for titel, tekst in _BIJLAGE4:
+        kop(titel)
+        doc.add_paragraph(tekst)
+
+    doc.add_page_break()
+    kop("Bijlage 5: Voorgestelde maatregelen in beeld")
+    doc.add_paragraph(
+        "Bij het verduurzamen van een bestaande woning ontstaan risico's op koudebruggen. Hieronder "
+        "staat per bouwdeel welke maatregel is voorgesteld en waar volgens de adviseur aandacht nodig "
+        "is. Voeg hier de schets van de woning toe waarop de maatregelen en de potentiële "
+        "koudebruggen zijn aangegeven (te vervangen ramen blauw gearceerd).")
+    for m in (getattr(dos, "maatregelen", None) or []):
+        doc.add_paragraph("%s — %s%s" % (m.onderdeel or "", m.omschrijving or "",
+                                         (" (%s)" % m.code) if m.code else ""), style=None)
+    if not (getattr(dos, "maatregelen", None) or []):
+        doc.add_paragraph("(nog geen maatregelen gekozen)")
+
+    doc.add_page_break()
+    kop("Bijlage 6: Ventilatieplan")
+    doc.add_paragraph(
+        "Het ventilatieplan (berekening en plattegrond) is als aparte bijlage bijgevoegd. Toevoer "
+        "0,7 dm³/s per m² verblijfsgebied, afvoer keuken 21 / bad 14 / toilet 7 dm³/s, toe- en afvoer "
+        "in balans met overstroom tussen de ruimten.")
+
+    doc.add_page_break()
+    kop("Bijlage 7: Detailtekeningen")
+    details = relevante_details(dos)
+    doc.add_paragraph(
+        "De onderstaande aansluitdetails komen in deze woning voor en vragen bij uitvoering aandacht. "
+        "De nummering volgt de ISSO-Referentiedetails; de ψ-waarden zijn de forfaitaire waarden uit "
+        "NTA 8800 bijlage I (kolom A = aansluiting volgens de aanvullende voorwaarden uitgevoerd, "
+        "kolom B = niet). Voeg per detail de bijbehorende detailtekening toe.")
+    for d in details:
+        doc.add_paragraph(
+            "Detail %d — %s | ψ = %.2f W/(m·K) bij goede uitvoering, %.2f W/(m·K) zonder | "
+            "voorwaarde: %s" % (d["nr"], d["omschrijving"], d["psi_a"], d["psi_b"], d["voorwaarde"]))
+    if not details:
+        doc.add_paragraph("(geen details afgeleid uit de opname — vul ze handmatig aan)")
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)

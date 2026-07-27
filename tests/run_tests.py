@@ -3389,5 +3389,33 @@ try:
 except Exception as _e:
     check("bouwfysica-aandachtspunten: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("U. psi-lookup (NTA bijlage I) + Bijlage 4-7 in de plan-output")
+try:
+    from engine.psi_lookup import psi as _psi, relevante_details as _rd, PSI_DEFAULT as _PD, is_gestapeld as _ig
+    check("psi: laagbouw detail 5 (onderdorpel kozijn) = 0,15 (A) / 0,25 (B)",
+          _psi(5, "Tussenwoning", True) == 0.15 and _psi(5, "Tussenwoning", False) == 0.25)
+    check("psi: gestapeld gebruikt tabel I.2 (detail 50 = 0,61)",
+          _ig("Galerijwoning") and _psi(50, "Galerijwoning", True) == 0.61)
+    check("psi: onbekende detailpositie -> 0,50 (NTA bijlage I.1)", _psi(999, "Tussenwoning") == _PD == 0.50)
+    _pd = build_sample()
+    _det = _rd(_pd)
+    check("psi: details afgeleid uit het dossier", len(_det) >= 3, str(len(_det)))
+    check("psi: elk detail heeft nr/omschrijving/psi_a/bron",
+          all({"nr", "omschrijving", "psi_a", "bron"} <= set(d) for d in _det))
+    # bijlagen 4-7 belanden in de docx
+    _bp = os.path.join(tempfile.gettempdir(), "bijlagen_test.docx")
+    fill_template(dos2, TEMPLATE, _bp)
+    _txt = "\n".join(p.text for p in docx.Document(_bp).paragraphs)
+    check("bijlage 4 t/m 7 als koppen in het plan",
+          all(k in _txt for k in ("Bijlage 4: Informatie over dit isolatieplan",
+                                  "Bijlage 5: Voorgestelde maatregelen in beeld",
+                                  "Bijlage 6: Ventilatieplan",
+                                  "Bijlage 7: Detailtekeningen")))
+    check("bijlage 4 noemt de bronnen (Groninger catalogus / RVO / Milieu Centraal / 21% btw)",
+          "Groninger Maatregelen Catalogus" in _txt and "Milieu Centraal" in _txt and "21 % btw" in _txt)
+    check("bijlage 7 toont detailregels met psi-waarden", "ψ = " in _txt and "Detail " in _txt)
+except Exception as _e:
+    check("psi-lookup/bijlagen: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
