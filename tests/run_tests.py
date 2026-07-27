@@ -3417,5 +3417,24 @@ try:
 except Exception as _e:
     check("psi-lookup/bijlagen: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("V. Ruimtefunctie: berging/opslag is GEEN verblijfsgebied (ISSO 82.1 6.3.1)")
+try:
+    from magicplan.statistics_csv import _functie_uit_naam as _fn
+    check("'Storage Room' -> overig (niet verblijfsruimte via het brede 'room')", _fn("Storage Room") == "overig")
+    check("'Closet' -> overig", _fn("Closet") == "overig")
+    check("'Zolder' -> overig (bergzolder; telt wel voor Ag, geen 0,7-toevoer)", _fn("Zolder") == "overig")
+    check("'Living Room' blijft verblijfsruimte", _fn("Living Room") == "verblijfsruimte")
+    check("'Slaapkamer zolder' blijft slaapkamer (werkelijk gebruik)", _fn("Slaapkamer zolder") == "slaapkamer")
+    check("'Bathroom' blijft badkamer", _fn("Bathroom") == "badkamer")
+    from ventilatie.ventilatie import bereken as _vb
+    from core.dossier import Ruimte as _R
+    _v = _vb([_R(naam="Storage Room", functie="overig", oppervlakte_m2=20),
+              _R(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30)])
+    _berg = next((r for r in _v["rows"] if "storage" in r["naam"].lower()), None)
+    check("berging krijgt GEEN toevoer in de ventilatieberekening",
+          _berg is not None and (_berg.get("toevoer") or 0) == 0, str(_berg))
+except Exception as _e:
+    check("ruimtefunctie: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

@@ -38,6 +38,11 @@ KEYWORDS = [
     ("wasruimte", ["was", "bijkeuken", "utility"]),
     ("verkeer", ["hal", "hallway", "overloop", "gang", "trap", "entree", "portaal", "vestibule", "corridor"]),
     ("slaapkamer", ["slaap", "bed"]),
+    # BERGING/OPSLAG vóór 'verblijfsruimte' — anders matcht 'Storage Room'/'Closet' op het brede
+    # trefwoord 'room' en krijgt een bergruimte ten onrechte 0,7 dm3/s.m2 toevoer.
+    # ISSO 82.1 §6.3.1: het WERKELIJK GEBRUIK is leidend (bergzolder = geen verblijfsgebied).
+    ("overig", ["berging", "storage", "opslag", "kast", "closet", "schuur", "meterkast",
+                "zolder", "attic", "vliering", "kruipruimte", "garage"]),
     ("verblijfsruimte", ["woon", "living", "studeer", "kantoor", "eet", "zit", "room"]),
 ]
 

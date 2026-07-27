@@ -51,6 +51,13 @@ _FUNCTIE_KW = [
     ("wasruimte", ["was", "bijkeuken", "utility", "laundry"]),
     ("verkeer", ["hal", "hallway", "overloop", "gang", "trap", "entree", "portaal", "vestibule", "corridor", "hall"]),
     ("slaapkamer", ["slaap", "bed"]),
+    # BERGING/OPSLAG vóór 'verblijfsruimte': anders matcht 'Storage Room'/'Closet' op het brede
+    # trefwoord 'room' en zou de tool er 0,7 dm3/s.m2 toevoer op zetten. ISSO 82.1 §6.3.1: het
+    # WERKELIJK GEBRUIK is leidend — een bergzolder/opslagruimte is géén verblijfsgebied (telt wel
+    # mee voor Ag als hij binnen de thermische zone valt). Gebruikt de bewoner 'm als slaap-/werkkamer,
+    # geef de ruimte dan die naam.
+    ("overig", ["berging", "storage", "opslag", "kast", "closet", "schuur", "meterkast",
+                "zolder", "attic", "vliering", "kruipruimte", "garage"]),
     ("verblijfsruimte", ["woon", "living", "studeer", "kantoor", "eet", "zit", "room"]),
 ]
 
