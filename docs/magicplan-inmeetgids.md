@@ -72,6 +72,24 @@ standaard deurmaten; kleine ruitjes <0,65 m² mag je gewoon invoeren (de tool re
 - Dan: **exporteer de Statistics-CSV** → webapp → Opname-stap → daar zie je alles terug en draai je
   `vabi/sanity.py`-checks (outliers/ontbrekende oriëntaties) automatisch mee.
 
+## 6. Isolatiedikte vaststellen — praktijktrucs (ISSO-Praktijkboek Energieprestatie, 2e druk)
+
+De isolatiedikte stuurt de Rc (NTA bijlage I.2.1.4: `Rc = d/0,045 + Rad`). Kun je 'm meten, meet 'm —
+dat scheelt een forfaitaire (conservatieve) waarde en dus een slechter label.
+
+- **Prikpen** — hulpmiddel om de dikte van zachte isolatie te bepalen (glas-/steenwol, vlokken).
+- **Boorgaten in de gevel**, vooral op de **kruisingen van de stootvoegen**, verraden **na-isolatie in
+  de spouw**. Zie ze je: de spouw is (deels) gevuld — noteer + foto.
+- **Meet de constructiedikte nabij een kozijn**: meet de totale dikte in de dagkant en trek de bekende
+  lagen (binnen- en buitenspouwblad) eraf → wat overblijft is de spouw/isolatie.
+- **Dak**: is er een **dakluik**, dan kun je daar de dikte van de dakconstructie bepalen. Bij
+  **dakramen**: meet de dikte in de dagkant, maar **let op de opstaande randen** (die tellen niet mee).
+- **Reflecterende folie**: telt alleen mee als de **spouw ≥ 20 mm** is (NTA tabel C.3) — bij een
+  smallere spouw vervalt het effect.
+- Lukt meten niet? Kies dan **"isolatiedikte onbekend"** + de **bouwjaarklasse**; nooit gokken. Bij een
+  aantoonbare **kwaliteitsverklaring** zet je Invoer op *Kwaliteitsverklaring* en de **BCRG-code** in
+  Vabi (let op: niet elke DoP staat in de BCRG-databank).
+
 ## Zakkaart
 **Scan → laser-check per kamer (±2%) → benoem kamer + gevels → ramen B×H → verdiepingshoogte +
 gevelhoogte → dak-m² per vlak → Ag ≈ BAG → forms (Object/Constructies/Ventilatie) → foto's → CSV.**

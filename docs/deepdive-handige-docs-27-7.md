@@ -144,8 +144,35 @@ van de isolatie — ligt hij aan de koude zijde, dan ontstaat **inwendige conden
 forfaitaire ψ-tabel (NTA bijlage I) én de bron voor **Bijlage 7 Detailtekeningen**. Nog niet gewired —
 zie punt D van `nta8800-analyse-vs-tool.md` (ψ-lookup) en de constructieblad-verkenning.
 
-## 7. Nog te doen
-- **ψ-lookup** (NTA bijlage I, detailpositie 1–24 / 50–74) koppelen aan de opname, met de
-  ISSO-Referentiedetails als onderbouwing → voedt meteen **Bijlage 7 Detailtekeningen**.
-- **ISSO Praktijkboek Energieprestatie** (2e druk) — praktijkcontext, nog niet doorgenomen.
-- **Bijlage 4–7** in de plan-output (zie punt 5).
+## 7. 🟢 ψ-lookup gebouwd → voedt Bijlage 7 (afgerond)
+
+`engine/psi_lookup.py` bevat nu de forfaitaire ψ-waarden uit **NTA 8800 bijlage I**: tabel **I.1**
+(laagbouw, detailpositie 1–24) en **I.2** (gestapeld, 50–74), met **kolom A** (aanvullende voorwaarden
+gehaald) en **kolom B** (niet), plus de **0,50-default** voor een ontbrekende detailpositie.
+`relevante_details(dos)` leidt uit de opname af welke details voorkomen (gevel · kozijn · hellend dak ·
+dakraam · dakkapel · woningscheidende wand, of de gestapelde tegenhangers).
+
+Dit is een **lookup van normwaarden** — de tool rekent nog steeds geen transmissie. Belangrijk: de norm
+koppelt deze waarden aan **nieuwbouw-Rc**, dus ze horen bij de **toekomstige staat** (na de maatregelen)
+— precies waar bijlage 7 over gaat. De nummering komt overeen met de **ISSO-Referentiedetails**.
+
+## 8. 🟢 Bijlage 4–7 in de plan-output (afgerond)
+`fill_template` zet bijlage 4 t/m 7 nu **achter** de bestaande inhoud, zodat het plan de structuur van
+de goedgekeurde voorbeeldplannen volgt. **Puur additief** — de M29-lay-out van het template zelf blijft
+ongemoeid (Beoordelingsformulier-eis). Bijlage 5 en 7 laten ruimte voor de schets resp. de
+detailtekeningen; bijlage 7 vermeldt per detail de ψ-waarde (A/B) en de voorwaarde.
+
+## 9. 🟢 ISSO-Praktijkboek Energieprestatie → inmeetgids aangevuld
+Praktijktrucs voor het vaststellen van de **isolatiedikte** (die stuurt de Rc, dus het label):
+**prikpen** voor zachte isolatie · **boorgaten op de kruisingen van de stootvoegen** = na-isolatie in
+de spouw · **dikte meten in de dagkant nabij een kozijn** en de bekende lagen eraf trekken ·
+**dakluik** voor de dakdikte · bij **dakramen letten op de opstaande randen** · **reflecterende folie
+telt alleen bij spouw ≥ 20 mm** · niet meetbaar → *dikte onbekend* + bouwjaarklasse, nooit gokken ·
+kwaliteitsverklaring → **BCRG-code** (niet elke DoP staat in de BCRG-databank).
+Toegevoegd als §6 in `docs/magicplan-inmeetgids.md`.
+
+## 10. Nog te doen
+- Bijlage 5: de **schets** van de woning met maatregelen + koudebruggen automatisch genereren
+  (nu een tekstplaceholder).
+- Bijlage 7: de **detailtekeningen** zelf (nu alleen de detaillijst met ψ) — sluit aan op de
+  constructieblad-verkenning.
