@@ -110,7 +110,9 @@ def main():
     maatregelen = parse_prijslijst(wb["Prijsonderbouwing"])
     rc_tab = parse_rc_tabellen(wb["Tabellen"])
     wb.close()
-    versie = re.search(r'(V\d+_Q\d+_\d+)', os.path.basename(xlsx))
+    # versie uit de bestandsnaam: 'V3_Q2_03062026' (oud) of 'Q3_2026_21072026' (vanaf Q3-2026)
+    versie = (re.search(r'(V\d+_Q\d+_\d+)', os.path.basename(xlsx))
+              or re.search(r'(Q\d+_\d{4}_\d+)', os.path.basename(xlsx)))
     catalog = {
         "bron": os.path.basename(xlsx),
         "versie": versie.group(1) if versie else "onbekend",

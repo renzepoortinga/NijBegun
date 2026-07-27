@@ -1,8 +1,8 @@
 {
-  "bron": "Maatregelencatalogus-aannemer-aangepast-V3_Q2_03062026.xlsx",
-  "versie": "V3_Q2_03062026",
-  "gegenereerd_op": "2026-06-07",
-  "aantal_maatregelen": 333,
+  "bron": "Maatregelencatalogus-Q3_2026_21072026.xlsx",
+  "versie": "Q3_2026_21072026",
+  "gegenereerd_op": "2026-07-27",
+  "aantal_maatregelen": 338,
   "maatregelen": [
     {
       "code": "V1-1-A1",
@@ -224,55 +224,55 @@
       "code": "V1-1-X12",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Natuurvrij maken bij spouwisolatie",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 4.6525,
-      "prijs_per_eenheid_incl_btw": 5.462
+      "omschrijving": "Natuurvrij maken bij spouwisolatie     {vervallen}  zie X13 X14",
+      "eenheid": "",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
     },
     {
       "code": "V1-1-X13",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Natuurvrij maken tussen- of rijwoning (gedoogbeleid Groningen, bij spouwmuurisolatie)",
-      "eenheid": "woning",
-      "prijs_per_eenheid_excl": 360.0,
-      "prijs_per_eenheid_incl_btw": 435.6
+      "omschrijving": "Natuurvrij maken tussen- of rijwoning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 371.04,
+      "prijs_per_eenheid_incl_btw": 435.601
     },
     {
       "code": "V1-1-X14",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Natuurvrij maken hoek- of vrijstaande woning (gedoogbeleid Groningen, bij spouwmuurisolatie)",
-      "eenheid": "woning",
-      "prijs_per_eenheid_excl": 410.0,
-      "prijs_per_eenheid_incl_btw": 496.1
+      "omschrijving": "Natuurvrij maken hoek- of vrijstaande woning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 422.57,
+      "prijs_per_eenheid_incl_btw": 496.0972
     },
     {
       "code": "V1-1-X15",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "eDNA sporenonderzoek tussen- of rijwoning (conform BRL IC-200, gedoogbeleid Groningen)",
-      "eenheid": "woning",
-      "prijs_per_eenheid_excl": 400.0,
-      "prijs_per_eenheid_incl_btw": 484.0
+      "omschrijving": "eDNA sporenonderzoek tussen- of rijwoning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 412.27,
+      "prijs_per_eenheid_incl_btw": 484.005
     },
     {
       "code": "V1-1-X16",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "eDNA sporenonderzoek hoek- of vrijstaande woning (conform BRL IC-200, gedoogbeleid Groningen)",
-      "eenheid": "woning",
-      "prijs_per_eenheid_excl": 400.0,
-      "prijs_per_eenheid_incl_btw": 484.0
+      "omschrijving": "eDNA sporenonderzoek hoek- of vrijstaande woning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 412.27,
+      "prijs_per_eenheid_incl_btw": 484.005
     },
     {
       "code": "V1-1-X17",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Alternatieve verblijfplaats (stelpost, gedoogbeleid Groningen; altijd opnemen bij spouwmuurisolatie)",
-      "eenheid": "stuks",
-      "prijs_per_eenheid_excl": 125.0,
-      "prijs_per_eenheid_incl_btw": 151.25
+      "omschrijving": "Alternatieve verblijfplaats (stelpost)",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 128.83,
+      "prijs_per_eenheid_incl_btw": 151.2464
     },
     {
       "code": "V1-2-A1",
@@ -953,7 +953,7 @@
       "code": "V2-3-X7",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Ventilatieroosters naturel",
+      "omschrijving": "Ventilatieroosters ZR naturel",
       "eenheid": "cm¹",
       "prijs_per_eenheid_excl": 1.2937,
       "prijs_per_eenheid_incl_btw": 1.5654
