@@ -28,6 +28,27 @@ _RATIONALE = {
           "(bij voorkeur met WTW) borgt een gezond binnenklimaat en voorkomt vocht/schimmel."),
 }
 
+# BOUWFYSISCHE AANDACHTSPUNTEN per bouwdeel (Praktijkboek Bouwfysica & bouwtechniek; Nij Begun-eis
+# "technische haalbaarheid": dampremmende laag · ruimtefunctie onder een koud dak · ventilatie).
+# Kernregel: een dampremmende laag hoort ALTIJD aan de WARME (binnen)zijde van de isolatie — ligt hij
+# aan de koude zijde, dan ontstaat inwendige condensatie in de constructie.
+_BOUWFYSICA = {
+    "A": "Aandachtspunt: bij binnenisolatie (voorzetwand) hoort de dampremmende laag aan de warme "
+         "binnenzijde; controleer waar houten vloerbalken in de gevel liggen (balkkoppen kunnen gaan "
+         "rotten als ze in de koude zone belanden). Bij spouwisolatie eerst vochtdoorslag en open "
+         "stootvoegen beoordelen.",
+    "B": "Aandachtspunt: betere kierdichting verlaagt de natuurlijke toevoer — borg de ventilatie "
+         "(roosters/WTW), anders verschuift het vochtprobleem naar het binnenklimaat.",
+    "C": "Aandachtspunt: vochtige kruipruimtelucht kan inwendige condensatie in de vloerconstructie "
+         "geven; combineer vloer-/bodemisolatie met een goed geventileerde kruipruimte en een "
+         "dampremmende laag aan de warme zijde.",
+    "D": "Aandachtspunt: isoleer je aan de binnenzijde van het dak, leg de dampremmende laag dan aan "
+         "de warme binnenzijde en houd de ventilatiespouw boven de isolatie open. Let op de "
+         "ruimtefunctie onder een koud dak (slaapkamer = meer vochtproductie).",
+    "E": "Aandachtspunt: stem toe- en afvoer op elkaar af (balans) en zorg voor overstroom tussen de "
+         "ruimten; een afzuiging zonder toevoer trekt vocht en koude via kieren naar binnen.",
+}
+
 
 def _euro(v):
     try:
@@ -53,6 +74,9 @@ def begeleidende_tekst(m):
     delen.append(z)
     if m.biobased:
         delen.append("Biobased variant beschikbaar (natuurlijke isolatie).")
+    bf = _BOUWFYSICA.get(letter)
+    if bf:
+        delen.append(bf)
     return " ".join(delen)
 
 

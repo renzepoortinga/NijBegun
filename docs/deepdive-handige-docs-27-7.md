@@ -119,10 +119,33 @@ voeg de bijlagen bij het indienen samen tot één document. Toegevoegd aan de **
 webapp zodat het niet vergeten wordt. *Niet zelf de M29-lay-out aanpassen — dat is een
 Beoordelingsformulier-eis.*
 
-## 6. Nog te doen (niet in deze ronde)
-- **ISSO-Referentiedetails** — onderbouwen de forfaitaire ψ-waarden (NTA bijlage I); koppelen aan onze
-  detailpositie-lookup (punt D uit de NTA-analyse).
-- **Praktijkboek Bouwfysica** — achtergrond voor de advieslogica (vocht/condensatie na na-isoleren);
-  kan `engine/advies_text.py` verrijken.
-- **ISSO Praktijkboek Energieprestatie** — praktijkcontext.
-- **Voorbeeldplannen-map** — output 1-op-1 matchen aan de gold standard (staat al op de roadmap).
+## 6. 🟢 Praktijkboek Bouwfysica → advieslogica verrijkt
+
+Onze begeleidende tekst noemde vocht/schimmel alléén bij ventilatie. De Nij Begun-eis "technische
+haalbaarheid" vraagt expliciet om **dampremmende laag · ruimtefunctie onder een koud dak · ventilatie**.
+Toegevoegd in `engine/advies_text.py` (`_BOUWFYSICA`, per bouwdeel A–E):
+
+**Kernregel uit het Praktijkboek:** een **dampremmende laag hoort altijd aan de WARME (binnen)zijde**
+van de isolatie — ligt hij aan de koude zijde, dan ontstaat **inwendige condensatie** in de constructie.
+
+- **A gevel** — binnenisolatie: dampremmer aan de binnenzijde; let op **balkkoppen** (houten vloerbalken
+  die in de gevel liggen kunnen gaan rotten als ze in de koude zone belanden). Spouwisolatie: eerst
+  vochtdoorslag + open stootvoegen beoordelen.
+- **B glas/kozijn** — kierdichting verlaagt de natuurlijke toevoer → ventilatie borgen.
+- **C vloer** — vochtige kruipruimtelucht geeft inwendige condensatie; goed geventileerde kruipruimte +
+  dampremmer aan de warme zijde.
+- **D dak** — binnenzijde isoleren: dampremmer aan de warme zijde, **ventilatiespouw boven de isolatie
+  openhouden**, let op de ruimtefunctie onder een koud dak (slaapkamer = meer vochtproductie).
+- **E ventilatie** — toe- en afvoer in balans + overstroom; afzuiging zonder toevoer trekt vocht/koude
+  via kieren naar binnen.
+
+**ISSO-Referentiedetails** (studenteneditie): gebruikt dezelfde detailnummering als NTA bijlage K
+(`101.0.1.01` enz.) en levert per detail de **ψ-waarde en f-factor**. Dit is de onderbouwing onder de
+forfaitaire ψ-tabel (NTA bijlage I) én de bron voor **Bijlage 7 Detailtekeningen**. Nog niet gewired —
+zie punt D van `nta8800-analyse-vs-tool.md` (ψ-lookup) en de constructieblad-verkenning.
+
+## 7. Nog te doen
+- **ψ-lookup** (NTA bijlage I, detailpositie 1–24 / 50–74) koppelen aan de opname, met de
+  ISSO-Referentiedetails als onderbouwing → voedt meteen **Bijlage 7 Detailtekeningen**.
+- **ISSO Praktijkboek Energieprestatie** (2e druk) — praktijkcontext, nog niet doorgenomen.
+- **Bijlage 4–7** in de plan-output (zie punt 5).

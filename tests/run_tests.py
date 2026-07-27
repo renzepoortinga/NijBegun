@@ -3376,5 +3376,18 @@ try:
 except Exception as _e:
     check("voorschot B/U: draait zonder fout", False); print("     " + repr(_e)[:200])
 
+print("T. Bouwfysische aandachtspunten in de begeleidende tekst (Nij Begun technische haalbaarheid)")
+try:
+    from engine.advies_text import begeleidende_tekst as _bt
+    from core.dossier import Maatregel as _MT
+    _tA = _bt(_MT(code="V1-1-A1", onderdeel="A Gevelisolatie", omschrijving="Spouwmuurisolatie"))
+    _tD = _bt(_MT(code="V4-1-A1", onderdeel="D Dakisolatie", omschrijving="Dakisolatie binnenzijde"))
+    check("A: gevel-advies noemt dampremmende laag + balkkoppen",
+          "dampremmende laag" in _tA and "balkkop" in _tA.lower())
+    check("D: dak-advies noemt warme binnenzijde + ruimtefunctie onder koud dak",
+          "warme binnenzijde" in _tD and "ruimtefunctie" in _tD)
+except Exception as _e:
+    check("bouwfysica-aandachtspunten: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
