@@ -241,6 +241,11 @@ def _beoordeling(tag, st, dossier):
          "Leverformaat PDF + JSON gegenereerd (M29-tooleis punt 10a)"),
         (not st.get("kwaco"), "KWACO-validatie zonder bevindingen"
          + ((" — " + " · ".join(st["kwaco"][:3])) if st.get("kwaco") else "")),
+        # De goedgekeurde voorbeeldplannen hebben BIJLAGE 1 t/m 7; ons officiële template (23-04-2026)
+        # bevat er 3. Bijlage 4-7 lever je nu als losse bestanden mee -> voeg ze samen tot één plan.
+        (False, "Bijlagen 4–7 samenvoegen tot één document vóór indienen: 4 Informatie over dit "
+                "isolatieplan · 5 Voorgestelde maatregelen in beeld (schets + koudebruggen) · "
+                "6 Ventilatieplan · 7 Detailtekeningen. Zie docs/deepdive-handige-docs-27-7.md"),
     ]
     return out
 

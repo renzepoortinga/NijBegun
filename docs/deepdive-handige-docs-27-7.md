@@ -87,7 +87,39 @@ dakvlak uit de webapp-wizard).
 
 ---
 
-## 5. Nog te doen (niet in deze ronde)
+## 5. 🟠 Voorbeeldplannen: goedgekeurde plannen hebben 7 bijlagen, ons template 3
+
+**Gold standard** (`Voorbeeldplannen/Voorbeeld isolatieplan bouwjaar 1970.pdf`, 22 p.):
+1. Een isolatieplan speciaal voor jouw huis
+2. Isolatieplanformulier (1 Gegevens · 2 Subsidiabele maatregelen · 3 Huidige woningstaat ·
+   4 Prijsopbouw per maatregel)
+3. Inhoud maatregelen en technische haalbaarheid toegelicht
+**Bijlage 1** Waarom ventileren? · **2** Vergunningen · **3** Foto's van opname ·
+**4** Informatie over dit isolatieplan · **5** Voorgestelde maatregelen in beeld ·
+**6** Ventilatieplan · **7** Detailtekeningen
+
+**Ons template** (`templates/isolatieplan_template.docx`, officieel 23-04-2026) bevat **alleen
+bijlage 1–3**. Bijlage 6 (ventilatieplan-SVG) en de haalbaarheidsbijlage maken wij wél, maar als
+**losse bestanden** — in de goedgekeurde plannen zitten ze **ín het document**.
+
+**Wat bijlage 4–7 bevatten (uit het voorbeeldplan):**
+- **4 — Informatie over dit isolatieplan**: standaardtekst. Berekend met standaard energieverbruik en
+  bewonersgedrag; investeringskosten uit de **Groninger Maatregelen Catalogus**, ontbrekende bedragen
+  via **kostenkengetallen.rvo.nl**; energietarieven van **Milieu Centraal** (per kwartaal bijgewerkt);
+  alles **incl. 21 % btw**. Plus een uitleg over **koudebruggen** (condensatie/schimmel na isoleren).
+- **5 — Voorgestelde maatregelen in beeld**: schets van de woning met daarop de maatregelen én de
+  potentiële koudebruggen; te vervangen ramen **blauw gearceerd**.
+- **6 — Ventilatieplan**: hebben wij al (SVG).
+- **7 — Detailtekeningen**: genummerde constructiedetails ("Detailtekening 1", …) — dit is precies het
+  **constructieblad** uit `docs/constructie-rc-tool-verkenning.md`, en sluit aan op de
+  ISSO-Referentiedetails (zelfde detailnummering als NTA bijlage K).
+
+**Actie:** vraag bij Nij Begun na of er een **nieuwer officieel template** is (met bijlage 4–7), of
+voeg de bijlagen bij het indienen samen tot één document. Toegevoegd aan de **indien-check** in de
+webapp zodat het niet vergeten wordt. *Niet zelf de M29-lay-out aanpassen — dat is een
+Beoordelingsformulier-eis.*
+
+## 6. Nog te doen (niet in deze ronde)
 - **ISSO-Referentiedetails** — onderbouwen de forfaitaire ψ-waarden (NTA bijlage I); koppelen aan onze
   detailpositie-lookup (punt D uit de NTA-analyse).
 - **Praktijkboek Bouwfysica** — achtergrond voor de advieslogica (vocht/condensatie na na-isoleren);
