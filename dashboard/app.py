@@ -662,7 +662,7 @@ GUIDE = """<h1>Guide — zo maak je een Nij Begun-isolatieplan</h1>
 <dt>3 · Maatregelen</dt><dd>Suggesties per bouwdeel (goedkoopste eerst) óf <b>zelf kiezen uit de volledige catalogus</b> incl. bijkomende kosten. Noteer per maatregel de <b>technische haalbaarheid</b>. Standaard → subsidietabel; extra's → 30% ISDE.</dd>
 <dt>4 · VABI-toets</dt><dd>Genereer de toekomstige staat (met <b>renovatiejaar-variant</b> voor de Qv10), importeer in Vabi, reken, upload de export terug. <b>Voldoet de set aan de Standaard?</b> Zo niet → pakket uitbreiden.</dd>
 <dt>5 · Afronden</dt><dd>Verplichte <b>foto's</b> (voorkant + huisnummer) + persoonlijke toelichting + isolatieplan (<b>PDF + JSON</b> leverformaat) + <b>visueel ventilatieplan</b> + haalbaarheids-bijlage + foto-checklist. De <b>indien-check</b> spiegelt het Beoordelingsformulier.</dd>
-<dt>6 · Opleveren</dt><dd>Exporteer de bundel en dien in via leveranciers@nijbegun.nl. De eerste 4 plannen worden 100% gecontroleerd.</dd></dl></div>
+<dt>6 · Opleveren</dt><dd>Exporteer de bundel en upload het plan in <b>Teams</b> → je eigen kanaal → tabblad <b>Bestanden</b> (zo schrijft "Proces isolatieplannen" het voor; niet per mail). Vul vooraf het <b>Excel-overzicht</b> op je Teams-kanaal aan met postcode · huisnummer · datum woningopname · woningtype — pas dán wordt de officiële opdracht verstrekt. <b>KWACO</b> zet het plan daarna op <b>akkoord</b> (je krijgt een mail; download het plan zelf uit Teams en stuur het naar de bewoner) of op <b>retour adviseur</b> (aanpassen en opnieuw indienen).</dd></dl></div>
 <details class=acc open><summary>Ventilatie — de Nij Begun-vuistregels (bindend)</summary><div class=acc-body>
 Toevoer <b>0,7 dm³/s·m² per verblijfsgebied</b> (min 7 l/s/leefruimte) via roosters/WTW. Afvoer <b>keuken 21 · bad 14 · toilet 7</b>. Aan-/afvoer in <b>balans</b>.
 Regels o.a.: overstroom max 2 deuren · ≥50% van buiten · géén afvoer in slaapkamer · >15 l/s onder deur → deurrooster · C4c CO₂-sturing woonkamer+hoofdslaapkamer.
@@ -776,14 +776,18 @@ def _voorschot_plannen():
             if not dos:
                 continue
             idc = getattr(dos, "identificatie", None)
-            adv = (getattr(getattr(dos, "opname", None), "type_advies", "") or "").lower()
+            # B/U-tarief volgt uit het BOUWJAAR (vóór 1945 = Uitgebreid), NIET uit het opnametype /
+            # de kwalificatie van de adviseur — zie Startpakket Isolatieadviseur maart 2026.
+            from dashboard.voorschot import uitgebreid_uit_bouwjaar
+            _uit = uitgebreid_uit_bouwjaar(getattr(idc, "bouwjaar", None))
             plannen.append({
                 "tag": tag,
                 "postcode": getattr(idc, "postcode", "") or "",
                 "huisnummer": getattr(idc, "huisnummer", "") or "",
                 "woningtype": getattr(idc, "woningtype", "") or "",
                 "ag_m2": getattr(getattr(dos, "geometrie", None), "gebruiksoppervlakte_ag_m2", 0) or 0,
-                "uitgebreid": ("uitgebreid" in adv or "detail" in adv),
+                "uitgebreid": bool(_uit),
+                "bouwjaar_onbekend": _uit is None,   # -> als B gefactureerd; controleer het bouwjaar
             })
     return plannen
 

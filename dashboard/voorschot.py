@@ -2,7 +2,12 @@
 Voorschot-factuur-specificatie voor de Provincie Groningen (opdracht isolatieplannen 2026).
 
 Opdrachtbrief 2026-102825: per opgesteld isolatieplan geldt een vast adviestarief (excl. btw),
-afhankelijk van woningtype x Basis/Uitgebreid. Een voorschot bedraagt 75% van de totale kosten en
+afhankelijk van woningtype x Basis/Uitgebreid. LET OP (Startpakket Isolatieadviseur, maart 2026):
+  **Basis     = woning gebouwd VANAF 1 januari 1945**
+  **Uitgebreid = woning gebouwd VÓÓR  1 januari 1945**
+"Het bouwjaar bepaalt of het B of U tarief van toepassing is en NIET de kwalificatie van de adviseur."
+Gebruik dus `uitgebreid_uit_bouwjaar()` en niet het opnametype. Een voorschot bedraagt 75% van de
+totale kosten en
 kan worden aangevraagd op ingediende (nog niet goedgekeurde) plannen. De voorschotfactuur moet een
 specificatie op adresniveau bevatten (postcode, huisnummer, bedrag) en de vaste factuurgegevens.
 
@@ -46,6 +51,17 @@ def _bucket(woningtype, ag_m2):
     if any(k in w for k in ("hoek", "kop", "eind", "twee", "2-onder", "2 onder", "onder een kap", "2^1")):
         return "hoek_2onder1kap"
     return None
+
+
+def uitgebreid_uit_bouwjaar(bouwjaar):
+    """True = U-tarief (woning gebouwd VÓÓR 1-1-1945), False = B-tarief (vanaf 1945).
+    None als het bouwjaar ontbreekt -> de aanroeper moet dat flaggen i.p.v. gokken (scheelt geld)."""
+    if bouwjaar in (None, "", 0):
+        return None
+    try:
+        return int(bouwjaar) < 1945
+    except (TypeError, ValueError):
+        return None
 
 
 def tarief_excl(woningtype, ag_m2, uitgebreid):

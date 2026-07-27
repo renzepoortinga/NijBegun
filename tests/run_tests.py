@@ -3364,5 +3364,17 @@ try:
 except Exception as _e:
     check("dak-form/NTA-aanvullingen: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("S. Voorschot B/U-tarief volgt het BOUWJAAR (Startpakket maart 2026), niet het opnametype")
+try:
+    from dashboard.voorschot import uitgebreid_uit_bouwjaar as _ub, tarief_excl as _te
+    check("B/U: vóór 1945 -> Uitgebreid", _ub(1930) is True and _ub(1944) is True)
+    check("B/U: vanaf 1945 -> Basis", _ub(1945) is False and _ub(1975) is False)
+    check("B/U: onbekend bouwjaar -> None (flaggen, niet gokken)",
+          _ub(None) is None and _ub("") is None)
+    check("tarief tussenwoning 1930 = 425 (U) en 1975 = 350 (B)",
+          _te("Tussenwoning", 100, True) == 425.0 and _te("Tussenwoning", 100, False) == 350.0)
+except Exception as _e:
+    check("voorschot B/U: draait zonder fout", False); print("     " + repr(_e)[:200])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
