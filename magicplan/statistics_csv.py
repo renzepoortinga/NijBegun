@@ -597,10 +597,29 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                     nareken_namen.append(("%s (%s)" % (r[1] or "wand", r[0] or "")).strip())
         elif typ == "Window":
             def _wn(frag, exact=False):
-                i = next((k for k, h in enumerate(_kop)
-                          if (frag == (h or "").strip().lower().split(" (")[0] if exact
-                              else frag in (h or "").lower())), None)
-                return ((r[i] or "").strip() if (i is not None and len(r) > i) else None)
+                """Waarde uit de raamrij op kolomKOP. exact=True: eerst een KALE kop die exact gelijk is
+                ('Type glas'), pas daarna de vorm mét haakjes.
+
+                Waarom: de export bevat zowel 'Type glas' (raam) als 'Type glas (indien glas in deur)'.
+                Beide worden 'type glas' zodra je alles vóór ' (' afknipt, en dan won de DEUR-kolom —
+                die bij een raam leeg is, waardoor het glastype overal leeg bleef (Essenhage 27-7).
+                Daarom: exacte kop wint, en anders de eerste kandidaat mét een waarde."""
+                kand = []
+                for k, h in enumerate(_kop):
+                    hl = (h or "").strip().lower()
+                    if not hl:
+                        continue
+                    if exact:
+                        if hl == frag:
+                            kand.insert(0, k)                 # exacte kop: hoogste prioriteit
+                        elif hl.split(" (")[0] == frag:
+                            kand.append(k)
+                    elif frag in hl:
+                        kand.append(k)
+                for k in kand:                                 # eerste kandidaat mét inhoud
+                    if len(r) > k and (r[k] or "").strip():
+                        return (r[k] or "").strip()
+                return ((r[kand[0]] or "").strip() if (kand and len(r) > kand[0]) else None)
             orient = _undot(_wn("oriëntatie (override)") or "")
             if not orient and len(r) > 17 and _norm_kompas((r[17] or "").strip()):
                 orient = (r[17] or "").strip()        # LEGACY-export: kolom 17 was raam-oriëntatie

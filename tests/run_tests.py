@@ -3436,5 +3436,34 @@ try:
 except Exception as _e:
     check("ruimtefunctie: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("W. Glastype-kolomkeuze: 'Type glas' (raam) wint van 'Type glas (indien glas in deur)'")
+try:
+    import tempfile as _tfW, os as _osW
+    from magicplan.statistics_csv import build_dossier as _bdW
+    # Essenhage-volgorde: de DEUR-glaskolom staat VOOR de raam-glaskolom. Vóór de fix knipte de
+    # 'exacte' match alles vóór ' (' af -> beide werden 'type glas' -> de (lege) deurkolom won.
+    _w = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Tussenwoning\n"
+          "Oriëntatie voorgevel,N\nGevelhoogte (m),3\nTotal living area,60\n\n"
+          "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+          "Ground Floor,60,2.60 m,Kruipruimte\n\n"
+          "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,"
+          "Type glas (indien glas in deur),Type glas,Gevelnaam (leeg = binnenwand)\n"
+          "Ground Floor,\n"
+          "Room,Wall 0,Wall,15,15,6,2.6,1,Wall,,,Voorgevel\n"
+          "Room,Wall 0,Hung Window,2.0,2.0,1.5,1.3,1,Window,,HR++,\n")
+    _fW = _tfW.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fW.write(_w); _fW.close()
+    _dW, _nW = _bdW(_fW.name); _osW.unlink(_fW.name)
+    _rW = next((s for s in _dW.schil if s.type == "kozijn" and s.subtype == "Raam"), None)
+    check("glastype van het RAAM wordt gelezen (HR++), niet de lege deur-kolom",
+          _rW is not None and _rW.glastype == "HR++", str(getattr(_rW, "glastype", None)))
+    # actiepunt-classificatie
+    from dashboard.app import _is_prio_actie as _pa
+    check("actiepunt 'FOUT wand ...' = prioriteit", _pa("FOUT wand 'X': veld leeg") is True)
+    check("actiepunt 'GEBOUWHOOGTE ONTBREEKT' = prioriteit", _pa("GEBOUWHOOGTE ONTBREEKT: vul ...") is True)
+    check("actiepunt 'Gevel NW: b x h-methode' = ter controle",
+          _pa("Gevel NW: b x h per bouwlaag gebruikt") is False)
+except Exception as _e:
+    check("glastype/actiepunten: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

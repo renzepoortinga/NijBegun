@@ -155,6 +155,11 @@ def _load_state(tag):
         with open(p, encoding="utf-8") as fh:
             st = json.load(fh)
         st["tag"] = tag                 # borg de tag (klikbare stepper werkt ook bij oude projecten)
+        # migratie: vabi_acties was een lijst STRINGS, is nu [{tekst, prio}] (prioriteit vs controle).
+        # Oude projecten zonder herimport blijven zo gewoon werken.
+        acts = st.get("vabi_acties")
+        if acts and isinstance(acts[0], str):
+            st["vabi_acties"] = [{"tekst": a, "prio": _is_prio_actie(a)} for a in acts]
         return st
     return None
 
@@ -389,8 +394,12 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 {% for h in st.import_historie|reverse %}<tr><td>{{h.tijd}}{% if loop.first %} <span class="pill green">meest recent</span>{% endif %}</td><td data-label="Bestand">{{h.bestand}}</td><td data-label="Vlakken">{{h.vlakken}}</td></tr>{% endfor %}
 </tbody></table></div></div>{% endif %}
 {% if st.vabi_acties %}<div class=card style="border:2px solid var(--warn-line);background:var(--warn-bg)">
-<h2>📋 Zelf doen in Vabi — {{st.vabi_acties|length}} actiepunt(en)</h2>
-<ul class=check>{% for a in st.vabi_acties %}<li><span class="mk no2">→</span>{{a}}</li>{% endfor %}</ul>
+<h2>📋 Zelf doen in Vabi — {{st.vabi_acties|length}} punt(en)</h2>
+{% set prio = st.vabi_acties|selectattr('prio')|list %}{% set ctrl = st.vabi_acties|rejectattr('prio')|list %}
+{% if prio %}<h3 style="margin:6px 0 4px">🔴 Actie vereist ({{prio|length}}) — hier gaat de berekening fout zonder ingrijpen</h3>
+<ul class=check>{% for a in prio %}<li><span class="mk no2">→</span>{{a.tekst}}</li>{% endfor %}</ul>{% endif %}
+{% if ctrl %}<details{% if not prio %} open{% endif %}><summary><b>🔍 Ter controle ({{ctrl|length}})</b> — nalopen, meestal akkoord</summary>
+<ul class=check>{% for a in ctrl %}<li><span class="mk">✓</span>{{a.tekst}}</li>{% endfor %}</ul></details>{% endif %}
 <p class="muted small">Automatisch verzameld bij je MagicPlan-upload: narekenen-wanden, kwaliteitsverklaringen
 (zet in Vabi Invoer=Kwaliteitsverklaring + vul zelf de BCRG-code), multi-zone en ontbrekende gegevens.
 Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij de VABI-export.</p></div>{% endif %}
@@ -482,6 +491,8 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div><label>Breedte (m)</label><input name=breedte placeholder="bv. 0.8"></div>
 <div><label>Hoogte (m)</label><input name=hoogte placeholder="bv. 1.2"></div>
 <div><label>of direct oppervlak (m²)</label><input name=m2 placeholder="leeg = breedte x hoogte"></div>
+<div><label>Toevoerrooster</label><select name=rooster><option value="">Geen</option><option>Zelfregelend (ZR)</option><option>Niet-zelfregelend</option><option>Onbekend</option></select></div>
+<div><label>Zonwering/luik</label><select name=zonwering><option value="">Geen</option><option>Rolluik of luik (bedienbaar)</option><option>Buitenzonwering</option><option>Binnenzonwering</option></select></div>
 </div><div class=btn-row><button class=btn>+ Dakraam toevoegen</button></div></form>
 {% else %}<p class=muted>Voeg eerst een dakvlak toe (optie 1/2/3 hierboven), dan kun je er dakramen aan hangen.</p>{% endif %}
 </div></details>
@@ -770,6 +781,20 @@ aan het isolatieplan.</p>
 <p class="muted small">Tarieven excl. btw uit de opdrachtbrief 2026: Vrijstaand &gt;300 m² €750/€825 · Vrijstaand
 &lt;300 m² €625/€700 · 2-onder-1-kap/hoek €500/€575 · tussen €350/€425 · meergezins €325/€400 ·
 repeterend €250/€325 (Basis/Uitgebreid). Advies volgt uit het type advies in de opname.</p>"""
+
+
+# Woorden die een actiepunt tot ECHTE ACTIE maken: zonder ingrijpen rekent Vabi met verkeerde of
+# ontbrekende invoer. De rest is 'ter controle' (de tool heeft een keuze gemaakt, jij bevestigt 'm).
+_PRIO_WOORDEN = ("fout", "ontbreekt", "onvolledig", "handmatig narekenen", "niet meegeteld",
+                 "let op wand", "tikfout", "dubbeltel", "onmogelijke hoek", "zelf toevoegen",
+                 "kwaliteitsverklaring", "multi-zone", "meerdere rekenzones", "vul ", "corrigeer",
+                 "verplicht", "gebouwhoogte", "weigert")
+
+
+def _is_prio_actie(tekst):
+    """True = 'actie vereist' (rode lijst), False = 'ter controle' (inklapbaar)."""
+    t = (tekst or "").lower()
+    return any(w in t for w in _PRIO_WOORDEN)
 
 
 def _voorschot_plannen():
@@ -1170,7 +1195,7 @@ def opname_magicplan(tag):
         acties += [str(i) for i in _issues if str(i) not in acties]
     except Exception as e:
         acties.append("VABI-voorcontrole kon niet draaien: %s" % str(e)[:90])
-    st["vabi_acties"] = acties
+    st["vabi_acties"] = [{"tekst": a, "prio": _is_prio_actie(a)} for a in acties]
     # behoud eerder ingevulde identificatie waar de import leeg is (bouwjaar: BAG/lead-waarde
     # mag niet weggevaagd worden door een CSV zonder Bouwjaar-veld)
     for attr in ("straat", "huisnummer", "postcode", "plaats", "woningtype", "bouwjaar", "bag_vboid"):
@@ -1451,7 +1476,12 @@ def opname_dakraam(tag):
     dos.schil.append(SchilDeel(id="dakraam-%d-%s" % (nr, (o or "hor").lower()[:4]), type="kozijn", subtype="Dakraam",
                                orientatie=o, oppervlakte_m2=m2, glastype=f.get("glas", "").strip(),
                                kozijnmateriaal="Hout of kunststof", begrenzing="Buitenlucht", rekenzone=1,
-                               opmerkingen="Dakraam in dakvlak %s (glas van het dakvlak afgetrokken in Vabi)" % (o or "horizontaal")))
+                               toevoerrooster=f.get("rooster", "").strip(),
+                               zonwering=f.get("zonwering", "").strip(),
+                               opmerkingen=("Dakraam in dakvlak %s (glas van het dakvlak afgetrokken in Vabi)"
+                                            % (o or "horizontaal")
+                                            + (" | toevoerrooster: %s" % f.get("rooster").strip()
+                                               if f.get("rooster", "").strip() else ""))))
     _dos_save(tag, st, dos)
     flash("Dakraam %d toegevoegd (%.2f m² in dakvlak %s). Nog een dakraam? Herhaal hieronder." % (nr, m2, o or "horizontaal"))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
