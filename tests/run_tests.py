@@ -3465,5 +3465,35 @@ try:
 except Exception as _e:
     check("glastype/actiepunten: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("X. Kwaliteitsverklaring = aantoonbaar geisoleerd + HR-glasmapping + share target")
+try:
+    from vabi.constructie_generate import _norm_glas as _ng
+    from vabi.codebook import Codebook as _CB
+    _cb = _CB.default()
+    check("HR (dubbel glas met coating) -> HR (code 3), niet Dubbel (2)",
+          _ng("HR (dubbel glas met coating)") == "hr" and _cb.glas_code("hr") == "3",
+          _ng("HR (dubbel glas met coating)") + "/" + str(_cb.glas_code(_ng("HR (dubbel glas met coating)"))))
+    check("HR+ apart van HR en HR++ (codes 3/4/5)",
+          [_cb.glas_code(_ng(g)) for g in ("HR", "HR+", "HR++")] == ["3", "4", "5"])
+    # kwaliteitsverklaring -> geen blind isolatie-advies
+    from engine.measure_engine import _isolated_status as _iso
+    from engine.advies_logic import _isolatie_op_niveau as _opn
+    from core.dossier import SchilDeel as _SDX
+    _kv = _SDX(id="dak-kv", type="dak", isolatie_aanwezig="Onbekend", rc_bron="Kwaliteitsverklaring")
+    _on = _SDX(id="dak-onb", type="dak", isolatie_aanwezig="Onbekend", rc_bron="Dikte onbekend")
+    check("kwaliteitsverklaring telt als geisoleerd (geen isolatie-advies)", _iso(_kv) is True)
+    check("advies_logic: kwaliteitsverklaring -> geen advies", _opn(_kv) is True)
+    check("zonder KV en isolatie Onbekend -> wel advies", _iso(_on) is False and _opn(_on) is False)
+    # PWA share target in het manifest
+    from dashboard.app import app as _app
+    _c = _app.test_client()
+    _m = _c.get("/manifest.webmanifest")
+    _mj = json.loads(_m.data.decode("utf-8"))
+    check("manifest bevat share_target naar /deel",
+          _mj.get("share_target", {}).get("action") == "/deel"
+          and _mj["share_target"]["params"]["files"][0]["name"] == "bestand")
+except Exception as _e:
+    check("KV/HR-glas/share: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

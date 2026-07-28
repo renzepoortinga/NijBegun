@@ -138,6 +138,16 @@ def _norm_glas(g):
         # VABI-Beslisschema kent geen vacuumglas -> map naar HR++ (dichtstbij, geldig);
         # adviseur verfijnt via U-waarde/kwaliteitsverklaring (zie generator-issues).
         return "hr++"
+    # HR-varianten EXPLICIET afvangen, van specifiek naar algemeen. De MagicPlan-optie heet
+    # 'HR (dubbel glas met coating)' en bevat dus het woord 'dubbel'; in de codebook-sleutels staat
+    # 'dubbel' vóór 'hr', waardoor HR-glas als DUBBEL (code 2) werd ingelezen i.p.v. HR (code 3)
+    # -> te ongunstige Ugl. Gevonden op de echte Essenhage-opname (27-7).
+    if "hr++" in g or "hr ++" in g:
+        return "hr++"
+    if "hr+" in g or "hr +" in g:
+        return "hr+"
+    if "hr" in g:
+        return "hr"
     return g
 
 

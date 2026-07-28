@@ -35,6 +35,12 @@ def price_incl(m):
     return m.get("prijs_per_eenheid_incl_btw") or m.get("prijs_per_eenheid_excl")
 
 def _isolated_status(s):
+    # 'Invoer = Kwaliteitsverklaring' betekent: er is AANTOONBAAR isolatie (met een gedeclareerde Rc).
+    # MagicPlan slaat dan de vraag 'isolatie aanwezig?' over (die hangt onder Beslisschema), waardoor
+    # het veld leeg/Onbekend bleef en de tool tóch isolatie voorstelde op een al geïsoleerd dak/vloer
+    # (Essenhage 27-7). De Rc zelf komt uit de verklaring -> die zet de adviseur in Vabi.
+    if (getattr(s, "rc_bron", "") or "").lower().startswith("kwaliteitsverklaring"):
+        return True
     return s.isolatie_aanwezig in ("Wel", "Ja")   # nieuw vocab Ja/Nee + oud Wel/Niet
 
 def element_spec(s):

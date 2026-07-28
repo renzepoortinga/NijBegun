@@ -39,6 +39,10 @@ def _kind(s):
 def _isolatie_op_niveau(s):
     """Heeft dit dichte deel al voldoende isolatie (dan geen isolatie-advies)?"""
     kind = _kind(s)
+    # Kwaliteitsverklaring = aantoonbaar geïsoleerd met een gedeclareerde Rc (MagicPlan slaat de
+    # 'isolatie aanwezig?'-vraag dan over). Geen blind isolatie-advies; de Rc komt uit de verklaring.
+    if (getattr(s, "rc_bron", "") or "").lower().startswith("kwaliteitsverklaring"):
+        return True
     ja = (s.isolatie_aanwezig or "").lower() in ("ja", "wel")
     if not ja:
         return False

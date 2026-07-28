@@ -709,7 +709,82 @@ def manifest():
             {"src": url_for("static", filename="icon-512.png"), "sizes": "512x512",
              "type": "image/png", "purpose": "maskable"},
         ],
+        # DELEN VANAF DE TELEFOON: hiermee verschijnt 'Nij Begun' in het deelmenu van iOS/Android.
+        # Je deelt de MagicPlan-CSV of een foto rechtstreeks naar de app — geen omweg via OneDrive.
+        "share_target": {
+            "action": "/deel", "method": "POST", "enctype": "multipart/form-data",
+            "params": {"title": "title", "text": "text", "url": "url",
+                       "files": [{"name": "bestand",
+                                  "accept": ["text/csv", ".csv", "application/json", ".json",
+                                             "image/*", "application/xml", "text/xml", ".xml"]}]},
+        },
     }, ensure_ascii=False), mimetype="application/manifest+json")
+
+
+DEEL_TMPL = """<h1>Gedeeld bestand</h1>
+<p class=lead><b>{{naam}}</b> is vanaf je telefoon gedeeld met de app. Kies het project waar het bij hoort.</p>
+{% if projecten %}<div class=card><h2>Kies het project</h2>
+<form method=post action="{{url_for('deel_plaats')}}"><input type=hidden name=token value="{{token}}">
+<div><label>Project</label><select name=tag>{% for t, a in projecten %}<option value="{{t}}">{{a or t}}</option>{% endfor %}</select></div>
+<div style="margin-top:10px"><label>Wat is dit?</label><select name=soort>
+<option value="opname">MagicPlan-opname (.csv) of dossier (.json) — inladen in de opname</option>
+<option value="foto">Foto — bij de projectfoto's</option>
+<option value="bijlage">Overige bijlage — bewaren bij het project</option>
+</select></div>
+<div class=btn-row style="margin-top:12px"><button class=btn>Plaatsen in het project</button></div></form></div>
+{% else %}<div class=hint>Je hebt nog geen projecten. Maak er eerst één aan op de startpagina.</div>{% endif %}
+<div class=btn-row><a class="btn sec" href="{{url_for('home')}}">← Naar de projecten</a></div>"""
+
+
+@app.route("/deel", methods=["POST", "GET"])
+@login_required
+def deel():
+    """PWA share target: ontvangt een bestand uit het deelmenu van iOS/Android en laat je kiezen
+    bij welk project het hoort. Zo hoef je niet eerst in OneDrive op te slaan."""
+    f = request.files.get("bestand")
+    if not f or not f.filename:
+        flash("Geen bestand ontvangen uit het deelmenu.")
+        return redirect(url_for("home"))
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    token = secrets.token_hex(8)
+    veilig = os.path.basename(f.filename).replace("/", "_").replace("\\", "_")
+    f.save(os.path.join(UPLOAD_DIR, "deel_%s_%s" % (token, veilig)))
+    projecten = []
+    if os.path.isdir(PROJECTS_DIR):
+        for tag in sorted(os.listdir(PROJECTS_DIR)):
+            s = _load_state(tag)
+            if s:
+                projecten.append((tag, s.get("adres")))
+    return page(DEEL_TMPL, naam=veilig, token=token, projecten=projecten)
+
+
+@app.route("/deel/plaats", methods=["POST"])
+@login_required
+def deel_plaats():
+    """Zet het gedeelde bestand in het gekozen project (opname / foto / bijlage)."""
+    token, tag = request.form.get("token", ""), request.form.get("tag", "")
+    soort = request.form.get("soort", "bijlage")
+    st = _load_state(tag)
+    if not st or not re.fullmatch(r"[0-9a-f]{16}", token or ""):
+        abort(404)
+    treffers = glob.glob(os.path.join(UPLOAD_DIR, "deel_%s_*" % token))
+    if not treffers:
+        flash("Het gedeelde bestand is niet meer gevonden — deel het opnieuw.")
+        return redirect(url_for("home"))
+    bron = treffers[0]
+    naam = os.path.basename(bron).split("_", 2)[-1]
+    ext = os.path.splitext(naam)[1].lower()
+    if soort == "opname" and ext in (".csv", ".json"):
+        doel = os.path.join(UPLOAD_DIR, "opname_%s%s" % (tag, ext))
+        shutil.move(bron, doel)
+        flash("'%s' staat klaar — kies in de Opname-stap 'Inladen' om 'm te verwerken." % naam)
+        return redirect(url_for("opname", tag=tag))
+    submap = "fotos" if soort == "foto" else "bijlagen"
+    doelmap = os.path.join(_pdir(tag), submap)
+    os.makedirs(doelmap, exist_ok=True)
+    shutil.move(bron, os.path.join(doelmap, naam))
+    flash("'%s' opgeslagen bij het project (%s)." % (naam, submap))
+    return redirect(url_for("opname", tag=tag))
 
 
 @app.route("/login", methods=["GET", "POST"])
