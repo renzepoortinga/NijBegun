@@ -732,6 +732,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # tegenoverliggend (Wall 1 // Wall 3) — die kunnen fysiek niet allebei dezelfde buitengevel zijn.
     # De breedte van zo'n paar telt dus 1x (geen aanname; de kamer raakt de gevel maar aan één kant).
     from collections import defaultdict as _ddw
+    gevel_onderbouwing = {}        # gevel_key -> verdieping -> ['kamer wand breedte', ...] (controle)
     _tel_breedtes = _ddw(list)     # (kamer_id, gevel_key) -> lijst effectieve breedtes (op volgorde)
     for _t in gevel_tikken:
         _tel_breedtes[(_t["kamer_id"], _t["gevel_key"])].append(_t)
@@ -749,9 +750,36 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                              % (_t["orient"], _t["kamer"], (" %s" % _vd) if _vd else "", _wr))
                 _gezien[_wr] += 1
                 continue
+            # TEGENOVERLIGGEND OP WANDNUMMER (Essenhage 29-7): MagicPlan nummert de wanden rondom de
+            # kamer, dus in een vierhoekige kamer liggen Wall n en Wall n+2 TEGENOVER elkaar. Staan die
+            # beide op dezelfde gevel getagd, dan kan dat geometrisch niet (behalve bij een L-vorm) en
+            # telt de tool ze tóch allebei mee -> te grote gevel. De breedte-dedup ziet dit niet als de
+            # breedtes verschillen. Niet stil corrigeren (kan een L-vorm zijn): LUID melden.
+            _nr = _t.get("wandnr")
+            if _nr is not None:
+                for _eerder in _tks:
+                    _enr = _eerder.get("wandnr")
+                    if (_eerder is not _t and _enr is not None and abs(_nr - _enr) == 2
+                            and _eerder.get("verdieping") == _vd
+                            and round(_eerder.get("breedte_eff") or 0, 2) != _wr
+                            and _nr > _enr):
+                        notes.append(
+                            "FOUT of L-VORM — kamer '%s'%s: zowel Wall %d (%.2f m) als Wall %d (%.2f m) "
+                            "staat op gevel %s. Die twee wanden liggen TEGENOVER elkaar (nummer +2), dus "
+                            "ze kunnen niet dezelfde buitengevel zijn; de tool telt ze nu WEL allebei mee "
+                            "(%.2f m breed). Controleer de gevelnaam van beide wanden — of het is een "
+                            "L-vormige kamer, dan is het goed."
+                            % (_t["kamer"] or "?", (" %s" % _vd) if _vd else "", _enr,
+                               _eerder.get("breedte_eff") or 0, _nr, _be, _t["orient"],
+                               (_eerder.get("breedte_eff") or 0) + _be))
+                        break
             _gezien[_wr] = _gezien.get(_wr, 0) + 1
             _d_bxh = gevel_bxh.setdefault(_gk, {})
             _d_bxh[_vd] = round(_d_bxh.get(_vd, 0.0) + _be, 2)
+            # ONDERBOUWING: leg vast WELKE wand is meegeteld, zodat de adviseur de gevel-m2 kan
+            # controleren ('kan ik jou controleren?' — Renze 29-7). Komt in SchilDeel.opmerkingen.
+            gevel_onderbouwing.setdefault(_gk, {}).setdefault(_vd, []).append(
+                "%s %s %.2f m" % (_t["kamer"] or "?", _t["wand"] or "", _be))
 
     # ---- AUTO-PERIMETER (begane-grond buitengevel-breedtes) ----
     # De vloer-perimeter (randverlies, NEN-EN-ISO 13370) = de lengte van de begane-grondvloerrand die aan
@@ -904,6 +932,15 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             isolatiedikte_mm=_w_dikte, spouw_aanwezig=_w_spouw,
             opmerkingen=((("%sgevel" % gnaam + " | ") if gnaam else "")
                          + "BRUTO (ramen/deuren als deelvlak); AVR/party-walls uitgefilterd"
+                         # CONTROLE-ONDERBOUWING: welke wanden zijn per bouwlaag meegeteld en hoe
+                         # komt de m2 tot stand? Zo kun je de gevel-m2 zelf natrekken.
+                         + (" | ONDERBOUWING: " + " ; ".join(
+                             "%s = %s -> %.2f m x %.2f m = %.2f m2"
+                             % (_vd, " + ".join(gevel_onderbouwing[key][_vd]),
+                                bxh.get(_vd, 0.0), verd_hoogte.get(_vd, 0.0),
+                                bxh.get(_vd, 0.0) * verd_hoogte.get(_vd, 0.0))
+                             for _vd in bxh if _vd in gevel_onderbouwing.get(key, {}))
+                            if (_is_bxh and gevel_onderbouwing.get(key)) else "")
                          + (" | begrenzing %s (naamconventie)" % begr if begr != "Buitenlucht" else "")
                          + (" | isolatie %s (per-wand override)" % isol_ov if isol_ov else "")
                          + (" | per-wand override: dikte/spouw/bron afwijkend van de Constructies-standaard"

@@ -3495,5 +3495,37 @@ try:
 except Exception as _e:
     check("KV/HR-glas/share: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("Y. Gevel-onderbouwing + tegenoverliggende wand op dezelfde gevel (wandnummer +2)")
+try:
+    import tempfile as _tfY, os as _osY
+    from magicplan.statistics_csv import build_dossier as _bdY
+    # Wall 1 (5.80) en Wall 3 (3.60) van DEZELFDE kamer beide op de voorgevel = tegenover elkaar.
+    # Verschillende breedtes, dus de breedte-dedup ziet het niet -> moet LUID gemeld worden.
+    _y = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Tussenwoning\n"
+          "Oriëntatie voorgevel,N\nGevelhoogte (m),3\nTotal living area,60\n\n"
+          "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+          "Ground Floor,60,2.60 m,Kruipruimte\n\n"
+          # >=12 kolommen: de parser negeert smallere wandrijen (len(r) < 12)
+          "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie,"
+          "Gevelnaam (leeg = binnenwand)\n"
+          "Ground Floor,\n"
+          "Woonkamer,Wall 1,Wall,15,15,5.80,2.6,1,Wall,,1,,Voorgevel\n"
+          "Woonkamer,Wall 3,Wall,10,10,3.60,2.6,1,Wall,,1,,Voorgevel\n")
+    _fY = _tfY.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fY.write(_y); _fY.close()
+    _dY, _nY = _bdY(_fY.name); _osY.unlink(_fY.name)
+    check("tegenoverliggende wand (nr +2) op dezelfde gevel -> LUIDE melding",
+          any("TEGENOVER elkaar (nummer +2)" in n for n in _nY))
+    check("melding noemt beide wandnummers en de opgetelde breedte",
+          any("Wall 1" in n and "Wall 3" in n and "9.40" in n for n in _nY))
+    _gY = next((s for s in _dY.schil if s.type == "gevel"), None)
+    check("gevel heeft een controleerbare ONDERBOUWING in de opmerking",
+          _gY is not None and "ONDERBOUWING:" in (_gY.opmerkingen or "")
+          and "Wall 1" in _gY.opmerkingen, (getattr(_gY, "opmerkingen", "") or "")[:90])
+    from dashboard.app import _is_prio_actie as _paY
+    check("de melding valt in de PRIORITEIT-lijst (begint met FOUT)",
+          _paY(next(n for n in _nY if "TEGENOVER elkaar (nummer +2)" in n)) is True)
+except Exception as _e:
+    check("gevel-onderbouwing/tegenover: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
