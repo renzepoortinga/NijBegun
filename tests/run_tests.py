@@ -3583,5 +3583,34 @@ try:
 except Exception as _e:
     check("vocabulaire-check: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("AB. Dubbele kamer: som kamers > vloeroppervlak van die verdieping")
+try:
+    import tempfile as _tfB, os as _osB
+    from magicplan.statistics_csv import build_dossier as _bdB
+    # 1e verdieping is 20 m2, maar er staan 3x een badkamer van 4 m2 + slaapkamer 12 = 24 m2
+    _b = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1979\nWoningtype,Tussenwoning\n"
+          "Oriëntatie voorgevel,NW\nGevelhoogte (m),5\nTotal living area,80\n\n"
+          "FLOOR ATTRIBUTES,Ground surface without walls: m²,Ceiling Height,Begrenzing\n"
+          "Ground Floor,60,2.60 m,Kruipruimte\n1st Floor,20,2.38 m,Buitenlucht\n\n"
+          "ROOM ATTRIBUTES,Ground surface without walls: m²\n"
+          "Ground Floor,\nWoonkamer,60\n"
+          "1st Floor,\nSlaapkamer,12\nBadkamer,4\nBadkamer,4\nBadkamer,4\n\n"
+          "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie,"
+          "Gevelnaam (leeg = binnenwand)\n"
+          "Ground Floor,\nWoonkamer,Wall 0,Wall,15,15,6,2.6,1,Wall,,1,,Voorgevel\n")
+    _fB = _tfB.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fB.write(_b); _fB.close()
+    _dB, _nB = _bdB(_fB.name); _osB.unlink(_fB.name)
+    check("dubbele kamer gedetecteerd (24 m2 kamers op een 20 m2-verdieping)",
+          any("DUBBELE KAMER" in n and "1st Floor" in n for n in _nB))
+    check("melding noemt de verdachte kamer (zelfde naam en oppervlak, 3x)",
+          any("Badkamer 4.00 m2 (3x)" in n for n in _nB))
+    from dashboard.app import _is_prio_actie
+    check("melding is PRIORITEIT (begint met FOUT)",
+          _is_prio_actie(next(n for n in _nB if "DUBBELE KAMER" in n)) is True)
+    check("geen valse melding op de begane grond (60 = 60)",
+          not any("DUBBELE KAMER" in n and "Ground Floor" in n for n in _nB))
+except Exception as _e:
+    check("dubbele-kamer-check: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

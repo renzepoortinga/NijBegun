@@ -335,6 +335,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             floor_names.add(r[0].strip())
     vloer_split = {}   # begrenzing -> m2: begane-grondvloerdelen met afwijkende begrenzing (uit ruimtenaam)
     kamer_verdieping = {}   # kamernaam -> verdiepingnaam (voor de zolder/dak-overlap-check)
+    _kamers_per_verd = {}   # verdieping -> [(kamernaam, m2)] (dubbele-kamer-check hieronder)
     _cur_verd = ""
     for r in room_rows[1:]:
         if not r:
@@ -349,6 +350,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         ag = _f(r[1]) if len(r) > 1 else None
         if ag is None:
             continue
+        _kamers_per_verd.setdefault(_cur_verd, []).append((naam, ag))
         # PER-KAMER element-fields (override op de Constructies-vloerstandaard). Kolom op KOP zoeken
         # (positie-onafhankelijk); leeg -> ruimtenaam-token, anders de projectstandaard.
         def _rv(*frags):
@@ -404,6 +406,30 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 fp = _f(r[gs_i])
                 if fp:
                     floor_footprint[naam] = fp
+    # DUBBELE KAMERS (Essenhage 30-7): staat een kamer per ongeluk meerdere keren in het plan (kopiëren/
+    # dubbel tekenen), dan telt MagicPlan die kamer-m2 én zijn wanden meerdere keren mee -> te grote
+    # gevel én te grote Ag. Zichtbaar doordat de SOM van de kamers groter is dan het vloeroppervlak van
+    # die verdieping. Niet stil corrigeren (we weten niet wélke de echte is): luid melden mét de
+    # verdachte kamers, zodat je ze in MagicPlan kunt verwijderen.
+    for _vnaam, _kamers in _kamers_per_verd.items():
+        _vlak = floor_footprint.get(_vnaam)
+        if not _vlak or not _kamers:
+            continue
+        _som = round(sum(a for _, a in _kamers), 2)
+        if _som - _vlak <= max(0.5, 0.02 * _vlak):        # kleine meetruis is normaal
+            continue
+        _tel = {}
+        for _n, _a in _kamers:
+            _tel.setdefault((_n, round(_a, 2)), []).append(_a)
+        _verdacht = ["%s %.2f m2 (%dx)" % (_n, _a, len(v)) for (_n, _a), v in _tel.items() if len(v) > 1]
+        notes.append(
+            "FOUT — DUBBELE KAMER(S) op '%s': de kamers tellen samen op tot %.2f m2, maar de verdieping "
+            "is %.2f m2 (%.2f m2 te veel). %s Een kamer die dubbel in het plan staat telt ook zijn "
+            "WANDEN dubbel mee in de gevel én in het gebruiksoppervlak. Verwijder de dubbele kamer(s) "
+            "in MagicPlan en exporteer opnieuw."
+            % (_vnaam, _som, _vlak, _som - _vlak,
+               ("Verdacht (zelfde naam én oppervlak): " + " · ".join(_verdacht) + ".")
+               if _verdacht else "Controleer welke kamer dubbel staat."))
     if dos.opname.gevelhoogte_m is None and floor_hoogtes:
         dos.opname.gevelhoogte_m = round(sum(floor_hoogtes), 2)  # som verdiepingshoogtes ~ gevelhoogte
     # GEBOUWHOOGTE (tot de nok) ≠ gevelhoogte (tot de goot). UITSLUITEND handmatige invoer via het
