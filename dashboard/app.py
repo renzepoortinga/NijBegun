@@ -373,7 +373,11 @@ hier terug — de webapp leest het huidige energielabel en of de woning de Stand
 <a class="btn lg {{ '' if h and h.behoefte is not none else 'ghost' }}" href="{{url_for('naar_maatregelen', tag=tag)}}">Door naar maatregelen →</a></div></div></form>"""
 
 # --------- opname-editor (SOBOLT-achtig: alle gegevens zichtbaar + bewerkbaar) ---------
-BEGR_OPTS = ["Buitenlucht", "Grond", "Kruipruimte", "AOR", "AOS", "AVR", "Sterk geventileerd", "Water"]
+# Canonieke begrenzingen — MOET gelijk blijven aan _BEGR_CANON in magicplan/statistics_csv.py.
+# Staat een waarde niet in deze lijst, dan toont het <select> de eerste optie en overschrijft het
+# opslaan de echte waarde stil (aannames-audit 30-7).
+BEGR_OPTS = ["Buitenlucht", "Grond", "Kruipruimte", "AOR", "AOS", "AVR", "Sterk geventileerd",
+             "Onverwarmde kelder", "Water"]
 ORI_OPTS = ["", "N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
 GLAS_OPTS = ["", "Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++",
              "TripleHR", "Vacuümglas", "Onbekend"]

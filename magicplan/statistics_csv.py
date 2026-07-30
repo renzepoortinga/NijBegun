@@ -183,6 +183,47 @@ _KOZIJN_MAT = {"a": "Hout of kunststof", "b": "Metaal thermisch onderbroken",
                "c": "Metaal niet thermisch onderbroken"}
 
 
+# ÉÉN VOCABULAIRE (aannames-audit 30-7). MagicPlan, de parser en de webapp gebruikten elk hun eigen
+# schrijfwijze ('AOR (onverwarmd)' vs 'AOR'; 'HR dubbel glas met coating' vs 'HR (dubbel glas met
+# coating)'). Stond een waarde niet in de webapp-keuzelijst, dan toonde het <select> de EERSTE optie
+# en werd de waarde bij opslaan STIL overschreven (begrenzing -> Buitenlucht, glastype -> leeg).
+# Daarom normaliseren we hier, bij binnenkomst, naar de canonieke set die de webapp ook gebruikt.
+_BEGR_CANON = {
+    "buitenlucht": "Buitenlucht", "buiten": "Buitenlucht", "grond": "Grond",
+    "kruipruimte": "Kruipruimte", "kruip": "Kruipruimte", "water": "Water",
+    "aor": "AOR", "aos": "AOS", "avr": "AVR",
+    "asgr": "Sterk geventileerd", "asv": "Sterk geventileerd",
+    "sterk geventileerd": "Sterk geventileerd", "sterk geventileerde ruimte": "Sterk geventileerd",
+    "onverwarmde kelder": "Onverwarmde kelder", "kelder": "Onverwarmde kelder",
+}
+
+
+def _norm_begrenzing(v):
+    """Elke schrijfwijze -> de canonieke begrenzing van de webapp/VABI-mapping. Leeg blijft leeg."""
+    s = _undot(v or "").strip()
+    if not s:
+        return ""
+    k = s.lower()
+    return _BEGR_CANON.get(k) or _BEGR_CANON.get(k.split(" (")[0].strip()) or s
+
+
+_GLAS_CANON = {
+    "enkel": "Enkel", "voorzetglas": "Voorzetglas", "voorzetraam": "Voorzetglas",
+    "dubbel": "Dubbel", "hr": "HR (dubbel glas met coating)",
+    "hr dubbel glas met coating": "HR (dubbel glas met coating)",
+    "hr (dubbel glas met coating)": "HR (dubbel glas met coating)",
+    "hr+": "HR+", "hr++": "HR++", "triplehr": "TripleHR", "triple hr": "TripleHR",
+    "vacuümglas": "Vacuümglas", "vacuumglas": "Vacuümglas", "onbekend": "Onbekend",
+}
+
+
+def _norm_glaslabel(v):
+    """CSV-glaswaarde -> de canonieke glaskeuze van de webapp. Onbekende waarde blijft ongemoeid
+    (dan ziet de adviseur 'm staan i.p.v. dat hij stil verdwijnt)."""
+    s = _undot(v or "").strip()
+    return _GLAS_CANON.get(s.lower(), s)
+
+
 def _norm_kozijn_mat(v):
     """Kozijntype A/B/C (officieel formulier) -> kozijnmateriaal. A=hout/kunststof, B=metaal therm.
     onderbroken, C=metaal niet-onderbroken. Default Hout of kunststof."""
@@ -325,7 +366,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         _rz_room = _rv("vloer - rekenzone")
         geo.ruimtes.append(Ruimte(naam=naam, functie=_functie_uit_naam(naam), oppervlakte_m2=ag,
                                   rekenzone=(int(_rz_room) if _rz_room.strip().isdigit() else 1)))
-        rb = _rv("vloer - begrenzing") or _begrenzing_uit_naam(naam)
+        rb = _norm_begrenzing(_rv("vloer - begrenzing")) or _begrenzing_uit_naam(naam)
         if rb not in ("Buitenlucht", "AVR"):   # veld-override of ruimtenaam-token -> apart vloerdeel
             vloer_split[rb] = round(vloer_split.get(rb, 0.0) + ag, 2)
     geo.gebruiksoppervlakte_ag_m2 = _f(G("Total living area")) or sum(r.oppervlakte_m2 for r in geo.ruimtes)
@@ -481,7 +522,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
     # F2 (15-7): de Constructies-form biedt per bouwdeel een 'Gevel - begrenzing'-standaard. Die werd
     # gelezen maar nooit toegepast (alleen wandnaam-tokens werkten). Nu = fallback als een wand geen
     # eigen begrenzing-token heeft (een expliciet token op de wand wint nog steeds).
-    _gevel_begr_default = _undot(G("Gevel - begrenzing"))
+    _gevel_begr_default = _norm_begrenzing(G("Gevel - begrenzing"))
     n_wall_ext = 0
     nareken_namen = []        # wanden die de adviseur markeerde om handmatig in Vabi na te rekenen
     gevel_tikken = []         # per getikte buitenwand: kamer/wand/orient/breedte (tikfout-checks)
@@ -523,7 +564,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                           or _orient_afleiden(cur_gevel_naam, orientatie_voorgevel))
             # PER-WAND OVERRIDE (element-fields) — wint van naam-token én van de projectstandaard.
             _wov = _wand_override(r)
-            _ov_begr = _colv(r, "gevel - begrenzing")
+            _ov_begr = _norm_begrenzing(_colv(r, "gevel - begrenzing"))
             _wtok = _begrenzing_uit_naam(_wnaam)   # 'Buitenlucht' = géén expliciet token op de wand
             cur_begr = (_ov_begr or                                    # 1) veld op de wand
                         (_wtok if (_wtok and _wtok != "Buitenlucht")   # 2) token in de naam
@@ -1515,7 +1556,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             id="raam-%d" % (i + 1), type="kozijn", subtype="Raam",
             begrenzing=k.get("begr", "Buitenlucht"),
             orientatie=k["orient"], oppervlakte_m2=(0.65 if klein else area),
-            glastype=_undot(k["glas"]) or "", kozijnmateriaal=_norm_kozijn_mat(k.get("kozijn_hk", "")),
+            glastype=_norm_glaslabel(k["glas"]), kozijnmateriaal=_norm_kozijn_mat(k.get("kozijn_hk", "")),
             zonwering=k.get("zonwering", ""),
             opmerkingen=(("klein raam %.2f m2 -> 0,65 m2 (Nij Begun-regel)" % area if klein else "")
                          + ("" if k["glas"] else " GLASTYPE ONTBREEKT")
@@ -1555,7 +1596,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             id="deur-%d" % (i + 1), type="kozijn", subtype="Deur",
             begrenzing=d.get("begr", "Buitenlucht"),
             orientatie=d["orient"], oppervlakte_m2=d["area"],
-            glastype=_undot(d["glas"]) or "", kozijnmateriaal="Hout of kunststof",
+            glastype=_norm_glaslabel(d["glas"]), kozijnmateriaal="Hout of kunststof",
             deur_met_raam_glas65=met_raam))
     # per-bouwdeel BOUWJAARKLASSE (beslisschema): het form-antwoord ("Gevel - bouwjaar (onbekend)"
     # = bv. 'Van 1975 t/m 1982') moet de constructie-keuze sturen — zonder dit viel de keuze terug

@@ -3558,5 +3558,30 @@ try:
 except Exception as _e:
     check("aannames-audit: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("AA. Eén vocabulaire: MagicPlan <-> parser <-> webapp mogen niet uit elkaar lopen")
+try:
+    from magicplan.statistics_csv import (_norm_begrenzing as _nb, _norm_glaslabel as _ngl,
+                                          _BEGR_CANON as _BC, _GLAS_CANON as _GC)
+    from dashboard.app import BEGR_OPTS as _BO, GLAS_OPTS as _GO
+    # 1) elke canonieke uitkomst MOET in de webapp-keuzelijst staan, anders overschrijft het
+    #    <select> de waarde stil bij opslaan
+    _mis_b = sorted({v for v in _BC.values() if v not in _BO})
+    check("elke genormaliseerde begrenzing staat in de webapp-lijst", not _mis_b, str(_mis_b))
+    _mis_g = sorted({v for v in _GC.values() if v not in _GO})
+    check("elke genormaliseerde glaskeuze staat in de webapp-lijst", not _mis_g, str(_mis_g))
+    # 2) de LIVE MagicPlan-schrijfwijzen moeten allemaal landen op een canonieke waarde
+    for _live, _verwacht in [("AOR (onverwarmd)", "AOR"), ("AOS (serre)", "AOS"),
+                             ("AVR (aangrenzend verwarmd)", "AVR"),
+                             ("ASGR (sterk geventileerd)", "Sterk geventileerd"),
+                             ("Onverwarmde kelder", "Onverwarmde kelder"), ("Water", "Water")]:
+        check("begrenzing '%s' -> '%s'" % (_live, _verwacht), _nb(_live) == _verwacht, _nb(_live))
+    check("glas 'HR dubbel glas met coating' (CSV) -> webapp-schrijfwijze mét haakjes",
+          _ngl("HR dubbel glas met coating") == "HR (dubbel glas met coating)",
+          _ngl("HR dubbel glas met coating"))
+    check("glas 'HR++' blijft HR++", _ngl("HR++") == "HR++")
+    check("onbekende glaswaarde blijft staan (verdwijnt niet stil)", _ngl("Zonneglas XYZ") == "Zonneglas XYZ")
+except Exception as _e:
+    check("vocabulaire-check: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

@@ -86,3 +86,72 @@ Twee patronen veroorzaakten **alle** vier de fouten:
    een inhoudelijke guard (zoals `_norm_kompas`), anders schrappen.
 
 Regressietests staan in `tests/run_tests.py` (secties W, Y, Z). 698 tests groen.
+
+---
+
+# Deel 2 — Defaults: wanneer mag de tool iets aannemen? (30-7)
+
+Aanleiding (Renze): *"Dat komt omdat je een standaard had bepaald toch?"* — klopt. De kolom-bug maakte
+het veld leeg; de **default** vulde het daarna stil met de **gunstigste** waarde.
+
+## De regel die de norm zelf stelt
+NTA 8800, voorwoord:
+> *"...forfaitaire waarden die bedoeld zijn als **vangnet** voor parameters waarvan aard en kwaliteit
+> onbekend zijn. In die gevallen wordt een **veilige (lees: conservatieve) waarde** voorgeschreven...
+> als de detailinfo onbekend is, dan moet de **energetisch slechtste waarde** gekozen worden"* —
+> en bij gedeeltelijk bekende info een *"genuanceerde slechtste waarde"*.
+
+## De toetsregel die daaruit volgt
+ISSO 82.1 over het kozijn: *"Om het type kozijn te bepalen, kijk je alleen naar het materiaal van het
+kozijnwerk."* Het is **waarneembaar** — er bestaat geen 'onbekend'-route voor. Daarmee:
+
+| Soort gegeven | Voorbeeld | Correcte omgang |
+|---|---|---|
+| **Waarneembaar** ter plaatse | kozijnmateriaal, glastype, daktype, begrenzing, ventilatiesysteem | **Vragen.** Ontbreekt het → **flag**, geen stille default |
+| **Niet waarneembaar** (dicht) | isolatiedikte in een spouw/kap | NTA-forfaitair: *Onbekend* + **conservatieve** waarde (bijlage I) |
+| **Beleidswaarde** | qv10 per bouwjaar, fls-weging | Vaste normwaarde, geen keuze |
+
+Een default op een **waarneembaar** gegeven is dus per definitie een stille aanname.
+
+## Inventarisatie van de defaults
+
+| Default | Waarde bij ontbreken | Oordeel |
+|---|---|---|
+| `_norm_kozijn_mat("")` | Hout of kunststof (Ufr **2,4** = beste) | ⚠️ **gunstig** — waarneembaar gegeven. Verdedigbaar omdat het live veld luidt *"afwijkend (anders dan hout/kunststof)?"* (leeg = niet afwijkend), maar bij **"Ja"** weet de tool het materiaal niet → nu **leeg + luide flag** i.p.v. het gunstigste type |
+| `_begrenzing_uit_naam()` | Buitenlucht | ✅ **conservatief** (fls=1, volledige ΔT) |
+| isolatie ontbreekt | "Onbekend" | ✅ correct — triggert de forfaitaire bouwjaartabel (bijlage I) |
+| vloerbegrenzing ontbreekt | "Kruipruimte" **+ melding** | ✅ met flag |
+| `type_dak` ontbreekt | "Zadeldak" **+ melding** | ✅ met flag |
+| spouw "Onbekend" | `None` (niet `False`) | ✅ False zou 'geverifieerd geen spouw' betekenen |
+| gebouwhoogte ontbreekt | 0 **+ luide flag** | ✅ bewust geen schatting |
+| woningtype leeg | `standaard_eis()` → `None` | ✅ geen aanname |
+
+## Bevinding 6 🔴 — Drie vocabulaires liepen uit elkaar (stille dataverlies)
+MagicPlan, de parser en de webapp gebruikten elk een eigen schrijfwijze. Een `<select>` toont alleen
+waarden uit zijn eigen lijst; staat de waarde er niet in, dan toont hij de **eerste optie** en
+**overschrijft opslaan de echte waarde stil**.
+
+| Bron | Waarde | Webapp-lijst | Gevolg |
+|---|---|---|---|
+| CSV | `HR dubbel glas met coating` | `HR (dubbel glas met coating)` | glastype **gewist** |
+| MagicPlan | `AOR (onverwarmd)` / `ASGR (…)` / `AVR (…)` | `AOR` / `Sterk geventileerd` / `AVR` | begrenzing → **Buitenlucht** |
+| MagicPlan | `Onverwarmde kelder` | *ontbrak* | begrenzing → **Buitenlucht** |
+
+**Fix:** normalisatie **bij binnenkomst** (`_norm_begrenzing`, `_norm_glaslabel`) naar één canonieke
+set, en `Onverwarmde kelder` toegevoegd aan de webapp. Een onbekende waarde blijft nu **staan**
+(zichtbaar voor de adviseur) i.p.v. stil te verdwijnen.
+
+**Structurele bewaking:** testsectie **AA** faalt zodra een canonieke waarde niet in de webapp-lijst
+staat — dan lopen de vocabulaires weer uit elkaar en weet je het meteen.
+
+## Alignment-status (30-7)
+| Onderdeel | MagicPlan live | Webapp | Parser |
+|---|---|---|---|
+| Glastype (9 opties incl. HR+) | ✅ | ✅ | ✅ genormaliseerd |
+| Begrenzing (9 incl. ASGR/Water/kelder) | ✅ | ✅ | ✅ genormaliseerd |
+| Woningtype (10) | ✅ | ✅ | ✅ |
+| **Kozijnmateriaal** | ⚠️ alleen **Ja/Nee**-poort | 3 materialen | leeg + flag bij "Ja" |
+
+**Openstaand formuliergat:** MagicPlan mist de vervolgvraag *"welk kozijnmateriaal?"* met
+`Metaal (thermisch onderbroken)` / `Metaal (niet thermisch onderbroken)`. Zonder dat veld kan het
+verschil tussen Ufr 3,8 en 7,0 de tool niet bereiken.
