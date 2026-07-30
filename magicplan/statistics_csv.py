@@ -187,6 +187,11 @@ def _norm_kozijn_mat(v):
     """Kozijntype A/B/C (officieel formulier) -> kozijnmateriaal. A=hout/kunststof, B=metaal therm.
     onderbroken, C=metaal niet-onderbroken. Default Hout of kunststof."""
     s = _undot(v).strip().lower()
+    # '?afwijkend' = de opname zegt 'ja, ander materiaal dan hout/kunststof' maar het formulier vraagt
+    # niet WELK. Niet stil op hout/kunststof zetten (dat is juist het gunstigste type A) -> leeg laten
+    # zodat de generator/adviseur het in Vabi moet invullen; de parser meldt het luid.
+    if s == "?afwijkend":
+        return ""
     if not s:
         return "Hout of kunststof"
     if s[0] in _KOZIJN_MAT and (len(s) == 1 or not s[1].isalpha()):
@@ -628,8 +633,19 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 continue
             _rp = ((r[_idx_raampaneel] or "").strip().lower()
                    if (_idx_raampaneel is not None and len(r) > _idx_raampaneel) else "")
-            _hk = (_wn("kozijnmateriaal", exact=True)
-                   or ((r[15] or "").strip() if len(r) > 15 else ""))
+            # KOZIJNMATERIAAL (aannames-audit 30-7): het live veld heet 'Kozijnmateriaal afwijkend
+            # (anders dan hout/kunststof)?' en is een JA/NEE-poort — er is GEEN vervolgveld dat vraagt
+            # wélk materiaal. De oude lookup matchte die kop niet en viel terug op kolom 15, en dat is
+            # in de huidige export 'Type glas' -> het glastype belandde in het kozijnmateriaal en werd
+            # daarna stil op de default 'Hout of kunststof' gezet. Nu expliciet: Nee/leeg = hout/
+            # kunststof (NTA kozijntype A); Ja = onbekend welk metaal -> LUIDE flag, want type B (Ufr
+            # 3,8) en C (Ufr 7,0) schelen enorm in de Uw (NTA 8800 tabel 8.3).
+            _hk_afw = _undot(_wn("kozijnmateriaal afwijkend") or "")
+            # op NAAM: 'Kozijnmateriaal' (nieuw) of 'Kozijn' (legacy-export met kozijntype A/B/C).
+            # Bewust GEEN positionele fallback meer: kolom 15 is in de huidige export 'Type glas'.
+            _hk = (_wn("kozijnmateriaal", exact=True) or _wn("kozijn", exact=True) or "")
+            if not _hk and _hk_afw.strip().lower().startswith("ja"):
+                _hk = "?afwijkend"
             # BOVEN-/ONDERLICHT (na 1e echte opname): een apart vlak in hetzelfde kozijn met ander
             # glas (bv. enkel glas boven) of een dicht paneel (borstwering onder). Zelfde patroon als
             # het deur-bovenlicht ('Ja, met eigen glas' / 'Ja, met dicht paneel' + per tak eigen
@@ -685,13 +701,26 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                  # NTA 8800 §8.2.2.3.4: bedienbaar luik/rolluik verlaagt de effectieve Uw
                                  "zonwering": _undot(_wn("zonwering/luik aanwezig") or "")})
         elif typ == "Door":
-            orient = ((r[17] or "").strip() if len(r) > 17 else "") or cur_orient
+            # LEGACY-fallback op kolom 17 alleen als het ECHT een kompaswaarde is: in de huidige export
+            # staat op 17 'Toevoerrooster type' — zonder deze guard werd 'Zelfregelend (ZR)' de
+            # oriëntatie van de deur (aannames-audit 30-7).
+            _o17 = (r[17] or "").strip() if len(r) > 17 else ""
+            orient = (_o17 if _norm_kompas(_o17) else "") or cur_orient
             # deur-kolommen op NAAM (Deur-groep is 8-7 geherstructureerd: glas-velden conditioneel
             # onder 'Type constructie (deur)' + nieuwe 'Glas >= 65%'-vraag) — positioneel als fallback
             def _kol(frag, fb):
                 return next((i for i, h in enumerate(_kop) if frag in (h or "").lower()), fb)
+
             def _byname(frag):
-                i = _kol(frag, None)
+                """Eerste kolom met die naam ÉN een waarde. De export bevat DUBBELE kolomnamen (de
+                raam- en de deur-variant van hetzelfde veld, bv. 'Kozijnmateriaal afwijkend ...' op
+                index 13 én 16). Pakken we blind de eerste, dan lezen we de lege raam-kolom op een
+                deurrij — dezelfde fout als bij het glastype (aannames-audit 30-7)."""
+                treffers = [i for i, h in enumerate(_kop) if frag in (h or "").lower()]
+                for i in treffers:
+                    if len(r) > i and (r[i] or "").strip():
+                        return (r[i] or "").strip()
+                i = treffers[0] if treffers else None
                 return ((r[i] or "").strip() if (i is not None and len(r) > i) else None)
             _ix_tc = _kol("type constructie", 18)
             tc = _undot(r[_ix_tc]) if len(r) > _ix_tc else ""
@@ -1470,6 +1499,14 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                          "neem mee in het ventilatieplan/Vabi." % (_ori, int(_rr)))
 
     # kozijnen (ramen): erven begrenzing + oriëntatie van de moederwand (parent/child); kozijn A/B/C
+    _n_koz_afw = sum(1 for k in kozijnen if k.get("kozijn_hk", "") == "?afwijkend")
+    if _n_koz_afw:
+        notes.append(
+            "KOZIJNMATERIAAL ONBEKEND bij %d kozijn(en): de opname zegt 'afwijkend (anders dan hout/"
+            "kunststof)', maar het MagicPlan-formulier vraagt NIET welk materiaal. Zet het type zelf in "
+            "Vabi — metaal MET thermische onderbreking (Ufr 3,8) of ZONDER (Ufr 7,0) scheelt fors in de "
+            "Uw (NTA 8800 tabel 8.3). De tool vult hier bewust niets in i.p.v. hout/kunststof aan te "
+            "nemen (dat is juist het gunstigste type)." % _n_koz_afw)
     for i, k in enumerate(kozijnen):
         # Nij Begun opname-handleiding: kleine ruiten < 0,65 m2 ALTIJD rekenen als 0,65 m2
         area = k["area"] or 0.0

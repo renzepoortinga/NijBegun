@@ -3527,5 +3527,36 @@ try:
 except Exception as _e:
     check("gevel-onderbouwing/tegenover: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("Z. Aannames-audit: kozijnmateriaal, dubbele kolomnamen, positionele fallbacks")
+try:
+    import tempfile as _tfZ, os as _osZ
+    from magicplan.statistics_csv import build_dossier as _bdZ, _norm_kozijn_mat as _nkm
+    check("'?afwijkend' -> LEEG (niet stil op het gunstigste hout/kunststof)", _nkm("?afwijkend") == "")
+    check("leeg -> hout/kunststof (80%-default)", _nkm("") == "Hout of kunststof")
+    check("metaal niet-TO herkend", _nkm("Metaal (niet thermisch onderbroken)") == "Metaal niet thermisch onderbroken")
+    # DUBBELE kolomnaam (raam- en deurvariant) + kozijn 'afwijkend' op de raamkolom
+    _z = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Tussenwoning\n"
+          "Oriëntatie voorgevel,N\nGevelhoogte (m),3\nTotal living area,60\n\n"
+          "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+          "Ground Floor,60,2.60 m,Kruipruimte\n\n"
+          "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,"
+          "Kozijnmateriaal afwijkend (anders dan hout/kunststof)?,Type glas (indien glas in deur),"
+          "Type glas,Kozijnmateriaal afwijkend (anders dan hout/kunststof)?,Toevoerrooster type,"
+          "Gevelnaam (leeg = binnenwand)\n"
+          "Ground Floor,\n"
+          "Room,Wall 0,Wall,15,15,6,2.6,1,Wall,,,,,,Voorgevel\n"
+          "Room,Wall 0,Hung Window,2.0,2.0,1.5,1.3,1,Window,,,HR++,Ja,,\n")
+    _fZ = _tfZ.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _fZ.write(_z); _fZ.close()
+    _dZ, _nZ = _bdZ(_fZ.name); _osZ.unlink(_fZ.name)
+    _rZ = next((s for s in _dZ.schil if s.type == "kozijn" and s.subtype == "Raam"), None)
+    check("raam met 'afwijkend=Ja' -> kozijnmateriaal LEEG (niet aangenomen)",
+          _rZ is not None and _rZ.kozijnmateriaal == "", str(getattr(_rZ, "kozijnmateriaal", None)))
+    check("LUIDE melding over onbekend kozijnmateriaal (Ufr 3,8 vs 7,0)",
+          any("KOZIJNMATERIAAL ONBEKEND" in n for n in _nZ))
+    check("glastype nog steeds correct ondanks de dubbele kolomnamen",
+          _rZ is not None and _rZ.glastype == "HR++", str(getattr(_rZ, "glastype", None)))
+except Exception as _e:
+    check("aannames-audit: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
