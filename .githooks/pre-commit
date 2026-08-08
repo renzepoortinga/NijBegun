@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Snelheid, geen gate: dit is omzeilbaar met --no-verify.
+# De echte gate is CI + branch protection.
+[ -x ./scripts/verify.sh ] && { ./scripts/verify.sh || {
+  echo ""; echo "Verify niet groen. Repareer de oorzaak — niet --no-verify gebruiken."
+  echo "CI blokkeert de merge toch."; exit 1; }; }
