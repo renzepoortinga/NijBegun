@@ -1,0 +1,43 @@
+# Tweede required check: onafhankelijke AI-review.
+# Zet één secret klaar (ANTHROPIC_API_KEY of de sleutel van je andere
+# leverancier) en maak deze workflow required in branch protection.
+#
+# Kies bewust een ándere leverancier dan waarmee je bouwt.
+name: ai-review
+on: pull_request
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, pull-requests: write }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      # Zonder API-key kan de review niet draaien; dan slaat de job netjes
+      # over in plaats van elke PR rood te kleuren. De check wordt pas een
+      # echte gate als het secret bestaat én "ai-review" in branch
+      # protection staat (scripts/protect.sh).
+      - name: Check API-key
+        id: key
+        env: { KEY: "${{ secrets.ANTHROPIC_API_KEY }}" }
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "aanwezig=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "aanwezig=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANTHROPIC_API_KEY ontbreekt — AI-review overgeslagen. Zet het secret in de repo-settings om de tweede poort te activeren."
+          fi
+      - name: Onafhankelijke review
+        if: steps.key.outputs.aanwezig == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Neem de rol uit agents/reviewer.md. Lees het taakbestand, beoordeel
+            de diff tegen main, adresseer elk punt uit .verify-report.json.
+            Schrijf je volledige rapport naar review.md. De laatste regel van
+            review.md is exact "VERDICT: PASS" of "VERDICT: FAIL".
+      - name: Verdict afdwingen
+        if: steps.key.outputs.aanwezig == 'true'
+        run: |
+          test -f review.md || { echo "geen review.md geschreven"; exit 1; }
+          tail -n1 review.md | grep -qx "VERDICT: PASS"

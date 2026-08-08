@@ -36,3 +36,5 @@ desktop.ini
 
 # === Claude/agent lokale state ===
 .claude/
+.verify-report.json
+review.md

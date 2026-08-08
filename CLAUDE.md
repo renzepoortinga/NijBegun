@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # CLAUDE.md — Nij Begun & EPA isolatieplan-tool
 
 ## Wat dit is
