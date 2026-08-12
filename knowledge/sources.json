@@ -1,0 +1,120 @@
+{
+  "schema_versie": 1,
+  "bijgewerkt": "2026-08-12",
+  "uitleg": "Een bron is pas formeel bruikbaar als titel, versie, peildatum, eigenaar en bestand zijn gecontroleerd.",
+  "bronnen": [
+    {
+      "id": "herkomst",
+      "titel": "Herkomst energielabel, NTA 8800, ISSO, VABI en Nij Begun",
+      "categorie": "Interne uitleg",
+      "status": "verplicht",
+      "versie": "2026-08-12",
+      "peildatum": "2026-08-12",
+      "pad": "docs/HERKOMST-ENERGIELABEL-NTA-ISSO-NIJ-BEGUN.md",
+      "eigenaar": "Poortinga Energieadvies"
+    },
+    {
+      "id": "overdracht-structuur",
+      "titel": "Overdracht nieuwe structuur",
+      "categorie": "Interne besluitvorming",
+      "status": "verplicht",
+      "versie": "2026-08-12",
+      "peildatum": "2026-08-12",
+      "pad": "docs/OVERDRACHT-NIEUWE-STRUCTUUR-2026-08-12.md",
+      "eigenaar": "Poortinga Energieadvies"
+    },
+    {
+      "id": "werkwijze",
+      "titel": "Werkwijze A tot Z",
+      "categorie": "Interne werkwijze",
+      "status": "verplicht",
+      "versie": "repository",
+      "peildatum": "",
+      "pad": "docs/WERKWIJZE-A-TOT-Z.md",
+      "eigenaar": "Poortinga Energieadvies"
+    },
+    {
+      "id": "nta8800",
+      "titel": "NTA 8800:2025+C1:2026 nl",
+      "categorie": "Norm",
+      "status": "verplicht",
+      "versie": "2025+C1:2026",
+      "peildatum": "2026",
+      "pad": "knowledge/NTA 8800_2025+C1_2026 nl.pdf",
+      "eigenaar": "NEN / licentiehouder",
+      "toegang": "licentiebeperkt"
+    },
+    {
+      "id": "isso-821",
+      "titel": "ISSO-publicatie 82.1 Energieprestatie woningen en woongebouwen",
+      "categorie": "Opnameprotocol",
+      "status": "verplicht",
+      "versie": "7e druk",
+      "peildatum": "",
+      "pad": "knowledge/ISSO-publicatie 82.1 Energieprestatie woningen en woongebouwen 7e druk.pdf",
+      "eigenaar": "ISSO / licentiehouder",
+      "toegang": "licentiebeperkt"
+    },
+    {
+      "id": "brl9500w",
+      "titel": "BRL 9500-W — aangewezen versie 2026",
+      "categorie": "Kwaliteitsborging",
+      "status": "verplicht",
+      "versie": "BRL 9500-W:2026, aangewezen 29-05-2026",
+      "peildatum": "2026",
+      "pad": "knowledge/brl-9500-w-installq-2026-aangewezen.pdf",
+      "eigenaar": "InstallQ"
+    },
+    {
+      "id": "nijbegun-regeling",
+      "titel": "Nij Begun — actuele opdracht-, regeling- en uitvoeringsdocumenten",
+      "categorie": "Regeling",
+      "status": "verplicht",
+      "versie": "automatisch ontdekt uit aanwezige Nij Begun-documenten",
+      "peildatum": "2026-08-12",
+      "pad": "",
+      "eigenaar": "Nij Begun"
+    },
+    {
+      "id": "nijbegun-catalogus",
+      "titel": "Nij Begun — actuele maatregelencatalogus",
+      "categorie": "Regeling",
+      "status": "verplicht",
+      "versie": "Q3_2026_21072026",
+      "peildatum": "2026-07-21",
+      "pad": "knowledge/Nij Begun/Maatregelencatalogus-Q3_2026_21072026.xlsx",
+      "eigenaar": "Nij Begun"
+    },
+    {
+      "id": "vabi",
+      "titel": "VABI EPA-W — gebruikte softwareversie, attest en bedieningsdocumentatie",
+      "categorie": "Rekensoftware",
+      "status": "verplicht",
+      "pad": "",
+      "url": "https://support.vabi.nl/support/epa/online-help/",
+      "eigenaar": "Vitec Vabi",
+      "versie": "online, doorlopend bijgewerkt",
+      "peildatum": "2026-08-12"
+    },
+    {
+      "id": "beslislogica",
+      "titel": "Maatregel-beslislogica",
+      "categorie": "Interne implementatie",
+      "status": "aanbevolen",
+      "versie": "repository",
+      "peildatum": "",
+      "pad": "docs/maatregel-beslislogica.md",
+      "eigenaar": "Poortinga Energieadvies"
+    },
+    {
+      "id": "aannames-audit",
+      "titel": "Aannames-audit",
+      "categorie": "Interne kwaliteitsborging",
+      "status": "aanbevolen",
+      "versie": "2026-07-30",
+      "peildatum": "2026-07-30",
+      "pad": "docs/aannames-audit-30-7.md",
+      "eigenaar": "Poortinga Energieadvies"
+    }
+  ]
+}

@@ -31,6 +31,7 @@ from dashboard import mailbox as mailbox_mod                                    
 from dashboard import graph_mail as graph_mod                                         # noqa: E402
 from dashboard import security as sec                                                 # noqa: E402
 from dashboard import ai as ai_mod                                                    # noqa: E402
+from dashboard import knowledge as knowledge_mod                                      # noqa: E402
 from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
 from engine.advies_text import genereer_advies                                        # noqa: E402
 from engine.standaard import verliesoppervlak, standaard_eis                          # noqa: E402
@@ -272,7 +273,7 @@ BASE = """<!doctype html><html lang=nl><head><meta charset=utf-8>
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head><body>
 <div class=topbar><a class=brand href="{{url_for('home') if session.ingelogd else url_for('login')}}"><img class=brand-mark src="{{url_for('static', filename='mark.svg')}}" alt="" width=24 height=24>Nij Begun<span class=brand-sub> · isolatieplan</span></a>
-<nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('voorschot_pagina')}}">Voorschot</a><a href="{{url_for('guide')}}">Guide</a>
+<nav>{% if session.ingelogd %}<a href="{{url_for('leads_pagina')}}">Leads</a><a href="{{url_for('home')}}">Projecten</a><a href="{{url_for('voorschot_pagina')}}">Voorschot</a><a href="{{url_for('knowledge_page')}}">Kennisbank</a><a href="{{url_for('guide')}}">Guide</a>
 <a href="{{url_for('logout')}}">Uitloggen</a>{% endif %}</nav></div>
 <div class="wrap {{wrapclass or ''}}">
 {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class=warn>{{m}}</div>{% endfor %}{% endwith %}
@@ -934,6 +935,9 @@ def voorschot_csv():
 
 # Veldgidsen — markdown uit docs/ gerenderd in de webapp (mobiel bij de opname te gebruiken)
 GIDSEN = {
+    "herkomst": ("🧭 Ontstaansgeschiedenis: energielabel, NTA, ISSO, VABI en Nij Begun", "HERKOMST-ENERGIELABEL-NTA-ISSO-NIJ-BEGUN.md"),
+    "collega-start": ("👋 Start hier — introductie voor nieuwe collega's", "COLLEGA-INTRO.md"),
+    "bronnen-audit": ("🔍 Actualiteit en aandachtspunten van de kennisbank", "KENNISBANK-BRONNEN-AUDIT-2026-08-12.md"),
     "opnameformulier": ("📋 Nij Begun opnameformulier (alles per project)", "nijbegun-opnameformulier.md"),
     "gedoogbeleid": ("🦇 Gedoogbeleid vleermuizen & eDNA (spouwisolatie, Groningen)", "gedoogbeleid-edna-gids.md"),
     "inmeten": ("📐 MagicPlan-inmeetgids (controlematen geometrie)", "magicplan-inmeetgids.md"),
@@ -969,6 +973,54 @@ def gids(slug):
 @login_required
 def guide():
     return page(GUIDE, stappen=STAPPEN, gidsen=GIDSEN)
+
+
+KNOWLEDGE = """<h1>Kennisbank & vraagbaak</h1>
+<p class=lead>Waarom het systeem werkt zoals het werkt, welke bronnen leidend zijn en wat je moet lezen
+voordat je inhoudelijke keuzes maakt.</p>
+<div class=hint><b>Brongebonden:</b> de vraagbaak zoekt alleen in toegestane, aanwezige documenten.
+Een AI-antwoord vervangt nooit de controle door de bevoegde adviseur.</div>
+<p><a class="btn sec" href="{{url_for('gids', slug='collega-start')}}">Nieuw hier? Start met de collega-intro</a></p>
+
+<div class=card><h2>Het pad naar de huidige tool</h2>
+<ol><li><b>Energielabel en energieprestatie</b> maken gebouwen vergelijkbaar.</li>
+<li><b>NTA 8800</b> bepaalt de landelijke rekenmethode.</li>
+<li><b>ISSO</b> vertaalt dit naar praktische opname- en bewijsregels.</li>
+<li><b>BRL 9500-W</b> borgt vakbekwaamheid, proces en dossier.</li>
+<li><b>VABI EPA-W</b> voert als geattesteerde software de formele berekening uit.</li>
+<li><b>Nij Begun</b> gebruikt deze basis en voegt regeling-, plan-, catalogus- en indieningseisen toe.</li>
+<li><b>Deze tool</b> bewaart één canoniek dossier en verbindt opname, controle, VABI en isolatieplan.</li></ol>
+<a class="btn sec" href="{{url_for('gids', slug='herkomst')}}">Lees de volledige ontstaansgeschiedenis</a></div>
+
+<div class=card><h2>Stel een inhoudelijke vraag</h2>
+<form method=post><label for=vraag>Vraag over ISSO, NTA 8800, BRL, VABI of Nij Begun</label>
+<textarea id=vraag name=vraag rows=4 required placeholder="Bijvoorbeeld: hoe bepaal ik volgens ISSO of een zolder tot de thermische zone behoort?">{{vraag}}</textarea>
+<div class=btn-row><button class=btn type=submit>Zoek en beantwoord</button></div></form>
+{% if fout %}<div class=warn>{{fout}}</div>{% endif %}
+{% if antwoord %}<div class=card style="margin-top:16px"><h3>Brongebonden antwoord</h3><div class=gids-inhoud>{{antwoord_html|safe}}</div></div>{% endif %}
+{% if hits %}<h3>Gebruikte bronpassages</h3>{% for h in hits %}<details class=acc><summary>[BRON {{loop.index}}] {{h.titel}}{% if h.kop %} — {{h.kop}}{% endif %}</summary>
+<div class=acc-body><p class="muted small">Versie: {{h.versie or 'niet vastgelegd'}} · {{h.pad}}</p><pre style="white-space:pre-wrap;font-family:inherit">{{h.tekst}}</pre></div></details>{% endfor %}{% endif %}</div>
+
+<div class=card><h2>Bronregister</h2><p class=muted>Een verplichte bron die ontbreekt of nog “IN TE VULLEN” is, blokkeert formeel vertrouwen in de vraagbaak voor dat onderwerp.</p>
+<div class=table-wrap><table><thead><tr><th>Status</th><th>Bron</th><th>Categorie</th><th>Versie</th><th>Bestand</th></tr></thead><tbody>
+{% for b in register.bronnen %}<tr><td>{% if b.aanwezig %}✅ Aanwezig{% else %}⚠️ Ontbreekt{% endif %}<br><span class="muted small">{{b.status}}</span></td>
+<td><b>{{b.titel}}</b><br><span class="muted small">Eigenaar: {{b.eigenaar}}{% if b.toegang %} · Toegang: {{b.toegang}}{% endif %}{% if b.duplicaat_van %} · Dubbel van {{b.duplicaat_van}}{% endif %}</span></td><td>{{b.categorie}}</td><td>{{b.versie}}</td><td><code>{{b.pad or b.url}}</code></td></tr>{% endfor %}
+</tbody></table></div><p class="muted small">Beheerinstructie: knowledge/README.md · Register: knowledge/sources.json</p></div>"""
+
+
+@app.route("/kennisbank", methods=["GET", "POST"])
+@login_required
+def knowledge_page():
+    register = knowledge_mod.laad_register()
+    vraag = (request.form.get("vraag") or "").strip() if request.method == "POST" else ""
+    hits, antwoord, fout = [], None, None
+    if vraag:
+        licensed = os.environ.get("NIJBEGUN_KENNISBANK_LICENTIE", "").lower() in ("1", "ja", "true")
+        hits = knowledge_mod.zoek(vraag, register, licentiebronnen=licensed)
+        antwoord, fout = knowledge_mod.beantwoord(vraag, hits, _cfg())
+    antwoord_html = bouwjaar_mod.md_naar_html(antwoord) if antwoord else ""
+    return page(KNOWLEDGE, register=register, vraag=vraag, hits=hits, antwoord=antwoord,
+                antwoord_html=antwoord_html, fout=fout)
 
 
 MAILS = """<h1>Bewonersmails</h1>

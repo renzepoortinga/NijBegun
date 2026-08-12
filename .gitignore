@@ -15,6 +15,13 @@ magicplan_fields_backup.json
 # === Projectdata / opnames (AVG: adressen, BAG, foto's, dossiers) ===
 out/
 
+# === Gelicentieerde kennisbankbronnen (NTA/ISSO/VABI e.d.; niet publiceren) ===
+knowledge/private/
+knowledge/**/*.pdf
+knowledge/**/*.xlsx
+knowledge/**/*.xls
+knowledge/**/*.docx
+
 # === Vabi/EPA-bestanden (kunnen versleuteld/persoonsgebonden zijn) ===
 *.epa
 *.epa.bak
@@ -23,6 +30,8 @@ out/
 __pycache__/
 *.py[cod]
 *.egg-info/
+build/
+dist/
 .venv/
 venv/
 .pytest_cache/

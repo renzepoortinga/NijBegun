@@ -3,3 +3,5 @@ lxml>=5.0
 openpyxl>=3.1
 flask>=3.0
 waitress>=3.0
+pypdf>=5.0
+cryptography>=44.0
