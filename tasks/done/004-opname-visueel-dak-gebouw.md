@@ -38,16 +38,16 @@ toevoegen zonder de architectuur te veranderen (MagicPlan blijft de bron voor ge
   onze tekenlaag.
 
 ## Acceptance criteria
-- [ ] `gebouw_svg(dos)` levert een geldige, well-formed SVG-string die de geladen
+- [x] `gebouw_svg(dos)` levert een geldige, well-formed SVG-string die de geladen
       gevels/daken van een dossier labelt (id + m² + oriëntatie)
-- [ ] De 3 dak-toevoegvormen tonen een live-meebewegende wireframe i.p.v. alleen tekst
-- [ ] Nieuwe dakkapel-stap: invoer levert 3 nieuwe SchilDelen op + het gekozen
+- [x] De 3 dak-toevoegvormen tonen een live-meebewegende wireframe i.p.v. alleen tekst
+- [x] Nieuwe dakkapel-stap: invoer levert 3 nieuwe SchilDelen op + het gekozen
       moederdakvlak wordt met het juiste gat-oppervlak verkleind (flag bij onbekende
       hellingshoek, zoals `dakkapel_vlakken()` al teruggeeft)
-- [ ] `python tests/run_tests.py` slaagt (bestaande 643 + nieuwe checks)
-- [ ] `./scripts/verify.sh` slaagt
-- [ ] AI-review PASS door een andere agent dan de bouwer (zelfde model/leverancier
-      toegestaan)
+- [x] `python tests/run_tests.py` slaagt (bestaande 643 + nieuwe checks) — 733/733
+- [x] `./scripts/verify.sh` slaagt
+- [x] AI-review PASS door een andere agent dan de bouwer (zelfde model/leverancier
+      toegestaan) — Codex, reviewronde 4
 
 ## Sessions
 - 2026-08-13 (Claude/Sonnet 5): plan opgesteld + goedgekeurd (zie
@@ -149,6 +149,29 @@ toevoegen zonder de architectuur te veranderen (MagicPlan blijft de bron voor ge
   rekenzone-crash. Suite: 733/733 groen. `verify.sh` PASS. Gecommit
   bovenop `58892ba` (alleen taak-004-bestanden). Derde Codex-reviewronde
   op deze fix volgt.
+
+- 2026-08-14 (Codex, onafhankelijke reviewronde 4): VERDICT PASS. Gericht
+  gecontroleerd dat een dakkapelgat groter dan het moederdak atomair wordt
+  geweigerd en dat een niet-numerieke rekenzone geen HTTP 500 meer geeft.
+  Eerdere fixes voor XML-escaping, moederdakselectie, niet-finiete/negatieve
+  maten en design-tokens blijven intact. `python tests/run_tests.py`:
+  733/733 groen. `verify.sh`: PASS met uitsluitend de bekende advisory dat
+  Git Bash hier geen `python3` vindt; daarom is de suite apart met `python`
+  uitgevoerd. Geen resterende merge-blokkades voor taak 004.
+
+- 2026-08-14 (Claude/Sonnet 5, Manager): afronding. Onafhankelijke review is
+  PASS (reviewronde 4, Codex), alle acceptatiecriteria voldaan. Herbevestigd
+  op de huidige branch: `python tests/run_tests.py` → 733/733 groen,
+  `./scripts/verify.sh` → PASS (enige melding is de bekende `python3`-
+  advisory uit taak 002, niet aan deze taak). De feature-commits staan al op
+  `feat/opname-visueel-dak-gebouw` (`58892ba`, `c1d4d2b`); de werkboom bevat
+  daarnaast nog ongecommitte, niet-taakgebonden wijzigingen in `AGENTS.md`/
+  `agents/*.md`/`docs/decisions/0001-ai-project-os.md`/`tasks/TEMPLATE.md`/
+  `tasks/ready/002-*.md` — bewust ongemoeid gelaten (zie sessie 2026-08-14
+  hierboven), horen niet in deze taak/PR thuis. Taak naar `tasks/done/`
+  verplaatst. Openstaand voor Renze: PR openen vanaf deze branch naar `main`
+  en, indien gewenst, de losstaande proceswijzigingen apart beoordelen/
+  committen.
 
 ## Notes
 - Onderzoek Inbrix (`docs/dak-invoer-marktonderzoek.md`, 11-7) had alleen marketingtekst;
