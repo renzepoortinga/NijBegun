@@ -1,6 +1,6 @@
 ---
 id: 004
-assigned: Codex (OpenAI), Builder
+assigned:
 branch: feat/bcrg-code-en-dikte
 depends_on: []
 ---
@@ -116,6 +116,38 @@ slaagt mag geen forfaitaire fallback worden gebruikt.
   maar wordt apart hard geblokkeerd met migratie-instructie; zo wordt de gebruikers-
   eis gerespecteerd zonder een oud dossier stil forfaitair rekenbaar te maken.
   De echte Vabi-importvalidatie blijft uitdrukkelijk open.
+- 2026-08-13 Codex (OpenAI), Manager: gebruiker pauzeert taak 004 bewust om
+  deze later te hervatten. Code staat gepusht op branch
+  `feat/bcrg-code-en-dikte`, laatste commit `f4b0880`; inhoudelijke codereview
+  PASS, maar geen formele andere-leveranciersreview. Taak terug naar backlog.
+
+## Hervatinstructie voor agents
+1. Begin vanaf remote branch `feat/bcrg-code-en-dikte` en verifieer dat HEAD
+   minimaal commit `f4b0880` bevat. Bouw dit niet opnieuw vanaf `main`.
+2. Commit of publiceer `9501TP-32-- (monitor).xml` nooit: het bevat
+   persoonsgegevens en dient alleen als lokale, read-only Vabi-referentie.
+3. Wijzig de architectuur niet: uitsluitend exact
+   `Ja — kwaliteitsverklaring` activeert de nieuwe route; `Ja`, `Nee` en
+   `Onbekend` blijven bestaand gedrag. Legacy
+   `rc_bron=Kwaliteitsverklaring` blijft hard geblokkeerd tot migratie.
+4. Eerste open stap: genereer met een niet-privacygevoelig testdossier een
+   constructiebibliotheek met geldige BCRG-code+dikte en importeer die in de
+   ondersteunde Vabi EPA-W-versie.
+5. Leg exact vast of Vabi de verklaring ophaalt en welke velden Vabi na lookup
+   aanvult. Controleer met name of nul-UUID, lege merk/type en Rc/U=0 de lookup
+   niet verhinderen. Bij importfout: exporteer de door Vabi gecorrigeerde
+   constructie en diff alleen de constructienode; gok geen velden/codes.
+6. Test ten minste één dak- of vloervariant uit de lokale referentie en één
+   gevelvariant. Noteer gebruikte BCRG-code en dikte alleen als die geen
+   persoonsgegevens vormen.
+7. Pas code/tests uitsluitend aan op basis van die praktijkuitkomst. Draai
+   daarna `./scripts/verify.sh` en, in een ingerichte omgeving met `lxml`, de
+   volledige `python3 tests/run_tests.py`.
+8. Publiceer vervolgens de voorbereide MagicPlan-formwijziging via de
+   bestaande ondersteunde live-route, uitsluitend na expliciete toestemming
+   voor de live API-call. Lees of commit geen `.env*`.
+9. Maak/actualiseer de PR vanaf `feat/bcrg-code-en-dikte`. Merge en deploy pas
+   na geslaagde Vabi-import, volledige checks en de vereiste review.
 
 ## Notes
 Taak 003 blokkeert nu iedere `rc_bron=Kwaliteitsverklaring`, omdat het dossier

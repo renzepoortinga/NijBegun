@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-13 door Codex (taak 004 in uitvoering)
+Bijgewerkt: 2026-08-13 door Codex (taak 004 gepauzeerd)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -16,11 +16,12 @@ Technische schuld). Historie staat in `BUILD_LOG.md` en
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 
-- Taak 004: expliciete BCRG-code+dikte-route voor constructiekwaliteitsverklaringen;
-  implementatie en Vabi-praktijkvalidatie in uitvoering.
+- Geen actieve taak.
 
 ## Blokkades
-- Geen bekende.
+- Taak 004 staat bewust terug in backlog. Implementatie staat op
+  `feat/bcrg-code-en-dikte` (`f4b0880`); vóór merge zijn een echte Vabi-import
+  met BCRG-resolutie en live publicatie/controle van de MagicPlan-velden nodig.
 
 ## Openstaande beslissingen
 - Geen.
