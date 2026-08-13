@@ -40,6 +40,11 @@
   /* 8pt-spacing */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
 
+  /* inline-SVG-typografie (gebouwoverzicht + dak-wireframes): één gedeelde schaal
+     i.p.v. losse font-size-waarden per <text>-element */
+  --svg-fs-1:10px; --svg-fs-2:11px; --svg-fs-3:12px; --svg-fs-4:13px;
+  --svg-fs-5:14px; --svg-fs-6:15px; --svg-fs-7:17px; --svg-fs-8:22px;
+
   /* materials (blur-lagen) */
   --bar-bg:rgba(255,255,255,.8);
 }
@@ -452,6 +457,10 @@ tr:last-child td{border-bottom:0}
    ============================================================ */
 .svgbox{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
 .svgbox svg{display:block;width:100%;height:auto}
+
+.dakwire{display:flex;justify-content:center;padding:var(--s4) 0;background:var(--tint);
+  border:1px solid var(--line);border-radius:14px;margin-bottom:var(--s4)}
+.dakwire svg{max-width:100%;height:auto}
 
 /* ============================================================
    KEY/VALUE-LIJST

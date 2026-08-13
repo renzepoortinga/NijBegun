@@ -793,12 +793,17 @@ check("csv: gevels rc_bron = Kwaliteitsverklaring",
       bool([s for s in _gd.schil if s.type == "gevel"])
       and all(s.rc_bron == "Kwaliteitsverklaring" for s in _gd.schil if s.type == "gevel"))
 check("csv: kwaliteitsverklaring geflagd in notes", any("kwaliteitsverklaring" in n.lower() for n in _gnotes))
-# constructie-generator vlagt de kwaliteitsverklaring
+# constructie-generator BLOKKEERT de export bij kwaliteitsverklaring (vabi/preflight.py,
+# taak fix/kwaliteitsverklaring-blokkeert-vabi-export): harde VabiExportBlocked i.p.v. een
+# stille issue, want de tool exporteert hiervoor geen rekenbare forfaitaire fallback.
 _kvdir = _tf.mkdtemp(); _kvpath = os.path.join(_kvdir, "c.xml")
 from vabi.constructie_generate import write as _cwrite2
-_, _kviss = _cwrite2(_gd, _kvpath)
-check("constr-gen: kwaliteitsverklaring -> issue voor adviseur",
-      any("kwaliteitsverklaring" in i.lower() for i in _kviss))
+from vabi.preflight import VabiExportBlocked as _VEB
+try:
+    _cwrite2(_gd, _kvpath)
+    check("constr-gen: kwaliteitsverklaring -> VabiExportBlocked", False, "geen exception opgegooid")
+except _VEB as _kve:
+    check("constr-gen: kwaliteitsverklaring -> VabiExportBlocked", "kwaliteitsverklaring" in str(_kve).lower())
 
 print("\n32. MagicPlan form_push: merge + validatie (offline)")
 import magicplan.form_push as _fp
@@ -877,6 +882,18 @@ import xml.etree.ElementTree as _ETv
 check("ventilatieplan-svg: well-formed XML", bool(_ETv.fromstring(_svgtxt)))
 check("ventilatieplan-svg: toont toevoer + afvoer", "l/s in" in _svgtxt and "l/s uit" in _svgtxt)
 
+from dashboard.gebouw_svg import gebouw_svg as _gsvg
+from core.dossier import Dossier as _GDos, SchilDeel as _GSchil
+_gdos = _GDos()
+_gdos.schil = [_GSchil(id="gevel-voor", type="gevel", orientatie="Z", oppervlakte_m2=20, rc_huidig=2.5),
+              _GSchil(id="dak1-schuin-z", type="dak", subtype="schuin (zadeldak)", orientatie="Z",
+                      oppervlakte_m2=25, hellingshoek=45)]
+_gsvgtxt = _gsvg(_gdos)
+check("gebouw-svg: geldige SVG-string", _gsvgtxt.startswith("<svg") and _gsvgtxt.rstrip().endswith("</svg>"))
+check("gebouw-svg: well-formed XML", bool(_ETv.fromstring(_gsvgtxt)))
+check("gebouw-svg: toont gevel- en dakvlak-ids", "gevel-voor" in _gsvgtxt and "dak1-schuin-z" in _gsvgtxt)
+check("gebouw-svg: leeg dossier -> nog steeds geldige SVG", bool(_ETv.fromstring(_gsvg(_GDos()))))
+
 print("\n35. Webapp (Flask) — laadt + kernroutes + Beoordelingscheck")
 try:
     import dashboard.app as _WA
@@ -906,6 +923,58 @@ try:
           and 'selected' in _op.get_data(as_text=True))
     check("webapp: huidige-staat-stap laadt (VABI-export terug)",
           _wc.get("/project/%s/huidig" % _ptag).status_code == 200)
+    # dakkapel-route: zadeldak toevoegen, dan een dakkapel erin -> 4 nieuwe vlakken + moederdak kleiner
+    _wc.post("/project/%s/opname/dak/driehoek" % _ptag, data={"orient_hellend": "Z", "helling1": "45",
+              "lange_zijde": "7", "breedte": "5", "rekenzone": "1"})
+    from dashboard.app import _dossier as _WA_dos
+    _voor_dos = _WA_dos(_ptag)
+    _voor_n, _moeder_m2 = len(_voor_dos.schil), _voor_dos.schil[0].oppervlakte_m2
+    _rk = _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "2.5",
+                    "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1", "wangen_geisoleerd": "on"})
+    check("webapp: dakkapel-route redirect", _rk.status_code in (302, 303))
+    _na_dos = _WA_dos(_ptag)
+    check("webapp: dakkapel voegt 4 vlakken toe (voorvlak+2 wangen+dakje)", len(_na_dos.schil) == _voor_n + 4)
+    check("webapp: dakkapel verkleint het moederdakvlak (gat afgetrokken)",
+          _na_dos.schil[0].oppervlakte_m2 < _moeder_m2)
+    import re as _re35
+    check("webapp: opname-pagina met dakkapel toont geldige gebouw-svg",
+          bool(_ETv.fromstring(_re35.search(r"<svg.*?</svg>", _wc.get("/project/%s/opname" % _ptag)
+               .get_data(as_text=True), _re35.S).group(0))))
+    # dakkapel-route weigert een PLAT dak als moederdak (ISSO 82.1 8.2.1: breekt door een
+    # hellend vlak heen) en weigert niet-positieve maten (negatief moet niet gewoon 'werken')
+    _wc.post("/project/%s/opname/dak/plat" % _ptag, data={"m2": "10", "rekenzone": "1"})
+    _plat_dos = _WA_dos(_ptag)
+    _plat_i = next(i for i, s in enumerate(_plat_dos.schil) if (s.subtype or "") == "plat dak")
+    _voor_n2 = len(_plat_dos.schil)
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_plat_i), "breedte": "2",
+             "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
+    check("webapp: dakkapel weigert plat dak als moederdak (geen nieuwe vlakken)",
+          len(_WA_dos(_ptag).schil) == _voor_n2)
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "-2",
+             "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
+    check("webapp: dakkapel weigert negatieve breedte (geen nieuwe vlakken)",
+          len(_WA_dos(_ptag).schil) == _voor_n2)
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "nan",
+             "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
+    check("webapp: dakkapel weigert NaN-breedte (geen nieuwe vlakken)",
+          len(_WA_dos(_ptag).schil) == _voor_n2)
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "inf",
+             "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
+    check("webapp: dakkapel weigert Infinity-breedte (geen nieuwe vlakken)",
+          len(_WA_dos(_ptag).schil) == _voor_n2)
+    # dakkapelgat groter dan het moederdak -> LUID geflagd, niet stil naar 0 geknipt
+    _dakkapel_dos = _WA_dos(_ptag)
+    _klein_i = next(i for i, s in enumerate(_dakkapel_dos.schil)
+                    if s.id == "dak1-schuin-n")  # 24,75 m2, ongebruikt in eerdere posts
+    _dakkapel_dos.schil[_klein_i].oppervlakte_m2 = 1.0  # kunstmatig klein moederdak
+    _WA.save_json(_dakkapel_dos, os.path.join(_WA._pdir(_ptag), _WA._load_state(_ptag)["dossier_file"]))
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_klein_i), "breedte": "5",
+             "hoogte": "3", "diepte": "3", "rekenzone": "1"})
+    _na_groot_dos = _WA_dos(_ptag)
+    check("webapp: dakkapelgat > moederdak -> moederdak op 0 (niet negatief)",
+          _na_groot_dos.schil[_klein_i].oppervlakte_m2 == 0.0)
+    check("webapp: dakkapelgat > moederdak -> LUIDE FLAG in de opmerking",
+          "LUIDE FLAG" in (_na_groot_dos.schil[_klein_i].opmerkingen or ""))
     import shutil as _sh35
     _sh35.rmtree(_WA._pdir(_ptag), ignore_errors=True)
     _bd = _WA._beoordeling("x", {"foto_voorkant": "", "foto_huisnummer": "", "na": {}}, build_sample())
