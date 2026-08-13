@@ -793,12 +793,17 @@ check("csv: gevels rc_bron = Kwaliteitsverklaring",
       bool([s for s in _gd.schil if s.type == "gevel"])
       and all(s.rc_bron == "Kwaliteitsverklaring" for s in _gd.schil if s.type == "gevel"))
 check("csv: kwaliteitsverklaring geflagd in notes", any("kwaliteitsverklaring" in n.lower() for n in _gnotes))
-# constructie-generator vlagt de kwaliteitsverklaring
+# constructie-generator BLOKKEERT de export bij kwaliteitsverklaring (vabi/preflight.py,
+# taak fix/kwaliteitsverklaring-blokkeert-vabi-export): harde VabiExportBlocked i.p.v. een
+# stille issue, want de tool exporteert hiervoor geen rekenbare forfaitaire fallback.
 _kvdir = _tf.mkdtemp(); _kvpath = os.path.join(_kvdir, "c.xml")
 from vabi.constructie_generate import write as _cwrite2
-_, _kviss = _cwrite2(_gd, _kvpath)
-check("constr-gen: kwaliteitsverklaring -> issue voor adviseur",
-      any("kwaliteitsverklaring" in i.lower() for i in _kviss))
+from vabi.preflight import VabiExportBlocked as _VEB
+try:
+    _cwrite2(_gd, _kvpath)
+    check("constr-gen: kwaliteitsverklaring -> VabiExportBlocked", False, "geen exception opgegooid")
+except _VEB as _kve:
+    check("constr-gen: kwaliteitsverklaring -> VabiExportBlocked", "kwaliteitsverklaring" in str(_kve).lower())
 
 print("\n32. MagicPlan form_push: merge + validatie (offline)")
 import magicplan.form_push as _fp
