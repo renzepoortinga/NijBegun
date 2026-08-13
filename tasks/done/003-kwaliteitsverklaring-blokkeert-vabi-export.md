@@ -36,19 +36,19 @@ geexporteerd als een rekenbare forfaitaire constructie met onbekende isolatie.
 - MagicPlan-formulieren of het canonieke datamodel uitbreiden.
 
 ## Acceptance criteria
-- [ ] Exact `rc_bron = Kwaliteitsverklaring` veroorzaakt een harde fout vóór
+- [x] Exact `rc_bron = Kwaliteitsverklaring` veroorzaakt een harde fout vóór
       enig Vabi-exportbestand wordt geschreven.
-- [ ] De fout noemt ieder betrokken schildeel en legt uit waarom de export is
+- [x] De fout noemt ieder betrokken schildeel en legt uit waarom de export is
       geblokkeerd.
-- [ ] `isolatie_aanwezig = Onbekend` zonder kwaliteitsverklaring blijft via de
+- [x] `isolatie_aanwezig = Onbekend` zonder kwaliteitsverklaring blijft via de
       bestaande beslisschema-/forfaitaire route exporteerbaar.
-- [ ] `rc_bron = Dikte onbekend`, leeg en overige bestaande waarden blijven
+- [x] `rc_bron = Dikte onbekend`, leeg en overige bestaande waarden blijven
       ongewijzigd werken.
-- [ ] Er blijft na een geblokkeerde `generate_all`-run geen gedeeltelijke nieuwe
+- [x] Er blijft na een geblokkeerde `generate_all`-run geen gedeeltelijke nieuwe
       exportset achter.
-- [ ] Bestaande tests plus nieuwe regressietests slagen via
+- [x] Bestaande tests plus nieuwe regressietests slagen via
       `./scripts/verify.sh`.
-- [ ] AI-review PASS door een andere leverancier dan de bouwer.
+- [x] AI-review PASS door een andere leverancier dan de bouwer.
 
 ## Sessions
 - 2026-08-13 Codex (OpenAI), Manager: oorzaak vastgesteld in
@@ -89,6 +89,13 @@ geexporteerd als een rekenbare forfaitaire constructie met onbekende isolatie.
   een kale checkout), niet aan taak 003 gerelateerd; de crash bij regel 799
   is weg. Gecommit (`4dd8221`) en gepusht. Klaar voor een hernieuwde
   onafhankelijke reviewronde.
+- 2026-08-14 Codex (OpenAI), Reviewer: onafhankelijke herreview van commit
+  `4dd8221` afgerond met VERDICT PASS. De gecorrigeerde regressietest vangt
+  `VabiExportBlocked` en alle acceptatiecriteria zijn afgedekt; taak gereed
+  voor administratieve afronding.
+- 2026-08-14 Codex (OpenAI), Manager: review PASS verwerkt, acceptatiecriteria
+  afgevinkt, taak naar `tasks/done/` verplaatst en `docs/STATE.md`
+  bijgewerkt. Geen featurecode gewijzigd.
 
 ## Notes
 De huidige code kiest bij een kwaliteitsverklaring eerst een standaardtemplate
