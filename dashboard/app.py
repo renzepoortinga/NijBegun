@@ -462,29 +462,16 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div class=card id=dak-toevoegen><h2>⛰ Dak toevoegen</h2>
 <p class=muted>Voeg zoveel daken toe als nodig (tot 20) — elk dak wordt automatisch genummerd. Kies per dak de invoerwijze. De toegevoegde dakvlakken verschijnen in de gebouwboom hierboven.</p>
 <details class=acc><summary><b>1 · Plat dak</b></summary><div class=acc-body>
-<div class=dakwire><svg id="platSvg" viewBox="0 0 220 130" width="220" height="130">
-<rect x="20" y="15" width="180" height="100" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="2"/>
-<path d="M20 15 L200 115 M20 45 L170 115 M20 75 L140 115 M20 105 L110 115 M50 15 L200 85 M80 15 L200 55" stroke="var(--blue)" stroke-width="0.75" opacity="0.35"/>
-<text id="platSvgVal" x="110" y="72" font-size="var(--svg-fs-7)" font-weight="700" text-anchor="middle" fill="var(--ink)">— m&#178;</text>
-</svg></div>
+<div class=dakwire><svg id="platSvg" class=isometrie-canvas viewBox="0 0 320 220" role=img aria-label="Isometrische voorbeeldtekening van het platte dak"></svg></div>
 <form method=post action="{{url_for('opname_dak_plat', tag=tag)}}" oninput="platDakPrev(this)"><div class=grid2>
-<div><label>Oppervlak (m²)</label><input name=m2 placeholder="bv. 24.5" required></div>
+<div><label>Breedte (m)</label><input name=breedte placeholder="bv. 5" required></div>
+<div><label>Diepte (m)</label><input name=diepte placeholder="bv. 4.9" required></div>
 <div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
 </div><div class=btn-row><button class=btn>+ Plat dak toevoegen</button></div></form></div></details>
 
 <details class=acc><summary><b>2 · Zadeldak — via driehoek berekenen</b></summary><div class=acc-body>
 <p class="muted small">De <b>hellende vlakken</b> zitten aan de gekozen oriëntatie én de tegenoverliggende. De <b>lange zijde (basis c)</b> is de breedte van de kopgevel (de zijde waarover het dak schuin loopt); de <b>breedte/noklengte</b> is de lengte waarmee elk hellend vlak vermenigvuldigd wordt. De <b>kopgevels</b> (driehoeken) tellen alleen mee als ze aan buiten grenzen (bij een tussenwoning meestal buurwand → uit laten).</p>
-<div class=dakwire><svg id="zadelSvg" viewBox="0 0 320 190" width="320" height="190">
-<line id="zadelBasis" x1="50" y1="150" x2="270" y2="150" stroke="var(--sub)" stroke-width="2"/>
-<path id="zadelDak" d="M50 150 L160 150 L270 150 Z" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/>
-<path id="zadelHellingBoog" d="M74 150 A24 24 0 0 0 90 132" fill="none" stroke="var(--sub)" stroke-width="1.5"/>
-<text id="zadelHellingLabel" x="96" y="138" font-size="var(--svg-fs-2)" fill="var(--sub)">45°</text>
-<text x="160" y="168" font-size="var(--svg-fs-2)" text-anchor="middle" fill="var(--ink)">c (lange zijde/basis)</text>
-<path d="M270 150 L300 130" stroke="var(--sub)" stroke-width="1.5" stroke-dasharray="3,3"/>
-<text x="302" y="128" font-size="var(--svg-fs-2)" fill="var(--ink)">breedte/noklengte</text>
-<text id="zadelVlakLabel" x="160" y="100" font-size="var(--svg-fs-4)" font-weight="700" text-anchor="middle" fill="var(--blue)">vul de velden in</text>
-<text id="zadelKopLabel" x="160" y="185" font-size="var(--svg-fs-2)" text-anchor="middle" fill="var(--sub)"></text>
-</svg></div>
+<div class=dakwire><svg id="zadelSvg" class=isometrie-canvas viewBox="0 0 320 220" role=img aria-label="Isometrische voorbeeldtekening van het zadeldak"></svg></div>
 <form method=post action="{{url_for('opname_dak_driehoek', tag=tag)}}" oninput="dakPrev(this)"><div class=grid2>
 <div><label>Oriëntatie hellende vlakken</label><select name=orient_hellend>{% for o in ori_opts %}{% if o %}<option>{{o}}</option>{% endif %}{% endfor %}</select></div>
 <div><label>Hellingshoek (°)</label><input name=helling1 value="45"></div>
@@ -533,18 +520,10 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 
 <details class=acc><summary><b>5 · Dakkapel toevoegen{% if n_dakkapel %} <span class="pill gray">{{n_dakkapel}} nu</span>{% endif %}</b></summary><div class=acc-body>
 {% if dakkapel_moeder_opts %}<p class="muted small">ISSO 82.1 §8.2.1: een dakkapel voegt een <b>voorvlak</b> (gevel) + <b>2 wangen</b> (gevel) + een <b>plat dakje</b> toe, en maakt een <b>gat</b> in het schuine moederdakvlak — dat gat wordt automatisch van het gekozen dakvlak afgetrokken (past het niet, dan wordt de dakkapel geweigerd — controleer dan het moederdak/de maten). Alleen <b>hellende</b> dakvlakken zijn kiesbaar (een dakkapel breekt door een schuin vlak heen; een plat dak of het dakje van een andere dakkapel niet).</p>
-<div class=dakwire><svg id="kapelSvg" viewBox="0 0 300 170" width="300" height="170">
-<path d="M20 130 L90 60 L210 60 L280 130 Z" fill="var(--tint)" stroke="var(--sub)" stroke-width="1.5"/>
-<path id="kapelGat" d="M110 130 L110 90 L190 90 L190 130 Z" fill="var(--card)" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="3,3"/>
-<path id="kapelWangL" d="M110 130 L110 90 L90 100 L90 130 Z" fill="var(--warn-bg)" stroke="var(--orange)" stroke-width="2"/>
-<path id="kapelVoor" d="M110 90 L190 90 L190 130 L110 130 Z" fill="var(--warn-bg)" stroke="var(--orange)" stroke-width="2" opacity="0.9"/>
-<path id="kapelWangR" d="M190 130 L190 90 L210 100 L210 130 Z" fill="var(--warn-bg)" stroke="var(--orange)" stroke-width="2"/>
-<path id="kapelDakje" d="M90 100 L110 90 L190 90 L210 100 Z" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1.5"/>
-<text x="150" y="113" font-size="var(--svg-fs-1)" text-anchor="middle" fill="var(--ink)">voorvlak</text>
-<text id="kapelLabel" x="150" y="155" font-size="var(--svg-fs-2)" font-weight="650" text-anchor="middle" fill="var(--ink)">vul breedte/hoogte/diepte in</text>
-</svg></div>
+<div class=dakwire><svg id="kapelSvg" class=isometrie-canvas viewBox="0 0 320 220" role=img aria-label="Isometrische voorbeeldtekening van de dakkapel"></svg></div>
+<p class="muted small" id=kapelprev aria-live=polite>Vul breedte, hoogte en diepte in.</p>
 <form method=post action="{{url_for('opname_dakkapel', tag=tag)}}" oninput="kapelPrev(this)"><div class=grid2>
-<div><label>In dakvlak (moederdak)</label><select name=moederdak_i>{% for lbl, di in dakkapel_moeder_opts %}<option value="{{di}}">{{lbl}}</option>{% endfor %}</select></div>
+<div><label>In dakvlak (moederdak)</label><select name=moederdak_i>{% for lbl, di in dakkapel_moeder_opts %}<option value="{{di}}" data-helling="{{d.schil[di].hellingshoek or 0}}">{{lbl}}</option>{% endfor %}</select></div>
 <div><label>Breedte voorvlak (m)</label><input name=breedte placeholder="bv. 2.5"></div>
 <div><label>Hoogte voorvlak (m)</label><input name=hoogte placeholder="bv. 1.5"></div>
 <div><label>Diepte (m)</label><input name=diepte placeholder="bv. 1.0"></div>
@@ -553,24 +532,8 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 </div><div class=btn-row><button class=btn>+ Dakkapel toevoegen</button></div></form>
 {% else %}<p class=muted>Voeg eerst een hellend dakvlak toe (optie 2 of 3 hierboven, met een hellingshoek &gt; 0°), dan kun je er een dakkapel in zetten.</p>{% endif %}
 </div></details>
+<script src="{{url_for('static', filename='isometrie.js')}}"></script>
 <script>
-function platDakPrev(f){var m2=parseFloat((f.m2.value||'').replace(',','.'));var t=document.getElementById('platSvgVal');if(t)t.textContent=(m2>0?m2.toFixed(1):'—')+' m²';}
-function dakPrev(f){
-  var c=parseFloat((f.lange_zijde.value||'').replace(',','.')),b=parseFloat((f.breedte.value||'').replace(',','.')),
-      h=parseFloat((f.helling1.value||'').replace(',','.')),e=document.getElementById('dakprev');
-  var hl=document.getElementById('zadelHellingLabel'),vl=document.getElementById('zadelVlakLabel'),
-      kl=document.getElementById('zadelKopLabel'),dp=document.getElementById('zadelDak');
-  if(!(c>0&&b>0&&h>0&&h<90)){
-    e.textContent='Vul lange zijde, breedte en hellingshoek in voor een voorbeeld.';
-    if(vl)vl.textContent='vul de velden in'; if(kl)kl.textContent=''; return;
-  }
-  var s=(c/2)/Math.cos(h*Math.PI/180),vlak=s*b,kop=0.5*c*((c/2)*Math.tan(h*Math.PI/180));
-  e.innerHTML='Voorbeeld: per hellend vlak <b>'+vlak.toFixed(2)+' m²</b> (2×, voor+achter) · per kopgevel <b>'+kop.toFixed(2)+' m²</b> (2×, alleen indien buiten).';
-  if(hl)hl.textContent=h.toFixed(0)+'°';
-  if(vl)vl.textContent='vlak '+vlak.toFixed(1)+' m² (×2)';
-  if(kl)kl.textContent='kopgevel '+kop.toFixed(1)+' m² (×2, indien buiten)';
-  if(dp){var peakY=150-Math.min(120,Math.max(15,h*1.8));dp.setAttribute('d','M50 150 L160 '+peakY.toFixed(1)+' L270 150 Z');}
-}
 function compasPrev(f){
   var os=['N','NO','O','ZO','Z','ZW','W','NW'];
   os.forEach(function(o){
@@ -582,14 +545,6 @@ function compasPrev(f){
   });
   var hz=f['m2_Horizontaal'],hv=hz?parseFloat((hz.value||'').replace(',','.')):NaN,ht=document.getElementById('compasHorizVal');
   if(ht)ht.textContent='plat '+(hv>0?hv.toFixed(1)+' m²':'—');
-}
-function kapelPrev(f){
-  var b=parseFloat((f.breedte.value||'').replace(',','.')),h=parseFloat((f.hoogte.value||'').replace(',','.')),
-      d=parseFloat((f.diepte.value||'').replace(',','.')),lbl=document.getElementById('kapelLabel');
-  if(!lbl)return;
-  if(!(b>0&&h>0&&d>0)){lbl.textContent='vul breedte/hoogte/diepte in';return;}
-  var gevel=b*h+2*(d*h),dak=b*d;
-  lbl.textContent='gevel '+gevel.toFixed(1)+' m² (voorvlak+wangen) · dakje '+dak.toFixed(1)+' m² · gat wordt bij opslaan van het moederdak afgetrokken';
 }
 </script></div>
 
@@ -1576,7 +1531,13 @@ def opname_dak_plat(tag):
     if not st or not dos:
         abort(404)
     from core.dossier import SchilDeel
-    m2 = _f2(request.form.get("m2")) or 0.0
+    breedte = _f2(request.form.get("breedte"))
+    diepte = _f2(request.form.get("diepte"))
+    maten_geldig = (breedte is not None and diepte is not None
+                    and all(math.isfinite(x) and x > 0 for x in (breedte, diepte)))
+    m2 = round(breedte * diepte, 2) if maten_geldig else (_f2(request.form.get("m2")) or 0.0)
+    if not maten_geldig:
+        breedte = diepte = None
     if not m2:
         flash("Vul een oppervlak in voor het platte dak.")
         return redirect(url_for("opname", tag=tag))
@@ -1585,6 +1546,7 @@ def opname_dak_plat(tag):
     dos.schil.append(SchilDeel(id="dak%d-plat" % nr, type="dak", subtype="plat dak",
                                begrenzing=((_ds.begrenzing if _ds else "") or "Buitenlucht"),
                                orientatie="", oppervlakte_m2=m2, hellingshoek=0,
+                               breedte_m=breedte, diepte_m=diepte, geometrie_groep="dak%d" % nr,
                                # isolatie erft de Constructies-form-standaard (MagicPlan); leeg -> Onbekend
                                isolatie_aanwezig=((_ds.isolatie_aanwezig if _ds else "") or "Onbekend"),
                                isolatiedikte_mm=(_ds.isolatiedikte_mm if _ds else None),
@@ -1614,17 +1576,26 @@ def opname_dak_driehoek(tag):
     breedte = _f2(f.get("breedte")) or 0.0
     h1 = _f2(f.get("helling1")) or 0.0
     h2 = _f2(f.get("helling2")) or h1
-    if not (o in DAK_COMPAS and c > 0 and breedte > 0 and 0 < h1 < 90):
-        flash("Zadeldak: kies een oriëntatie, en vul lange zijde, breedte en een geldige hellingshoek (0-89°) in.")
+    if not (o in DAK_COMPAS and all(math.isfinite(x) for x in (c, breedte, h1, h2))
+            and c > 0 and breedte > 0 and 0 < h1 < 90 and 0 < h2 < 90):
+        flash("Zadeldak: kies een oriëntatie, en vul lange zijde, breedte en geldige hellingshoeken (0-89°) in.")
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     footprint = c * breedte
     zij = _zij8(o)
     vlakken = dak_vlakken_zadeldak(footprint, c, h1, orient_schuin=(o, _opp8(o)), orient_kopgevel=zij)
-    if h2 != h1:   # asymmetrisch: tegenoverliggend vlak eigen helling op de halve footprint
-        for v in vlakken:
-            if v.get("kind") == "dak" and v.get("orientatie") == _opp8(o):
-                v["m2"] = round((footprint / 2.0) / max(0.087, math.cos(math.radians(h2))), 2)
-                v["hellingshoek"] = h2
+    # Eén nok voor beide vlakken. Bij ongelijke hoeken verschuift die nok: de twee horizontale
+    # runs tellen op tot c en leveren dezelfde nokhoogte. core.geometry blijft bewust symmetrisch.
+    nokhoogte = (c / (1 / math.tan(math.radians(h1)) + 1 / math.tan(math.radians(h2))))
+    runs = {o: nokhoogte / math.tan(math.radians(h1)),
+            _opp8(o): nokhoogte / math.tan(math.radians(h2))}
+    hoeken = {o: h1, _opp8(o): h2}
+    for v in vlakken:
+        if v.get("kind") == "dak":
+            hoek = hoeken[v["orientatie"]]
+            v["m2"] = round(breedte * runs[v["orientatie"]] / math.cos(math.radians(hoek)), 2)
+            v["hellingshoek"] = hoek
+        elif h2 != h1:
+            v["m2"] = round(0.5 * c * nokhoogte, 2)
     kop_buiten = {zij[0]: f.get("kopgevel1_buiten") == "on", zij[1]: f.get("kopgevel2_buiten") == "on"}
     nr = _volgend_dak_nr(dos)
     rz = int(f.get("rekenzone") or 1)
@@ -1636,12 +1607,14 @@ def opname_dak_driehoek(tag):
             dos.schil.append(SchilDeel(id="dak%d-kopgevel-%s" % (nr, (v["orientatie"] or "x").lower()),
                                        type="gevel", subtype="kopgevel-driehoek", begrenzing="Buitenlucht",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], isolatie_aanwezig="Onbekend",
+                                       geometrie_groep="dak%d" % nr,
                                        rekenzone=rz, opmerkingen="Dak %d — kopgevel-driehoek (zadeldak, basis %.2f m)" % (nr, c)))
             n_kop += 1
         else:
             dos.schil.append(SchilDeel(id="dak%d-schuin-%s" % (nr, (v["orientatie"] or "x").lower()),
                                        type="dak", subtype="schuin (zadeldak)", begrenzing="Buitenlucht",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
+                                       breedte_m=breedte, diepte_m=runs[v["orientatie"]], geometrie_groep="dak%d" % nr,
                                        isolatie_aanwezig="Onbekend", rekenzone=rz,
                                        opmerkingen="Dak %d — hellend vlak %s (c=%.2f x breedte=%.2f, %.0f°)"
                                        % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1)))
@@ -1751,6 +1724,12 @@ def opname_dakkapel(tag):
             or b <= 0 or h <= 0 or d <= 0):
         flash("Vul een geldige, positieve breedte, hoogte en diepte van de dakkapel in.")
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    stijging = d * math.tan(math.radians(moeder.hellingshoek))
+    if stijging >= h:
+        flash("Deze dakkapel is geometrisch niet haalbaar: bij %.0f° stijgt het moederdak over %.2f m "
+              "diepte met %.2f m. De hoogte moet groter zijn dan die stijging."
+              % (moeder.hellingshoek, d, stijging))
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     vlakken = dakkapel_vlakken(b, h, d, hellingshoek_dakvlak_graden=moeder.hellingshoek)
     gat = vlakken["gat_schuin_dak_m2"]
     moeder_m2_voor = moeder.oppervlakte_m2 or 0
@@ -1769,17 +1748,25 @@ def opname_dakkapel(tag):
     zij_l, zij_r = _zij8(orient) if orient else ("", "")
     voorvlak = SchilDeel(id="dakkapel%d-voorvlak" % nr, type="gevel", subtype="Dakkapel voorvlak",
                          orientatie=orient, begrenzing="Buitenlucht", oppervlakte_m2=round(b * h, 2),
+                         breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
+                         geometrie_groep="dakkapel%d" % nr,
                          rekenzone=rekenzone, opmerkingen="Dakkapel %d — voorvlak in dakvlak %s" % (nr, moeder.id))
     wang_l = SchilDeel(id="dakkapel%d-wang-links" % nr, type="gevel", subtype="Dakkapel wang",
                        orientatie=zij_l, begrenzing="Buitenlucht", oppervlakte_m2=round(d * h, 2),
+                       breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
+                       geometrie_groep="dakkapel%d" % nr,
                        rekenzone=rekenzone, isolatie_aanwezig=("Ja" if wangen_geisoleerd else "Onbekend"),
                        opmerkingen="Dakkapel %d — linkerwang" % nr)
     wang_r = SchilDeel(id="dakkapel%d-wang-rechts" % nr, type="gevel", subtype="Dakkapel wang",
                        orientatie=zij_r, begrenzing="Buitenlucht", oppervlakte_m2=round(d * h, 2),
+                       breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
+                       geometrie_groep="dakkapel%d" % nr,
                        rekenzone=rekenzone, isolatie_aanwezig=("Ja" if wangen_geisoleerd else "Onbekend"),
                        opmerkingen="Dakkapel %d — rechterwang" % nr)
     dakje = SchilDeel(id="dakkapel%d-dakje" % nr, type="dak", subtype="plat (dakkapel)",
                       orientatie="", begrenzing="Buitenlucht", oppervlakte_m2=vlakken["dak_m2"],
+                      breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
+                      geometrie_groep="dakkapel%d" % nr,
                       hellingshoek=0, rekenzone=rekenzone, opmerkingen="Dakkapel %d — plat dakje" % nr)
     dos.schil += [voorvlak, wang_l, wang_r, dakje]
     if gat:

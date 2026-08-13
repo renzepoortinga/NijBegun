@@ -921,6 +921,9 @@ try:
     check("webapp: opname toont MagicPlan-import + woningtype-dropdown",
           "MagicPlan-opname inladen" in _op.get_data(as_text=True)
           and 'selected' in _op.get_data(as_text=True))
+    check("webapp: dakwizards laden losse isometriemodule en beschikbare canvassen",
+          'static/isometrie.js' in _op.get_data(as_text=True)
+          and _op.get_data(as_text=True).count('class=isometrie-canvas') == 2)
     check("webapp: huidige-staat-stap laadt (VABI-export terug)",
           _wc.get("/project/%s/huidig" % _ptag).status_code == 200)
     # dakkapel-route: zadeldak toevoegen, dan een dakkapel erin -> 4 nieuwe vlakken + moederdak kleiner
@@ -929,6 +932,24 @@ try:
     from dashboard.app import _dossier as _WA_dos
     _voor_dos = _WA_dos(_ptag)
     _voor_n, _moeder_m2 = len(_voor_dos.schil), _voor_dos.schil[0].oppervlakte_m2
+    check("webapp: zadeldak bewaart ruwe renderingmaten",
+          all(s.breedte_m == 5.0 and abs(s.diepte_m - 3.5) < 0.001
+              for s in _voor_dos.schil if s.type == "dak"))
+    import math as _math35
+    _wc.post("/project/%s/opname/dak/driehoek" % _ptag, data={"orient_hellend": "O", "helling1": "30",
+              "helling2": "60", "lange_zijde": "8", "breedte": "6", "rekenzone": "1"})
+    _asym_dos = _WA_dos(_ptag)
+    _asym = [s for s in _asym_dos.schil if (s.id or "").startswith("dak2-schuin-")]
+    _asym_o = next(s for s in _asym if s.orientatie == "O")
+    _asym_w = next(s for s in _asym if s.orientatie == "W")
+    check("webapp: asymmetrisch zadeldak deelt één nokhoogte en volledige basis",
+          abs((_asym_o.diepte_m + _asym_w.diepte_m) - 8.0) < 0.001
+          and abs(_asym_o.diepte_m * _math35.tan(_math35.radians(30))
+                  - _asym_w.diepte_m * _math35.tan(_math35.radians(60))) < 0.001)
+    check("webapp: asymmetrisch zadeldak m2 volgt per-vlak run en helling",
+          abs(_asym_o.oppervlakte_m2 - round(6 * _asym_o.diepte_m / _math35.cos(_math35.radians(30)), 2)) < 0.001
+          and abs(_asym_w.oppervlakte_m2 - round(6 * _asym_w.diepte_m / _math35.cos(_math35.radians(60)), 2)) < 0.001)
+    _voor_n = len(_asym_dos.schil)
     _rk = _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "2.5",
                     "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1", "wangen_geisoleerd": "on"})
     check("webapp: dakkapel-route redirect", _rk.status_code in (302, 303))
@@ -936,15 +957,36 @@ try:
     check("webapp: dakkapel voegt 4 vlakken toe (voorvlak+2 wangen+dakje)", len(_na_dos.schil) == _voor_n + 4)
     check("webapp: dakkapel verkleint het moederdakvlak (gat afgetrokken)",
           _na_dos.schil[0].oppervlakte_m2 < _moeder_m2)
+    _kapel_delen = [s for s in _na_dos.schil if (s.id or "").startswith("dakkapel1-")]
+    check("webapp: dakkapel bewaart maten en stabiele moederdakreferentie",
+          len(_kapel_delen) == 4 and all(s.breedte_m == 2.5 and s.diepte_m == 1.0
+          and s.hoogte_m == 1.5 and s.moedervlak_id == _na_dos.schil[0].id
+          and s.geometrie_groep == "dakkapel1" for s in _kapel_delen))
+    _kapel_rt = _GDos.from_dict(_na_dos.to_dict())
+    check("webapp: renderingmetadata overleeft dossier save/reload",
+          _kapel_rt.schil[-1].breedte_m == 2.5 and _kapel_rt.schil[-1].moedervlak_id == _na_dos.schil[0].id)
+    check("webapp: dakkapelcanvas verschijnt bij een geldig hellend moederdak",
+          _wc.get("/project/%s/opname" % _ptag).get_data(as_text=True).count('class=isometrie-canvas') == 3)
+    _steil_i = next(i for i, s in enumerate(_na_dos.schil)
+                    if (s.id or "").startswith("dak2-schuin-") and s.hellingshoek == 60)
+    _voor_steil = len(_na_dos.schil)
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_steil_i), "breedte": "2",
+             "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
+    check("webapp: dakkapel weigert inverterende geometrie op steil dak",
+          len(_WA_dos(_ptag).schil) == _voor_steil)
     import re as _re35
     check("webapp: opname-pagina met dakkapel toont geldige gebouw-svg",
           bool(_ETv.fromstring(_re35.search(r"<svg.*?</svg>", _wc.get("/project/%s/opname" % _ptag)
                .get_data(as_text=True), _re35.S).group(0))))
     # dakkapel-route weigert een PLAT dak als moederdak (ISSO 82.1 8.2.1: breekt door een
     # hellend vlak heen) en weigert niet-positieve maten (negatief moet niet gewoon 'werken')
-    _wc.post("/project/%s/opname/dak/plat" % _ptag, data={"m2": "10", "rekenzone": "1"})
+    _wc.post("/project/%s/opname/dak/plat" % _ptag,
+             data={"breedte": "4", "diepte": "2.5", "rekenzone": "1"})
     _plat_dos = _WA_dos(_ptag)
     _plat_i = next(i for i, s in enumerate(_plat_dos.schil) if (s.subtype or "") == "plat dak")
+    check("webapp: plat dak berekent oppervlak en bewaart beide maten",
+          _plat_dos.schil[_plat_i].oppervlakte_m2 == 10.0
+          and _plat_dos.schil[_plat_i].breedte_m == 4.0 and _plat_dos.schil[_plat_i].diepte_m == 2.5)
     _voor_n2 = len(_plat_dos.schil)
     _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_plat_i), "breedte": "2",
              "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
