@@ -144,8 +144,10 @@ element** en vul de bijbehorende **Field** in — alleen het afwijkende veld:
 - **Form "Constructies"** — geveltype · thermische massa wanden/vloeren · spouwdikte dak · **Rc-bron gevel / vloer / dak** (Opgemeten / Dikte onbekend / **Kwaliteitsverklaring**).
 - **Form "Installaties"** — ventilatie · verwarming · tapwater · koeling · zonne-energie · foto's.
 
-> **Kwaliteitsverklaring?** Kies bij Rc-bron "Kwaliteitsverklaring". De tool kiest dan een forfaitaire constructie
-> én **vlagt het**, zodat jij in VABI `Invoer = Kwaliteitsverklaring` + de Rc/U-waarde invult. (De tool gokt nooit een Rc/U.)
+> **Kwaliteitsverklaring?** Kies bij `Isolatie aanwezig?` expliciet **Ja — kwaliteitsverklaring**
+> en vul de **BCRG-code** en **isolatiedikte (mm)** in. Ontbreekt één van beide, dan blokkeert de
+> Vabi-export. Met beide waarden exporteert de tool de BCRG-lookuproute; Vabi haalt zelf de verklaring
+> en rekenwaarde op. De tool valt nooit terug op `Onbekend` en rekent geen Rc/U.
 
 ### ⭐ Vier velden voor de HUIDIGE STAAT in het isolatieplan (sectie 3) — vergeet ze niet
 Deze bepalen op welke regel van het plan de staat terechtkomt. Laat je ze leeg, dan blijven die

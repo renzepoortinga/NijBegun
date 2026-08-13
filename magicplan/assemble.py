@@ -101,7 +101,11 @@ def build_dossier(p, kozijnen, plan):
         id="gevel", type="gevel", subtype=_g(p, "geveltype", default="") or "",
         begrenzing=_g(p, "gevel_begrenzing", default="Buitenlucht") or "Buitenlucht",
         oppervlakte_m2=gevel_area, isolatie_aanwezig=_g(p, "isolatie_aanwezig", default="Onbekend") or "Onbekend",
-        rc_bron=_g(p, "rc_bron", default="") or "", spouw_aanwezig=_g(p, "spouw_aanwezig", bool),
+        rc_bron=("Kwaliteitsverklaring" if "kwaliteitsverklaring" in
+                 (_g(p, "isolatie_aanwezig", default="") or "").lower()
+                 else (_g(p, "rc_bron", default="") or "")),
+        spouw_aanwezig=_g(p, "spouw_aanwezig", bool),
+        bcrg_code=_g(p, "gevel_bcrg_code", default="") or "",
         isolatiedikte_mm=_g(p, "isolatie_mm", float),
         opmerkingen=_gevel_opm))
     # vloer + dak (hergebruik extractor-helpers met report-p)

@@ -186,6 +186,25 @@
   },
   {
    "form_match": "Constructies",
+   "add_options": [
+    {"name": "Gevel - isolatie aanwezig?", "options": ["Ja — kwaliteitsverklaring"]},
+    {"name": "Vloer - isolatie aanwezig?", "options": ["Ja — kwaliteitsverklaring"]},
+    {"name": "Dak - isolatie aanwezig?", "options": ["Ja — kwaliteitsverklaring"]}
+   ],
+   "attach_children": [
+    {"name": "Gevel - isolatie aanwezig?", "show_when": "Ja — kwaliteitsverklaring", "children": [
+     {"name": "Gevel - BCRG-code", "dataType": "text", "required": true},
+     {"name": "Gevel - BCRG-isolatiedikte (mm)", "dataType": "number", "required": true}
+    ]},
+    {"name": "Vloer - isolatie aanwezig?", "show_when": "Ja — kwaliteitsverklaring", "children": [
+     {"name": "Vloer - BCRG-code", "dataType": "text", "required": true},
+     {"name": "Vloer - BCRG-isolatiedikte (mm)", "dataType": "number", "required": true}
+    ]},
+    {"name": "Dak - isolatie aanwezig?", "show_when": "Ja — kwaliteitsverklaring", "children": [
+     {"name": "Dak - BCRG-code", "dataType": "text", "required": true},
+     {"name": "Dak - BCRG-isolatiedikte (mm)", "dataType": "number", "required": true}
+    ]}
+   ],
    "add_after_section": {
     "GEVEL": [
      {
@@ -298,6 +317,14 @@
   }
  ],
  "field_groups": [
+  {
+   "form_match": "Gevel",
+   "add_options": [{"name": "Gevel - isolatie aanwezig?", "options": ["Ja — kwaliteitsverklaring"]}],
+   "attach_children": [{"name": "Gevel - isolatie aanwezig?", "show_when": "Ja — kwaliteitsverklaring", "children": [
+    {"name": "Gevel - BCRG-code", "dataType": "text", "required": true},
+    {"name": "Gevel - BCRG-isolatiedikte (mm)", "dataType": "number", "required": true}
+   ]}]
+  },
   {
    "form_match": "Raam",
    "attach_children": [

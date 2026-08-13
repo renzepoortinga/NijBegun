@@ -11,9 +11,9 @@ De 219 = EPA's VOLLEDIGE forfaitaire Standaard-constructies-set (LIVE geverifiee
 knop "Standaard constructies" laadt exact 219 — 1-op-1 met deze template). Dimensies: opaak (gevel/
 dak/vloer) isolatie-onbekend + 10..230 mm in 10mm-stappen x met/zonder spouw; glas 7 types (enkel/
 dubbel/HR/HR+/HR++/TripleHR/voorzet) x 3 kozijnmaterialen; deur geisoleerd/niet; paneel 10..100 mm.
-Een GEMETEN/afwijkende Rc/U hoort niet bij een forfaitaire preset en wordt geflagd. Een expliciete
-kwaliteitsverklaring blokkeert de export volledig, zodat die nooit als rekenbare forfaitaire preset
-kan belanden. De adviseur verwerkt de verklaring correct in Vabi; de tool gokt geen Rc/U-waarde.
+Een GEMETEN/afwijkende Rc/U hoort niet bij een forfaitaire preset en wordt geflagd. Een complete,
+expliciete kwaliteitsverklaring krijgt uitsluitend de bewezen Vabi-route met BCRG-code+dikte;
+Vabi verzorgt de lookup. De tool schrijft daarbij geen Rc/U, merk, UUID of toepassingsvariant.
 
 De constructiebibliotheek bevat alleen constructie-TYPES (Rc/isolatie/glas), geen oppervlak/
 orientatie -> die geometrie komt later in de Objectenbibliotheek. We leveren dus de UNIEKE set
@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json            # noqa: E402
 from vabi.codebook import Codebook            # noqa: E402
-from vabi.preflight import assert_no_schil_kwaliteitsverklaring  # noqa: E402
+from vabi.preflight import assert_no_schil_kwaliteitsverklaring, is_kwaliteitsverklaring  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "refs", "standaard_constructies_v120001001.xml")
@@ -175,6 +175,35 @@ def _classify(s):
     return t
 
 
+def _set_text(el, tag, value):
+    child = el.find(tag)
+    if child is None:
+        raise ValueError("Vabi-constructiesjabloon mist verplicht veld %s" % tag)
+    child.text = str(value)
+
+
+def _kwaliteitsverklaring_template(tmpl, s, kind):
+    """Maak de minimale, door de monitorreferentie bewezen BCRG-lookupinvoer."""
+    clone = copy.deepcopy(tmpl)
+    code = (getattr(s, "bcrg_code", "") or "").strip()
+    dikte = int(round(float(s.isolatiedikte_mm)))
+    naam = "%s BCRG %s (%d mm)" % (kind.capitalize(), code, dikte)
+    constructietype = _t(clone, "ConstructieType", "")
+    if kind == "dak":
+        # Aangeleverde Vabi-monitor: 5=hellend dak en 6=plat dak op de KV-route.
+        constructietype = "6" if "plat" in (getattr(s, "subtype", "") or "").lower() else "5"
+    for tag, value in (
+        ("Naam", naam), ("ConstructieType", constructietype),
+        ("Invoer", "0"), ("KwaliteitsverklaringInvoermethode", "1"),
+        ("Code", code), ("KwaliteitsverklaringIsolatieDikte", "%03d" % dikte),
+        ("Merk", ""), ("Type", ""), ("KwaliteitsverklaringId", "00000000-0000-0000-0000-000000000000"),
+        ("KwaliteitsverklaringType", ""), ("Rc", "0.00"), ("U", "0.00"),
+        ("IsolatieAanwezig", "-1"), ("Isolatiedikte", "0"), ("Bouwjaar", "-1"),
+        ("SpouwAanwezig", "0")):
+        _set_text(clone, tag, value)
+    return clone
+
+
 def _jaar_uit_klassetekst(tekst):
     """Bouwjaarklasse-TEKST uit het MagicPlan-form ('Van 1975 t/m 1982', 'Tot 1965', 'Vanaf 2014',
     ook ge-dot 'Van.1975.t.m.1982') -> representatief jaar BINNEN die klasse, of None. De klassen in
@@ -233,6 +262,8 @@ def match_constructies(dos, pool, cb):
         if tmpl is None:
             issues.append("schildeel %s: geen passende standaard-constructie (%s)" % (s.id, kind))
             continue
+        if is_kwaliteitsverklaring(s):
+            tmpl = _kwaliteitsverklaring_template(tmpl, s, kind)
         naam = _t(tmpl, "Naam", "")
         # GUID DETERMINISTISCH afleiden uit de constructienaam (uuid5), NIET random (uuid4) en NIET
         # op id(tmpl): resolve_constructies wordt 2x apart aangeroepen (constructie- én objecten-
@@ -254,6 +285,16 @@ def assert_importable(chosen, cb):
     for c, _guid in chosen:
         for f in GATE_FIELDS:
             v = _t(c, f)
+            # Invoer=0 is rechtstreeks bewezen door de aangeleverde Vabi-monitorreferentie. De
+            # standaardbibliotheek waarmee Codebook is opgebouwd bevat alleen forfaitair Invoer=6.
+            if f == "Invoer" and v == "0" and _t(c, "KwaliteitsverklaringInvoermethode") == "1":
+                continue
+            if (f == "ConstructieType" and v in ("5", "6")
+                    and _t(c, "KwaliteitsverklaringInvoermethode") == "1"):
+                continue
+            if (f in ("IsolatieAanwezig", "Bouwjaar") and v == "-1"
+                    and _t(c, "KwaliteitsverklaringInvoermethode") == "1"):
+                continue
             if v is not None and not cb.is_valid(f, v):
                 problems.append("%s=%r (constructie %r)" % (f, v, _t(c, "Naam")))
     if problems:

@@ -183,6 +183,26 @@ def apply_attach_children(form, specs):
     return done
 
 
+def apply_add_options(form, specs):
+    """Voeg opties toe aan bestaande list-vragen, idempotent en zonder andere opties te wijzigen."""
+    want = {s["name"].strip().lower(): s.get("options", []) for s in (specs or [])}
+    done = []
+    def rec(nodes):
+        for n in nodes or []:
+            if isinstance(n, dict):
+                nm = n.get("name", "").strip().lower()
+                opts = (n.get("fields") or {}).get("options")
+                if nm in want and isinstance(opts, list):
+                    have = {str(o).strip().casefold() for o in opts}
+                    for option in want[nm]:
+                        if str(option).strip().casefold() not in have:
+                            opts.append(option); have.add(str(option).strip().casefold())
+                            done.append("%s: %s" % (n.get("name"), option))
+                rec(n.get("children"))
+    rec(_children(form))
+    return done
+
+
 def apply_optional(form, names):
     """Zet required=False op vragen met een naam uit `names` (spiegelbeeld van apply_required).
     Zo hoeft de adviseur die velden niet meer in te vullen — de tool defaultt ze (bv. raam: alleen
@@ -288,10 +308,13 @@ def merge_record(record, additions, verbose=True):
     added, req_done = [], []
     if form_add:
         _, added = apply_additions(form, form_add)
+        added += apply_add_options(form, form_add.get("add_options"))
+        added += apply_attach_children(form, form_add.get("attach_children"))
     # element-veldgroepen (custom-fields: Raam/paneel, Gevel per wand, ...): add_after_section + attach_children
     fg = next((f for f in additions.get("field_groups", []) if f.get("form_match", "").lower() in name.lower()), None)
     attach_done = []
     if fg:
+        added += apply_add_options(form, fg.get("add_options"))
         if fg.get("add_after_section"):
             _, _add2 = apply_additions(form, fg)
             added += _add2

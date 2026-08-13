@@ -93,6 +93,7 @@ class BouwdeelStandaard:
     bouwjaarklasse: str = ""
     spouw_aanwezig: Optional[bool] = None
     rc_bron: str = ""
+    bcrg_code: str = ""                           # alleen bij Ja — kwaliteitsverklaring; Vabi doet de lookup
     begrenzing: str = ""
     isolatie_zijde: str = ""                       # binnen- of buitenzijde (isolatieplan V4)
     riet_dikte_mm: Optional[float] = None          # rieten dak -> Rc-toeslag d/0,105 (NTA bijlage I)
@@ -107,7 +108,7 @@ class SchilDeel:
     gevel_naam: str = ""          # voorgevel | achtergevel | linkergevel | rechtergevel (uit de wandnaam;
                                   #   de oriëntatie wordt hieruit + orientatie_voorgevel afgeleid)
     oppervlakte_m2: float = 0.0
-    isolatie_aanwezig: str = "Onbekend"   # Ja | Nee | Onbekend (oud: Wel/Niet/Gedeeltelijk - beide ondersteund)
+    isolatie_aanwezig: str = "Onbekend"   # Ja | Nee | Onbekend | Ja — kwaliteitsverklaring
     rc_huidig: Optional[float] = None
     u_huidig: Optional[float] = None
     spouw_aanwezig: Optional[bool] = None
@@ -117,6 +118,7 @@ class SchilDeel:
     glastype: str = ""            # Enkel | Dubbel | HR | HR+ | HR++ | Triple | ...
     kozijnmateriaal: str = ""     # Hout | Kunststof | Metaal | MTO | Aluminium
     rc_bron: str = ""             # Opgemeten dikte | Dikte onbekend | Kwaliteitsverklaring | Forfaitair (bouwjaar/renovatiejaar)
+    bcrg_code: str = ""            # BCRG-code; alleen actief via expliciete isolatiekeuze kwaliteitsverklaring
     bouwjaarklasse: str = ""      # per-bouwdeel klasse voor het beslisschema (bv. "Van 1975 t/m 1982"); wint van project-bouwjaar
     hellingshoek: Optional[float] = None          # dak: graden (bepaalt het schuine dakoppervlak)
     oppervlak_handmatig: Optional[float] = None   # dak: handmatig gemeten m2 (override op de berekening)

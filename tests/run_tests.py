@@ -765,7 +765,8 @@ check("naam: zonder kompastoken -> leeg", _ou("Voorgevel") == "")
 _gv = "\n".join([
     "PLAN ATTRIBUTES", "Bouwjaar,1975 t/m 1982", "Woningtype,Vrijstaand",
     "Orientatie voorgevel,Z", "Total living area,120", "Exterior perimeter: m,40",
-    "Rc-bron gevel,Kwaliteitsverklaring",
+    "Gevel - isolatie aanwezig?,Ja — kwaliteitsverklaring", "Gevel - BCRG-code,20210229GK",
+    "Gevel - BCRG-isolatiedikte (mm),80",
     "Zonne-energie aanwezig?,Ja", "PV - paneeltype,Monokristallijn", "PV - aantal panelen,10", "PV - orientatie,Zuid",
     "PV-2 - paneeltype,Polykristallijn", "PV-2 - aantal panelen,6", "PV-2 - orientatie,Oost", "",
     "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing",
@@ -792,13 +793,16 @@ check("csv: 2e PV = polykristallijn/Oost",
 check("csv: gevels rc_bron = Kwaliteitsverklaring",
       bool([s for s in _gd.schil if s.type == "gevel"])
       and all(s.rc_bron == "Kwaliteitsverklaring" for s in _gd.schil if s.type == "gevel"))
-check("csv: kwaliteitsverklaring geflagd in notes", any("kwaliteitsverklaring" in n.lower() for n in _gnotes))
-# constructie-generator vlagt de kwaliteitsverklaring
+check("csv: BCRG-code+dikte blijven behouden",
+      all(s.bcrg_code == "20210229GK" and s.isolatiedikte_mm == 80
+          for s in _gd.schil if s.type == "gevel"))
+# constructie-generator schrijft de lookup-route zonder handmatige issue/fallback
 _kvdir = _tf.mkdtemp(); _kvpath = os.path.join(_kvdir, "c.xml")
 from vabi.constructie_generate import write as _cwrite2
 _, _kviss = _cwrite2(_gd, _kvpath)
-check("constr-gen: kwaliteitsverklaring -> issue voor adviseur",
-      any("kwaliteitsverklaring" in i.lower() for i in _kviss))
+_kvroot = _ETg.parse(_kvpath).getroot(); _kvcon = next(_kvroot.iter("Constructie"))
+check("constr-gen: kwaliteitsverklaring -> BCRG-lookuproute",
+      _kvcon.findtext("Invoer") == "0" and _kvcon.findtext("Code") == "20210229GK")
 
 print("\n32. MagicPlan form_push: merge + validatie (offline)")
 import magicplan.form_push as _fp
@@ -958,7 +962,8 @@ try:
                 "Gevelhoogte (m),5.4\n"
                 "Gevel - invoer,Beslisschema\nGevel - isolatie aanwezig?,Ja\nGevel - isolatiedikte onbekend?,Nee\n"
                 "Gevel - isolatiedikte (mm),80\nGevel - begrenzing,Buitenlucht\n"
-                "Vloer - invoer,Kwaliteitsverklaring\nVloer - begrenzing,Kruipruimte\n\n"
+                "Vloer - isolatie aanwezig?,Ja — kwaliteitsverklaring\nVloer - BCRG-code,20210229GK\n"
+                "Vloer - BCRG-isolatiedikte (mm),80\nVloer - begrenzing,Kruipruimte\n\n"
                 "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
                 "Ground Floor,40,2.50 m,Kruipruimte\n\n"
                 "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
@@ -970,7 +975,9 @@ try:
     check("boom: gevel rc_bron=Opgemeten dikte (80mm bekend)", _gev is not None and _gev.rc_bron == "Opgemeten dikte")
     check("boom: gevel isolatie=Ja + dikte 80mm",
           _gev is not None and _gev.isolatie_aanwezig == "Ja" and _gev.isolatiedikte_mm == 80.0)
-    check("boom: vloer rc_bron=Kwaliteitsverklaring (Invoer=KV)", _vlo is not None and _vlo.rc_bron == "Kwaliteitsverklaring")
+    check("boom: vloer expliciete kwaliteitsverklaring met code+dikte",
+          _vlo is not None and _vlo.rc_bron == "Kwaliteitsverklaring"
+          and _vlo.bcrg_code == "20210229GK" and _vlo.isolatiedikte_mm == 80)
 except Exception as _e:
     check("boom: parser draait zonder fout", False); print("     " + repr(_e)[:160])
 
@@ -3495,7 +3502,7 @@ try:
 except Exception as _e:
     check("KV/HR-glas/share: draait zonder fout", False); print("     " + repr(_e)[:220])
 
-print("X2. Kwaliteitsverklaring blokkeert iedere VABI-export vóór schrijven")
+print("X2. Expliciete kwaliteitsverklaring: incompleet blokkeert, compleet exporteert BCRG-route")
 try:
     import shutil as _shX2
     from vabi import generate_all as _gaX2
@@ -3505,8 +3512,10 @@ try:
     from vabi.preflight import VabiExportBlocked as _BlockedX2
     _kvX2 = build_sample()
     _kvX2.schil[0].rc_bron = "  kWaLiTeItSvErKlArInG  "
+    _kvX2.schil[0].isolatie_aanwezig = "Ja — kwaliteitsverklaring"
     _kvX2.schil[0].id = "gevel-kv-1"
     _kvX2.schil[1].rc_bron = "Kwaliteitsverklaring"
+    _kvX2.schil[1].isolatie_aanwezig = "Ja — kwaliteitsverklaring"
     _kvX2.schil[1].id = "vloer-kv-2"
     _tdX2 = tempfile.mkdtemp(prefix="nb_kv_gate_")
     _directX2 = []
@@ -3521,7 +3530,8 @@ try:
             _directX2.append(not os.path.exists(_pathX2)
                              and "gevel-kv-1" in str(_eX2)
                              and "vloer-kv-2" in str(_eX2)
-                             and "correct in Vabi" in str(_eX2))
+                             and "BCRG-code ontbreekt" in str(_eX2)
+                             and "isolatiedikte ontbreekt" in str(_eX2))
     check("KV: alle drie directe writers blokkeren met alle ids vóór schrijven", all(_directX2))
 
     _allX2 = os.path.join(_tdX2, "complete_set")
@@ -3543,6 +3553,32 @@ try:
         _allowedX2.append(all(os.path.isfile(_resX2[_kX2][0])
                               for _kX2 in ("constructies", "objecten", "installaties")))
     check("KV: onbekend, Dikte onbekend en leeg blijven exporteerbaar", all(_allowedX2))
+
+    # Compleet: code+dikte naar de minimale bewezen Vabi-route; geen forfaitaire Rc/U-fallback.
+    _compleetX2 = build_sample()
+    _compleetX2.schil = [_compleetX2.schil[0]]
+    _compleetX2.schil[0].id = "gevel-bcrg-compleet"
+    _compleetX2.schil[0].isolatie_aanwezig = "Ja — kwaliteitsverklaring"
+    _compleetX2.schil[0].rc_bron = "Kwaliteitsverklaring"
+    _compleetX2.schil[0].bcrg_code = "20210229GK"
+    _compleetX2.schil[0].isolatiedikte_mm = 80
+    _compleet_dirX2 = os.path.join(_tdX2, "compleet")
+    _res_compleetX2 = _gaX2.generate_all(_compleetX2, _compleet_dirX2)
+    import xml.etree.ElementTree as _ETX2
+    _rootX2 = _ETX2.parse(_res_compleetX2["constructies"][0]).getroot()
+    _conX2 = next(_rootX2.iter("Constructie"))
+    check("KV compleet: Invoer=0 en invoermethode=1",
+          _conX2.findtext("Invoer") == "0" and _conX2.findtext("KwaliteitsverklaringInvoermethode") == "1")
+    check("KV compleet: code+dikte behouden voor Vabi-lookup",
+          _conX2.findtext("Code") == "20210229GK"
+          and _conX2.findtext("KwaliteitsverklaringIsolatieDikte") == "080")
+    check("KV compleet: geen Rc/U of forfaitaire isolatiewaarde geëxporteerd",
+          _conX2.findtext("Rc") == "0.00" and _conX2.findtext("U") == "0.00"
+          and _conX2.findtext("IsolatieAanwezig") == "-1" and _conX2.findtext("Isolatiedikte") == "0")
+    _map_cX2 = _cgX2.resolve_constructies(_compleetX2)[1]
+    _map_oX2 = _ogX2.resolve_constructies(_compleetX2)[1]
+    check("KV compleet: constructie/object gebruiken dezelfde deterministische GUID",
+          _map_cX2["gevel-bcrg-compleet"]["guid"] == _map_oX2["gevel-bcrg-compleet"]["guid"])
 
     import dashboard.app as _WAX2
     _WAX2.app.config.update(TESTING=True, SECRET_KEY="test-kv-gate")

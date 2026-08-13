@@ -39,6 +39,9 @@ aanvoertemperatuur, koeling aanwezig?, tapwater toestel, PV aanwezig? + Meerdere
 `Gevelnaam` · `Gevel - oriëntatie (override)` · `Gevel - invoer (override)` ·
 `Gevel - foto kwaliteitsverklaring` · `Gevel - isolatie aanwezig?` · `Gevel - isolatiedikte onbekend?` ·
 `Gevel - bouwjaar` · `Gevel - isolatiedikte (mm)` · `Gevel - spouw aanwezig (indien <40mm)?` ·
+Nieuwe code-definitie: `Isolatie aanwezig?` krijgt `Ja — kwaliteitsverklaring`; daarbij verschijnen
+`BCRG-code` en `BCRG-isolatiedikte (mm)`. Deze wijziging staat in `magicplan/forms/additions.json` en
+moet nog via de ondersteunde MagicPlan-publicatieroute live worden gepubliceerd.
 `Gevel - spouw aanwezig?` · `Gevel - bouwjaar (onbekend)` · `Gevel - thermische massa` ·
 `Gevel - begrenzing` · `Gevel - rekenzone` · `Deels binnen/deels buiten? (narekenen)` ·
 `Grenst aan buiten (m)`.

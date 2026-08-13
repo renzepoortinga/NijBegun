@@ -405,8 +405,8 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <ul class=check>{% for a in prio %}<li><span class="mk no2">→</span>{{a.tekst}}</li>{% endfor %}</ul>{% endif %}
 {% if ctrl %}<details{% if not prio %} open{% endif %}><summary><b>🔍 Ter controle ({{ctrl|length}})</b> — nalopen, meestal akkoord</summary>
 <ul class=check>{% for a in ctrl %}<li><span class="mk">✓</span>{{a.tekst}}</li>{% endfor %}</ul></details>{% endif %}
-<p class="muted small">Automatisch verzameld bij je MagicPlan-upload: narekenen-wanden, kwaliteitsverklaringen
-(zet in Vabi Invoer=Kwaliteitsverklaring + vul zelf de BCRG-code), multi-zone en ontbrekende gegevens.
+<p class="muted small">Automatisch verzameld bij je MagicPlan-upload: narekenen-wanden, incomplete
+kwaliteitsverklaringen (BCRG-code én isolatiedikte zijn verplicht), multi-zone en ontbrekende gegevens.
 Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij de VABI-export.</p></div>{% endif %}
 <div class=card><h2>② Algemeen</h2><form method=post action="{{url_for('opname_algemeen', tag=tag)}}"><div class=grid2>
 <div><label>BAG nummeraanduiding-ID</label><input name=bag_vboid value="{{d.identificatie.bag_vboid}}"></div>
@@ -443,8 +443,9 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div><label>U-waarde (huidig)</label><input name=u value="{{s.u_huidig or ''}}"></div>
 {% else %}
 <div><label>Rc-waarde (huidig, m²K/W)</label><input name=rc value="{{s.rc_huidig or ''}}"></div>
-<div><label>Isolatie aanwezig</label><select name=isolatie>{% for x in ('Ja','Nee','Onbekend') %}<option {{'selected' if x==s.isolatie_aanwezig}}>{{x}}</option>{% endfor %}</select></div>
+<div><label>Isolatie aanwezig</label><select name=isolatie>{% for x in ('Ja','Nee','Onbekend','Ja — kwaliteitsverklaring') %}<option {{'selected' if x==s.isolatie_aanwezig}}>{{x}}</option>{% endfor %}</select></div>
 <div><label>Isolatiedikte (mm)</label><input name=dikte value="{{s.isolatiedikte_mm or ''}}"></div>
+<div><label>BCRG-code (bij kwaliteitsverklaring)</label><input name=bcrg_code value="{{s.bcrg_code or ''}}" placeholder="bv. 20210229GK"></div>
 {% endif %}
 {% if s.type == 'dak' %}<div><label>Hellingshoek (°)</label><input name=helling value="{{s.hellingshoek or ''}}"></div>{% endif %}
 <div><label>Opmerkingen</label><input name=opmerkingen value="{{s.opmerkingen}}"></div>
@@ -1395,6 +1396,15 @@ def opname_el(tag, i):
         s.rc_huidig = _f2(f.get("rc"))
         s.isolatie_aanwezig = f.get("isolatie", s.isolatie_aanwezig)
         s.isolatiedikte_mm = _f2(f.get("dikte"))
+        s.bcrg_code = f.get("bcrg_code", "").strip()
+        if "kwaliteitsverklaring" in s.isolatie_aanwezig.lower():
+            s.rc_bron = "Kwaliteitsverklaring"
+        elif s.isolatiedikte_mm and s.isolatie_aanwezig == "Ja":
+            s.rc_bron = "Opgemeten dikte"
+        elif s.isolatie_aanwezig == "Onbekend":
+            s.rc_bron = "Dikte onbekend"
+        elif s.rc_bron == "Kwaliteitsverklaring":
+            s.rc_bron = ""
     if (s.type or "").lower() == "dak":
         s.hellingshoek = _f2(f.get("helling"))
     _dos_save(tag, st, dos)
@@ -1489,6 +1499,7 @@ def opname_dak_plat(tag):
                                bouwjaarklasse=((_ds.bouwjaarklasse if _ds else "") or ""),
                                spouw_aanwezig=(_ds.spouw_aanwezig if _ds else None),
                                rc_bron=((_ds.rc_bron if _ds else "") or ""),
+                               bcrg_code=((_ds.bcrg_code if _ds else "") or ""),
                                rekenzone=int(request.form.get("rekenzone") or 1),
                                opmerkingen="Dak %d (plat) — webapp-invoer" % nr))
     _dos_save(tag, st, dos)
@@ -1526,6 +1537,7 @@ def opname_dak_driehoek(tag):
     kop_buiten = {zij[0]: f.get("kopgevel1_buiten") == "on", zij[1]: f.get("kopgevel2_buiten") == "on"}
     nr = _volgend_dak_nr(dos)
     rz = int(f.get("rekenzone") or 1)
+    _ds = getattr(dos.opname, "dak_standaard", None)
     n_dak = n_kop = 0
     for v in vlakken:
         if v.get("kind") == "gevel":     # kopgevel-driehoek -> alleen als die gevel aan buiten grenst
@@ -1540,7 +1552,10 @@ def opname_dak_driehoek(tag):
             dos.schil.append(SchilDeel(id="dak%d-schuin-%s" % (nr, (v["orientatie"] or "x").lower()),
                                        type="dak", subtype="schuin (zadeldak)", begrenzing="Buitenlucht",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
-                                       isolatie_aanwezig="Onbekend", rekenzone=rz,
+                                       isolatie_aanwezig=((_ds.isolatie_aanwezig if _ds else "") or "Onbekend"),
+                                       isolatiedikte_mm=(_ds.isolatiedikte_mm if _ds else None),
+                                       rc_bron=((_ds.rc_bron if _ds else "") or ""),
+                                       bcrg_code=((_ds.bcrg_code if _ds else "") or ""), rekenzone=rz,
                                        opmerkingen="Dak %d — hellend vlak %s (c=%.2f x breedte=%.2f, %.0f°)"
                                        % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1)))
             n_dak += 1
@@ -1561,6 +1576,7 @@ def opname_dak_negen(tag):
     f = request.form
     nr = _volgend_dak_nr(dos)
     rz = int(f.get("rekenzone") or 1)
+    _ds = getattr(dos.opname, "dak_standaard", None)
     helling = _f2(f.get("helling9"))
     n_add = 0
     for o in DAK_COMPAS + ["Horizontaal"]:
@@ -1570,7 +1586,10 @@ def opname_dak_negen(tag):
         dos.schil.append(SchilDeel(id="dak%d-%s" % (nr, o.lower()[:4]), type="dak", subtype="vlak (zelf ingevoerd)",
                                    begrenzing="Buitenlucht", orientatie=("" if o == "Horizontaal" else o),
                                    oppervlakte_m2=m2, hellingshoek=(0 if o == "Horizontaal" else helling),
-                                   isolatie_aanwezig="Onbekend", rekenzone=rz,
+                                   isolatie_aanwezig=((_ds.isolatie_aanwezig if _ds else "") or "Onbekend"),
+                                   isolatiedikte_mm=(_ds.isolatiedikte_mm if _ds else None),
+                                   rc_bron=((_ds.rc_bron if _ds else "") or ""),
+                                   bcrg_code=((_ds.bcrg_code if _ds else "") or ""), rekenzone=rz,
                                    opmerkingen="Dak %d — m² zelf ingevoerd (%s)" % (nr, o)))
         n_add += 1
     if not n_add:

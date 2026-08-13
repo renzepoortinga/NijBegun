@@ -182,7 +182,10 @@ def _map_geometrie_en_schil(plan, dos, p):
         "begrenzing": _g(p, "gevel_begrenzing", default="Buitenlucht") or "Buitenlucht",
         "spouw_aanwezig": _g(p, "spouw_aanwezig", bool),
         "isolatie_aanwezig": _g(p, "isolatie_aanwezig", default="Onbekend") or "Onbekend",
-        "rc_bron": _g(p, "rc_bron", default="") or "",
+        "rc_bron": ("Kwaliteitsverklaring" if "kwaliteitsverklaring" in
+                    (_g(p, "isolatie_aanwezig", default="") or "").lower()
+                    else (_g(p, "rc_bron", default="") or "")),
+        "bcrg_code": _g(p, "gevel_bcrg_code", default="") or _g(p, "bcrg_code", default="") or "",
         "isolatie_mm": _g(p, "isolatie_mm", float),
         "rc_huidig": _g(p, "rc_huidig", float),
         "afwijking": _g(p, "gevel_afwijking", default="") or "",
@@ -223,6 +226,7 @@ def _map_wand(w, idbase, gevel_tags):
             id="gevel-%s" % idbase, type="gevel", subtype=gevel_tags["subtype"],
             begrenzing=gevel_tags["begrenzing"], orientatie=orient, oppervlakte_m2=area,
             isolatie_aanwezig=gevel_tags["isolatie_aanwezig"], rc_bron=gevel_tags["rc_bron"],
+            bcrg_code=gevel_tags["bcrg_code"],
             spouw_aanwezig=gevel_tags["spouw_aanwezig"], isolatiedikte_mm=gevel_tags["isolatie_mm"],
             rc_huidig=gevel_tags["rc_huidig"], opmerkingen=gevel_tags["afwijking"]))
     for oi, o in enumerate(_first(w, EXPECTED_CONTAINERS["objects"]) or [], 1):
@@ -245,13 +249,16 @@ def _map_wand(w, idbase, gevel_tags):
 
 
 def _maak_vloer(p, footprint):
+    _iso = _g(p, "vloer_iso", default="Onbekend") or "Onbekend"
     return SchilDeel(
         id="vloer-bg", type="vloer",
         subtype=_g(p, "vloerconstructie", default="") or "",
         begrenzing=_g(p, "vloer_begrenzing", default="") or "",
         orientatie="horizontaal", oppervlakte_m2=round(footprint, 2),
-        isolatie_aanwezig=_g(p, "vloer_iso", default="Onbekend") or "Onbekend",
-        rc_bron=_g(p, "vloer_rc_bron", default="") or "",
+        isolatie_aanwezig=_iso,
+        rc_bron=("Kwaliteitsverklaring" if "kwaliteitsverklaring" in _iso.lower()
+                 else (_g(p, "vloer_rc_bron", default="") or "")),
+        bcrg_code=_g(p, "vloer_bcrg_code", default="") or "",
         isolatiedikte_mm=_g(p, "vloer_isolatie_mm", float),
         rc_huidig=_g(p, "vloer_rc", float),
         opmerkingen=_g(p, "vlak_afwijking", default="") or "")
@@ -267,12 +274,15 @@ def _maak_dak(p, footprint):
         opp = footprint / max(math.cos(math.radians(helling)), 0.1)
     else:
         opp = footprint
+    _iso = _g(p, "dak_iso", default="Onbekend") or "Onbekend"
     return SchilDeel(
         id="dak", type="dak",
         subtype=_g(p, "daktype", default="") or "",
         begrenzing="Buitenlucht", orientatie="horizontaal", oppervlakte_m2=round(opp, 2),
-        isolatie_aanwezig=_g(p, "dak_iso", default="Onbekend") or "Onbekend",
-        rc_bron=_g(p, "dak_rc_bron", default="") or "",
+        isolatie_aanwezig=_iso,
+        rc_bron=("Kwaliteitsverklaring" if "kwaliteitsverklaring" in _iso.lower()
+                 else (_g(p, "dak_rc_bron", default="") or "")),
+        bcrg_code=_g(p, "dak_bcrg_code", default="") or "",
         isolatiedikte_mm=_g(p, "dak_isolatie_mm", float),
         rc_huidig=_g(p, "dak_rc", float),
         hellingshoek=helling, oppervlak_handmatig=handmatig)
