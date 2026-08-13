@@ -123,6 +123,33 @@ toevoegen zonder de architectuur te veranderen (MagicPlan blijft de bron voor ge
   een toekomstige commit maakt de huidige reviewdiff niet schoon. Details
   gerapporteerd aan bouwer/gebruiker.
 
+- 2026-08-14 (Codex, onafhankelijke reviewronde 3): VERDICT FAIL. Bevestigd
+  opgelost: `NaN`/`Infinity` worden geweigerd, SVG-typografie gebruikt nu
+  gedeelde tokens, XML-escaping en moederdakfilters blijven correct. De
+  feature staat in commit `58892ba`; de niet-taakgebonden proceswijzigingen
+  zijn niet in die commit opgenomen, al blijven ze zichtbaar in de totale
+  werkboomdiff. `python tests/run_tests.py`: 732/732 groen; `verify.sh` PASS
+  met de bekende `python3`-advisory. Nog blokkerend: een dakkapelgat groter
+  dan het moederdak wordt ondanks een luide flag wel opgeslagen en zet het
+  canonieke moederdak op 0 m²; een gemanipuleerde `rekenzone` gaat nog door
+  een onbeschermde `int(...)` en kan een HTTP 500 veroorzaken. Details
+  gerapporteerd aan bouwer/gebruiker.
+- 2026-08-14 (Claude/Sonnet 5): laatste 2 blokkerende punten uit reviewronde 3
+  opgelost. (1) Dakkapelgat > moederdak: niet meer flaggen-en-toch-opslaan,
+  maar HARD GEWEIGERD — de check verhuisd naar vóór het aanmaken van de 4
+  SchilDelen; past de dakkapel niet, dan wordt er niets toegevoegd en niets
+  aan het moederdak veranderd (consistent met de andere validaties in deze
+  route: fysiek onmogelijke invoer weigeren, niet zwijgend/deels doorvoeren).
+  (2) `rekenzone = int(f.get(...))` had geen bescherming tegen een niet-
+  numerieke waarde (crafted POST buiten de dropdown om) → `ValueError` →
+  HTTP 500; nu in try/except met terugval op `moeder.rekenzone or 1`, zelfde
+  patroon als de bestaande `moeder_i`-parsing. Tests bijgewerkt (het
+  "LUIDE FLAG"-scenario bestaat niet meer, vervangen door "geweigerd, geen
+  nieuwe vlakken" + "moederdak ongewijzigd") en een nieuwe test voor de
+  rekenzone-crash. Suite: 733/733 groen. `verify.sh` PASS. Gecommit
+  bovenop `58892ba` (alleen taak-004-bestanden). Derde Codex-reviewronde
+  op deze fix volgt.
+
 ## Notes
 - Onderzoek Inbrix (`docs/dak-invoer-marktonderzoek.md`, 11-7) had alleen marketingtekst;
   deze sessie heeft de daadwerkelijke UI bekeken via hun publiek gehoste

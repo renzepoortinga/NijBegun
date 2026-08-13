@@ -532,7 +532,7 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 </div></details>
 
 <details class=acc><summary><b>5 · Dakkapel toevoegen{% if n_dakkapel %} <span class="pill gray">{{n_dakkapel}} nu</span>{% endif %}</b></summary><div class=acc-body>
-{% if dakkapel_moeder_opts %}<p class="muted small">ISSO 82.1 §8.2.1: een dakkapel voegt een <b>voorvlak</b> (gevel) + <b>2 wangen</b> (gevel) + een <b>plat dakje</b> toe, en maakt een <b>gat</b> in het schuine moederdakvlak — dat gat wordt automatisch van het gekozen dakvlak afgetrokken. Alleen <b>hellende</b> dakvlakken zijn kiesbaar (een dakkapel breekt door een schuin vlak heen; een plat dak of het dakje van een andere dakkapel niet).</p>
+{% if dakkapel_moeder_opts %}<p class="muted small">ISSO 82.1 §8.2.1: een dakkapel voegt een <b>voorvlak</b> (gevel) + <b>2 wangen</b> (gevel) + een <b>plat dakje</b> toe, en maakt een <b>gat</b> in het schuine moederdakvlak — dat gat wordt automatisch van het gekozen dakvlak afgetrokken (past het niet, dan wordt de dakkapel geweigerd — controleer dan het moederdak/de maten). Alleen <b>hellende</b> dakvlakken zijn kiesbaar (een dakkapel breekt door een schuin vlak heen; een plat dak of het dakje van een andere dakkapel niet).</p>
 <div class=dakwire><svg id="kapelSvg" viewBox="0 0 300 170" width="300" height="170">
 <path d="M20 130 L90 60 L210 60 L280 130 Z" fill="var(--tint)" stroke="var(--sub)" stroke-width="1.5"/>
 <path id="kapelGat" d="M110 130 L110 90 L190 90 L190 130 Z" fill="var(--card)" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="3,3"/>
@@ -1752,9 +1752,19 @@ def opname_dakkapel(tag):
         flash("Vul een geldige, positieve breedte, hoogte en diepte van de dakkapel in.")
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     vlakken = dakkapel_vlakken(b, h, d, hellingshoek_dakvlak_graden=moeder.hellingshoek)
+    gat = vlakken["gat_schuin_dak_m2"]
+    moeder_m2_voor = moeder.oppervlakte_m2 or 0
+    if gat and gat > moeder_m2_voor:
+        flash("Deze dakkapel past niet: het gat (%.2f m²) is groter dan het gekozen moederdak %s "
+              "(%.2f m²). Controleer het moederdak en de maten (breedte/hoogte/diepte)."
+              % (gat, moeder.id, moeder_m2_voor))
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     nr = sum(1 for s in dos.schil if "dakkapel" in (s.id or "").lower() and "voorvlak" in (s.id or "").lower()) + 1
     wangen_geisoleerd = bool(f.get("wangen_geisoleerd"))
-    rekenzone = int(f.get("rekenzone") or moeder.rekenzone or 1)
+    try:
+        rekenzone = int(f.get("rekenzone") or moeder.rekenzone or 1)
+    except ValueError:
+        rekenzone = moeder.rekenzone or 1
     orient = moeder.orientatie or ""
     zij_l, zij_r = _zij8(orient) if orient else ("", "")
     voorvlak = SchilDeel(id="dakkapel%d-voorvlak" % nr, type="gevel", subtype="Dakkapel voorvlak",
@@ -1772,19 +1782,10 @@ def opname_dakkapel(tag):
                       orientatie="", begrenzing="Buitenlucht", oppervlakte_m2=vlakken["dak_m2"],
                       hellingshoek=0, rekenzone=rekenzone, opmerkingen="Dakkapel %d — plat dakje" % nr)
     dos.schil += [voorvlak, wang_l, wang_r, dakje]
-    gat = vlakken["gat_schuin_dak_m2"]
-    gat_te_groot = ""
     if gat:
-        moeder_m2_voor = moeder.oppervlakte_m2 or 0
-        if gat > moeder_m2_voor:
-            gat_te_groot = ("LUIDE FLAG: het dakkapel-gat (%.2f m²) is GROTER dan het moederdakvlak "
-                            "%s (%.2f m²) — controleer het gekozen moederdak en de maten, het dakvlak "
-                            "is nu op 0 m² gezet in plaats van negatief." % (gat, moeder.id, moeder_m2_voor))
-            moeder.opmerkingen = ((moeder.opmerkingen + " | ") if moeder.opmerkingen else "") + gat_te_groot
-        moeder.oppervlakte_m2 = round(max(0.0, moeder_m2_voor - gat), 2)
+        moeder.oppervlakte_m2 = round(moeder_m2_voor - gat, 2)
     _dos_save(tag, st, dos)
-    flash("Dakkapel %d toegevoegd: %s. Nog een dakkapel? Herhaal hieronder." % (nr, vlakken["flag"])
-          + (" " + gat_te_groot if gat_te_groot else ""))
+    flash("Dakkapel %d toegevoegd: %s. Nog een dakkapel? Herhaal hieronder." % (nr, vlakken["flag"]))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 

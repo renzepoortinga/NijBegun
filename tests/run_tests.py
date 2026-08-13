@@ -968,13 +968,18 @@ try:
                     if s.id == "dak1-schuin-n")  # 24,75 m2, ongebruikt in eerdere posts
     _dakkapel_dos.schil[_klein_i].oppervlakte_m2 = 1.0  # kunstmatig klein moederdak
     _WA.save_json(_dakkapel_dos, os.path.join(_WA._pdir(_ptag), _WA._load_state(_ptag)["dossier_file"]))
+    _voor_n3 = len(_dakkapel_dos.schil)
     _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_klein_i), "breedte": "5",
              "hoogte": "3", "diepte": "3", "rekenzone": "1"})
     _na_groot_dos = _WA_dos(_ptag)
-    check("webapp: dakkapelgat > moederdak -> moederdak op 0 (niet negatief)",
-          _na_groot_dos.schil[_klein_i].oppervlakte_m2 == 0.0)
-    check("webapp: dakkapelgat > moederdak -> LUIDE FLAG in de opmerking",
-          "LUIDE FLAG" in (_na_groot_dos.schil[_klein_i].opmerkingen or ""))
+    check("webapp: dakkapelgat > moederdak -> geweigerd, geen nieuwe vlakken",
+          len(_na_groot_dos.schil) == _voor_n3)
+    check("webapp: dakkapelgat > moederdak -> moederdak ONgewijzigd (geen aftrek zonder toevoeging)",
+          _na_groot_dos.schil[_klein_i].oppervlakte_m2 == 1.0)
+    # ongeldige (niet-numerieke) rekenzone crasht niet (HTTP 500), valt terug op moederdak.rekenzone
+    _rzr = _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "2",
+                     "hoogte": "1.5", "diepte": "1.0", "rekenzone": "geen-getal"})
+    check("webapp: dakkapel met ongeldige rekenzone -> geen 500", _rzr.status_code in (302, 303))
     import shutil as _sh35
     _sh35.rmtree(_WA._pdir(_ptag), ignore_errors=True)
     _bd = _WA._beoordeling("x", {"foto_voorkant": "", "foto_huisnummer": "", "na": {}}, build_sample())
