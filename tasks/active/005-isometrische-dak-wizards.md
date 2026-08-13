@@ -96,6 +96,14 @@ oorspronkelijke plan-bestand — dat leeft buiten de repo).
   dezelfde suite is apart met `python` volledig groen). JS-syntax en
   `git diff --check` groen. In-app browser was niet verbonden, dus geen
   screenshot-QA; responsive/dark/reduced-motion contracten statisch getoetst.
+- 2026-08-14 (Codex, Builder, reviewfix): review-FAIL hersteld: het
+  asymmetrische zadeldak gebruikt nu in route én preview één gedeelde
+  nokhoogte, verschoven nok en een eigen horizontale run/oppervlak per vlak;
+  `diepte_m` bewaart voor hellende vlakken die run. Regressietest met 30°/60°
+  toegevoegd. De dakkapelpreview leest de hellingshoek van het gekozen
+  moederdak en legt zijn onderranden werkelijk op dat hellende vlak. 741/741
+  tests groen; `verify.sh`, JS-syntax en `git diff --check` PASS (zelfde
+  bekende taak-002 `python3`-advisory in Git Bash).
 
 ## Notes
 - Referentie voor de gewenste stijl: taak 004's Notes verwijzen naar

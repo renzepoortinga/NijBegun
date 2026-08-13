@@ -933,7 +933,23 @@ try:
     _voor_dos = _WA_dos(_ptag)
     _voor_n, _moeder_m2 = len(_voor_dos.schil), _voor_dos.schil[0].oppervlakte_m2
     check("webapp: zadeldak bewaart ruwe renderingmaten",
-          all(s.breedte_m == 5.0 and s.diepte_m == 7.0 for s in _voor_dos.schil if s.type == "dak"))
+          all(s.breedte_m == 5.0 and abs(s.diepte_m - 3.5) < 0.001
+              for s in _voor_dos.schil if s.type == "dak"))
+    import math as _math35
+    _wc.post("/project/%s/opname/dak/driehoek" % _ptag, data={"orient_hellend": "O", "helling1": "30",
+              "helling2": "60", "lange_zijde": "8", "breedte": "6", "rekenzone": "1"})
+    _asym_dos = _WA_dos(_ptag)
+    _asym = [s for s in _asym_dos.schil if (s.id or "").startswith("dak2-schuin-")]
+    _asym_o = next(s for s in _asym if s.orientatie == "O")
+    _asym_w = next(s for s in _asym if s.orientatie == "W")
+    check("webapp: asymmetrisch zadeldak deelt één nokhoogte en volledige basis",
+          abs((_asym_o.diepte_m + _asym_w.diepte_m) - 8.0) < 0.001
+          and abs(_asym_o.diepte_m * _math35.tan(_math35.radians(30))
+                  - _asym_w.diepte_m * _math35.tan(_math35.radians(60))) < 0.001)
+    check("webapp: asymmetrisch zadeldak m2 volgt per-vlak run en helling",
+          abs(_asym_o.oppervlakte_m2 - round(6 * _asym_o.diepte_m / _math35.cos(_math35.radians(30)), 2)) < 0.001
+          and abs(_asym_w.oppervlakte_m2 - round(6 * _asym_w.diepte_m / _math35.cos(_math35.radians(60)), 2)) < 0.001)
+    _voor_n = len(_asym_dos.schil)
     _rk = _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": "0", "breedte": "2.5",
                     "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1", "wangen_geisoleerd": "on"})
     check("webapp: dakkapel-route redirect", _rk.status_code in (302, 303))

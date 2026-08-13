@@ -522,7 +522,7 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 {% if dakkapel_moeder_opts %}<p class="muted small">ISSO 82.1 §8.2.1: een dakkapel voegt een <b>voorvlak</b> (gevel) + <b>2 wangen</b> (gevel) + een <b>plat dakje</b> toe, en maakt een <b>gat</b> in het schuine moederdakvlak — dat gat wordt automatisch van het gekozen dakvlak afgetrokken (past het niet, dan wordt de dakkapel geweigerd — controleer dan het moederdak/de maten). Alleen <b>hellende</b> dakvlakken zijn kiesbaar (een dakkapel breekt door een schuin vlak heen; een plat dak of het dakje van een andere dakkapel niet).</p>
 <div class=dakwire><svg id="kapelSvg" class=isometrie-canvas viewBox="0 0 320 220" role=img aria-label="Isometrische voorbeeldtekening van de dakkapel"></svg></div>
 <form method=post action="{{url_for('opname_dakkapel', tag=tag)}}" oninput="kapelPrev(this)"><div class=grid2>
-<div><label>In dakvlak (moederdak)</label><select name=moederdak_i>{% for lbl, di in dakkapel_moeder_opts %}<option value="{{di}}">{{lbl}}</option>{% endfor %}</select></div>
+<div><label>In dakvlak (moederdak)</label><select name=moederdak_i>{% for lbl, di in dakkapel_moeder_opts %}<option value="{{di}}" data-helling="{{d.schil[di].hellingshoek or 0}}">{{lbl}}</option>{% endfor %}</select></div>
 <div><label>Breedte voorvlak (m)</label><input name=breedte placeholder="bv. 2.5"></div>
 <div><label>Hoogte voorvlak (m)</label><input name=hoogte placeholder="bv. 1.5"></div>
 <div><label>Diepte (m)</label><input name=diepte placeholder="bv. 1.0"></div>
@@ -1575,17 +1575,26 @@ def opname_dak_driehoek(tag):
     breedte = _f2(f.get("breedte")) or 0.0
     h1 = _f2(f.get("helling1")) or 0.0
     h2 = _f2(f.get("helling2")) or h1
-    if not (o in DAK_COMPAS and c > 0 and breedte > 0 and 0 < h1 < 90):
-        flash("Zadeldak: kies een oriëntatie, en vul lange zijde, breedte en een geldige hellingshoek (0-89°) in.")
+    if not (o in DAK_COMPAS and all(math.isfinite(x) for x in (c, breedte, h1, h2))
+            and c > 0 and breedte > 0 and 0 < h1 < 90 and 0 < h2 < 90):
+        flash("Zadeldak: kies een oriëntatie, en vul lange zijde, breedte en geldige hellingshoeken (0-89°) in.")
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     footprint = c * breedte
     zij = _zij8(o)
     vlakken = dak_vlakken_zadeldak(footprint, c, h1, orient_schuin=(o, _opp8(o)), orient_kopgevel=zij)
-    if h2 != h1:   # asymmetrisch: tegenoverliggend vlak eigen helling op de halve footprint
-        for v in vlakken:
-            if v.get("kind") == "dak" and v.get("orientatie") == _opp8(o):
-                v["m2"] = round((footprint / 2.0) / max(0.087, math.cos(math.radians(h2))), 2)
-                v["hellingshoek"] = h2
+    # Eén nok voor beide vlakken. Bij ongelijke hoeken verschuift die nok: de twee horizontale
+    # runs tellen op tot c en leveren dezelfde nokhoogte. core.geometry blijft bewust symmetrisch.
+    nokhoogte = (c / (1 / math.tan(math.radians(h1)) + 1 / math.tan(math.radians(h2))))
+    runs = {o: nokhoogte / math.tan(math.radians(h1)),
+            _opp8(o): nokhoogte / math.tan(math.radians(h2))}
+    hoeken = {o: h1, _opp8(o): h2}
+    for v in vlakken:
+        if v.get("kind") == "dak":
+            hoek = hoeken[v["orientatie"]]
+            v["m2"] = round(breedte * runs[v["orientatie"]] / math.cos(math.radians(hoek)), 2)
+            v["hellingshoek"] = hoek
+        elif h2 != h1:
+            v["m2"] = round(0.5 * c * nokhoogte, 2)
     kop_buiten = {zij[0]: f.get("kopgevel1_buiten") == "on", zij[1]: f.get("kopgevel2_buiten") == "on"}
     nr = _volgend_dak_nr(dos)
     rz = int(f.get("rekenzone") or 1)
@@ -1603,7 +1612,7 @@ def opname_dak_driehoek(tag):
             dos.schil.append(SchilDeel(id="dak%d-schuin-%s" % (nr, (v["orientatie"] or "x").lower()),
                                        type="dak", subtype="schuin (zadeldak)", begrenzing="Buitenlucht",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
-                                       breedte_m=breedte, diepte_m=c,
+                                       breedte_m=breedte, diepte_m=runs[v["orientatie"]],
                                        isolatie_aanwezig="Onbekend", rekenzone=rz,
                                        opmerkingen="Dak %d — hellend vlak %s (c=%.2f x breedte=%.2f, %.0f°)"
                                        % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1)))

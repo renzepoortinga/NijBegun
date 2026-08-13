@@ -102,15 +102,22 @@
     var width = n(form.breedte.value), height = n(form.hoogte.value), depth = n(form.diepte.value);
     var svg = document.getElementById("kapelSvg");
     if (!(width > 0 && height > 0 && depth > 0)) return empty(svg, "Vul breedte, hoogte en diepte in");
-    var roofWidth = width * 2.2, roofDepth = depth * 3.2, rise = roofDepth * 0.45;
+    var selected = form.moederdak_i && form.moederdak_i.options[form.moederdak_i.selectedIndex];
+    var angle = selected ? n(selected.getAttribute("data-helling")) : 45;
+    if (!(angle > 0 && angle < 90)) angle = 45;
+    var roofWidth = width * 2.2, roofDepth = depth * 3.2, tangent = Math.tan(angle * Math.PI / 180);
+    var rise = roofDepth * tangent;
     var roof = slope([{x: 0, y: 0, z: 0}, {x: roofWidth, y: 0, z: 0},
       {x: roofWidth, y: rise, z: roofDepth}, {x: 0, y: rise, z: roofDepth}], "moederdak");
-    var box = block(width, depth, height).map(function (face) {
-      face.setAttribute("data-face", face.getAttribute("data-face") + "-actief");
-      face._points3d.forEach(function (p) { p.x += (roofWidth - width) / 2; p.y += rise * 0.45; p.z += roofDepth * 0.38; });
-      return face;
-    });
-    draw(svg, [roof].concat(box), width.toFixed(2) + " × " + depth.toFixed(2) + " × " + height.toFixed(2) + " m");
+    var x0 = (roofWidth - width) / 2, z0 = roofDepth * 0.3, z1 = z0 + depth;
+    var floorFront = z0 * tangent, floorBack = z1 * tangent, top = floorFront + height;
+    var lf = {x: x0, y: floorFront, z: z0}, rf = {x: x0 + width, y: floorFront, z: z0};
+    var lb = {x: x0, y: floorBack, z: z1}, rb = {x: x0 + width, y: floorBack, z: z1};
+    var lft = {x: x0, y: top, z: z0}, rft = {x: x0 + width, y: top, z: z0};
+    var lbt = {x: x0, y: top, z: z1}, rbt = {x: x0 + width, y: top, z: z1};
+    var dormer = [slope([lf, rf, rft, lft], "voor-actief"),
+      slope([rf, rb, rbt, rft], "wang-actief"), slope([lft, rft, rbt, lbt], "boven-actief")];
+    draw(svg, [roof].concat(dormer), width.toFixed(2) + " × " + depth.toFixed(2) + " × " + height.toFixed(2) + " m · moederdak " + angle.toFixed(0) + "°");
   };
 
   window.Isometrie = {project: project, polygon: polygon, block: block, slope: slope};
