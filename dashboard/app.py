@@ -37,6 +37,7 @@ from engine.advies_text import genereer_advies                                  
 from engine.standaard import verliesoppervlak, standaard_eis                          # noqa: E402
 from ventilatie.ventilatie import bereken as vent_bereken, rapport as vent_rapport    # noqa: E402
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
+from dashboard.gebouw_svg import gebouw_svg                                            # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
 from foto import checklist as foto_checklist                                          # noqa: E402
 from validator import validate as validator_mod                                       # noqa: E402
@@ -423,6 +424,7 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div class=acc-body>{{bj_html|safe}}<p class="muted small">Bron: bouwjaarklasse-opnamegids (algemene NL-bouwpraktijk) — de opname blijft leidend.</p></div></details>{% endif %}
 
 <div class=card><h2>Gebouw <span class="pill gray">{{elementen|length}} vlakken</span></h2>
+{% if gebouw_svg %}<div class=svgbox>{{gebouw_svg|safe}}</div>{% endif %}
 {% for rz, els in zones %}<h3 style="margin-top:14px">Rekenzone {{rz}}</h3>
 {% for i, s in els %}<details class=acc><summary>{{ico.get(s.type,'▫')}} <b>{{s.id}}</b>
 <span class="pill gray">{{s.type}}{{' · '+s.subtype if s.subtype}}</span>
@@ -460,13 +462,29 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div class=card id=dak-toevoegen><h2>⛰ Dak toevoegen</h2>
 <p class=muted>Voeg zoveel daken toe als nodig (tot 20) — elk dak wordt automatisch genummerd. Kies per dak de invoerwijze. De toegevoegde dakvlakken verschijnen in de gebouwboom hierboven.</p>
 <details class=acc><summary><b>1 · Plat dak</b></summary><div class=acc-body>
-<form method=post action="{{url_for('opname_dak_plat', tag=tag)}}"><div class=grid2>
+<div class=dakwire><svg id="platSvg" viewBox="0 0 220 130" width="220" height="130">
+<rect x="20" y="15" width="180" height="100" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="2"/>
+<path d="M20 15 L200 115 M20 45 L170 115 M20 75 L140 115 M20 105 L110 115 M50 15 L200 85 M80 15 L200 55" stroke="var(--blue)" stroke-width="0.75" opacity="0.35"/>
+<text id="platSvgVal" x="110" y="72" font-size="var(--svg-fs-7)" font-weight="700" text-anchor="middle" fill="var(--ink)">— m&#178;</text>
+</svg></div>
+<form method=post action="{{url_for('opname_dak_plat', tag=tag)}}" oninput="platDakPrev(this)"><div class=grid2>
 <div><label>Oppervlak (m²)</label><input name=m2 placeholder="bv. 24.5" required></div>
 <div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
 </div><div class=btn-row><button class=btn>+ Plat dak toevoegen</button></div></form></div></details>
 
 <details class=acc><summary><b>2 · Zadeldak — via driehoek berekenen</b></summary><div class=acc-body>
 <p class="muted small">De <b>hellende vlakken</b> zitten aan de gekozen oriëntatie én de tegenoverliggende. De <b>lange zijde (basis c)</b> is de breedte van de kopgevel (de zijde waarover het dak schuin loopt); de <b>breedte/noklengte</b> is de lengte waarmee elk hellend vlak vermenigvuldigd wordt. De <b>kopgevels</b> (driehoeken) tellen alleen mee als ze aan buiten grenzen (bij een tussenwoning meestal buurwand → uit laten).</p>
+<div class=dakwire><svg id="zadelSvg" viewBox="0 0 320 190" width="320" height="190">
+<line id="zadelBasis" x1="50" y1="150" x2="270" y2="150" stroke="var(--sub)" stroke-width="2"/>
+<path id="zadelDak" d="M50 150 L160 150 L270 150 Z" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/>
+<path id="zadelHellingBoog" d="M74 150 A24 24 0 0 0 90 132" fill="none" stroke="var(--sub)" stroke-width="1.5"/>
+<text id="zadelHellingLabel" x="96" y="138" font-size="var(--svg-fs-2)" fill="var(--sub)">45°</text>
+<text x="160" y="168" font-size="var(--svg-fs-2)" text-anchor="middle" fill="var(--ink)">c (lange zijde/basis)</text>
+<path d="M270 150 L300 130" stroke="var(--sub)" stroke-width="1.5" stroke-dasharray="3,3"/>
+<text x="302" y="128" font-size="var(--svg-fs-2)" fill="var(--ink)">breedte/noklengte</text>
+<text id="zadelVlakLabel" x="160" y="100" font-size="var(--svg-fs-4)" font-weight="700" text-anchor="middle" fill="var(--blue)">vul de velden in</text>
+<text id="zadelKopLabel" x="160" y="185" font-size="var(--svg-fs-2)" text-anchor="middle" fill="var(--sub)"></text>
+</svg></div>
 <form method=post action="{{url_for('opname_dak_driehoek', tag=tag)}}" oninput="dakPrev(this)"><div class=grid2>
 <div><label>Oriëntatie hellende vlakken</label><select name=orient_hellend>{% for o in ori_opts %}{% if o %}<option>{{o}}</option>{% endif %}{% endfor %}</select></div>
 <div><label>Hellingshoek (°)</label><input name=helling1 value="45"></div>
@@ -482,7 +500,18 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 
 <details class=acc><summary><b>3 · Zelf de m² invoeren (9 geometrieën)</b></summary><div class=acc-body>
 <p class="muted small">Voor een lastig dak: vul per oriëntatie het (schuine) dakoppervlak in. Laat leeg wat er niet is.</p>
-<form method=post action="{{url_for('opname_dak_negen', tag=tag)}}"><div class=grid2>
+<div class=dakwire><svg id="compasSvg" viewBox="0 0 300 300" width="260" height="260">
+<circle cx="150" cy="150" r="36" fill="var(--tint)" stroke="var(--sub)" stroke-width="1.5"/>
+<text id="compasHorizVal" x="150" y="155" font-size="var(--svg-fs-3)" text-anchor="middle" fill="var(--sub)">plat —</text>
+{% for o in ['N','NO','O','ZO','Z','ZW','W','NW'] %}
+<g id="compasSeg{{o}}" transform="rotate({{loop.index0 * 45}} 150 150)">
+<path d="M150 150 L150 40 A110 110 0 0 1 {{(150+110*0.3826834324)|round(1)}} {{(150-110*0.9238795325)|round(1)}} Z" fill="var(--tint)" stroke="var(--card)" stroke-width="2"/>
+<text x="150" y="66" font-size="var(--svg-fs-2)" font-weight="650" text-anchor="middle" fill="var(--ink)" transform="rotate({{-(loop.index0 * 45)}} 150 66)">{{o}}</text>
+<text id="compasVal{{o}}" x="150" y="82" font-size="var(--svg-fs-1)" text-anchor="middle" fill="var(--sub)" transform="rotate({{-(loop.index0 * 45)}} 150 82)">—</text>
+</g>
+{% endfor %}
+</svg></div>
+<form method=post action="{{url_for('opname_dak_negen', tag=tag)}}" oninput="compasPrev(this)"><div class=grid2>
 {% for o in ['N','NO','O','ZO','Z','ZW','W','NW','Horizontaal'] %}<div><label>{{o}} (m²)</label><input name="m2_{{o}}"></div>{% endfor %}
 <div><label>Hellingshoek schuine vlakken (° — optioneel)</label><input name=helling9></div>
 <div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
@@ -501,7 +530,68 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 </div><div class=btn-row><button class=btn>+ Dakraam toevoegen</button></div></form>
 {% else %}<p class=muted>Voeg eerst een dakvlak toe (optie 1/2/3 hierboven), dan kun je er dakramen aan hangen.</p>{% endif %}
 </div></details>
-<script>function dakPrev(f){var c=parseFloat((f.lange_zijde.value||'').replace(',','.')),b=parseFloat((f.breedte.value||'').replace(',','.')),h=parseFloat((f.helling1.value||'').replace(',','.')),e=document.getElementById('dakprev');if(!(c>0&&b>0&&h>0&&h<90)){e.textContent='Vul lange zijde, breedte en hellingshoek in voor een voorbeeld.';return;}var s=(c/2)/Math.cos(h*Math.PI/180),vlak=s*b,kop=0.5*c*((c/2)*Math.tan(h*Math.PI/180));e.innerHTML='Voorbeeld: per hellend vlak <b>'+vlak.toFixed(2)+' m²</b> (2×, voor+achter) · per kopgevel <b>'+kop.toFixed(2)+' m²</b> (2×, alleen indien buiten).';}</script></div>
+
+<details class=acc><summary><b>5 · Dakkapel toevoegen{% if n_dakkapel %} <span class="pill gray">{{n_dakkapel}} nu</span>{% endif %}</b></summary><div class=acc-body>
+{% if dakkapel_moeder_opts %}<p class="muted small">ISSO 82.1 §8.2.1: een dakkapel voegt een <b>voorvlak</b> (gevel) + <b>2 wangen</b> (gevel) + een <b>plat dakje</b> toe, en maakt een <b>gat</b> in het schuine moederdakvlak — dat gat wordt automatisch van het gekozen dakvlak afgetrokken (past het niet, dan wordt de dakkapel geweigerd — controleer dan het moederdak/de maten). Alleen <b>hellende</b> dakvlakken zijn kiesbaar (een dakkapel breekt door een schuin vlak heen; een plat dak of het dakje van een andere dakkapel niet).</p>
+<div class=dakwire><svg id="kapelSvg" viewBox="0 0 300 170" width="300" height="170">
+<path d="M20 130 L90 60 L210 60 L280 130 Z" fill="var(--tint)" stroke="var(--sub)" stroke-width="1.5"/>
+<path id="kapelGat" d="M110 130 L110 90 L190 90 L190 130 Z" fill="var(--card)" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="3,3"/>
+<path id="kapelWangL" d="M110 130 L110 90 L90 100 L90 130 Z" fill="var(--warn-bg)" stroke="var(--orange)" stroke-width="2"/>
+<path id="kapelVoor" d="M110 90 L190 90 L190 130 L110 130 Z" fill="var(--warn-bg)" stroke="var(--orange)" stroke-width="2" opacity="0.9"/>
+<path id="kapelWangR" d="M190 130 L190 90 L210 100 L210 130 Z" fill="var(--warn-bg)" stroke="var(--orange)" stroke-width="2"/>
+<path id="kapelDakje" d="M90 100 L110 90 L190 90 L210 100 Z" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1.5"/>
+<text x="150" y="113" font-size="var(--svg-fs-1)" text-anchor="middle" fill="var(--ink)">voorvlak</text>
+<text id="kapelLabel" x="150" y="155" font-size="var(--svg-fs-2)" font-weight="650" text-anchor="middle" fill="var(--ink)">vul breedte/hoogte/diepte in</text>
+</svg></div>
+<form method=post action="{{url_for('opname_dakkapel', tag=tag)}}" oninput="kapelPrev(this)"><div class=grid2>
+<div><label>In dakvlak (moederdak)</label><select name=moederdak_i>{% for lbl, di in dakkapel_moeder_opts %}<option value="{{di}}">{{lbl}}</option>{% endfor %}</select></div>
+<div><label>Breedte voorvlak (m)</label><input name=breedte placeholder="bv. 2.5"></div>
+<div><label>Hoogte voorvlak (m)</label><input name=hoogte placeholder="bv. 1.5"></div>
+<div><label>Diepte (m)</label><input name=diepte placeholder="bv. 1.0"></div>
+<div><label>Rekenzone</label><select name=rekenzone>{% for z in (1,2,3) %}<option>{{z}}</option>{% endfor %}</select></div>
+<div><label class=chk><input type=checkbox name=wangen_geisoleerd checked> Wangen geïsoleerd</label></div>
+</div><div class=btn-row><button class=btn>+ Dakkapel toevoegen</button></div></form>
+{% else %}<p class=muted>Voeg eerst een hellend dakvlak toe (optie 2 of 3 hierboven, met een hellingshoek &gt; 0°), dan kun je er een dakkapel in zetten.</p>{% endif %}
+</div></details>
+<script>
+function platDakPrev(f){var m2=parseFloat((f.m2.value||'').replace(',','.'));var t=document.getElementById('platSvgVal');if(t)t.textContent=(m2>0?m2.toFixed(1):'—')+' m²';}
+function dakPrev(f){
+  var c=parseFloat((f.lange_zijde.value||'').replace(',','.')),b=parseFloat((f.breedte.value||'').replace(',','.')),
+      h=parseFloat((f.helling1.value||'').replace(',','.')),e=document.getElementById('dakprev');
+  var hl=document.getElementById('zadelHellingLabel'),vl=document.getElementById('zadelVlakLabel'),
+      kl=document.getElementById('zadelKopLabel'),dp=document.getElementById('zadelDak');
+  if(!(c>0&&b>0&&h>0&&h<90)){
+    e.textContent='Vul lange zijde, breedte en hellingshoek in voor een voorbeeld.';
+    if(vl)vl.textContent='vul de velden in'; if(kl)kl.textContent=''; return;
+  }
+  var s=(c/2)/Math.cos(h*Math.PI/180),vlak=s*b,kop=0.5*c*((c/2)*Math.tan(h*Math.PI/180));
+  e.innerHTML='Voorbeeld: per hellend vlak <b>'+vlak.toFixed(2)+' m²</b> (2×, voor+achter) · per kopgevel <b>'+kop.toFixed(2)+' m²</b> (2×, alleen indien buiten).';
+  if(hl)hl.textContent=h.toFixed(0)+'°';
+  if(vl)vl.textContent='vlak '+vlak.toFixed(1)+' m² (×2)';
+  if(kl)kl.textContent='kopgevel '+kop.toFixed(1)+' m² (×2, indien buiten)';
+  if(dp){var peakY=150-Math.min(120,Math.max(15,h*1.8));dp.setAttribute('d','M50 150 L160 '+peakY.toFixed(1)+' L270 150 Z');}
+}
+function compasPrev(f){
+  var os=['N','NO','O','ZO','Z','ZW','W','NW'];
+  os.forEach(function(o){
+    var inp=f['m2_'+o],val=inp?parseFloat((inp.value||'').replace(',','.')):NaN,
+        seg=document.getElementById('compasSeg'+o),lbl=document.getElementById('compasVal'+o);
+    if(!lbl)return;
+    if(val>0){lbl.textContent=val.toFixed(1)+' m²';seg.querySelector('path').setAttribute('fill','var(--info-bg)');}
+    else{lbl.textContent='—';seg.querySelector('path').setAttribute('fill','var(--tint)');}
+  });
+  var hz=f['m2_Horizontaal'],hv=hz?parseFloat((hz.value||'').replace(',','.')):NaN,ht=document.getElementById('compasHorizVal');
+  if(ht)ht.textContent='plat '+(hv>0?hv.toFixed(1)+' m²':'—');
+}
+function kapelPrev(f){
+  var b=parseFloat((f.breedte.value||'').replace(',','.')),h=parseFloat((f.hoogte.value||'').replace(',','.')),
+      d=parseFloat((f.diepte.value||'').replace(',','.')),lbl=document.getElementById('kapelLabel');
+  if(!lbl)return;
+  if(!(b>0&&h>0&&d>0)){lbl.textContent='vul breedte/hoogte/diepte in';return;}
+  var gevel=b*h+2*(d*h),dak=b*d;
+  lbl.textContent='gevel '+gevel.toFixed(1)+' m² (voorvlak+wangen) · dakje '+dak.toFixed(1)+' m² · gat wordt bij opslaan van het moederdak afgetrokken';
+}
+</script></div>
 
 <div class=card><h2>Ventilatie</h2>
 <p class=muted>Nij Begun rekent met vuistregels: toevoer 0,7 dm³/s·m² per verblijfsgebied (min 7 l/s), afvoer keuken 21 / bad 14 / toilet 7, in balans. Ventilatie is een <b>verplicht</b> onderdeel van het isolatieplan.</p>
@@ -1278,12 +1368,24 @@ def opname(tag):
     # dakvlakken (voor de 'dakraam toevoegen'-keuze): label + oriëntatie-waarde
     dak_vlakken = [("%s · %s · %.1f m²" % (s.id, s.orientatie or "Horizontaal", s.oppervlakte_m2 or 0),
                     s.orientatie or "") for s in dos.schil if (s.type or "") == "dak"]
+    dak_vlakken_idx = [("%s · %s · %.1f m²" % (s.id, s.orientatie or "Horizontaal", s.oppervlakte_m2 or 0), i)
+                       for i, s in enumerate(dos.schil) if (s.type or "") == "dak"]
+    # dakkapel (ISSO 82.1 §8.2.1) breekt door een HELLEND vlak heen -> platte daken en het
+    # dakje van een andere dakkapel zijn geen geldig moederdak (ook server-side afgedwongen
+    # in opname_dakkapel, dit is alleen de klikbare keuzelijst).
+    dakkapel_moeder_opts = [(lbl, i) for lbl, i in dak_vlakken_idx
+                            if (dos.schil[i].hellingshoek or 0) > 0
+                            and "dakkapel" not in (dos.schil[i].id or "").lower()]
     n_dakraam = sum(1 for s in dos.schil if "dakraam" in (s.subtype or "").lower())
+    n_dakkapel = sum(1 for s in dos.schil if "dakkapel" in (s.id or "").lower() and "voorvlak" in (s.id or "").lower())
+    gebouw_overzicht_svg = gebouw_svg(dos) if dos.schil else ""
     return page(OPNAME_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 elementen=elementen, zones=zones, verlies=verlies, ag=ag, std_eigen=std_eigen,
                 bj_titel=bj_titel, bj_html=bj_html, woningtypes=WONINGTYPE_OPTS, dak_vlakken=dak_vlakken,
-                n_dakraam=n_dakraam, begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
-                koz_opts=KOZ_OPTS, ico=TYPE_ICO)
+                dak_vlakken_idx=dak_vlakken_idx, dakkapel_moeder_opts=dakkapel_moeder_opts,
+                n_dakraam=n_dakraam, n_dakkapel=n_dakkapel,
+                begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
+                koz_opts=KOZ_OPTS, ico=TYPE_ICO, gebouw_svg=gebouw_overzicht_svg)
 
 
 @app.route("/project/<tag>/opname/magicplan", methods=["POST"])
@@ -1615,6 +1717,75 @@ def opname_dakraam(tag):
                                                if f.get("rooster", "").strip() else ""))))
     _dos_save(tag, st, dos)
     flash("Dakraam %d toegevoegd (%.2f m² in dakvlak %s). Nog een dakraam? Herhaal hieronder." % (nr, m2, o or "horizontaal"))
+    return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+
+
+@app.route("/project/<tag>/opname/dakkapel", methods=["POST"])
+@login_required
+def opname_dakkapel(tag):
+    """ISSO 82.1 §8.2.1: een dakkapel voegt voorvlak+2 wangen (gevel) + een plat dakje (dak) toe, en
+    trekt het gat dat ze in het schuine moederdakvlak maakt van dát dakvlak af (core/geometry.dakkapel_vlakken)."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    from core.dossier import SchilDeel
+    from core.geometry import dakkapel_vlakken
+    f = request.form
+    try:
+        moeder_i = int(f.get("moederdak_i", ""))
+    except ValueError:
+        moeder_i = -1
+    if not (0 <= moeder_i < len(dos.schil)):
+        flash("Kies een geldig moederdakvlak voor de dakkapel.")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    moeder = dos.schil[moeder_i]
+    # ISSO 82.1 §8.2.1: een dakkapel breekt door een HELLEND vlak heen -> een plat dak of het
+    # dakje van een andere dakkapel is server-side ook geen geldig moederdak (niet alleen de
+    # dropdown-filter vertrouwen, dit endpoint is ook los aan te roepen).
+    if ((moeder.type or "").lower() != "dak" or (moeder.hellingshoek or 0) <= 0
+            or "dakkapel" in (moeder.id or "").lower()):
+        flash("Kies een hellend dakvlak (hellingshoek > 0°) als moederdak voor de dakkapel.")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    b, h, d = _f2(f.get("breedte")), _f2(f.get("hoogte")), _f2(f.get("diepte"))
+    if (not (b and h and d) or not all(math.isfinite(x) for x in (b, h, d))
+            or b <= 0 or h <= 0 or d <= 0):
+        flash("Vul een geldige, positieve breedte, hoogte en diepte van de dakkapel in.")
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    vlakken = dakkapel_vlakken(b, h, d, hellingshoek_dakvlak_graden=moeder.hellingshoek)
+    gat = vlakken["gat_schuin_dak_m2"]
+    moeder_m2_voor = moeder.oppervlakte_m2 or 0
+    if gat and gat > moeder_m2_voor:
+        flash("Deze dakkapel past niet: het gat (%.2f m²) is groter dan het gekozen moederdak %s "
+              "(%.2f m²). Controleer het moederdak en de maten (breedte/hoogte/diepte)."
+              % (gat, moeder.id, moeder_m2_voor))
+        return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    nr = sum(1 for s in dos.schil if "dakkapel" in (s.id or "").lower() and "voorvlak" in (s.id or "").lower()) + 1
+    wangen_geisoleerd = bool(f.get("wangen_geisoleerd"))
+    try:
+        rekenzone = int(f.get("rekenzone") or moeder.rekenzone or 1)
+    except ValueError:
+        rekenzone = moeder.rekenzone or 1
+    orient = moeder.orientatie or ""
+    zij_l, zij_r = _zij8(orient) if orient else ("", "")
+    voorvlak = SchilDeel(id="dakkapel%d-voorvlak" % nr, type="gevel", subtype="Dakkapel voorvlak",
+                         orientatie=orient, begrenzing="Buitenlucht", oppervlakte_m2=round(b * h, 2),
+                         rekenzone=rekenzone, opmerkingen="Dakkapel %d — voorvlak in dakvlak %s" % (nr, moeder.id))
+    wang_l = SchilDeel(id="dakkapel%d-wang-links" % nr, type="gevel", subtype="Dakkapel wang",
+                       orientatie=zij_l, begrenzing="Buitenlucht", oppervlakte_m2=round(d * h, 2),
+                       rekenzone=rekenzone, isolatie_aanwezig=("Ja" if wangen_geisoleerd else "Onbekend"),
+                       opmerkingen="Dakkapel %d — linkerwang" % nr)
+    wang_r = SchilDeel(id="dakkapel%d-wang-rechts" % nr, type="gevel", subtype="Dakkapel wang",
+                       orientatie=zij_r, begrenzing="Buitenlucht", oppervlakte_m2=round(d * h, 2),
+                       rekenzone=rekenzone, isolatie_aanwezig=("Ja" if wangen_geisoleerd else "Onbekend"),
+                       opmerkingen="Dakkapel %d — rechterwang" % nr)
+    dakje = SchilDeel(id="dakkapel%d-dakje" % nr, type="dak", subtype="plat (dakkapel)",
+                      orientatie="", begrenzing="Buitenlucht", oppervlakte_m2=vlakken["dak_m2"],
+                      hellingshoek=0, rekenzone=rekenzone, opmerkingen="Dakkapel %d — plat dakje" % nr)
+    dos.schil += [voorvlak, wang_l, wang_r, dakje]
+    if gat:
+        moeder.oppervlakte_m2 = round(moeder_m2_voor - gat, 2)
+    _dos_save(tag, st, dos)
+    flash("Dakkapel %d toegevoegd: %s. Nog een dakkapel? Herhaal hieronder." % (nr, vlakken["flag"]))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 

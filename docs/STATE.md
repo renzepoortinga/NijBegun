@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-13 door Codex (taak 003 in uitvoering)
+Bijgewerkt: 2026-08-14 door Claude (taak 004 afgerond, review PASS)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -18,6 +18,13 @@ Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 
 - Taak 003: kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export;
   implementatie gereed, onafhankelijke review nog vereist.
+
+Taak 004 (visuele laag SVG voor dak/dakkapel + gebouwoverzicht) is klaar en
+staat in `tasks/done/`: 4 reviewrondes (Codex), laatste VERDICT PASS. Onderweg
+ontdekt en meegefixt: een bestaande test in `tests/run_tests.py` verwachtte
+nog het oude gedrag van `vabi/constructie_generate.write()` vóór taak 003 —
+crashte de testrunner stil, waardoor `verify.sh` een tijdje geen volledige
+testrun meer liet zien. `python tests/run_tests.py`: 733/733 groen.
 
 ## Blokkades
 - Geen bekende.
