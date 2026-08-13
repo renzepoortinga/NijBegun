@@ -960,12 +960,20 @@ try:
     _kapel_delen = [s for s in _na_dos.schil if (s.id or "").startswith("dakkapel1-")]
     check("webapp: dakkapel bewaart maten en stabiele moederdakreferentie",
           len(_kapel_delen) == 4 and all(s.breedte_m == 2.5 and s.diepte_m == 1.0
-          and s.hoogte_m == 1.5 and s.moedervlak_id == _na_dos.schil[0].id for s in _kapel_delen))
+          and s.hoogte_m == 1.5 and s.moedervlak_id == _na_dos.schil[0].id
+          and s.geometrie_groep == "dakkapel1" for s in _kapel_delen))
     _kapel_rt = _GDos.from_dict(_na_dos.to_dict())
     check("webapp: renderingmetadata overleeft dossier save/reload",
           _kapel_rt.schil[-1].breedte_m == 2.5 and _kapel_rt.schil[-1].moedervlak_id == _na_dos.schil[0].id)
     check("webapp: dakkapelcanvas verschijnt bij een geldig hellend moederdak",
           _wc.get("/project/%s/opname" % _ptag).get_data(as_text=True).count('class=isometrie-canvas') == 3)
+    _steil_i = next(i for i, s in enumerate(_na_dos.schil)
+                    if (s.id or "").startswith("dak2-schuin-") and s.hellingshoek == 60)
+    _voor_steil = len(_na_dos.schil)
+    _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_steil_i), "breedte": "2",
+             "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
+    check("webapp: dakkapel weigert inverterende geometrie op steil dak",
+          len(_WA_dos(_ptag).schil) == _voor_steil)
     import re as _re35
     check("webapp: opname-pagina met dakkapel toont geldige gebouw-svg",
           bool(_ETv.fromstring(_re35.search(r"<svg.*?</svg>", _wc.get("/project/%s/opname" % _ptag)

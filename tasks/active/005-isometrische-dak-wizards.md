@@ -104,6 +104,14 @@ oorspronkelijke plan-bestand — dat leeft buiten de repo).
   moederdak en legt zijn onderranden werkelijk op dat hellende vlak. 741/741
   tests groen; `verify.sh`, JS-syntax en `git diff --check` PASS (zelfde
   bekende taak-002 `python3`-advisory in Git Bash).
+- 2026-08-14 (Codex, Builder, reviewfix 2): steile-dak-inversie afgevangen
+  met dezelfde haalbaarheidsgrens in client en server:
+  `hoogte > diepte × tan(helling)`. De preview toont bij overtreding een
+  zichtbare foutstaat en de route schrijft geen vlakken. Regressietest voor
+  60°/1,0 m/1,5 m toegevoegd. `geometrie_groep` toegevoegd en gevuld voor
+  dak- en dakkapeldelen, zodat taak 006 niet van id-conventies afhangt.
+  742/742 tests groen; `verify.sh`, JS-syntax en `git diff --check` PASS
+  (zelfde bekende taak-002 `python3`-advisory in Git Bash).
 
 ## Notes
 - Referentie voor de gewenste stijl: taak 004's Notes verwijzen naar

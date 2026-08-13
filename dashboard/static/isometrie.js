@@ -63,11 +63,11 @@
       fill: "var(--ink)", "font-size": "var(--svg-fs-3)"}, label));
   }
 
-  function empty(svg, text) {
+  function empty(svg, text, color) {
     if (!svg) return;
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     svg.appendChild(el("text", {x: "160", y: "110", "text-anchor": "middle",
-      fill: "var(--sub)", "font-size": "var(--svg-fs-3)"}, text));
+      fill: color || "var(--sub)", "font-size": "var(--svg-fs-3)"}, text));
   }
 
   window.platDakPrev = function (form) {
@@ -100,12 +100,22 @@
 
   window.kapelPrev = function (form) {
     var width = n(form.breedte.value), height = n(form.hoogte.value), depth = n(form.diepte.value);
-    var svg = document.getElementById("kapelSvg");
-    if (!(width > 0 && height > 0 && depth > 0)) return empty(svg, "Vul breedte, hoogte en diepte in");
+    var svg = document.getElementById("kapelSvg"), info = document.getElementById("kapelprev");
+    if (!(width > 0 && height > 0 && depth > 0)) {
+      if (info) info.textContent = "Vul breedte, hoogte en diepte in.";
+      return empty(svg, "Vul breedte, hoogte en diepte in");
+    }
     var selected = form.moederdak_i && form.moederdak_i.options[form.moederdak_i.selectedIndex];
     var angle = selected ? n(selected.getAttribute("data-helling")) : 45;
     if (!(angle > 0 && angle < 90)) angle = 45;
     var roofWidth = width * 2.2, roofDepth = depth * 3.2, tangent = Math.tan(angle * Math.PI / 180);
+    var climb = depth * tangent;
+    if (climb >= height) {
+      var error = "Niet haalbaar: hoogte moet groter zijn dan " + climb.toFixed(2) + " m bij " + angle.toFixed(0) + "°.";
+      if (info) info.textContent = error;
+      return empty(svg, error, "var(--err-fg)");
+    }
+    if (info) info.textContent = "De onderranden volgen het moederdak; het dakje blijft horizontaal.";
     var rise = roofDepth * tangent;
     var roof = slope([{x: 0, y: 0, z: 0}, {x: roofWidth, y: 0, z: 0},
       {x: roofWidth, y: rise, z: roofDepth}, {x: 0, y: rise, z: roofDepth}], "moederdak");

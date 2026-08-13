@@ -125,6 +125,7 @@ class SchilDeel:
     diepte_m: Optional[float] = None
     hoogte_m: Optional[float] = None
     moedervlak_id: str = ""                    # rendering-relatie, bv. dakkapel -> hellend dakvlak
+    geometrie_groep: str = ""                  # rendering-groep, zonder afhankelijkheid van id-conventies
     rekenzone: int = 1                             # rekenzone-nummer (default 1; >1 bij meerdere zones)
     deur_met_raam_glas65: bool = False             # deur met raam >=65% glas -> telt als raam in VABI
     toevoerrooster: str = ""                       # ventilatie-toevoer via raam: Zelfregelend (ZR)|Niet-zelfregelend|Geen
