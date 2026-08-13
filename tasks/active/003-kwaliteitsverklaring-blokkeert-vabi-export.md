@@ -66,6 +66,29 @@ geexporteerd als een rekenbare forfaitaire constructie met onbekende isolatie.
   systeem-Python mist `lxml`; installeren lukte niet omdat ook `pip` ontbreekt.
   Onafhankelijke leveranciersreview en volledige suite in een ingerichte
   omgeving blijven vereist.
+- 2026-08-14 Codex (OpenAI), Reviewer: VERDICT FAIL op de exacte taakcommit
+  `55ab519`. De inhoudelijke preflight en regressiedekking zijn passend, maar
+  `py -3 tests/run_tests.py` breekt bij de bestaande test op regel 799: die
+  verwacht nog de verwijderde issue-fallback en vangt `VabiExportBlocked` niet.
+  Daardoor worden de later toegevoegde X2-regressietests niet bereikt en is het
+  acceptatiecriterium “bestaande tests plus nieuwe regressietests slagen” niet
+  gehaald. `verify.sh` retourneert wel PASS omdat Python-tests tijdelijk
+  advisory zijn (taak 002); `.verify-report.json` bevat precies die advisory.
+  De latere taak-004-commit corrigeert deze verouderde verwachting en de huidige
+  suite draait 733/733 groen, maar die correctie zit niet op taakbranch
+  `fix/kwaliteitsverklaring-blokkeert-vabi-export`. Vereiste fix: cherry-pick of
+  equivalent van die testcorrectie op taak 003, volledige suite opnieuw draaien
+  en daarna opnieuw onafhankelijk reviewen.
+- 2026-08-14 (Claude/Sonnet 5, Manager): de testcorrectie uit taak 004
+  overgezet naar `fix/kwaliteitsverklaring-blokkeert-vabi-export` (aparte
+  git-worktree, niet de actieve branch geraakt): regel 796-801 verving de
+  verouderde issue-verwachting door een `try/except VabiExportBlocked`,
+  zelfde patroon als in taak 004. `python tests/run_tests.py` op deze branch:
+  711 geslaagd / 2 gefaald — de 2 faalpunten zijn de bekende, lokale-
+  omgeving-gebonden tests uit taak 002 (`config.json`/plan-json ontbreken in
+  een kale checkout), niet aan taak 003 gerelateerd; de crash bij regel 799
+  is weg. Gecommit (`4dd8221`) en gepusht. Klaar voor een hernieuwde
+  onafhankelijke reviewronde.
 
 ## Notes
 De huidige code kiest bij een kwaliteitsverklaring eerst een standaardtemplate
