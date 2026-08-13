@@ -112,6 +112,10 @@ oorspronkelijke plan-bestand — dat leeft buiten de repo).
   dak- en dakkapeldelen, zodat taak 006 niet van id-conventies afhangt.
   742/742 tests groen; `verify.sh`, JS-syntax en `git diff --check` PASS
   (zelfde bekende taak-002 `python3`-advisory in Git Bash).
+- 2026-08-14 (Codex, Reviewer): onafhankelijke herreview op commit `9734d09`
+  PASS. Asymmetrische nokgeometrie, steile-dakvalidatie, metadata-contract,
+  client/serverconsistentie en regressiedekking akkoord; taak gereed voor
+  afronding.
 
 ## Notes
 - Referentie voor de gewenste stijl: taak 004's Notes verwijzen naar
