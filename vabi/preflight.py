@@ -1,4 +1,5 @@
 """Harde dossiercontroles die moeten slagen voordat Vabi-export wordt geschreven."""
+from core.dossier import is_bcrg_isolatiekeuze
 
 
 class VabiExportBlocked(ValueError):
@@ -7,11 +8,20 @@ class VabiExportBlocked(ValueError):
 
 def is_kwaliteitsverklaring(s):
     """Alleen de expliciete MagicPlan-isolatiekeuze activeert deze route."""
-    return "kwaliteitsverklaring" in (getattr(s, "isolatie_aanwezig", "") or "").strip().casefold()
+    return is_bcrg_isolatiekeuze(getattr(s, "isolatie_aanwezig", ""))
 
 
 def assert_complete_schil_kwaliteitsverklaring(dos):
     """Een expliciete kwaliteitsverklaring vereist code én positieve dikte."""
+    legacy = [str(getattr(s, "id", "") or "(zonder id)") for s in dos.schil
+              if not is_kwaliteitsverklaring(s)
+              and (getattr(s, "rc_bron", "") or "").strip().casefold() == "kwaliteitsverklaring"]
+    if legacy:
+        raise VabiExportBlocked(
+            "VABI-export geblokkeerd: legacy kwaliteitsverklaring zonder de nieuwe expliciete "
+            "isolatiekeuze voor %s. Kies 'Ja — kwaliteitsverklaring' en vul BCRG-code+dikte in; "
+            "er wordt geen forfaitaire fallback gemaakt." % ", ".join(legacy)
+        )
     ontbreekt_code, ontbreekt_dikte = [], []
     for s in dos.schil:
         if not is_kwaliteitsverklaring(s):

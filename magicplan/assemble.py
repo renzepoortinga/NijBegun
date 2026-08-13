@@ -12,7 +12,7 @@ verifieert/overschrijft in Vabi. Dak-m2 = footprint x 1/cos(helling) of het hand
 import os, sys, json, math, argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
-                          SchilDeel, save_json)
+                          SchilDeel, save_json, is_bcrg_isolatiekeuze)
 from magicplan.extractor import _g, _functie, _map_ventilatie, _map_installaties, _maak_vloer, _maak_dak
 from magicplan import report_parser
 
@@ -101,8 +101,8 @@ def build_dossier(p, kozijnen, plan):
         id="gevel", type="gevel", subtype=_g(p, "geveltype", default="") or "",
         begrenzing=_g(p, "gevel_begrenzing", default="Buitenlucht") or "Buitenlucht",
         oppervlakte_m2=gevel_area, isolatie_aanwezig=_g(p, "isolatie_aanwezig", default="Onbekend") or "Onbekend",
-        rc_bron=("Kwaliteitsverklaring" if "kwaliteitsverklaring" in
-                 (_g(p, "isolatie_aanwezig", default="") or "").lower()
+        rc_bron=("Kwaliteitsverklaring" if is_bcrg_isolatiekeuze(
+                 _g(p, "isolatie_aanwezig", default=""))
                  else (_g(p, "rc_bron", default="") or "")),
         spouw_aanwezig=_g(p, "spouw_aanwezig", bool),
         bcrg_code=_g(p, "gevel_bcrg_code", default="") or "",

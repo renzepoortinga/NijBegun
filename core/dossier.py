@@ -12,6 +12,12 @@ from typing import List, Optional, Any
 import json, os, datetime
 
 SCHEMA_VERSION = "0.3"
+BCRG_ISOLATIEKEUZE = "Ja — kwaliteitsverklaring"
+
+
+def is_bcrg_isolatiekeuze(value: Any) -> bool:
+    """Uitsluitend de exact opgeslagen MagicPlan-optie activeert de BCRG-route."""
+    return str(value or "").strip().casefold() == BCRG_ISOLATIEKEUZE.casefold()
 
 # ---------- deelobjecten ----------
 @dataclass

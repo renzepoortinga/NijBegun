@@ -18,7 +18,7 @@ TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, TOOL_DIR)
 from flask import (Flask, request, session, redirect, url_for, send_from_directory,  # noqa: E402
                    render_template_string, abort, flash, Response)
-from core.dossier import load_json, save_json                                         # noqa: E402
+from core.dossier import load_json, save_json, is_bcrg_isolatiekeuze                 # noqa: E402
 from vabi.monitor_xml import parse as parse_monitor                                   # noqa: E402
 from vabi.result_reader import read_results                                           # noqa: E402
 from vabi.sanity import check as sanity_check                                         # noqa: E402
@@ -1397,7 +1397,7 @@ def opname_el(tag, i):
         s.isolatie_aanwezig = f.get("isolatie", s.isolatie_aanwezig)
         s.isolatiedikte_mm = _f2(f.get("dikte"))
         s.bcrg_code = f.get("bcrg_code", "").strip()
-        if "kwaliteitsverklaring" in s.isolatie_aanwezig.lower():
+        if is_bcrg_isolatiekeuze(s.isolatie_aanwezig):
             s.rc_bron = "Kwaliteitsverklaring"
         elif s.isolatiedikte_mm and s.isolatie_aanwezig == "Ja":
             s.rc_bron = "Opgemeten dikte"

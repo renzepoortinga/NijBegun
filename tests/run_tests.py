@@ -3553,6 +3553,50 @@ try:
         _allowedX2.append(all(os.path.isfile(_resX2[_kX2][0])
                               for _kX2 in ("constructies", "objecten", "installaties")))
     check("KV: onbekend, Dikte onbekend en leeg blijven exporteerbaar", all(_allowedX2))
+    _gewoonX2 = []
+    for _isoX2 in ("Ja", "Nee", "Onbekend"):
+        _normX2 = build_sample(); _normX2.schil = [_normX2.schil[0]]
+        _normX2.schil[0].isolatie_aanwezig = _isoX2
+        _normX2.schil[0].rc_bron = "Dikte onbekend" if _isoX2 == "Onbekend" else ""
+        _normX2.schil[0].isolatiedikte_mm = 80 if _isoX2 == "Ja" else None
+        _normresX2 = _gaX2.generate_all(_normX2, os.path.join(_tdX2, "norm_" + _isoX2))
+        _gewoonX2.append(os.path.isfile(_normresX2["constructies"][0]))
+    check("KV activatie: gewone Ja/Nee/Onbekend blijven exporteerbaar", all(_gewoonX2))
+
+    from core.dossier import is_bcrg_isolatiekeuze as _is_keuzeX2
+    check("KV activatie: alleen exacte MagicPlan-optie (trim+casefold)",
+          _is_keuzeX2("  ja — KWALITEITSVERKLARING  ")
+          and not _is_keuzeX2("verklaring")
+          and not _is_keuzeX2("onverwachte tekst met kwaliteitsverklaring"))
+    for _vreemdX2 in ("verklaring", "onverwachte tekst met kwaliteitsverklaring"):
+        _negX2 = build_sample(); _negX2.schil = [_negX2.schil[0]]
+        _negX2.schil[0].isolatie_aanwezig = _vreemdX2
+        _negX2.schil[0].rc_bron = ""
+        _negX2.schil[0].bcrg_code = "20210229GK"; _negX2.schil[0].isolatiedikte_mm = 80
+        _negdirX2 = os.path.join(_tdX2, "neg_" + str(len(_vreemdX2)))
+        _negresX2 = _gaX2.generate_all(_negX2, _negdirX2)
+        _negrootX2 = __import__("xml.etree.ElementTree", fromlist=["ElementTree"]).parse(
+            _negresX2["constructies"][0]).getroot()
+        check("KV activatie: onverwachte isolatietekst activeert geen BCRG-route (%s)" % _vreemdX2,
+              next(_negrootX2.iter("Constructie")).findtext("Invoer") != "0")
+        _rcnegX2 = build_sample(); _rcnegX2.schil = [_rcnegX2.schil[0]]
+        _rcnegX2.schil[0].isolatie_aanwezig = "Onbekend"; _rcnegX2.schil[0].rc_bron = _vreemdX2
+        _rcnegresX2 = _gaX2.generate_all(_rcnegX2, os.path.join(_tdX2, "rcneg_" + str(len(_vreemdX2))))
+        _rcnegrootX2 = __import__("xml.etree.ElementTree", fromlist=["ElementTree"]).parse(
+            _rcnegresX2["constructies"][0]).getroot()
+        check("KV activatie: rc_bron=%r activeert geen BCRG-route" % _vreemdX2,
+              next(_rcnegrootX2.iter("Constructie")).findtext("Invoer") != "0")
+    _legacyX2 = build_sample(); _legacyX2.schil = [_legacyX2.schil[0]]
+    _legacyX2.schil[0].isolatie_aanwezig = "Onbekend"
+    _legacyX2.schil[0].rc_bron = "Kwaliteitsverklaring"
+    _legacyX2.schil[0].bcrg_code = "20210229GK"; _legacyX2.schil[0].isolatiedikte_mm = 80
+    try:
+        _gaX2.generate_all(_legacyX2, os.path.join(_tdX2, "legacy"))
+        _legacy_blockX2 = False
+    except _BlockedX2 as _e_legacyX2:
+        _legacy_blockX2 = "legacy kwaliteitsverklaring" in str(_e_legacyX2)
+    check("KV legacy: rc_bron alleen activeert nieuwe route niet en valt niet forfaitair terug",
+          _legacy_blockX2)
 
     # Compleet: code+dikte naar de minimale bewezen Vabi-route; geen forfaitaire Rc/U-fallback.
     _compleetX2 = build_sample()

@@ -21,7 +21,7 @@ import os, sys, json, math, argparse, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
                           SchilDeel, Ventilatie, Installaties, Verwarming, Tapwater, Koeling,
-                          ZonneEnergieSysteem, Foto, save_json)
+                          ZonneEnergieSysteem, Foto, save_json, is_bcrg_isolatiekeuze)
 
 # Containers die we 1x live verifieren (eerste alternatief dat bestaat wint).
 EXPECTED_CONTAINERS = {
@@ -182,8 +182,8 @@ def _map_geometrie_en_schil(plan, dos, p):
         "begrenzing": _g(p, "gevel_begrenzing", default="Buitenlucht") or "Buitenlucht",
         "spouw_aanwezig": _g(p, "spouw_aanwezig", bool),
         "isolatie_aanwezig": _g(p, "isolatie_aanwezig", default="Onbekend") or "Onbekend",
-        "rc_bron": ("Kwaliteitsverklaring" if "kwaliteitsverklaring" in
-                    (_g(p, "isolatie_aanwezig", default="") or "").lower()
+        "rc_bron": ("Kwaliteitsverklaring" if is_bcrg_isolatiekeuze(
+                    _g(p, "isolatie_aanwezig", default=""))
                     else (_g(p, "rc_bron", default="") or "")),
         "bcrg_code": _g(p, "gevel_bcrg_code", default="") or _g(p, "bcrg_code", default="") or "",
         "isolatie_mm": _g(p, "isolatie_mm", float),
@@ -256,7 +256,7 @@ def _maak_vloer(p, footprint):
         begrenzing=_g(p, "vloer_begrenzing", default="") or "",
         orientatie="horizontaal", oppervlakte_m2=round(footprint, 2),
         isolatie_aanwezig=_iso,
-        rc_bron=("Kwaliteitsverklaring" if "kwaliteitsverklaring" in _iso.lower()
+        rc_bron=("Kwaliteitsverklaring" if is_bcrg_isolatiekeuze(_iso)
                  else (_g(p, "vloer_rc_bron", default="") or "")),
         bcrg_code=_g(p, "vloer_bcrg_code", default="") or "",
         isolatiedikte_mm=_g(p, "vloer_isolatie_mm", float),
@@ -280,7 +280,7 @@ def _maak_dak(p, footprint):
         subtype=_g(p, "daktype", default="") or "",
         begrenzing="Buitenlucht", orientatie="horizontaal", oppervlakte_m2=round(opp, 2),
         isolatie_aanwezig=_iso,
-        rc_bron=("Kwaliteitsverklaring" if "kwaliteitsverklaring" in _iso.lower()
+        rc_bron=("Kwaliteitsverklaring" if is_bcrg_isolatiekeuze(_iso)
                  else (_g(p, "dak_rc_bron", default="") or "")),
         bcrg_code=_g(p, "dak_bcrg_code", default="") or "",
         isolatiedikte_mm=_g(p, "dak_isolatie_mm", float),

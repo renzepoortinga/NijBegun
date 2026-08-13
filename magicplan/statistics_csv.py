@@ -15,7 +15,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, Ruimte, VloerInfo,
                           SchilDeel, Ventilatie, Verwarming, Installaties,
-                          Koeling, Tapwater, ZonneEnergieSysteem, BouwdeelStandaard)
+                          Koeling, Tapwater, ZonneEnergieSysteem, BouwdeelStandaard,
+                          is_bcrg_isolatiekeuze)
 from core.geometry import (woningscheidende_wand_toeslag_m2, aantal_woningscheidende_wanden,
                            hellingshoek_uit_nok, dak_vlakken_zadeldak, dak_vlakken_lessenaar,
                            dak_vlakken_schilddak, dakkapel_vlakken)
@@ -509,7 +510,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         iso = _colv(r, "gevel - isolatie aanwezig")
         dikte_onb = _colv(r, "gevel - isolatiedikte onbekend").lower() in ("ja", "yes", "true")
         dikte = (_f(_colv(r, "gevel - bcrg-isolatiedikte (mm)"))
-                 if "kwaliteitsverklaring" in iso.lower()
+                 if is_bcrg_isolatiekeuze(iso)
                  else _f(_colv(r, "gevel - isolatiedikte (mm)")))
         bouwjaar = _colv(r, "gevel - bouwjaar (onbekend)", "gevel - bouwjaar")
         spouw_s = _colv(r, "gevel - spouw aanwezig")
@@ -517,7 +518,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         bcrg = _colv(r, "gevel - bcrg-code", "gevel - bcrg code")
         if not (iso or dikte or bouwjaar or spouw_s or invoer or bcrg or dikte_onb):
             return None
-        if "kwaliteitsverklaring" in iso.lower():
+        if is_bcrg_isolatiekeuze(iso):
             rc = "Kwaliteitsverklaring"
         elif dikte and not dikte_onb:
             rc = "Opgemeten dikte"
@@ -907,7 +908,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         dikte_onb = gv(prefix + " - isolatiedikte onbekend?").lower() in ("ja", "yes", "true")
         gewone_dikte = _f(G(prefix + " - isolatiedikte (mm)")) or (_f(G(_alt + " - isolatiedikte (mm)")) if _alt else None)
         bcrg_dikte = _f(G(prefix + " - BCRG-isolatiedikte (mm)")) or (_f(G(_alt + " - BCRG-isolatiedikte (mm)")) if _alt else None)
-        dikte = bcrg_dikte if "kwaliteitsverklaring" in iso.lower() else gewone_dikte
+        dikte = bcrg_dikte if is_bcrg_isolatiekeuze(iso) else gewone_dikte
         bcrg = gv(prefix + " - BCRG-code", prefix + " - BCRG code")
         bouwjaar = gv(prefix + " - bouwjaar", prefix + " - bouwjaar (onbekend)")
         spouw_s = gv(prefix + " - spouw aanwezig?", prefix + " - spouw aanwezig (indien <40mm)?")
@@ -921,7 +922,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         if not begr and oud_begrveld:
             begr = _undot(G(oud_begrveld))
         # rc_bron afleiden
-        if "kwaliteitsverklaring" in iso.lower():
+        if is_bcrg_isolatiekeuze(iso):
             rc = "Kwaliteitsverklaring"
         elif "opgemeten" in oud_rc.lower() or (dikte and not dikte_onb):
             rc = "Opgemeten dikte"
@@ -1916,7 +1917,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         notes.append("Tweede ventilatiesysteem opgenomen (%s): de tool zet ventilatiesysteem 1 door; voeg het 2e "
                      "ventilatiesysteem in Vabi toe (golden rule: niet gegokt)." % vent2)
     kwv = sorted({s.type for s in dos.schil
-                  if "kwaliteitsverklaring" in (s.isolatie_aanwezig or "").lower()})
+                  if is_bcrg_isolatiekeuze(s.isolatie_aanwezig)})
     if kwv:
         notes.append("Kwaliteitsverklaring geselecteerd voor: %s. BCRG-code + isolatiedikte gaan naar "
                      "Vabi; Vabi haalt zelf verklaring en rekenwaarde op. Ontbrekende invoer blokkeert export."

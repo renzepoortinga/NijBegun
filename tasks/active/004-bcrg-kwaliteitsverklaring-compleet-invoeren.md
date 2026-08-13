@@ -107,6 +107,15 @@ slaagt mag geen forfaitaire fallback worden gebruikt.
   untracked en is niet als fixture gekopieerd. Nog verplicht: echte import in de
   ondersteunde Vabi EPA-W-versie om te bewijzen dat Vabi code+dikte resolveert;
   MagicPlan-formwijziging is alleen offline voorbereid en niet live gepubliceerd.
+- 2026-08-13 Codex (OpenAI), Builder: reviewblocker opgelost. Activatie loopt nu
+  centraal via `is_bcrg_isolatiekeuze()` en accepteert uitsluitend trim+casefold
+  exact `Ja — kwaliteitsverklaring`; brede substringmatching is verwijderd uit
+  parser, API/report-route, dashboard en preflight. Negatieve regressies dekken
+  `verklaring`, onverwachte tekst met `kwaliteitsverklaring` en gewone Ja/Nee/
+  Onbekend. Legacy `rc_bron=Kwaliteitsverklaring` activeert de nieuwe route niet,
+  maar wordt apart hard geblokkeerd met migratie-instructie; zo wordt de gebruikers-
+  eis gerespecteerd zonder een oud dossier stil forfaitair rekenbaar te maken.
+  De echte Vabi-importvalidatie blijft uitdrukkelijk open.
 
 ## Notes
 Taak 003 blokkeert nu iedere `rc_bron=Kwaliteitsverklaring`, omdat het dossier
