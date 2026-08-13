@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-08 door Claude (installatie AI Project OS)
+Bijgewerkt: 2026-08-13 door Codex (taak 003 in uitvoering)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,9 @@ Technische schuld). Historie staat in `BUILD_LOG.md` en
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+- Taak 003: kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export;
+  implementatie gereed, onafhankelijke review nog vereist.
 
 ## Blokkades
 - Geen bekende.

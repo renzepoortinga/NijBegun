@@ -11,9 +11,9 @@ De 219 = EPA's VOLLEDIGE forfaitaire Standaard-constructies-set (LIVE geverifiee
 knop "Standaard constructies" laadt exact 219 — 1-op-1 met deze template). Dimensies: opaak (gevel/
 dak/vloer) isolatie-onbekend + 10..230 mm in 10mm-stappen x met/zonder spouw; glas 7 types (enkel/
 dubbel/HR/HR+/HR++/TripleHR/voorzet) x 3 kozijnmaterialen; deur geisoleerd/niet; paneel 10..100 mm.
-Een GEMETEN/afwijkende Rc/U (detailopname/kwaliteitsverklaring) hoort niet bij een forfaitaire preset
--> die wordt GEFLAGD (adviseur zet Invoer + Rc/U zelf in VABI); de tool gokt nooit een continue
-Rc-waarde. Dus: forfaitaire mogelijkheden = deze 219 (compleet); custom Rc = bewust handmatig.
+Een GEMETEN/afwijkende Rc/U hoort niet bij een forfaitaire preset en wordt geflagd. Een expliciete
+kwaliteitsverklaring blokkeert de export volledig, zodat die nooit als rekenbare forfaitaire preset
+kan belanden. De adviseur verwerkt de verklaring correct in Vabi; de tool gokt geen Rc/U-waarde.
 
 De constructiebibliotheek bevat alleen constructie-TYPES (Rc/isolatie/glas), geen oppervlak/
 orientatie -> die geometrie komt later in de Objectenbibliotheek. We leveren dus de UNIEKE set
@@ -29,6 +29,7 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json            # noqa: E402
 from vabi.codebook import Codebook            # noqa: E402
+from vabi.preflight import assert_no_schil_kwaliteitsverklaring  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "refs", "standaard_constructies_v120001001.xml")
@@ -232,12 +233,6 @@ def match_constructies(dos, pool, cb):
         if tmpl is None:
             issues.append("schildeel %s: geen passende standaard-constructie (%s)" % (s.id, kind))
             continue
-        # Kwaliteitsverklaring (Rc/U onderbouwd): de tool koos een forfaitaire/best-passende standaard-
-        # constructie en VLAGT het — de adviseur zet Invoer=Kwaliteitsverklaring + de Rc/U-waarde zelf in
-        # VABI (golden rule: de Invoer-enum/U-waarde niet zelf gokken).
-        if (getattr(s, "rc_bron", "") or "").strip().lower() == "kwaliteitsverklaring":
-            issues.append("schildeel %s: Rc/U via kwaliteitsverklaring -> zet Invoer=Kwaliteitsverklaring + "
-                          "de Rc/U-waarde handmatig in VABI (tool koos een forfaitaire constructie)." % s.id)
         naam = _t(tmpl, "Naam", "")
         # GUID DETERMINISTISCH afleiden uit de constructienaam (uuid5), NIET random (uuid4) en NIET
         # op id(tmpl): resolve_constructies wordt 2x apart aangeroepen (constructie- én objecten-
@@ -269,6 +264,7 @@ def resolve_constructies(dos, pool=None, cb=None):
     """Publiek: per schildeel de gekozen constructie (naam+guid) + de unieke gekloonde
     <Constructie>-elementen (guid gezet). Gedeeld door constructie- EN objecten-generator,
     zodat de NaamConstructie/GUID-verwijzingen in beide bibliotheken identiek zijn."""
+    assert_no_schil_kwaliteitsverklaring(dos)
     pool = pool or TemplatePool(TEMPLATE)
     cb = cb or Codebook.from_export(TEMPLATE)
     chosen, mapping, issues = match_constructies(dos, pool, cb)
