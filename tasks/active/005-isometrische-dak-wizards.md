@@ -86,6 +86,16 @@ oorspronkelijke plan-bestand — dat leeft buiten de repo).
   m²+hoek+kompasrichting, geen coördinaten/afmetingen — vandaar de knip in
   twee taken (deze + 006) en de nieuwe optionele dossiervelden hier. Plan
   besproken en goedgekeurd met Renze (volledig isometrisch, 100%).
+- 2026-08-14 (Codex, Builder): plat dak, zadeldak en dakkapel omgebouwd naar
+  een losse dependencyvrije 3D→2D-projectiemodule (`isometrie.js`). Plat dak
+  vraagt nu breedte+diepte; de routes bewaren `breedte_m`, `diepte_m`,
+  `hoogte_m` en voor dakkapeldelen een stabiele `moedervlak_id`. Dakkapel
+  wordt zonder beschikbare offsets gecentreerd op het moederdakvlak. Nieuwe
+  route- en roundtriptests toegevoegd: 739/739 groen; `verify.sh` PASS (de
+  bekende taak-002 Python-advisory doordat Git Bash geen `python3` vindt;
+  dezelfde suite is apart met `python` volledig groen). JS-syntax en
+  `git diff --check` groen. In-app browser was niet verbonden, dus geen
+  screenshot-QA; responsive/dark/reduced-motion contracten statisch getoetst.
 
 ## Notes
 - Referentie voor de gewenste stijl: taak 004's Notes verwijzen naar
