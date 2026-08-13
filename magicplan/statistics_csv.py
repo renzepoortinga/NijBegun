@@ -1899,8 +1899,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                      "ventilatiesysteem in Vabi toe (golden rule: niet gegokt)." % vent2)
     kwv = sorted({s.type for s in dos.schil if s.rc_bron == "Kwaliteitsverklaring"})
     if kwv:
-        notes.append("Kwaliteitsverklaring geselecteerd voor: %s. De tool kiest een forfaitaire constructie en "
-                     "VLAGT het; zet Invoer=Kwaliteitsverklaring + de Rc/U-waarde zelf in VABI." % ", ".join(kwv))
+        notes.append("Kwaliteitsverklaring geselecteerd voor: %s. De VABI-export wordt geblokkeerd; "
+                     "verwerk de kwaliteitsverklaring eerst correct in Vabi." % ", ".join(kwv))
     zones = set(s.rekenzone for s in dos.schil) | {dos.ventilatie.rekenzone, inst.verwarming.rekenzone,
               inst.tapwater.rekenzone, inst.koeling.rekenzone} | {z.rekenzone for z in inst.zonne_energie}
     if any(z > 1 for z in zones):

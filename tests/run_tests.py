@@ -3495,6 +3495,80 @@ try:
 except Exception as _e:
     check("KV/HR-glas/share: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("X2. Kwaliteitsverklaring blokkeert iedere VABI-export vóór schrijven")
+try:
+    import shutil as _shX2
+    from vabi import generate_all as _gaX2
+    from vabi import constructie_generate as _cgX2
+    from vabi import objecten_generate as _ogX2
+    from vabi import installatie_generate as _igX2
+    from vabi.preflight import VabiExportBlocked as _BlockedX2
+    _kvX2 = build_sample()
+    _kvX2.schil[0].rc_bron = "  kWaLiTeItSvErKlArInG  "
+    _kvX2.schil[0].id = "gevel-kv-1"
+    _kvX2.schil[1].rc_bron = "Kwaliteitsverklaring"
+    _kvX2.schil[1].id = "vloer-kv-2"
+    _tdX2 = tempfile.mkdtemp(prefix="nb_kv_gate_")
+    _directX2 = []
+    for _nameX2, _writerX2 in (("constructie", _cgX2.write),
+                               ("objecten", _ogX2.write),
+                               ("installatie", _igX2.write)):
+        _pathX2 = os.path.join(_tdX2, _nameX2 + ".xml")
+        try:
+            _writerX2(_kvX2, _pathX2)
+            _directX2.append(False)
+        except _BlockedX2 as _eX2:
+            _directX2.append(not os.path.exists(_pathX2)
+                             and "gevel-kv-1" in str(_eX2)
+                             and "vloer-kv-2" in str(_eX2)
+                             and "correct in Vabi" in str(_eX2))
+    check("KV: alle drie directe writers blokkeren met alle ids vóór schrijven", all(_directX2))
+
+    _allX2 = os.path.join(_tdX2, "complete_set")
+    try:
+        _gaX2.generate_all(_kvX2, _allX2, prefix="huidig")
+        _blocked_allX2 = False
+    except _BlockedX2:
+        _blocked_allX2 = not os.path.exists(_allX2)
+    check("KV: generate_all laat geen gedeeltelijke exportset of map achter", _blocked_allX2)
+
+    _allowedX2 = []
+    for _bronX2 in ("", "Dikte onbekend", "Forfaitair bouwjaar"):
+        _okX2 = build_sample()
+        for _sX2 in _okX2.schil:
+            _sX2.rc_bron = _bronX2
+        _okX2.schil[0].isolatie_aanwezig = "Onbekend"
+        _okdirX2 = os.path.join(_tdX2, "ok_" + str(len(_allowedX2)))
+        _resX2 = _gaX2.generate_all(_okX2, _okdirX2)
+        _allowedX2.append(all(os.path.isfile(_resX2[_kX2][0])
+                              for _kX2 in ("constructies", "objecten", "installaties")))
+    check("KV: onbekend, Dikte onbekend en leeg blijven exporteerbaar", all(_allowedX2))
+
+    import dashboard.app as _WAX2
+    _WAX2.app.config.update(TESTING=True, SECRET_KEY="test-kv-gate")
+    _orig_lsX2, _orig_dosX2, _orig_pdX2 = _WAX2._load_state, _WAX2._dossier, _WAX2._pdir
+    _dashdirX2 = os.path.join(_tdX2, "dashboard_project")
+    _WAX2._load_state = lambda _tagX2: {"dossier_file": "dossier.json"}
+    _WAX2._dossier = lambda _tagX2: _kvX2
+    _WAX2._pdir = lambda _tagX2: _dashdirX2
+    try:
+        _clientX2 = _WAX2.app.test_client()
+        with _clientX2.session_transaction() as _sessX2:
+            _sessX2["ingelogd"] = True
+        _respX2 = _clientX2.get("/project/test-kv/opname/vabi_huidig", follow_redirects=False)
+        with _clientX2.session_transaction() as _sessX2:
+            _flashesX2 = " ".join(m for _cat, m in _sessX2.get("_flashes", []))
+        check("KV: dashboard toont concrete blokkade met betrokken ids",
+              _respX2.status_code in (302, 303) and "VABI-export geblokkeerd" in _flashesX2
+              and "gevel-kv-1" in _flashesX2 and "vloer-kv-2" in _flashesX2)
+        check("KV: dashboardroute schrijft geen exportbestanden",
+              not os.path.exists(os.path.join(_dashdirX2, "vabi_huidig")))
+    finally:
+        _WAX2._load_state, _WAX2._dossier, _WAX2._pdir = _orig_lsX2, _orig_dosX2, _orig_pdX2
+    _shX2.rmtree(_tdX2, ignore_errors=True)
+except Exception as _e:
+    check("KV exportgate: draait zonder fout", False); print("     " + repr(_e)[:220])
+
 print("Y. Gevel-onderbouwing + tegenoverliggende wand op dezelfde gevel (wandnummer +2)")
 try:
     import tempfile as _tfY, os as _osY

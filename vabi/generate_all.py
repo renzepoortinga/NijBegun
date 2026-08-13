@@ -12,9 +12,12 @@ import os, sys, argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json                                  # noqa: E402
 from vabi import constructie_generate, objecten_generate, installatie_generate  # noqa: E402
+from vabi.preflight import assert_no_schil_kwaliteitsverklaring            # noqa: E402
 
 
 def generate_all(dos, outdir, prefix=""):
+    # Vóór mkdir en vóór elk bestand: nooit een gedeeltelijke exportset.
+    assert_no_schil_kwaliteitsverklaring(dos)
     os.makedirs(outdir, exist_ok=True)
     p = (prefix + "_") if prefix else ""
     res = {}
