@@ -198,6 +198,31 @@ def _face(points, schildeel=None, kind="vlak", fill=C_HOUSE, stroke=C_HOUSE_LINE
             "stroke": stroke, "geometrie": geometrie}
 
 
+# Vaste 'zon' linksvoor-boven, in dezelfde (x,y,z)-ruimte als alle vlakpunten hier (y = omhoog).
+# Consistent voor élk vlak (muur/dak/dakkapel/contour) -> geeft de isometrie diepte zonder ergens
+# een hex-kleur te introduceren: puur een CSS brightness-filter bovenop de bestaande kleurtoken,
+# dus blijft vanzelf correct in zowel het lichte als het donkere thema.
+_ZON = (-0.25, 0.85, -0.45)
+
+
+def _shade(points):
+    """Helderheidsfactor (CSS brightness()) uit de vlaknormaal t.o.v. _ZON. Vlakken zijn hier
+    steeds als 'onder-links, onder-rechts, boven-rechts, boven-links' opgebouwd (dezelfde
+    winding als de rechthoek-gevels); cross(edge2, edge1) geeft daarmee de naar-buiten-wijzende
+    normaal. Te weinig punten of een ontaarde (bijna-nul) normaal -> neutraal (1.0)."""
+    if len(points) < 3:
+        return 1.0
+    (x0, y0, z0), (x1, y1, z1), (x2, y2, z2) = points[0], points[1], points[2]
+    ax, ay, az = x1 - x0, y1 - y0, z1 - z0
+    bx, by, bz = x2 - x0, y2 - y0, z2 - z0
+    nx, ny, nz = by * az - bz * ay, bz * ax - bx * az, bx * ay - by * ax
+    lengte = math.sqrt(nx * nx + ny * ny + nz * nz)
+    if lengte < 1e-9:
+        return 1.0
+    dot = (nx * _ZON[0] + ny * _ZON[1] + nz * _ZON[2]) / lengte
+    return max(0.6, min(1.15, 0.90 + 0.20 * dot))
+
+
 def _orientatie_zijden(gevelgroepen):
     zijden = {}
     for naam, delen in gevelgroepen.items():
@@ -415,11 +440,22 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
         return "%.1f,%.1f" % (450 + (x - (min_x + max_x) / 2) * schaal,
                               255 + (y - (min_y + max_y) / 2) * schaal)
 
+    grond2d = [_project(punt) for face in faces for punt in face["points"] if punt[1] == 0]
     p = ['<svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" role="img" '
          'aria-labelledby="gebouw-titel gebouw-uitleg">',
          '<title id="gebouw-titel">%s</title>' % _esc(titel),
          '<desc id="gebouw-uitleg">Isometrische weergave uit de opgeslagen gevel- en dakmaten.</desc>',
-         '<rect width="900" height="540" fill="%s"/>' % C_CARD,
+         '<defs><filter id="gebouw-schaduw" x="-50%" y="-50%" width="200%" height="200%">'
+         '<feGaussianBlur stdDeviation="7"/></filter></defs>',
+         '<rect width="900" height="540" fill="%s"/>' % C_CARD]
+    if grond2d:
+        gx = [450 + (x - (min_x + max_x) / 2) * schaal for x, _ in grond2d]
+        gy = [255 + (y - (min_y + max_y) / 2) * schaal for _, y in grond2d]
+        p.append('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="%s" fill-opacity="0.16" '
+                 'filter="url(#gebouw-schaduw)"/>'
+                 % ((min(gx) + max(gx)) / 2, max(gy) + 6,
+                    max(20.0, (max(gx) - min(gx)) / 2 + 10), 10, C_INK))
+    p += [
          '<text x="32" y="42" font-size="var(--svg-fs-8)" font-weight="700" fill="%s">%s</text>'
          % (C_INK, _esc(titel)),
          '<text x="32" y="68" font-size="var(--svg-fs-3)" fill="%s" data-footprint-bron="%s">'
@@ -442,10 +478,14 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
         if face.get("delen"):
             ids = ",".join(s.id or "" for s in face["delen"])
             attrs += ' data-element-ids="%s"' % _esc(ids)
+        # Vlakke daktoppen (bovenzijde-contour) hebben geen betrouwbare winding (volgt de
+        # MagicPlan-contour zoals aangeleverd) -> altijd de helderste 'plat boven'-tint, i.p.v.
+        # een mogelijk verkeerd-om berekende normaal.
+        shade = 1.07 if face["kind"] == "bovenzijde-contour" else _shade(face["points"])
         p.append('<polygon points="%s" fill="%s" stroke="%s" stroke-width="2" '
-                 'stroke-linejoin="round" data-face="%s" %s/>'
+                 'stroke-linejoin="round" filter="brightness(%.3f)" data-face="%s" %s/>'
                  % (" ".join(scherm(point) for point in face["points"]), face["fill"],
-                    face["stroke"], face["kind"], attrs))
+                    face["stroke"], shade, face["kind"], attrs))
         if deel:
             cx = sum(point[0] for point in face["points"]) / len(face["points"])
             cy = sum(point[1] for point in face["points"]) / len(face["points"])
