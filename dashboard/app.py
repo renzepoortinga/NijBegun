@@ -384,6 +384,12 @@ ORI_OPTS = ["", "N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]
 GLAS_OPTS = ["", "Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++",
              "TripleHR", "Vacuümglas", "Onbekend"]
 KOZ_OPTS = ["", "Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (niet thermisch onderbroken)"]
+# Zelfde klasse-grenzen als dashboard/bouwjaar.py:ERAS; fraseringen ('Tot'/'Van .. t/m'/'Vanaf') zijn
+# wat vabi/constructie_generate.py:_jaar_uit_klassetekst() al herkent (afkomstig uit het MagicPlan-form).
+BOUWJAARKLASSE_OPTS = ["", "Tot 1946", "Van 1946 t/m 1964", "Van 1965 t/m 1974", "Van 1975 t/m 1982",
+                       "Van 1983 t/m 1991", "Van 1992 t/m 2005", "Vanaf 2006"]
+RC_BRON_OPTS = ["", "Opgemeten dikte", "Dikte onbekend", "Kwaliteitsverklaring",
+               "Forfaitair (bouwjaar/renovatiejaar)"]
 TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟", "paneel": "⬜"}
 
 OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
@@ -447,6 +453,8 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 <div><label>Rc-waarde (huidig, m²K/W)</label><input name=rc value="{{s.rc_huidig or ''}}"></div>
 <div><label>Isolatie aanwezig</label><select name=isolatie>{% for x in ('Ja','Nee','Onbekend') %}<option {{'selected' if x==s.isolatie_aanwezig}}>{{x}}</option>{% endfor %}</select></div>
 <div><label>Isolatiedikte (mm)</label><input name=dikte value="{{s.isolatiedikte_mm or ''}}"></div>
+<div><label>Bouwjaarklasse (dit vlak, leeg = projectbouwjaar)</label><select name=bouwjaarklasse>{% for bj in bouwjaarklasse_opts %}<option {{'selected' if bj==s.bouwjaarklasse}}>{{bj}}</option>{% endfor %}</select></div>
+<div><label>Rc-bron</label><select name=rc_bron>{% for r in rc_bron_opts %}<option {{'selected' if r==s.rc_bron}}>{{r}}</option>{% endfor %}</select></div>
 {% endif %}
 {% if s.type == 'dak' %}<div><label>Hellingshoek (°)</label><input name=helling value="{{s.hellingshoek or ''}}"></div>{% endif %}
 <div><label>Opmerkingen</label><input name=opmerkingen value="{{s.opmerkingen}}"></div>
@@ -1340,7 +1348,8 @@ def opname(tag):
                 dak_vlakken_idx=dak_vlakken_idx, dakkapel_moeder_opts=dakkapel_moeder_opts,
                 n_dakraam=n_dakraam, n_dakkapel=n_dakkapel,
                 begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
-                koz_opts=KOZ_OPTS, ico=TYPE_ICO, gebouw_svg=gebouw_overzicht_svg)
+                koz_opts=KOZ_OPTS, bouwjaarklasse_opts=BOUWJAARKLASSE_OPTS, rc_bron_opts=RC_BRON_OPTS,
+                ico=TYPE_ICO, gebouw_svg=gebouw_overzicht_svg)
 
 
 @app.route("/project/<tag>/opname/magicplan", methods=["POST"])
@@ -1452,6 +1461,8 @@ def opname_el(tag, i):
         s.rc_huidig = _f2(f.get("rc"))
         s.isolatie_aanwezig = f.get("isolatie", s.isolatie_aanwezig)
         s.isolatiedikte_mm = _f2(f.get("dikte"))
+        s.bouwjaarklasse = f.get("bouwjaarklasse", "").strip()
+        s.rc_bron = f.get("rc_bron", "").strip()
     if (s.type or "").lower() == "dak":
         s.hellingshoek = _f2(f.get("helling"))
     _dos_save(tag, st, dos)
@@ -1524,6 +1535,21 @@ def _volgend_dak_nr(dos):
     return n + 1
 
 
+def _erf_dak_kwargs(dos):
+    """SchilDeel-kwargs die een nieuw dakvlak erft van de Constructies-DAK-standaard (MagicPlan-
+    form, `dos.opname.dak_standaard`) — leeg/geen standaard -> Onbekend (geen gok). Gedeeld door
+    alle dak-wizards zodat een nieuw BouwdeelStandaard-veld maar op één plek bijgehouden hoeft."""
+    ds = getattr(dos.opname, "dak_standaard", None)
+    return {
+        "begrenzing": (ds.begrenzing if ds else "") or "Buitenlucht",
+        "isolatie_aanwezig": (ds.isolatie_aanwezig if ds else "") or "Onbekend",
+        "isolatiedikte_mm": ds.isolatiedikte_mm if ds else None,
+        "bouwjaarklasse": (ds.bouwjaarklasse if ds else "") or "",
+        "spouw_aanwezig": ds.spouw_aanwezig if ds else None,
+        "rc_bron": (ds.rc_bron if ds else "") or "",
+    }
+
+
 @app.route("/project/<tag>/opname/dak/plat", methods=["POST"])
 @login_required
 def opname_dak_plat(tag):
@@ -1542,19 +1568,12 @@ def opname_dak_plat(tag):
         flash("Vul een oppervlak in voor het platte dak.")
         return redirect(url_for("opname", tag=tag))
     nr = _volgend_dak_nr(dos)
-    _ds = getattr(dos.opname, "dak_standaard", None)
     dos.schil.append(SchilDeel(id="dak%d-plat" % nr, type="dak", subtype="plat dak",
-                               begrenzing=((_ds.begrenzing if _ds else "") or "Buitenlucht"),
                                orientatie="", oppervlakte_m2=m2, hellingshoek=0,
                                breedte_m=breedte, diepte_m=diepte, geometrie_groep="dak%d" % nr,
-                               # isolatie erft de Constructies-form-standaard (MagicPlan); leeg -> Onbekend
-                               isolatie_aanwezig=((_ds.isolatie_aanwezig if _ds else "") or "Onbekend"),
-                               isolatiedikte_mm=(_ds.isolatiedikte_mm if _ds else None),
-                               bouwjaarklasse=((_ds.bouwjaarklasse if _ds else "") or ""),
-                               spouw_aanwezig=(_ds.spouw_aanwezig if _ds else None),
-                               rc_bron=((_ds.rc_bron if _ds else "") or ""),
                                rekenzone=int(request.form.get("rekenzone") or 1),
-                               opmerkingen="Dak %d (plat) — webapp-invoer" % nr))
+                               opmerkingen="Dak %d (plat) — webapp-invoer" % nr,
+                               **_erf_dak_kwargs(dos)))
     _dos_save(tag, st, dos)
     flash("Plat dak %d toegevoegd (%.2f m²). Wil je nog een dak toevoegen? Kies opnieuw hieronder." % (nr, m2))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
@@ -1599,6 +1618,8 @@ def opname_dak_driehoek(tag):
     kop_buiten = {zij[0]: f.get("kopgevel1_buiten") == "on", zij[1]: f.get("kopgevel2_buiten") == "on"}
     nr = _volgend_dak_nr(dos)
     rz = int(f.get("rekenzone") or 1)
+    # Alleen de hellende dakvlakken zelf erven de dak-standaard, niet de kopgevel-driehoek
+    # hieronder (die is gevel-typed en hoort bij de gevel-standaard, niet de dak-standaard).
     n_dak = n_kop = 0
     for v in vlakken:
         if v.get("kind") == "gevel":     # kopgevel-driehoek -> alleen als die gevel aan buiten grenst
@@ -1612,12 +1633,13 @@ def opname_dak_driehoek(tag):
             n_kop += 1
         else:
             dos.schil.append(SchilDeel(id="dak%d-schuin-%s" % (nr, (v["orientatie"] or "x").lower()),
-                                       type="dak", subtype="schuin (zadeldak)", begrenzing="Buitenlucht",
+                                       type="dak", subtype="schuin (zadeldak)",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
                                        breedte_m=breedte, diepte_m=runs[v["orientatie"]], geometrie_groep="dak%d" % nr,
-                                       isolatie_aanwezig="Onbekend", rekenzone=rz,
+                                       rekenzone=rz,
                                        opmerkingen="Dak %d — hellend vlak %s (c=%.2f x breedte=%.2f, %.0f°)"
-                                       % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1)))
+                                       % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1),
+                                       **_erf_dak_kwargs(dos)))
             n_dak += 1
     _dos_save(tag, st, dos)
     flash("Zadeldak %d toegevoegd: %d hellend vlak + %d kopgevel. Nog een dak? Kies opnieuw hieronder."
@@ -1643,10 +1665,11 @@ def opname_dak_negen(tag):
         if not m2:
             continue
         dos.schil.append(SchilDeel(id="dak%d-%s" % (nr, o.lower()[:4]), type="dak", subtype="vlak (zelf ingevoerd)",
-                                   begrenzing="Buitenlucht", orientatie=("" if o == "Horizontaal" else o),
+                                   orientatie=("" if o == "Horizontaal" else o),
                                    oppervlakte_m2=m2, hellingshoek=(0 if o == "Horizontaal" else helling),
-                                   isolatie_aanwezig="Onbekend", rekenzone=rz,
-                                   opmerkingen="Dak %d — m² zelf ingevoerd (%s)" % (nr, o)))
+                                   rekenzone=rz,
+                                   opmerkingen="Dak %d — m² zelf ingevoerd (%s)" % (nr, o),
+                                   **_erf_dak_kwargs(dos)))
         n_add += 1
     if not n_add:
         flash("Geen m² ingevuld — vul minstens één oriëntatie in.")

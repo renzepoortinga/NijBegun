@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Claude (taak 007 afgerond)
+Bijgewerkt: 2026-08-14 door Claude (taak 008 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -55,8 +55,21 @@ volgt nog de bounding-box, niet de polygon zelf (bewust uit scope). AI-review
 normaal-bug bij concave vormen) en 2 bewust laten staan (lage impact, zie
 taakbestand). 768/768 tests groen.
 
+Taak 008 (dak-wizards erven de Constructies-DAK-standaard + bouwjaarklasse/rc_bron in de editor)
+is klaar en staat in `tasks/done/`: de zadeldak- en freeform-dakwizard hardcodeerden nog
+`isolatie_aanwezig="Onbekend"` i.p.v. `dos.opname.dak_standaard` te erven (het platte dak deed dit
+al); nu alle drie via een gedeelde `_erf_dak_kwargs()`-helper. Bouwjaarklasse en Rc-bron zijn nu
+ook per vlak zichtbaar/corrigeerbaar in de gebouwboom-editor. `docs/magicplan-velden-audit.md`
+bevinding C bleek bij het narechecken al opgelost. AI-review vond 2 punten in een niet-aangeraakt
+bestand (`scripts/verify.sh`, al vóór deze sessie ongecommit — zie Blokkades) en 1 terechte
+duplicatie in eigen werk, verwerkt. 772/772 tests groen.
+
 ## Blokkades
-- Geen bekende.
+- Geen bekende voor de eigen taken. Wél gevonden (niet gefixt, niet van deze taken): het reeds
+  vóór deze sessie ongecommitte `scripts/verify.sh` heeft een awk-padsplitser die stukloopt op een
+  spatie in het pad (bv. deze machine's eigen `C:\Users\Renze Poortinga`), en meldt de
+  `main`-worktree zelf altijd als "al gemerged, opruimen" vanuit elke andere worktree. Renze
+  opgemerkt; niet gecorrigeerd omdat het buiten de scope van taken 007/008 valt.
 
 ## Openstaande beslissingen
 - Geen.
