@@ -67,6 +67,10 @@ class VloerInfo:
     naam: str = ""
     oppervlakte_m2: float = 0.0
     hoogte_m: Optional[float] = None
+    # Echte grondvlak-contour in meter, oorsprong linksboven: [[x, z], ...], gesloten veelhoek.
+    # Alleen gevuld als de MagicPlan-API-route een plattegrond-omtrek teruggaf (assemble.py);
+    # de CSV-route kent 'm nooit -> None betekent "footprint afleiden uit gevel-m2" (bestaand gedrag).
+    contour_m: Optional[List[List[float]]] = None
 
 @dataclass
 class Ruimte:

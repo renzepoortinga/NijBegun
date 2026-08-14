@@ -23,6 +23,22 @@ import math
 HARTMAAT_GEBOUWSCHEIDENDE_WAND_M = 0.11
 
 
+def polygon_oppervlakte_m2(punten):
+    """Oppervlakte van een gesloten veelhoek via de schoenveter-formule.
+    `punten` = lijst (x, y)-paren in dezelfde eenheid (bv. meter of pixel); de
+    veelhoek hoeft niet convex te zijn, en de omloopvolgorde (met/tegen de klok
+    mee) maakt niet uit -> geeft altijd 0.0 bij minder dan 3 punten."""
+    if len(punten) < 3:
+        return 0.0
+    totaal = 0.0
+    n = len(punten)
+    for i in range(n):
+        x1, y1 = punten[i]
+        x2, y2 = punten[(i + 1) % n]
+        totaal += x1 * y2 - x2 * y1
+    return abs(totaal) / 2
+
+
 def aantal_woningscheidende_wanden(woningtype):
     """Aantal gebouwscheidende (buur)wanden uit de woningpositie (ISSO 82.1 par. 7.1.1).
     vrijstaand -> 0 · hoek/eind/kop -> 1 · twee-onder-een-kap -> 1 · tussen -> 2."""
