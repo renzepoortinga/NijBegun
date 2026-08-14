@@ -83,6 +83,20 @@ if [ -n "$BASE" ]; then
   else ok "geen bestaande migraties gewijzigd"; fi
 else ok "geen basis om tegen te vergelijken"; fi
 
+# ── ADVISORY: verweesde worktrees
+head_ "Worktrees"
+HIER=$(git rev-parse --show-toplevel)
+STALE=$(git worktree list --porcelain 2>/dev/null | awk '
+  /^worktree / { wt=$0; sub(/^worktree /, "", wt) }
+  /^branch /   { br=$0; sub(/^branch /, "", br); sub("refs/heads/","",br); print wt"|"br }
+' | while IFS='|' read -r wt br; do
+  [ "$wt" = "$HIER" ] && continue
+  [ "$br" = "main" ] && continue
+  git merge-base --is-ancestor "$br" main 2>/dev/null && printf '%s (%s) ' "$wt" "$br"
+done)
+[ -n "$STALE" ] && advise "worktree(s) al gemerged in main, nog niet opgeruimd: $STALE"
+[ -z "$STALE" ] && ok "geen verweesde worktrees"
+
 # ── ADVISORY: administratie
 head_ "Administratie"
 [ -f docs/STATE.md ] || advise "docs/STATE.md ontbreekt"
