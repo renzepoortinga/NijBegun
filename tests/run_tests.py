@@ -1038,6 +1038,17 @@ check("gebouw-svg: contourmuren dragen geen id maar wél een data-contour-marker
 _gu_vorm = [(0, 0), (10, 0), (10, 10), (7, 10), (7, 3), (3, 3), (3, 10), (0, 10)]
 check("gebouw-svg: concave U-vorm geeft de schoenveter-verwachte 3 zichtbare wanden",
       len(_gmuur(_gu_vorm, 3)) == 3)
+# Shading moet ONAFHANKELIJK zijn van de omlooprichting van de aangeleverde contour (bevinding uit
+# taak 010-review): dezelfde rechthoek met/tegen de klok in aangeleverd is fysiek hetzelfde gebouw
+# en hoort dus dezelfde brightness()-waarde per muur te geven.
+from dashboard.gebouw_svg import _shade as _gshade
+_grect_ccw = [(0, 0), (6, 0), (6, 8), (0, 8)]
+_grect_cw = [(0, 0), (0, 8), (6, 8), (6, 0)]
+_gshades_ccw = sorted(round(_gshade(f["points"]), 3) for f in _gmuur(_grect_ccw, 3))
+_gshades_cw = sorted(round(_gshade(f["points"]), 3) for f in _gmuur(_grect_cw, 3))
+check("gebouw-svg: shading onafhankelijk van CW/CCW-omlooprichting van de contour",
+      _gshades_ccw == _gshades_cw and len(_gshades_ccw) == 2,
+      str((_gshades_ccw, _gshades_cw)))
 
 print("\n35. Webapp (Flask) — laadt + kernroutes + Beoordelingscheck")
 try:

@@ -138,7 +138,15 @@ def _muurvlakken(punten, wall_h):
 
     Een contourrand komt niet 1-op-1 overeen met een MagicPlan-gevelnaam, dus deze vlakken
     dragen geen `deel` — traceerbaarheid van de onderliggende SchilDelen loopt via de
-    render-metadata-laag onderaan `gebouw_svg`, niet via een label op de muur zelf."""
+    render-metadata-laag onderaan `gebouw_svg`, niet via een label op de muur zelf.
+
+    De gebouwde vlakpunten worden altijd in dezelfde canonieke omlooprichting opgeleverd
+    (onder-links, onder-rechts, boven-rechts, boven-links vanuit het perspectief van de camera),
+    ONGEACHT of de aangeleverde contour zelf met- of tegen de klok in loopt. `_shade()` (de
+    richtingsafhankelijke helderheid) leest de normaal namelijk rechtstreeks uit de eerste twee
+    randen van elk vlak zonder de omlooprichting van de brontekening te kennen — zonder deze
+    normalisatie zou een tegen-de-klok-in aangeleverde MagicPlan-contour precies de omgekeerde
+    (dus 'verkeerd om') schaduw krijgen van een fysiek identiek gebouw met de andere omlooprichting."""
     n = len(punten)
     schoenveter = sum(punten[i][0] * punten[(i + 1) % n][1] - punten[(i + 1) % n][0] * punten[i][1]
                       for i in range(n))
@@ -150,6 +158,8 @@ def _muurvlakken(punten, wall_h):
         nx, nz = teken * (z2 - z1), teken * -(x2 - x1)
         if nx - nz <= 0:                          # niet zichtbaar voor deze camera -> weglaten
             continue
+        if teken == -1:                           # canoniseer de omlooprichting (zie docstring)
+            x1, z1, x2, z2 = x2, z2, x1, z1
         mx, mz = (x1 + x2) / 2, (z1 + z2) / 2
         diepte = mx + wall_h / 2 - mz
         ranked.append((diepte, _face([(x1, 0, z1), (x2, 0, z2), (x2, wall_h, z2), (x1, wall_h, z1)],
@@ -451,10 +461,14 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
     if grond2d:
         gx = [450 + (x - (min_x + max_x) / 2) * schaal for x, _ in grond2d]
         gy = [255 + (y - (min_y + max_y) / 2) * schaal for _, y in grond2d]
-        p.append('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="%s" fill-opacity="0.16" '
+        # Bewust 'black', niet een thema-token: een schaduw hoort in zowel licht als donker thema
+        # donker te blijven (zelfde conventie als --shadow/--shadow-sm in app.css, die ook in
+        # beide thema's rgba(0,0,0,...) blijven) — C_INK zou in donker thema bijna wit worden en
+        # een lichtgevende halo tekenen i.p.v. een schaduw.
+        p.append('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="black" fill-opacity="0.16" '
                  'filter="url(#gebouw-schaduw)"/>'
                  % ((min(gx) + max(gx)) / 2, max(gy) + 6,
-                    max(20.0, (max(gx) - min(gx)) / 2 + 10), 10, C_INK))
+                    max(20.0, (max(gx) - min(gx)) / 2 + 10), 10))
     p += [
          '<text x="32" y="42" font-size="var(--svg-fs-8)" font-weight="700" fill="%s">%s</text>'
          % (C_INK, _esc(titel)),

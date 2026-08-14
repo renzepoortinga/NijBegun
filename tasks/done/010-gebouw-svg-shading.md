@@ -54,7 +54,7 @@ wijziging, geen interactieve rotatie — dat blijft toekomstig werk.
       `filter`-waarden, dat zou de tests te veel aan de gekozen lichtrichting vastklinken; wel
       bestaande structuur-/XML-validiteitstests ongewijzigd geslaagd).
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer (`/code-review high`, zie Sessions).
 
 ## Sessions
 - 2026-08-14 (claude): shading-formule ontworpen als vlak-normaal (3D cross-product) · vaste
@@ -74,6 +74,22 @@ wijziging, geen interactieve rotatie — dat blijft toekomstig werk.
   Geen browser-visuele-QA gedaan: de Claude-in-Chrome-extensie verbond niet (zelfde probleem als
   eerder in het gesprek). Geverifieerd via numerieke normaal-/shading-uitkomsten i.p.v. een
   screenshot — Renze: bekijk het gebouwoverzicht in de echte webapp voor het definitieve oordeel.
+- 2026-08-14 (claude), vervolg: `/code-review high` vond 2 ECHTE bugs (geen ander-bestandencluster
+  deze keer):
+  1. `_shade()` leest de vlaknormaal uit de eerste twee randen zonder de omlooprichting van de
+     broncontour te kennen — een MagicPlan-contour die met de klok mee i.p.v. tegen de klok in is
+     aangeleverd (externe data, niet gegarandeerd) gaf daardoor de PRECIES OMGEKEERDE schaduw voor
+     fysiek hetzelfde gebouw. Gereproduceerd (zelfde rechthoek CW vs CCW gaf shade 0.85/0.99 vs
+     0.95/0.81) en gefixt: `_muurvlakken` canoniseert nu de omlooprichting van elk vlak vóórdat het
+     de punten opbouwt (`teken == -1` -> punten omwisselen), zodat `_shade()` altijd een consistent
+     gewonden vlak krijgt, ongeacht de bronvolgorde. Regressietest toegevoegd (dezelfde rechthoek
+     CW/CCW moet identieke shades geven).
+  2. De grondschaduw-ellips gebruikte `C_INK` (`var(--ink)`) — bijna zwart in licht thema, maar
+     bijna WIT in donker thema (`app.css`), dus een lichtgevende halo i.p.v. een schaduw. Gefixt
+     naar een vast `fill="black"`, dezelfde conventie als de bestaande `--shadow`/`--shadow-sm`-
+     tokens in `app.css` die zelf ook in beide thema's `rgba(0,0,0,...)` blijven — een schaduw
+     hoort niet met het thema mee te draaien.
+  773/773 tests groen (772 + 1 nieuwe regressietest).
 
 ## Notes
 - Vervolgstappen voor de stijl-slag (niet in deze taak): dak op de echte polygon-vorm i.p.v. de
