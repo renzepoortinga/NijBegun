@@ -96,6 +96,17 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   `verify.sh`: PASS met dezelfde Python-advisory; `py_compile` en
   `git diff --check`: PASS. Browser-QA was niet mogelijk omdat geen browser
   aan deze sessie verbonden was; responsive/darkmode/tokens statisch getoetst.
+- 2026-08-14 (Codex, Builder, reviewfix): drie blocking reviewbevindingen
+  hersteld. Exacte dakmetadata wordt niet meer geclamped: run, breedte,
+  helling, gedeelde nok en gebouwhoogte worden op 0,10 m noktolerantie
+  gevalideerd; incompatibele metadata levert een zichtbare fout en geen als
+  `exact` gelabeld dak. Dakvlakken kiezen hun zijde via de oriëntaties van de
+  vier benoemde gevels en zijn daardoor lijstvolgorde-onafhankelijk.
+  Dakkapelvoorvlak, beide wangen en dakje worden structureel via hun stabiele
+  taak-005-idrollen gekoppeld en op het expliciete moederdak geïnterpoleerd.
+  Nieuwe coördinaten-, conflict-, shuffle- en vier-face-regressies toegevoegd:
+  746 PASS, uitsluitend dezelfde 2 taak-002-omgevingsfouten over; `verify.sh`,
+  `py_compile` en `git diff --check` PASS.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.

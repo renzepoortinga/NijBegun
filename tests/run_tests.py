@@ -886,7 +886,7 @@ from dashboard.gebouw_svg import gebouw_svg as _gsvg
 from core.dossier import Dossier as _GDos, SchilDeel as _GSchil
 _gdos = _GDos()
 _gdos.opname.gevelhoogte_m = 3.0
-_gdos.opname.gebouwhoogte_m = 5.5
+_gdos.opname.gebouwhoogte_m = 7.0
 _gdos.schil = [
     _GSchil(id="gevel-voor", type="gevel", gevel_naam="voor", orientatie="Z",
             oppervlakte_m2=18, rc_huidig=2.5),
@@ -912,6 +912,23 @@ check("gebouw-svg: echte isometrische vlakken en afgeleide footprint",
       and "WONING" not in _gsvgtxt)
 check("gebouw-svg: taak-005-dakmetadata rendert exact",
       'data-element-id="dak1-schuin-z"' in _gsvgtxt and 'data-geometrie="exact"' in _gsvgtxt)
+check("gebouw-svg: exacte dakcoördinaten bewaren run, goot- en gebouwhoogte",
+      'data-punten-3d="0.000,3.000,0.000 6.000,3.000,0.000 '
+      '6.000,7.000,4.000 0.000,7.000,4.000"' in _gsvgtxt)
+_shuffle = _GDos.from_dict(_gdos.to_dict())
+_shuffle.schil[-2], _shuffle.schil[-1] = _shuffle.schil[-1], _shuffle.schil[-2]
+_shuffle_svg = _gsvg(_shuffle)
+check("gebouw-svg: dakzijde volgt oriëntatie en niet lijstvolgorde",
+      'data-element-id="dak1-schuin-z"' in _shuffle_svg
+      and 'data-punten-3d="0.000,3.000,0.000 6.000,3.000,0.000 '
+      '6.000,7.000,4.000 0.000,7.000,4.000"' in _shuffle_svg)
+_dak_conflict = _GDos.from_dict(_gdos.to_dict())
+_dak_conflict.opname.gebouwhoogte_m = 6.0
+_dak_conflict_svg = _gsvg(_dak_conflict)
+check("gebouw-svg: incompatibele exacte dakmetadata wordt niet vervormd of exact genoemd",
+      "Dak niet getekend:" in _dak_conflict_svg and "verschillen meer dan 0,10 m" in _dak_conflict_svg
+      and ('data-element-id="dak1-schuin-z" data-oppervlakte-m2="25.00" '
+           'data-orientatie="Z" data-geometrie="exact"') not in _dak_conflict_svg)
 _escape = _GDos.from_dict(_gdos.to_dict())
 _escape.schil[0].id = 'gevel-&-<voor>"'
 _escape_svg = _gsvg(_escape)
@@ -931,6 +948,9 @@ _kapel.schil += [
     _GSchil(id="dakkapel1-wang-rechts", type="gevel", subtype="Dakkapel wang",
             oppervlakte_m2=1.5, breedte_m=2, diepte_m=1, hoogte_m=1.5,
             moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1"),
+    _GSchil(id="dakkapel1-wang-links", type="gevel", subtype="Dakkapel wang",
+            oppervlakte_m2=1.5, breedte_m=2, diepte_m=1, hoogte_m=1.5,
+            moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1"),
     _GSchil(id="dakkapel1-dakje", type="dak", subtype="plat (dakkapel)",
             oppervlakte_m2=2, breedte_m=2, diepte_m=1, hoogte_m=1.5,
             moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1"),
@@ -939,6 +959,11 @@ _kapel_svg = _gsvg(_kapel)
 check("gebouw-svg: dakkapel staat op expliciet moederdakvlak",
       'data-face="dakkapel-voor"' in _kapel_svg and "dakkapel1-voorvlak" in _kapel_svg
       and "dak1-schuin-z" in _kapel_svg)
+check("gebouw-svg: dakkapelrollen koppelen alle vier zichtbare faces structureel",
+      all(('data-face="dakkapel-%s"' % rol) in _kapel_svg
+          for rol in ("voor", "links", "rechts", "dak"))
+      and all(('data-element-id="dakkapel1-%s"' % suffix) in _kapel_svg
+              for suffix in ("voorvlak", "wang-links", "wang-rechts", "dakje")))
 _geen_hoogte = _GDos.from_dict(_gdos.to_dict())
 _geen_hoogte.opname.gevelhoogte_m = None
 check("gebouw-svg: ontbrekende gevelhoogte geeft niet-gegokte fallback",

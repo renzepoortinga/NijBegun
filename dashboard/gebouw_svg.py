@@ -128,21 +128,81 @@ def _fallback(dos, titel, reden):
 
 
 def _face(points, schildeel=None, kind="vlak", fill=C_HOUSE, stroke=C_HOUSE_LINE,
-          approximate=False):
+          geometrie="exact"):
     return {"points": points, "deel": schildeel, "kind": kind, "fill": fill,
-            "stroke": stroke, "approximate": approximate}
+            "stroke": stroke, "geometrie": geometrie}
 
 
-def _roof_faces(dos, footprint):
+def _orientatie_zijden(gevelgroepen):
+    zijden = {}
+    for naam, delen in gevelgroepen.items():
+        for deel in delen:
+            orientatie = (deel.orientatie or "").strip().upper()
+            if orientatie:
+                zijden[orientatie] = naam
+    return zijden
+
+
+def _dakvlakpunten(zijde, lengte, run, goothoogte, nokhoogte, breedte_huis, diepte_huis):
+    """Vier punten met vaste volgorde: goot links/rechts, nok rechts/links."""
+    if zijde in ("voor", "achter"):
+        x0 = (breedte_huis - lengte) / 2
+        z_goot = 0 if zijde == "voor" else diepte_huis
+        z_nok = run if zijde == "voor" else diepte_huis - run
+        return [(x0, goothoogte, z_goot), (x0 + lengte, goothoogte, z_goot),
+                (x0 + lengte, nokhoogte, z_nok), (x0, nokhoogte, z_nok)]
+    z0 = (diepte_huis - lengte) / 2
+    x_goot = 0 if zijde == "links" else breedte_huis
+    x_nok = run if zijde == "links" else breedte_huis - run
+    return [(x_goot, goothoogte, z0), (x_goot, goothoogte, z0 + lengte),
+            (x_nok, nokhoogte, z0 + lengte), (x_nok, nokhoogte, z0)]
+
+
+def _roof_faces(dos, footprint, gevelgroepen):
     breedte_huis, diepte_huis, gevelhoogte = footprint
-    faces, dakinfo = [], {}
+    faces, dakinfo, fouten = [], {}, []
+    orientatie_zijden = _orientatie_zijden(gevelgroepen)
     daken = _dakvlakken(dos)
     groepen = {}
     for dak in daken:
         groepen.setdefault(dak.geometrie_groep or "legacy:%s" % dak.id, []).append(dak)
-    for groep in groepen.values():
+    for groepsnaam, groep in groepen.items():
         hellend = [d for d in groep if (d.hellingshoek or 0) > 0]
-        for index, dak in enumerate(groep):
+        exact_hellend = [d for d in hellend if d.breedte_m and d.diepte_m
+                          and d.breedte_m > 0 and d.diepte_m > 0]
+        groep_fout = ""
+        exacte_info = []
+        for dak in exact_hellend:
+            zijde = orientatie_zijden.get((dak.orientatie or "").strip().upper())
+            if not zijde:
+                groep_fout = "dakvlak %s heeft geen gevelzijde voor oriëntatie %s" % (dak.id, dak.orientatie or "?")
+                break
+            zijde_lengte = breedte_huis if zijde in ("voor", "achter") else diepte_huis
+            zijde_run = diepte_huis if zijde in ("voor", "achter") else breedte_huis
+            if dak.breedte_m > zijde_lengte + .01 or dak.diepte_m > zijde_run + .01:
+                groep_fout = "dakvlak %s past niet op de afgeleide footprint" % dak.id
+                break
+            berekende_nok = gevelhoogte + dak.diepte_m * math.tan(math.radians(dak.hellingshoek))
+            gebouwhoogte = dos.opname.gebouwhoogte_m
+            if (gebouwhoogte and math.isfinite(gebouwhoogte)
+                    and abs(gebouwhoogte - berekende_nok) > .10):
+                groep_fout = ("dakvlak %s: gebouwhoogte en helling/run verschillen meer dan 0,10 m"
+                              % dak.id)
+                break
+            exacte_info.append((dak, zijde, berekende_nok))
+        if not groep_fout and len(exacte_info) == 2:
+            (dak_a, zijde_a, nok_a), (dak_b, zijde_b, nok_b) = exacte_info
+            tegenover = {"voor": "achter", "achter": "voor", "links": "rechts", "rechts": "links"}
+            overspanning = diepte_huis if zijde_a in ("voor", "achter") else breedte_huis
+            if (zijde_b != tegenover[zijde_a]
+                    or abs(dak_a.diepte_m + dak_b.diepte_m - overspanning) > .01
+                    or abs(dak_a.breedte_m - dak_b.breedte_m) > .01
+                    or abs(nok_a - nok_b) > .10):
+                groep_fout = "dakgroep %s deelt geen geometrisch consistente nok" % groepsnaam
+        if groep_fout:
+            fouten.append(groep_fout)
+
+        for dak in groep:
             exact = bool(dak.breedte_m and dak.diepte_m and dak.breedte_m > 0 and dak.diepte_m > 0)
             helling = math.radians(dak.hellingshoek or 0)
             lengte = dak.breedte_m if exact else breedte_huis
@@ -153,28 +213,35 @@ def _roof_faces(dos, footprint):
                 run = schuine_diepte * math.cos(helling)
             else:
                 run = diepte_huis
-            lengte = min(max(.1, lengte), breedte_huis)
-            run = min(max(.1, run), diepte_huis)
-            x0 = (breedte_huis - lengte) / 2
+            lengte = max(.1, lengte)
+            run = max(.1, run)
             if not hellend or not helling:
-                points = [(x0, gevelhoogte, 0), (x0 + lengte, gevelhoogte, 0),
-                          (x0 + lengte, gevelhoogte, run), (x0, gevelhoogte, run)]
+                if exact and (lengte > breedte_huis + .01 or run > diepte_huis + .01):
+                    fouten.append("plat dakvlak %s past niet op de afgeleide footprint" % dak.id)
+                    continue
+                x0 = (breedte_huis - lengte) / 2
+                z0 = (diepte_huis - run) / 2
+                points = [(x0, gevelhoogte, z0), (x0 + lengte, gevelhoogte, z0),
+                          (x0 + lengte, gevelhoogte, z0 + run), (x0, gevelhoogte, z0 + run)]
             else:
-                # Twee vlakken uit dezelfde geometriegroep delen een nok; de
-                # runs bepalen de verschoven nok bij een asymmetrisch dak.
-                aan_voorzijde = index == 0
-                z_goot = 0 if aan_voorzijde else diepte_huis
-                z_nok = run if aan_voorzijde else diepte_huis - run
+                if exact and groep_fout:
+                    continue
+                zijde = orientatie_zijden.get((dak.orientatie or "").strip().upper())
+                if not zijde:
+                    if exact:
+                        continue
+                    zijde = "voor"
                 berekende_nok = gevelhoogte + run * math.tan(helling)
                 gebouwhoogte = dos.opname.gebouwhoogte_m
-                nokhoogte = (gebouwhoogte if gebouwhoogte and math.isfinite(gebouwhoogte)
-                             and gebouwhoogte >= gevelhoogte else berekende_nok)
-                points = [(x0, gevelhoogte, z_goot), (x0 + lengte, gevelhoogte, z_goot),
-                          (x0 + lengte, nokhoogte, z_nok), (x0, nokhoogte, z_nok)]
-            faces.append(_face(points, dak, "dakvlak", C_DAK, C_DAK_LINE, not exact))
+                nokhoogte = (gebouwhoogte if exact and gebouwhoogte and math.isfinite(gebouwhoogte)
+                             else berekende_nok)
+                points = _dakvlakpunten(zijde, lengte, run, gevelhoogte, nokhoogte,
+                                        breedte_huis, diepte_huis)
+            geometrie = "exact" if exact else "benaderd"
+            faces.append(_face(points, dak, "dakvlak", C_DAK, C_DAK_LINE, geometrie))
             dakinfo[dak.id] = {"points": points, "run": run, "lengte": lengte,
                                "helling": helling, "exact": exact}
-    return faces, dakinfo
+    return faces, dakinfo, fouten
 
 
 def _dakkapel_faces(dos, dakinfo):
@@ -184,29 +251,49 @@ def _dakkapel_faces(dos, dakinfo):
         if _is_dakkapel(deel) and deel.moedervlak_id:
             groepen.setdefault(deel.geometrie_groep or deel.moedervlak_id, []).append(deel)
     for delen in groepen.values():
-        basis = delen[0]
+        rollen = {}
+        for deel in delen:
+            sleutel = (deel.id or "").lower()
+            if "voorvlak" in sleutel:
+                rollen["voor"] = deel
+            elif "wang-links" in sleutel:
+                rollen["links"] = deel
+            elif "wang-rechts" in sleutel:
+                rollen["rechts"] = deel
+            elif "dakje" in sleutel or (deel.type or "").lower() == "dak":
+                rollen["dak"] = deel
+        basis = rollen.get("voor")
+        if not basis or not all(rol in rollen for rol in ("voor", "links", "rechts", "dak")):
+            continue
         moeder = dakinfo.get(basis.moedervlak_id)
         if not moeder or not (basis.breedte_m and basis.diepte_m and basis.hoogte_m):
             continue
         b, d, h = basis.breedte_m, basis.diepte_m, basis.hoogte_m
         if min(b, d, h) <= 0 or b > moeder["lengte"] or d > moeder["run"]:
             continue
-        dakpunten = moeder["points"]
-        x0 = (dakpunten[0][0] + dakpunten[1][0] - b) / 2
-        z0 = dakpunten[0][2] + (dakpunten[2][2] - dakpunten[0][2]) * .3
-        richting = 1 if dakpunten[2][2] >= dakpunten[0][2] else -1
-        z1 = z0 + richting * d
-        helling = moeder["helling"]
-        y0 = dakpunten[0][1] + abs(z0 - dakpunten[0][2]) * math.tan(helling)
-        y1 = dakpunten[0][1] + abs(z1 - dakpunten[0][2]) * math.tan(helling)
-        top = y0 + h
+        p0, p1, p2, p3 = moeder["points"]
+        fractie_b = b / moeder["lengte"]
+        fractie_d = d / moeder["run"]
+        u0, u1 = (1 - fractie_b) / 2, (1 + fractie_b) / 2
+        v0, v1 = (1 - fractie_d) / 2, (1 + fractie_d) / 2
+
+        def interp(u, v):
+            links = tuple(p0[i] + (p3[i] - p0[i]) * v for i in range(3))
+            rechts = tuple(p1[i] + (p2[i] - p1[i]) * v for i in range(3))
+            return tuple(links[i] + (rechts[i] - links[i]) * u for i in range(3))
+
+        lf, rf, lb, rb = interp(u0, v0), interp(u1, v0), interp(u0, v1), interp(u1, v1)
+        top = lf[1] + h
+        lft, rft = (lf[0], top, lf[2]), (rf[0], top, rf[2])
+        lbt, rbt = (lb[0], top, lb[2]), (rb[0], top, rb[2])
         punten = {
-            "voor": [(x0, y0, z0), (x0 + b, y0, z0), (x0 + b, top, z0), (x0, top, z0)],
-            "zij": [(x0 + b, y0, z0), (x0 + b, y1, z1), (x0 + b, top, z1), (x0 + b, top, z0)],
-            "dak": [(x0, top, z0), (x0 + b, top, z0), (x0 + b, top, z1), (x0, top, z1)],
+            "voor": [lf, rf, rft, lft],
+            "links": [lb, lf, lft, lbt],
+            "rechts": [rf, rb, rbt, rft],
+            "dak": [lft, rft, rbt, lbt],
         }
         for kind, pts in punten.items():
-            deel = next((x for x in delen if kind in (x.id or "").lower()), basis)
+            deel = rollen[kind]
             faces.append(_face(pts, deel, "dakkapel-%s" % kind,
                                C_DAKKAPEL, C_DAKKAPEL_LINE))
     return faces
@@ -230,7 +317,7 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
         faces.append(_face(punten, delen[0], "gevel-%s" % naam,
                            C_HOUSE, C_KNOWN if bekend else C_UNKNOWN))
         faces[-1]["delen"] = delen
-    dakfaces, dakinfo = _roof_faces(dos, footprint)
+    dakfaces, dakinfo, dakfouten = _roof_faces(dos, footprint, gevelgroepen)
     faces.extend(dakfaces)
     faces.extend(_dakkapel_faces(dos, dakinfo))
 
@@ -255,7 +342,9 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
          % (C_SUB, breedte, diepte, gevelhoogte)]
     for face in faces:
         deel = face.get("deel")
-        extra = ' data-geometrie="%s"' % ("benaderd" if face["approximate"] else "exact")
+        extra = ' data-geometrie="%s" data-punten-3d="%s"' % (
+            face["geometrie"],
+            _esc(" ".join("%.3f,%.3f,%.3f" % punt for punt in face["points"])))
         attrs = _attrs(deel, extra) if deel else ""
         if face.get("delen"):
             ids = ",".join(s.id or "" for s in face["delen"])
@@ -284,11 +373,14 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
                      % (_attrs(deel), _esc(deel.id), deel.oppervlakte_m2 or 0,
                         _esc(deel.orientatie)))
     p.append('</g>')
-    benaderd = [face["deel"] for face in dakfaces if face["approximate"]]
+    benaderd = [face["deel"] for face in dakfaces if face["geometrie"] == "benaderd"]
     if benaderd:
         p.append('<text x="32" y="508" font-size="var(--svg-fs-3)" fill="%s">'
                  'Benaderd dakvlak: %s (legacy zonder renderingmaten)</text>'
                  % (C_SUB, _esc(", ".join(d.id or "" for d in benaderd))))
+    if dakfouten:
+        p.append('<text x="32" y="486" font-size="var(--svg-fs-3)" fill="var(--err-fg)">'
+                 'Dak niet getekend: %s</text>' % _esc("; ".join(dakfouten)))
     p.append('<text x="32" y="532" font-size="var(--svg-fs-2)" fill="%s">'
              'Vlakken blijven via id, m² en oriëntatie herleidbaar in de tekening.</text>' % C_SUB)
     p.append('</svg>')
