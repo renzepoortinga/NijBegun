@@ -17,7 +17,7 @@ de container-namen in EXPECTED_CONTAINERS bij.
 
 Credentials uit .env (NIET in OneDrive bewaren): MAGICPLAN_API_KEY, MAGICPLAN_CUSTOMER_ID, MAGICPLAN_API_BASE
 """
-import os, sys, json, math, argparse, urllib.request, urllib.error
+import os, sys, json, math, argparse, ssl, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
                           SchilDeel, Ventilatie, Installaties, Verwarming, Tapwater, Koeling,
@@ -48,6 +48,18 @@ def load_env(path):
     return env
 
 
+def _ssl_context():
+    """Python 3.13+/OpenSSL 3.2+ zet VERIFY_X509_STRICT standaard aan: een strengere RFC 5280-
+    profielcheck die cloud.magicplan.app's certificaatketen afwijst ('Basic Constraints of CA cert
+    not marked critical') - een reëel maar technisch niet-strikt-conform intermediate-CA-veld, geen
+    vervalst certificaat (Windows/curl accepteren dezelfde keten probleemloos, en de rest van het
+    internet werkt gewoon vanuit deze machine - dus geen MITM/proxy-probleem). We schakelen ALLEEN
+    die ene profielcheck uit; CA-vertrouwen, hostnaam- en verloopcontrole blijven onverkort actief."""
+    ctx = ssl.create_default_context()
+    ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    return ctx
+
+
 class MagicPlanClient:
     def __init__(self, env):
         self.base = env.get("MAGICPLAN_API_BASE", "https://cloud.magicplan.app/api/v2").rstrip("/")
@@ -59,7 +71,7 @@ class MagicPlanClient:
         req.add_header("key", self.key)          # MagicPlan REST v2: headers 'key' + 'customer'
         req.add_header("customer", self.customer)
         req.add_header("Accept", "application/json")
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=30, context=_ssl_context()) as r:
             return json.loads(r.read().decode("utf-8"))
 
     def get_workspace(self):
