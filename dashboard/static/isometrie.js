@@ -36,6 +36,24 @@
 
   function slope(points, kind) { return polygon(points, kind || "hellend"); }
 
+  // Zelfde 'zon' en shading-formule als dashboard/gebouw_svg.py:_shade — puur een CSS
+  // brightness()-filter bovenop de bestaande kleurtokens (geen hex), zodat de wizard-previews
+  // en het definitieve gebouwoverzicht dezelfde visuele diepte krijgen. Vlakken zijn hier steeds
+  // 'onder-links, onder-rechts, boven-rechts, boven-links' (of een driehoek) opgebouwd; cross van
+  // de tweede rand op de eerste geeft de naar-buiten-wijzende normaal.
+  var ZON = {x: -0.25, y: 0.85, z: -0.45};
+  function shade(points3d) {
+    if (points3d.length < 3) return 1;
+    var p0 = points3d[0], p1 = points3d[1], p2 = points3d[2];
+    var ax = p1.x - p0.x, ay = p1.y - p0.y, az = p1.z - p0.z;
+    var bx = p2.x - p0.x, by = p2.y - p0.y, bz = p2.z - p0.z;
+    var nx = by * az - bz * ay, ny = bz * ax - bx * az, nz = bx * ay - by * ax;
+    var lengte = Math.sqrt(nx * nx + ny * ny + nz * nz);
+    if (lengte < 1e-9) return 1;
+    var dot = (nx * ZON.x + ny * ZON.y + nz * ZON.z) / lengte;
+    return Math.max(0.6, Math.min(1.15, 0.90 + 0.20 * dot));
+  }
+
   function draw(svg, faces, label) {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     var projected = [];
@@ -57,6 +75,7 @@
       face.setAttribute("stroke", face.getAttribute("data-face").indexOf("actief") >= 0 ? "var(--orange)" : "var(--blue)");
       face.setAttribute("stroke-width", "2");
       face.setAttribute("stroke-linejoin", "round");
+      face.setAttribute("filter", "brightness(" + shade(face._points3d).toFixed(3) + ")");
       svg.appendChild(face);
     });
     svg.appendChild(el("text", {x: "160", y: "207", "text-anchor": "middle",

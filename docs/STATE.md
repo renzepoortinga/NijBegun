@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Claude (taak 008 afgerond)
+Bijgewerkt: 2026-08-14 door Claude (taken 009 en 010 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -64,12 +64,24 @@ bevinding C bleek bij het narechecken al opgelost. AI-review vond 2 punten in ee
 bestand (`scripts/verify.sh`, al vóór deze sessie ongecommit — zie Blokkades) en 1 terechte
 duplicatie in eigen werk, verwerkt. 772/772 tests groen.
 
+Taak 009 (fix verweesde-worktrees-check in `verify.sh`) is klaar en staat in `tasks/done/`: de
+awk-padsplitser die stukliep op een spatie in het pad, en de `main`-worktree die zichzelf altijd
+als "al gemerged, opruimen" meldde — beide empirisch gereproduceerd (tijdelijke worktree onder een
+pad met spatie) en gefixt. AI-review vond nog een kleine efficiëntie-nit (`git rev-parse` gehoist
+uit de loop), verwerkt.
+
+Taak 010 (richtingsafhankelijke shading + grondschaduw — eerste stap visuele stijl-slag) is klaar
+en staat in `tasks/done/`: elk vlak in het gebouwoverzicht + de drie dak-wizard-previews krijgt nu
+een CSS `brightness()`-filter uit de vlaknormaal t.o.v. een vaste lichtrichting, bovenop de
+bestaande kleurtokens (geen hex). AI-review vond 2 echte bugs (shading omgekeerd bij een met-de-
+klok-mee aangeleverde MagicPlan-contour; grondschaduw werd een lichte halo in donker thema), beide
+gefixt. Geen browser-visuele-QA — de Claude-in-Chrome-extensie verbond niet vanuit deze sessie
+(zie Blokkades). 773/773 tests groen.
+
 ## Blokkades
-- Geen bekende voor de eigen taken. Wél gevonden (niet gefixt, niet van deze taken): het reeds
-  vóór deze sessie ongecommitte `scripts/verify.sh` heeft een awk-padsplitser die stukloopt op een
-  spatie in het pad (bv. deze machine's eigen `C:\Users\Renze Poortinga`), en meldt de
-  `main`-worktree zelf altijd als "al gemerged, opruimen" vanuit elke andere worktree. Renze
-  opgemerkt; niet gecorrigeerd omdat het buiten de scope van taken 007/008 valt.
+- Claude-in-Chrome-extensie verbond niet vanuit deze sessie (meerdere pogingen) — visuele QA van
+  taak 010 is daarom numeriek/geometrisch geverifieerd, niet met een screenshot. Renze: bekijk het
+  gebouwoverzicht + de dak-wizard-previews in de echte webapp voor het definitieve visuele oordeel.
 
 ## Openstaande beslissingen
 - Geen.
