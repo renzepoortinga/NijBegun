@@ -882,7 +882,7 @@ import xml.etree.ElementTree as _ETv
 check("ventilatieplan-svg: well-formed XML", bool(_ETv.fromstring(_svgtxt)))
 check("ventilatieplan-svg: toont toevoer + afvoer", "l/s in" in _svgtxt and "l/s uit" in _svgtxt)
 
-from dashboard.gebouw_svg import gebouw_svg as _gsvg
+from dashboard.gebouw_svg import gebouw_svg as _gsvg, _dakvlak_geometry as _gdakgeo
 from core.dossier import Dossier as _GDos, SchilDeel as _GSchil
 _gdos = _GDos()
 _gdos.opname.gevelhoogte_m = 5
@@ -943,6 +943,20 @@ _gkap_n = next(p.attrib["points"] for p in _gkap_n_root.iter("{http://www.w3.org
                if p.attrib.get("data-face") == "dakkapel")
 check("gebouw-svg: tegenoverliggend moederdak verandert de werkelijke dakkapelpositie",
       'data-parent="dak1-schuin-n"' in _gkap_noord_svg and _gkap_n != _gkap_z)
+_gplat = _GSchil(id="plat", type="dak", oppervlakte_m2=48, hellingshoek=0,
+                 breedte_m=8, diepte_m=6)
+_gplat_pts, _ = _gdakgeo(_gplat, 8, 6, 5, False)
+check("gebouw-svg: exact plat dak gebruikt volledige footprint zonder uitsteken",
+      min(p[0] for p in _gplat_pts) == 0 and max(p[0] for p in _gplat_pts) == 8
+      and min(p[2] for p in _gplat_pts) == 0 and max(p[2] for p in _gplat_pts) == 6
+      and {p[1] for p in _gplat_pts} == {5})
+_glessenaar = _GSchil(id="lessenaar-o", type="dak", orientatie="O", oppervlakte_m2=55,
+                      hellingshoek=30, breedte_m=6, diepte_m=8)
+_gless_pts, _ = _gdakgeo(_glessenaar, 8, 6, 5, False)
+check("gebouw-svg: enkel lessenaarsvlak loopt tussen beide footprint-randen",
+      min(round(p[0], 6) for p in _gless_pts) == 0 and max(round(p[0], 6) for p in _gless_pts) == 8
+      and min(round(p[2], 6) for p in _gless_pts) == 0 and max(round(p[2], 6) for p in _gless_pts) == 6
+      and len({round(p[1], 6) for p in _gless_pts}) == 2)
 _glegacy = _GDos.from_dict(_gdos.to_dict())
 _glegacy.schil = [s for s in _glegacy.schil if "dakkapel" not in s.id]
 for _gs in _glegacy.schil:

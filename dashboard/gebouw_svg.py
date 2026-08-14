@@ -79,15 +79,20 @@ def _dakvlak_geometry(s, width, depth, eave, paired=False):
     angle = math.radians(s.hellingshoek or 0)
     rise = run * math.tan(angle)
     cx, cz = width / 2, depth / 2
-    # Bij een dakpaar ligt de hoge rand op de gedeelde nok rond het midden;
-    # bij één vlak loopt de hoge rand vanaf de buitenrand naar binnen.
-    ridge = (cx, cz)
-    eave_center = (cx + vx * run, cz + vz * run)
+    # Een zadeldak bewaart per vlak de goot→nok-run. Een enkel vlak en een
+    # plat dak bewaren juist de volledige overspanning.
+    if paired:
+        ridge = (cx, cz)
+        eave_center = (cx + vx * run, cz + vz * run)
+    else:
+        ridge = (cx - vx * run / 2, cz - vz * run / 2)
+        eave_center = (cx + vx * run / 2, cz + vz * run / 2)
     half = span / 2
     e1 = (eave_center[0] - tx * half, eave, eave_center[1] - tz * half)
     e2 = (eave_center[0] + tx * half, eave, eave_center[1] + tz * half)
-    r2 = (ridge[0] + tx * half, eave + rise, ridge[1] + tz * half)
-    r1 = (ridge[0] - tx * half, eave + rise, ridge[1] - tz * half)
+    high = eave if not (s.hellingshoek or 0) else eave + rise
+    r2 = (ridge[0] + tx * half, high, ridge[1] + tz * half)
+    r1 = (ridge[0] - tx * half, high, ridge[1] - tz * half)
     return [e1, e2, r2, r1], {"v": (vx, vz), "t": (tx, tz), "run": run,
                                "span": span, "rise": rise, "eave_center": eave_center,
                                "ridge": ridge, "eave": eave, "paired": paired}

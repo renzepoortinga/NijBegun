@@ -20,7 +20,7 @@ Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 - Taak 003: kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export;
   implementatie gereed, onafhankelijke review nog vereist.
 - Taak 006: opgeslagen gebouwoverzicht en het vrije 9-vlakken-vangnet zijn
-  isometrisch doorgevoerd; 749 tests groen, onafhankelijke herreview loopt.
+  isometrisch doorgevoerd; 751 tests groen, onafhankelijke herreview loopt.
 
 Taak 004 (visuele laag SVG voor dak/dakkapel + gebouwoverzicht) is klaar en
 staat in `tasks/done/`: 4 reviewrondes (Codex), laatste VERDICT PASS. Onderweg

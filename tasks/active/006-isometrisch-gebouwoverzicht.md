@@ -104,6 +104,11 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   geplaatst, ook op de tegenoverliggende of gedraaide zijde. Nieuwe
   regressies controleren vier dakrichtingen, eigen hoeken en wisselende
   moederdakpositie. 749/749 tests, JS-syntax en diff-check groen.
+- 2026-08-14 (Codex, Builder, reviewfix 2): herreview-FAIL voor het verschil
+  tussen volledige overspanning (plat/lessenaar) en goot-tot-nok-run
+  (zadeldak) hersteld. Platte en enkelvoudige hellende vlakken liggen nu
+  tussen beide footprint-randen; zadeldakparen blijven naar de centrale nok
+  lopen. Bounds-regressies toegevoegd. 751/751 tests en diff-check groen.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.
