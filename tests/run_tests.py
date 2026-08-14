@@ -142,6 +142,15 @@ check("extractor installaties (subtype)", _ed.installaties.verwarming.subtype ==
 _ed2, _ = engine_run(_ed, cat)
 check("extractor -> engine draait", _ed2 is not None and isinstance(_ed2.maatregelen, list))
 check("extractor -> engine maatregelen (gevel/vloer/dak)", len(_ed2.maatregelen) >= 2, str(len(_ed2.maatregelen)))
+# Python 3.14/OpenSSL 3.2-fix (taak 012): elke live urlopen() naar cloud.magicplan.app moet de
+# aangepaste SSL-context gebruiken (VERIFY_X509_STRICT uit) - bron-check i.p.v. een live request,
+# zodat een volgende toegevoegde urlopen-aanroep niet stil dezelfde 'Basic Constraints'-fout
+# herintroduceert (precies wat er in de eerste versie van taak 012 gebeurde, gevonden door review).
+_extractor_bron = open(os.path.join(HERE, "..", "magicplan", "extractor.py"), encoding="utf-8").read()
+check("extractor: elke urlopen() gebruikt de VERIFY_X509_STRICT-fix",
+      _extractor_bron.count("urllib.request.urlopen(") == _extractor_bron.count("context=_ssl_context()"),
+      "urlopen=%d context=%d" % (_extractor_bron.count("urllib.request.urlopen("),
+                                 _extractor_bron.count("context=_ssl_context()")))
 
 print("12. Prijsopbouw T7-T9 (cat 1/2/3 + clonen)")
 from core.dossier import Maatregel as _M, Subpost as _Sub

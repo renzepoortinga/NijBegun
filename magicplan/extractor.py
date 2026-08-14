@@ -405,7 +405,7 @@ def main():
                 req = urllib.request.Request(c.base + path)
                 req.add_header("key", c.key); req.add_header("customer", c.customer)
                 req.add_header("Accept", "application/json")
-                with urllib.request.urlopen(req, timeout=30) as r:
+                with urllib.request.urlopen(req, timeout=30, context=_ssl_context()) as r:
                     body = r.read().decode("utf-8", "replace")
                 fn = os.path.join(outdir, "probe2_%s.json" % path.strip("/").replace("/", "_").replace("?", "_").replace("=", "_"))
                 open(fn, "w", encoding="utf-8").write(body)

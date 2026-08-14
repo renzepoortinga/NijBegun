@@ -27,7 +27,10 @@ keten wordt door de nieuwe strikte OpenSSL-check afgewezen.
 ## Scope
 `magicplan/extractor.py`: nieuwe `_ssl_context()` — een `ssl.create_default_context()` met
 alléén `VERIFY_X509_STRICT` uitgeschakeld; CA-vertrouwen, hostnaam- en verloopcontrole blijven
-volledig actief. Toegepast op de enige plek die live HTTP doet (`MagicPlanClient._get`).
+volledig actief. Toegepast op **beide** plekken die live `urllib.request.urlopen` naar
+`cloud.magicplan.app` doen: `MagicPlanClient._get` én de losse `--probe`-diagnoseroute (die zijn
+eigen `Request`/`urlopen` bouwt, niet via `_get` loopt — over het hoofd gezien in de eerste versie
+van deze taak, gevonden door `/code-review high`).
 
 ## Out of scope
 - Geen wijziging aan andere modules die netwerk doen (`magicplan/photos.py`,
@@ -55,7 +58,7 @@ webapp's normale JSON-upload wél gedaan, vandaar de chirurgische aanpak i.p.v. 
 - [x] `python magicplan/extractor.py --project-id <echt-id>` haalt een echte opname op.
 - [x] `python tests/run_tests.py` blijft groen (789/789 — geen test raakt live netwerk).
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer (`/code-review high`, zie Sessions).
 
 ## Sessions
 - 2026-08-15 (claude): SSL-fout eerst gekarakteriseerd vóór een fix te verzinnen — google.com
@@ -65,3 +68,10 @@ webapp's normale JSON-upload wél gedaan, vandaar de chirurgische aanpak i.p.v. 
   profielvlag uit te zetten, niets anders aan certificaatverificatie veranderd. Live beproefd op
   een echt project; productiedossier bijgewerkt met backup en verificatie in de draaiende
   container (zie hierboven) — nog niet gemerged/gedeployed als losse stap, dat gebeurt na review.
+- 2026-08-15 (claude), vervolg: `/code-review high` vond de fix onvolledig — `--probe` (de
+  diagnoseroute) bouwt zijn eigen `Request`/`urlopen` en liep dus NIET via het gefixte
+  `MagicPlanClient._get`. Dezelfde `_ssl_context()` daar ook toegepast; de (onterechte) claim in
+  dit taakbestand dat `_get` "de enige plek" was, gecorrigeerd. Bron-check-regressietest
+  toegevoegd (telt `urlopen(`-aanroepen vs. `context=_ssl_context()`-toepassingen — vangt een
+  toekomstige nieuwe urlopen-aanroep die de fix vergeet, zonder een live request nodig te hebben).
+  790/790 tests groen.
