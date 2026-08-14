@@ -1,6 +1,6 @@
 ---
 id: 006
-assigned:
+assigned: Codex Builder
 branch: feat/isometrisch-gebouwoverzicht
 depends_on: [005]
 ---
@@ -82,6 +82,20 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   (zie dat taakbestand voor de volledige context/aanleiding). Deze taak kan
   pas starten nadat taak 005 gemerged is (de nieuwe `SchilDeel`-velden
   moeten bestaan).
+- 2026-08-14 (Codex, Builder): `gebouw_svg` vervangen door een server-side
+  isometrische projector met herleidbare gevel-, dak- en dakkapelvlakken.
+  Een 3D-footprint vereist vier benoemde gevels en een positieve gevelhoogte;
+  tegenoverliggende maten gebruiken dezelfde 25%-signaleringsgrens als de
+  bestaande MagicPlan-dubbeltelcheck. Bij ontbrekende of inconsistente data
+  volgt een gelabelde niet-3D fallback. De gevelbox stopt bij gevelhoogte en
+  de nok gebruikt de expliciete gebouwhoogte; taak-005-metadata rendert exact,
+  legacy-daken zijn zichtbaar `benaderd`, en dakkapellen volgen hun expliciete
+  `moedervlak_id`. XML-escaping, footprint/fallback, exact/legacy-dak en
+  dakkapelplaatsing zijn getest. `python tests/run_tests.py`: 742 PASS en 2
+  bekende taak-002-omgevingsfouten (extern plan-json en lokaal config-adres);
+  `verify.sh`: PASS met dezelfde Python-advisory; `py_compile` en
+  `git diff --check`: PASS. Browser-QA was niet mogelijk omdat geen browser
+  aan deze sessie verbonden was; responsive/darkmode/tokens statisch getoetst.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.

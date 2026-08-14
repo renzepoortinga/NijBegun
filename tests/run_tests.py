@@ -885,13 +885,70 @@ check("ventilatieplan-svg: toont toevoer + afvoer", "l/s in" in _svgtxt and "l/s
 from dashboard.gebouw_svg import gebouw_svg as _gsvg
 from core.dossier import Dossier as _GDos, SchilDeel as _GSchil
 _gdos = _GDos()
-_gdos.schil = [_GSchil(id="gevel-voor", type="gevel", orientatie="Z", oppervlakte_m2=20, rc_huidig=2.5),
-              _GSchil(id="dak1-schuin-z", type="dak", subtype="schuin (zadeldak)", orientatie="Z",
-                      oppervlakte_m2=25, hellingshoek=45)]
+_gdos.opname.gevelhoogte_m = 3.0
+_gdos.opname.gebouwhoogte_m = 5.5
+_gdos.schil = [
+    _GSchil(id="gevel-voor", type="gevel", gevel_naam="voor", orientatie="Z",
+            oppervlakte_m2=18, rc_huidig=2.5),
+    _GSchil(id="gevel-achter", type="gevel", gevel_naam="achter", orientatie="N",
+            oppervlakte_m2=18, rc_huidig=2.5),
+    _GSchil(id="gevel-links", type="gevel", gevel_naam="links", orientatie="W",
+            oppervlakte_m2=24),
+    _GSchil(id="gevel-rechts", type="gevel", gevel_naam="rechts", orientatie="O",
+            oppervlakte_m2=24),
+    _GSchil(id="dak1-schuin-z", type="dak", subtype="schuin (zadeldak)", orientatie="Z",
+            oppervlakte_m2=25, hellingshoek=45, breedte_m=6, diepte_m=4,
+            geometrie_groep="dak1"),
+    _GSchil(id="dak1-schuin-n", type="dak", subtype="schuin (zadeldak)", orientatie="N",
+            oppervlakte_m2=25, hellingshoek=45, breedte_m=6, diepte_m=4,
+            geometrie_groep="dak1"),
+]
 _gsvgtxt = _gsvg(_gdos)
 check("gebouw-svg: geldige SVG-string", _gsvgtxt.startswith("<svg") and _gsvgtxt.rstrip().endswith("</svg>"))
 check("gebouw-svg: well-formed XML", bool(_ETv.fromstring(_gsvgtxt)))
 check("gebouw-svg: toont gevel- en dakvlak-ids", "gevel-voor" in _gsvgtxt and "dak1-schuin-z" in _gsvgtxt)
+check("gebouw-svg: echte isometrische vlakken en afgeleide footprint",
+      'data-face="gevel-voor"' in _gsvgtxt and "Footprint 6.00 × 8.00 m" in _gsvgtxt
+      and "WONING" not in _gsvgtxt)
+check("gebouw-svg: taak-005-dakmetadata rendert exact",
+      'data-element-id="dak1-schuin-z"' in _gsvgtxt and 'data-geometrie="exact"' in _gsvgtxt)
+_escape = _GDos.from_dict(_gdos.to_dict())
+_escape.schil[0].id = 'gevel-&-<voor>"'
+_escape_svg = _gsvg(_escape)
+check("gebouw-svg: dossierwaarden zijn XML-veilig ge-escaped",
+      "gevel-&amp;-&lt;voor&gt;&quot;" in _escape_svg and bool(_ETv.fromstring(_escape_svg)))
+_legacy = _GDos.from_dict(_gdos.to_dict())
+_legacy.schil[-2].breedte_m = _legacy.schil[-2].diepte_m = None
+_legacy.schil[-1].breedte_m = _legacy.schil[-1].diepte_m = None
+_legacy_svg = _gsvg(_legacy)
+check("gebouw-svg: legacy-dak zichtbaar als benadering",
+      'data-geometrie="benaderd"' in _legacy_svg and "Benaderd dakvlak:" in _legacy_svg)
+_kapel = _GDos.from_dict(_gdos.to_dict())
+_kapel.schil += [
+    _GSchil(id="dakkapel1-voorvlak", type="gevel", subtype="Dakkapel voorvlak",
+            oppervlakte_m2=3, breedte_m=2, diepte_m=1, hoogte_m=1.5,
+            moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1"),
+    _GSchil(id="dakkapel1-wang-rechts", type="gevel", subtype="Dakkapel wang",
+            oppervlakte_m2=1.5, breedte_m=2, diepte_m=1, hoogte_m=1.5,
+            moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1"),
+    _GSchil(id="dakkapel1-dakje", type="dak", subtype="plat (dakkapel)",
+            oppervlakte_m2=2, breedte_m=2, diepte_m=1, hoogte_m=1.5,
+            moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1"),
+]
+_kapel_svg = _gsvg(_kapel)
+check("gebouw-svg: dakkapel staat op expliciet moederdakvlak",
+      'data-face="dakkapel-voor"' in _kapel_svg and "dakkapel1-voorvlak" in _kapel_svg
+      and "dak1-schuin-z" in _kapel_svg)
+_geen_hoogte = _GDos.from_dict(_gdos.to_dict())
+_geen_hoogte.opname.gevelhoogte_m = None
+check("gebouw-svg: ontbrekende gevelhoogte geeft niet-gegokte fallback",
+      "Kon geen 3D-vorm afleiden" in _gsvg(_geen_hoogte)
+      and 'data-face="gevel-voor"' not in _gsvg(_geen_hoogte))
+_inconsistent = _GDos.from_dict(_gdos.to_dict())
+_inconsistent.schil[1].oppervlakte_m2 = 9
+check("gebouw-svg: inconsistente tegenoverliggende gevels geven fallback",
+      "verschillen meer dan 25%" in _gsvg(_inconsistent)
+      and 'data-face="gevel-voor"' not in _gsvg(_inconsistent))
 check("gebouw-svg: leeg dossier -> nog steeds geldige SVG", bool(_ETv.fromstring(_gsvg(_GDos()))))
 
 print("\n35. Webapp (Flask) — laadt + kernroutes + Beoordelingscheck")
