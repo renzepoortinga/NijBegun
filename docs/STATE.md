@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Codex (taken 003, 005 en 006 afgerond)
+Bijgewerkt: 2026-08-14 door Claude (taak 007 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -41,6 +41,19 @@ Taak-005-daken renderen exact na geometrievalidatie, legacy-daken zichtbaar
 benaderd en dakkapellen via hun moederdakrelatie. Onafhankelijke herreview op
 commit `e157ce0`: PASS MET RISICO'S, geen blockers. 746 checks groen; lokaal
 blijven uitsluitend de twee bekende taak-002-omgevingschecks over.
+
+Taak 007 (gebouwoverzicht op de echte MagicPlan-plattegrondcontour) is klaar
+en staat in `tasks/done/`: `magicplan/assemble.py` leest nu de tot dusver
+ongebruikte `image_map`-plattegrondcontour uit MagicPlans API en kalibreert
+'m op `statistics.area_with_walls` (met plausibiliteitscheck tegen de
+netto-oppervlakte); `dashboard/gebouw_svg.py` tekent die echte (ook
+niet-rechthoekige) vorm wanneer beschikbaar, met een schoenveter-teken-
+gebaseerde backface-culling die ook bij een concaaf grondvlak correct is.
+Zonder contour blijft het rechthoek-pad uit taak 006 de fallback. Het dak
+volgt nog de bounding-box, niet de polygon zelf (bewust uit scope). AI-review
+(`/code-review high`) vond 9 punten, waarvan 7 verwerkt (incl. een echte
+normaal-bug bij concave vormen) en 2 bewust laten staan (lage impact, zie
+taakbestand). 768/768 tests groen.
 
 ## Blokkades
 - Geen bekende.
