@@ -50,9 +50,10 @@ GEEN enkele fout, dus de kern (schoenveter-visibility, shading, painter's-order)
       gekozen randgevallen (zelfdoorsnijdend, extreme schaal, negatieve coördinaten, bijna-verticaal
       dak, etc.) — 0 crashes, 0 niet-eindige SVG-coördinaten, 0 brightness-waarden buiten bereik.
 - [x] Regressietests toegevoegd aan `tests/run_tests.py` voor alle 5 gevonden problemen.
-- [x] `python tests/run_tests.py` groen (781/781).
+- [x] `python tests/run_tests.py` groen (787/787 — na 2 review-rondes).
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer (`/code-review high`, 2 rondes, zie
+      Sessions).
 
 ## Sessions
 - 2026-08-14 (claude): twee losse fuzz-scripts geschreven (niet in de repo, scratchpad) — één tegen
@@ -65,3 +66,20 @@ GEEN enkele fout, dus de kern (schoenveter-visibility, shading, painter's-order)
   gevallen. Ontdekt tijdens het opzetten: per ongeluk wéér op `main` beginnen te werken i.p.v. een
   branch (derde keer deze sessie) — dit keer meteen bij het opmerken gecorrigeerd vóórdat er iets
   gecommit werd.
+- 2026-08-14 (claude), vervolg: `/code-review high` ging dieper dan de eigen stresstest en vond
+  4 échte gaten die ik had gemist (allemaal string-getypeerde in plaats van NaN/Infinity-invoer —
+  een andere hoek dan mijn eigen fuzzing):
+  1. `_contour_geldig` crashte alsnog (TypeError) op een string-coördinaat i.p.v. netjes False te
+     geven — de `math.isfinite`-check verwacht al een float, kreeg een str.
+  2. `_floor_contour_m`: `area_with_walls`/`area` als string (bv. `"N/A"`) gaf een ongevangen
+     `ValueError` bij `float(...)`.
+  3. Een NaN vloeroppervlakte lekte via `max()` door naar `footprint` (en dus naar
+     `_maak_vloer`/`_maak_dak` in `extractor.py`, en naar `VloerInfo.oppervlakte_m2` zelf) —
+     `perimeter` was al gevangen (vorige ronde), maar `footprint` zelf niet.
+  4. Dezelfde `float(x or 0)`-kwetsbaarheid zat nog op `ceilingHeight`, kamer-oppervlakte en
+     raam-breedte/hoogte — dezelfde functie, dezelfde aanvalsoppervlakte, niet meegenomen in de
+     eerste fixronde.
+  Alle 4 in één keer opgelost met een gedeelde `_getal(waarde, default)`-helper (veilig naar float,
+  niet-numeriek of niet-eindig -> default, nooit een crash) i.p.v. per plek een losse try/except —
+  voorkomt dat een volgend gevonden veld weer los gepatcht moet worden. Reviewer-repro's stuk voor
+  stuk herbevestigd na de fix (0 fouten), plus regressietests toegevoegd. 787/787 tests groen.

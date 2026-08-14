@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Claude (taken 009 en 010 afgerond)
+Bijgewerkt: 2026-08-14 door Claude (taak 011 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -77,6 +77,15 @@ bestaande kleurtokens (geen hex). AI-review vond 2 echte bugs (shading omgekeerd
 klok-mee aangeleverde MagicPlan-contour; grondschaduw werd een lichte halo in donker thema), beide
 gefixt. Geen browser-visuele-QA — de Claude-in-Chrome-extensie verbond niet vanuit deze sessie
 (zie Blokkades). 773/773 tests groen.
+
+Taak 011 (stresstest contour-/gebouwoverzicht-pijplijn) is klaar en staat in `tasks/done/`: op
+verzoek zelf gefuzzed i.p.v. te wachten op de volgende reviewronde. 300 willekeurige polygon-/
+dakcombinaties op `gebouw_svg.py` gaven 0 fouten (kerngeometrie staat stevig); adversariële/
+edge-case invoer op de databoundary (`magicplan/assemble.py`) vond wél 9 echte problemen over
+2 rondes — NaN/Infinity en niet-numerieke (string) waarden in MagicPlan-API-velden
+(`area_with_walls`/`area`/`ceilingHeight`/raammaten) die niet gevangen werden en ofwel crashten
+ofwel stil doorlekten naar de opgeslagen `dossier.json`. Alle 9 gefixt (gedeelde `_getal()`-helper
+i.p.v. losse patches), regressietests toegevoegd. 787/787 tests groen.
 
 ## Blokkades
 - Claude-in-Chrome-extensie verbond niet vanuit deze sessie (meerdere pogingen) — visuele QA van

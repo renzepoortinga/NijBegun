@@ -111,7 +111,11 @@ def _contour_geldig(contour):
     'niet gokken'-regel: liever de rechthoek-fallback dan onbruikbare NaN-coördinaten tekenen)."""
     if not contour or len(contour) < 3:
         return False
-    return all(len(p) == 2 and math.isfinite(p[0]) and math.isfinite(p[1]) for p in contour)
+    try:
+        return all(len(p) == 2 and math.isfinite(float(p[0])) and math.isfinite(float(p[1]))
+                   for p in contour)
+    except (TypeError, ValueError):
+        return False  # niet-numerieke coördinaat (bv. een string uit een handmatig bewerkt dossier)
 
 
 def _polygon_footprint(dos):

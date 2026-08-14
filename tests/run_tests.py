@@ -257,6 +257,35 @@ _planv2_negatief = {"data": {"plan_data": {"living_area": 10.0, "floors": [
 _geo_neg, _win_neg, _fp_neg, _per_neg, _h_neg = geometry_from_plan(_planv2_negatief)
 check("assemble: negatieve vloeroppervlakte crasht geometry_from_plan niet (was ValueError bij sqrt)",
       _per_neg == 0.0)
+# Tweede stresstestronde (review op taak 011): niet-numerieke (string) waarden op dezelfde
+# aanvalsoppervlakte die de eerste ronde met NaN/Infinity/malformed types al had dichtgezet.
+check("assemble: area_with_walls als string -> None (geen ValueError)",
+      _floor_contour_m({"statistics": {"area_with_walls": "N/A"},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, 10, 0, 10, 10, 0, 10]}]}) is None)
+import math as _mathassm
+_planv2_nan_footprint = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": float("nan")}},
+    {"name": "B", "statistics": {"area": 20.0}}]}}}
+_geo_nanfp, _win_nanfp, _fp_nanfp, _per_nanfp, _h_nanfp = geometry_from_plan(_planv2_nan_footprint)
+check("assemble: NaN vloeroppervlakte lekt niet door via max() naar footprint/VloerInfo",
+      _mathassm.isfinite(_fp_nanfp) and all(_mathassm.isfinite(v.oppervlakte_m2) for v in _geo_nanfp.vloeren),
+      str((_fp_nanfp, [v.oppervlakte_m2 for v in _geo_nanfp.vloeren])))
+_planv2_bad_ceiling = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": 10.0},
+     "values": [{"id": "ceilingHeight", "value": "oops"}]}]}}}
+check("assemble: niet-numerieke ceilingHeight crasht niet",
+      geometry_from_plan(_planv2_bad_ceiling)[0].vloeren[0].hoogte_m is None)
+_planv2_bad_room = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": 10.0},
+     "rooms": [{"name": "R", "statistics": {"area": "bad"}}]}]}}}
+check("assemble: niet-numerieke kamer-oppervlakte crasht niet",
+      geometry_from_plan(_planv2_bad_room)[0].ruimtes[0].oppervlakte_m2 == 0.0)
+from dashboard.gebouw_svg import _contour_geldig as _gcgeldig
+check("gebouw-svg: _contour_geldig accepteert numerieke strings (geen crash, wél geldig)",
+      _gcgeldig([["0", "0"], ["5", "0"], ["5", "5"]]) is True)
+check("gebouw-svg: _contour_geldig verwerpt echt niet-numerieke coördinaten (geen TypeError)",
+      _gcgeldig([["abc", "0"], ["5", "0"], ["5", "5"]]) is False)
 _planv2_contour = {"data": {"plan_data": {"living_area": 12.0, "floors": [
     {"name": "Begane grond", "statistics": {"area": 12.0, "area_with_walls": 12.0},
      "image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}],

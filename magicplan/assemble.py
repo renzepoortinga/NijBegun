@@ -25,6 +25,17 @@ def _value(values, vid):
     return None
 
 
+def _getal(waarde, default=0.0):
+    """Veilig naar float: niet-numeriek (bv. een string uit kapotte JSON) of niet-eindig
+    (NaN/Infinity) -> `default`, nooit een crash en nooit een besmet getal dat verderop stil
+    doorsijpelt (bv. via `max()`, dat NaN niet betrouwbaar uitsluit)."""
+    try:
+        v = float(waarde)
+    except (TypeError, ValueError):
+        return default
+    return v if math.isfinite(v) else default
+
+
 def _floor_contour_m(fl):
     """Reconstrueer de echte grondvlak-contour (meter) uit MagicPlans plattegrond-beeldkaart.
 
@@ -47,8 +58,8 @@ def _floor_contour_m(fl):
         return None
     stats = fl.get("statistics")
     stats = stats if isinstance(stats, dict) else {}
-    werkelijke_opp = float(stats.get("area_with_walls") or 0)
-    if not (math.isfinite(werkelijke_opp) and werkelijke_opp > 0):
+    werkelijke_opp = _getal(stats.get("area_with_walls"))
+    if werkelijke_opp <= 0:
         return None
     image_map = fl.get("image_map")
     image_map = image_map if isinstance(image_map, list) else []
@@ -69,7 +80,7 @@ def _floor_contour_m(fl):
     opp_px = polygon_oppervlakte_m2(punten_px)  # eenheid hier: px2, functienaam blijft kloppen (m2-formule)
     if opp_px <= 0:
         return None
-    netto_opp = float(stats.get("area") or 0)
+    netto_opp = _getal(stats.get("area"))
     if netto_opp > 0 and not (netto_opp <= werkelijke_opp <= netto_opp * 1.5):
         return None
     schaal = math.sqrt(werkelijke_opp / opp_px)  # m per pixel
@@ -82,26 +93,26 @@ def geometry_from_plan(plan):
     """Lees de echte MagicPlan v2-structuur: data.plan_data.floors[].rooms[].objects[]."""
     data = plan.get("data", plan)
     pd = data.get("plan_data", {})
-    geo = Geometrie(gebruiksoppervlakte_ag_m2=float(pd.get("living_area") or 0))
+    geo = Geometrie(gebruiksoppervlakte_ag_m2=_getal(pd.get("living_area")))
     windows, total_h, areas = [], 0.0, []
     for fl in pd.get("floors", []):
-        area = float((fl.get("statistics") or {}).get("area") or 0)
-        ch = _value(fl.get("values"), "ceilingHeight")
+        area = _getal((fl.get("statistics") or {}).get("area"))
+        ch = _getal(_value(fl.get("values"), "ceilingHeight"), None)
         geo.vloeren.append(VloerInfo(naam=fl.get("name", ""), oppervlakte_m2=area,
-                                     hoogte_m=float(ch) if ch else None,
-                                     contour_m=_floor_contour_m(fl)))
+                                     hoogte_m=ch, contour_m=_floor_contour_m(fl)))
         if ch:
-            total_h += float(ch)
+            total_h += ch
         areas.append((fl.get("name", ""), area))
         for rm in fl.get("rooms", []):
             rn = rm.get("name", "")
-            ra = float((rm.get("statistics") or {}).get("area") or 0)
+            ra = _getal((rm.get("statistics") or {}).get("area"))
             geo.ruimtes.append(Ruimte(naam=rn, functie=_functie(rn), oppervlakte_m2=ra))
             for o in rm.get("objects", []):
                 sid = (o.get("symbol_id") or "").lower()
                 if sid.startswith("window") or sid == "doorwithwindow":
-                    w = _value(o.get("values"), "width"); h = _value(o.get("values"), "height")
-                    a = round(float(w) * float(h), 2) if w and h else 0.0
+                    w = _getal(_value(o.get("values"), "width"), None)
+                    h = _getal(_value(o.get("values"), "height"), None)
+                    a = round(w * h, 2) if w and h else 0.0
                     windows.append({"area": a, "room": rn})
     footprint = max((a for _, a in areas), default=0.0)   # grootste verdieping = footprint-proxy
     # buitenomtrek BENADEREN uit de footprint (de MagicPlan-perimeter telt binnenwanden mee);
