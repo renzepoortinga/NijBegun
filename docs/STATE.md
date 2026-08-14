@@ -3,13 +3,13 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Codex (taken 003 en 005 afgerond, review PASS)
+Bijgewerkt: 2026-08-14 door Codex (taken 003, 005 en 006 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
 VABI-bibliotheken (foutloos importeerbaar in EPA 12.0.1) → isolatieplan
 (Word/PDF) + ventilatie + fotochecklist + KWACO-validatie, met een lokaal
-dashboard. 742 ketentests groen; de Git-Bash-verificatie houdt de Python-run
+dashboard. 746 functionele checks groen; de Git-Bash-verificatie houdt de Python-run
 nog advisory totdat taak 002 `python3` op Windows draagbaar maakt (zie
 Technische schuld). Historie staat in `BUILD_LOG.md` en
 `STATUS_NACHT_2026-06-13.md`; vanaf nu is dít bestand + `tasks/` de stand.
@@ -34,6 +34,14 @@ renderingmetadata inclusief geometriegroepen/moederdakreferentie en identieke
 client/servervalidatie voor asymmetrische en steile daken. Onafhankelijke
 review op commit `9734d09`: PASS. `python tests/run_tests.py`: 742/742 groen.
 
+Taak 006 (isometrisch gebouwoverzicht) is klaar en staat in `tasks/done/`:
+vier consistente MagicPlan-gevels leveren een maatvaste isometrische box;
+onvolledige/inconsistente invoer krijgt een expliciete niet-3D fallback.
+Taak-005-daken renderen exact na geometrievalidatie, legacy-daken zichtbaar
+benaderd en dakkapellen via hun moederdakrelatie. Onafhankelijke herreview op
+commit `e157ce0`: PASS MET RISICO'S, geen blockers. 746 checks groen; lokaal
+blijven uitsluitend de twee bekende taak-002-omgevingschecks over.
+
 ## Blokkades
 - Geen bekende.
 
@@ -48,6 +56,9 @@ review op commit `9734d09`: PASS. `python tests/run_tests.py`: 742/742 groen.
 - `CLAUDE.md` is 465 regels operationeel geheugen; werkt, maar migreer
   stukken naar `docs/` wanneer je ze toch aanraakt (geen aparte
   verbouwtaak waard op dit moment).
+- Gebouw-SVG gebruikt een vaste paintervolgorde; uitzonderlijke samengestelde
+  geometrie kan daardoor visueel overlappen. Legacy renderingmetadata met
+  niet-eindige getallen heeft nog geen eigen defensieve foutstaat.
 
 ## Niet doen
 - Geen nieuwe dependencies zonder overleg.

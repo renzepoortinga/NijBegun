@@ -1,6 +1,6 @@
 ---
 id: 006
-assigned:
+assigned: Codex Builder
 branch: feat/isometrisch-gebouwoverzicht
 depends_on: [005]
 ---
@@ -61,20 +61,20 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   blijft de tekenlaag.
 
 ## Acceptance criteria
-- [ ] `gebouw_svg(dos)` levert een geldige, well-formed isometrische
+- [x] `gebouw_svg(dos)` levert een geldige, well-formed isometrische
       SVG-tekening op (geen labelkaartjes-lay-out) die de geladen gevels/
       daken/dakkapellen van een dossier toont, met id/m²/oriëntatie
       herleidbaar in de markup
-- [ ] Footprint wordt correct afgeleid uit de 4 gevelnamen + gevelhoogte,
+- [x] Footprint wordt correct afgeleid uit de 4 gevelnamen + gevelhoogte,
       met een zichtbare, niet-gegokte fallback als dat niet kan
-- [ ] Dakvlakken met taak-005-metadata renderen exact; legacy-dakvlakken
+- [x] Dakvlakken met taak-005-metadata renderen exact; legacy-dakvlakken
       zonder die metadata renderen benaderd én zichtbaar gemarkeerd als
       benadering
-- [ ] Dakkapel wordt op de juiste dakvlak-face geplaatst
-- [ ] Voldoet aan `docs/design-system.md` (zie taak 005 voor de exacte eisen)
-- [ ] `python tests/run_tests.py` slaagt
-- [ ] `./scripts/verify.sh` slaagt
-- [ ] AI-review PASS door een andere agent dan de bouwer (zelfde model of
+- [x] Dakkapel wordt op de juiste dakvlak-face geplaatst
+- [x] Voldoet aan `docs/design-system.md` (zie taak 005 voor de exacte eisen)
+- [x] `python tests/run_tests.py` slaagt
+- [x] `./scripts/verify.sh` slaagt
+- [x] AI-review PASS door een andere agent dan de bouwer (zelfde model of
       leverancier toegestaan)
 
 ## Sessions
@@ -82,6 +82,38 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   (zie dat taakbestand voor de volledige context/aanleiding). Deze taak kan
   pas starten nadat taak 005 gemerged is (de nieuwe `SchilDeel`-velden
   moeten bestaan).
+- 2026-08-14 (Codex, Builder): `gebouw_svg` vervangen door een server-side
+  isometrische projector met herleidbare gevel-, dak- en dakkapelvlakken.
+  Een 3D-footprint vereist vier benoemde gevels en een positieve gevelhoogte;
+  tegenoverliggende maten gebruiken dezelfde 25%-signaleringsgrens als de
+  bestaande MagicPlan-dubbeltelcheck. Bij ontbrekende of inconsistente data
+  volgt een gelabelde niet-3D fallback. De gevelbox stopt bij gevelhoogte en
+  de nok gebruikt de expliciete gebouwhoogte; taak-005-metadata rendert exact,
+  legacy-daken zijn zichtbaar `benaderd`, en dakkapellen volgen hun expliciete
+  `moedervlak_id`. XML-escaping, footprint/fallback, exact/legacy-dak en
+  dakkapelplaatsing zijn getest. `python tests/run_tests.py`: 742 PASS en 2
+  bekende taak-002-omgevingsfouten (extern plan-json en lokaal config-adres);
+  `verify.sh`: PASS met dezelfde Python-advisory; `py_compile` en
+  `git diff --check`: PASS. Browser-QA was niet mogelijk omdat geen browser
+  aan deze sessie verbonden was; responsive/darkmode/tokens statisch getoetst.
+- 2026-08-14 (Codex, Builder, reviewfix): drie blocking reviewbevindingen
+  hersteld. Exacte dakmetadata wordt niet meer geclamped: run, breedte,
+  helling, gedeelde nok en gebouwhoogte worden op 0,10 m noktolerantie
+  gevalideerd; incompatibele metadata levert een zichtbare fout en geen als
+  `exact` gelabeld dak. Dakvlakken kiezen hun zijde via de oriëntaties van de
+  vier benoemde gevels en zijn daardoor lijstvolgorde-onafhankelijk.
+  Dakkapelvoorvlak, beide wangen en dakje worden structureel via hun stabiele
+  taak-005-idrollen gekoppeld en op het expliciete moederdak geïnterpoleerd.
+  Nieuwe coördinaten-, conflict-, shuffle- en vier-face-regressies toegevoegd:
+  746 PASS, uitsluitend dezelfde 2 taak-002-omgevingsfouten over; `verify.sh`,
+  `py_compile` en `git diff --check` PASS.
+- 2026-08-14 (Codex, Reviewer): onafhankelijke herreview op `e157ce0`:
+  **PASS MET RISICO'S**, geen blockers. De drie eerdere blockers zijn aantoonbaar
+  hersteld. Niet-blokkerend vastgelegd: de vaste SVG-paintervolgorde kan bij
+  uitzonderlijke geometrie visueel overlappen en niet-eindige waarden in oude
+  renderingmetadata hebben nog geen afzonderlijke defensieve foutstaat. Geen
+  uitbreiding gedaan buiten de afgesproken taakscope. GitHub `verify` groen;
+  lokale suite 746 PASS plus de twee bekende taak-002-omgevingschecks.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.
