@@ -77,10 +77,10 @@ CSV — en wordt genegeerd. De vloerbegrenzing per kamer komt uit de **ruimtenaa
 | Verwarming / tapwater / koeling / PV (H9/H10/H13/H16) | Installaties | ✅ |
 | Bouwjaar / gebouwhoogte / woningtype | Object | ⚠ zie C |
 | **Dak: isolatie/Rc** | webapp-wizard | ⚠ zie D |
-| **DWTW douche-WTW (bijl. U)** | — | ❌ ontbreekt |
-| **Zonwering/rolluik (§8.2.2.3.4)** | — | ❌ ontbreekt |
-| **Rieten dak (bijl. I: d/0,105)** | alleen in de PDF-route | ❌ niet in de CSV-route |
-| **Beschaduwing/belemmering PV (§17.3)** | — | ❌ ontbreekt |
+| **DWTW douche-WTW (bijl. U)** | Installaties (`dwtw_aanwezig`) | ✅ (27-7, zie §6) |
+| **Zonwering/rolluik (§8.2.2.3.4)** | Windows (`zonwering`) | ✅ (27-7, zie §6) |
+| **Rieten dak (bijl. I: d/0,105)** | Constructies DAK (`riet_dikte_mm`) | ✅ (27-7, zie §6) |
+| **Beschaduwing/belemmering PV (§17.3)** | Installaties (`belemmering`) | ✅ (27-7, zie §6) |
 
 ### ⚠ Bevinding C — Woningtype dekt alleen grondgebonden
 Live opties: `Vrijstaand · Twee-onder-een-kap · Tussenwoning · Hoekwoning`. Geen appartement/galerij/
@@ -115,16 +115,16 @@ Ontbreekt bovendien in de editor: **bouwjaarklasse per dakvlak** en **rc_bron (k
 
 ## 5. Aanbevolen acties (op impact)
 
-1. **Wand-overrides lezen** (bevinding A) — parser laten zoeken op de 12 wandkolommen, met de
-   naam-tokens als fallback. Grootste winst: geen namen meer typen, per-wand afwijkingen werken echt.
-2. **Kamer-overrides lezen** (bevinding B) — minimaal `Vloer - begrenzing`,
-   `Vloer - telt mee voor gebruiksoppervlakte?` en `Vloer - rekenzone`. Nu stille invoer.
+> Punten 1, 2 en 5 zijn diezelfde dag doorgevoerd (zie §6). Alleen 3 en 4 stonden nog open per 27-7;
+> controleer bij het oppakken ervan eerst of de webapp-wizard (dak) inmiddels verder is dan hier beschreven.
+
+1. ~~Wand-overrides lezen (bevinding A)~~ — **gedaan**, zie §6.
+2. ~~Kamer-overrides lezen (bevinding B)~~ — **gedaan**, zie §6.
 3. **Woningtype uitbreiden** (bevinding C) met de gestapelde types; anders is de Standaard-eis fout
    voor appartementen. Overweeg `is_grondgebonden` bij leeg woningtype te laten **flaggen** i.p.v. stil True.
 4. **Dak-isolatie in de wizard** (bevinding D) — isolatie/dikte/bouwjaarklasse/rc_bron bij het
    toevoegen van een dakvlak uitvragen, plus "Dak - isolatie aan zijde" (V4) terug in de flow.
-5. **Ontbrekende NTA-velden** toevoegen waar ze echt tellen: **DWTW** (grote invloed op tapwater),
-   **zonwering/rolluik**, **riet**, **PV-belemmering**.
+5. ~~Ontbrekende NTA-velden toevoegen~~ (**DWTW**/**zonwering**/**riet**/**PV-belemmering**) — **gedaan**, zie §6.
 
 > Werkwijze bij wijzigingen: live via de browserconsole-route (zie `magicplan/forms/LIVE-WIJZIGINGEN.md`),
 > en werk daarna `docs/magicplan-forms-live.md` bij. De parser-veldnamen in `statistics_csv.py` zijn
