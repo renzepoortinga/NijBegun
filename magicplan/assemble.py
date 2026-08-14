@@ -25,6 +25,25 @@ def _value(values, vid):
     return None
 
 
+def _getal(waarde, default=0.0):
+    """Veilig naar float: niet-numeriek (bv. een string uit kapotte JSON) of niet-eindig
+    (NaN/Infinity) -> `default`, nooit een crash en nooit een besmet getal dat verderop stil
+    doorsijpelt (bv. via `max()`, dat NaN niet betrouwbaar uitsluit)."""
+    try:
+        v = float(waarde)
+    except (TypeError, ValueError):
+        return default
+    return v if math.isfinite(v) else default
+
+
+def _opp(waarde, default=0.0):
+    """Zoals `_getal`, maar dan voor een grootheid die nooit negatief kan zijn (oppervlakte,
+    raambreedte/-hoogte): een negatieve waarde uit onbetrouwbare brondata is even onbruikbaar als
+    NaN, en zou anders bv. een raam-'oppervlak' bij het gevelvlak OPTELLEN i.p.v. aftrekken."""
+    v = _getal(waarde, default)
+    return v if (v is not None and v >= 0) else default
+
+
 def _floor_contour_m(fl):
     """Reconstrueer de echte grondvlak-contour (meter) uit MagicPlans plattegrond-beeldkaart.
 
@@ -39,28 +58,37 @@ def _floor_contour_m(fl):
 
     Geeft None als de data ontbreekt of te ontaard is om te vertrouwen (liever geen contour dan
     een verzonnen vorm - zelfde 'niet gokken'-regel als de rest van de keten): geen/meerdere
-    'floor'-entries (bij >1 weten we niet welke bij area_with_walls hoort), niet-numerieke
-    coördinaten, of een bruto/netto-verhouding (area_with_walls vs. area) die niet aannemelijk is
-    (bruto hoort door de wanddikte iets groter te zijn dan netto, niet fors groter/kleiner -
-    anders hoort de schaal vermoedelijk niet bij déze polygon)."""
-    stats = fl.get("statistics") or {}
-    werkelijke_opp = float(stats.get("area_with_walls") or 0)
+    'floor'-entries (bij >1 weten we niet welke bij area_with_walls hoort), niet-numerieke of
+    niet-eindige (NaN/Infinity) coördinaten, of een bruto/netto-verhouding (area_with_walls vs.
+    area) die niet aannemelijk is (bruto hoort door de wanddikte iets groter te zijn dan netto,
+    niet fors groter/kleiner - anders hoort de schaal vermoedelijk niet bij déze polygon)."""
+    if not isinstance(fl, dict):
+        return None
+    stats = fl.get("statistics")
+    stats = stats if isinstance(stats, dict) else {}
+    werkelijke_opp = _getal(stats.get("area_with_walls"))
     if werkelijke_opp <= 0:
         return None
-    entries = [e for e in (fl.get("image_map") or []) if (e or {}).get("symbol_id") == "floor"]
+    image_map = fl.get("image_map")
+    image_map = image_map if isinstance(image_map, list) else []
+    entries = [e for e in image_map if isinstance(e, dict) and e.get("symbol_id") == "floor"]
     if len(entries) != 1:
         return None
     coords = entries[0].get("coordinates") or []
+    if not isinstance(coords, list):
+        return None
     if len(coords) < 8 or len(coords) % 2:  # minstens 4 punten, volledige (x, y)-paren
         return None
     try:
         punten_px = [(float(x), float(y)) for x, y in zip(coords[0::2], coords[1::2])]
     except (TypeError, ValueError):
         return None
+    if any(not (math.isfinite(x) and math.isfinite(y)) for x, y in punten_px):
+        return None  # NaN/Infinity in de brondata -> geen contour vertrouwen (niet gokken)
     opp_px = polygon_oppervlakte_m2(punten_px)  # eenheid hier: px2, functienaam blijft kloppen (m2-formule)
     if opp_px <= 0:
         return None
-    netto_opp = float(stats.get("area") or 0)
+    netto_opp = _getal(stats.get("area"))
     if netto_opp > 0 and not (netto_opp <= werkelijke_opp <= netto_opp * 1.5):
         return None
     schaal = math.sqrt(werkelijke_opp / opp_px)  # m per pixel
@@ -73,31 +101,33 @@ def geometry_from_plan(plan):
     """Lees de echte MagicPlan v2-structuur: data.plan_data.floors[].rooms[].objects[]."""
     data = plan.get("data", plan)
     pd = data.get("plan_data", {})
-    geo = Geometrie(gebruiksoppervlakte_ag_m2=float(pd.get("living_area") or 0))
+    geo = Geometrie(gebruiksoppervlakte_ag_m2=_opp(pd.get("living_area")))
     windows, total_h, areas = [], 0.0, []
     for fl in pd.get("floors", []):
-        area = float((fl.get("statistics") or {}).get("area") or 0)
-        ch = _value(fl.get("values"), "ceilingHeight")
+        area = _opp((fl.get("statistics") or {}).get("area"))
+        ch = _getal(_value(fl.get("values"), "ceilingHeight"), None)
         geo.vloeren.append(VloerInfo(naam=fl.get("name", ""), oppervlakte_m2=area,
-                                     hoogte_m=float(ch) if ch else None,
-                                     contour_m=_floor_contour_m(fl)))
+                                     hoogte_m=ch, contour_m=_floor_contour_m(fl)))
         if ch:
-            total_h += float(ch)
+            total_h += ch
         areas.append((fl.get("name", ""), area))
         for rm in fl.get("rooms", []):
             rn = rm.get("name", "")
-            ra = float((rm.get("statistics") or {}).get("area") or 0)
+            ra = _opp((rm.get("statistics") or {}).get("area"))
             geo.ruimtes.append(Ruimte(naam=rn, functie=_functie(rn), oppervlakte_m2=ra))
             for o in rm.get("objects", []):
                 sid = (o.get("symbol_id") or "").lower()
                 if sid.startswith("window") or sid == "doorwithwindow":
-                    w = _value(o.get("values"), "width"); h = _value(o.get("values"), "height")
-                    a = round(float(w) * float(h), 2) if w and h else 0.0
+                    w = _opp(_value(o.get("values"), "width"), None)
+                    h = _opp(_value(o.get("values"), "height"), None)
+                    a = round(w * h, 2) if w and h else 0.0
                     windows.append({"area": a, "room": rn})
     footprint = max((a for _, a in areas), default=0.0)   # grootste verdieping = footprint-proxy
     # buitenomtrek BENADEREN uit de footprint (de MagicPlan-perimeter telt binnenwanden mee);
-    # 4*sqrt(opp) = omtrek vierkant, x1.15 voor niet-vierkante plattegrond.
-    perimeter = round(4 * math.sqrt(footprint) * 1.15, 1) if footprint else 0.0
+    # 4*sqrt(opp) = omtrek vierkant, x1.15 voor niet-vierkante plattegrond. footprint > 0 bewaakt
+    # zowel een lege/negatieve als een NaN-oppervlakte uit onbetrouwbare API-data (math.sqrt op een
+    # negatief getal crasht; NaN faalt de '> 0'-test en valt dus terecht op 0.0 terug).
+    perimeter = round(4 * math.sqrt(footprint) * 1.15, 1) if footprint > 0 else 0.0
     return geo, windows, footprint, perimeter, total_h
 
 

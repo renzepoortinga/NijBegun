@@ -232,6 +232,74 @@ check("assemble: bruto (area_with_walls) fors groter dan netto (area) -> None (s
       _floor_contour_m({"statistics": {"area": 5.0, "area_with_walls": 12.0},
                         "image_map": [{"symbol_id": "floor",
                                       "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}]}) is None)
+# Stresstest-bevindingen (14-8): NaN/Infinity in de brondata moeten geweigerd worden, niet
+# doorsijpelen naar een onbruikbare contour, en malformed/onverwachte structuren mogen nooit crashen.
+check("assemble: NaN area_with_walls -> None (niet stil doorrekenen naar NaN-schaal)",
+      _floor_contour_m({"statistics": {"area_with_walls": float("nan")},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}]}) is None)
+check("assemble: Infinity area_with_walls -> None",
+      _floor_contour_m({"statistics": {"area_with_walls": float("inf")},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}]}) is None)
+check("assemble: NaN in coördinaten -> None (float() slikt NaN, expliciete isfinite-check vangt 'm)",
+      _floor_contour_m({"statistics": {"area_with_walls": 12.0},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, float("nan"), 0, 100, 100, 0, 100]}]}) is None)
+check("assemble: fl is None -> None (geen crash)", _floor_contour_m(None) is None)
+check("assemble: image_map is geen lijst -> None (geen crash)",
+      _floor_contour_m({"statistics": {"area_with_walls": 12.0}, "image_map": "oops"}) is None)
+check("assemble: coordinates is geen lijst -> None (geen crash)",
+      _floor_contour_m({"statistics": {"area_with_walls": 12.0},
+                        "image_map": [{"symbol_id": "floor", "coordinates": "oops"}]}) is None)
+_planv2_negatief = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "Kelder", "statistics": {"area": -5.0}, "rooms": []}]}}}
+_geo_neg, _win_neg, _fp_neg, _per_neg, _h_neg = geometry_from_plan(_planv2_negatief)
+check("assemble: negatieve vloeroppervlakte crasht geometry_from_plan niet (was ValueError bij sqrt)",
+      _per_neg == 0.0)
+# Tweede stresstestronde (review op taak 011): niet-numerieke (string) waarden op dezelfde
+# aanvalsoppervlakte die de eerste ronde met NaN/Infinity/malformed types al had dichtgezet.
+check("assemble: area_with_walls als string -> None (geen ValueError)",
+      _floor_contour_m({"statistics": {"area_with_walls": "N/A"},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, 10, 0, 10, 10, 0, 10]}]}) is None)
+import math as _mathassm
+_planv2_nan_footprint = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": float("nan")}},
+    {"name": "B", "statistics": {"area": 20.0}}]}}}
+_geo_nanfp, _win_nanfp, _fp_nanfp, _per_nanfp, _h_nanfp = geometry_from_plan(_planv2_nan_footprint)
+check("assemble: NaN vloeroppervlakte lekt niet door via max() naar footprint/VloerInfo",
+      _mathassm.isfinite(_fp_nanfp) and all(_mathassm.isfinite(v.oppervlakte_m2) for v in _geo_nanfp.vloeren),
+      str((_fp_nanfp, [v.oppervlakte_m2 for v in _geo_nanfp.vloeren])))
+_planv2_bad_ceiling = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": 10.0},
+     "values": [{"id": "ceilingHeight", "value": "oops"}]}]}}}
+check("assemble: niet-numerieke ceilingHeight crasht niet",
+      geometry_from_plan(_planv2_bad_ceiling)[0].vloeren[0].hoogte_m is None)
+_planv2_bad_room = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": 10.0},
+     "rooms": [{"name": "R", "statistics": {"area": "bad"}}]}]}}}
+check("assemble: niet-numerieke kamer-oppervlakte crasht niet",
+      geometry_from_plan(_planv2_bad_room)[0].ruimtes[0].oppervlakte_m2 == 0.0)
+# Derde stresstestronde (review op taak 011, ronde 2): negatieve oppervlaktes uit onbetrouwbare
+# brondata werden door _getal() doorgelaten (eindig + numeriek, dus "geldig") maar zijn voor een
+# oppervlakte net zo onbruikbaar als NaN - _opp() klemt ze nu vast op 0.
+_planv2_neg_vloer = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "Kelder", "statistics": {"area": -5.0}, "rooms": []}]}}}
+check("assemble: negatieve vloeroppervlakte -> 0.0, lekt niet als negatief getal door",
+      geometry_from_plan(_planv2_neg_vloer)[0].vloeren[0].oppervlakte_m2 == 0.0)
+_planv2_neg_raam = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": 10.0}, "rooms": [
+        {"name": "R", "statistics": {"area": 5}, "objects": [
+            {"symbol_id": "windowHung", "values": [{"id": "width", "value": -1.2},
+                                                    {"id": "height", "value": 1.0}]}]}]}]}}}
+check("assemble: negatieve raambreedte -> raam-oppervlak 0.0 (geen inversie van de gevelaftrek)",
+      geometry_from_plan(_planv2_neg_raam)[1][0]["area"] == 0.0)
+from dashboard.gebouw_svg import _contour_geldig as _gcgeldig
+check("gebouw-svg: _contour_geldig accepteert numerieke strings (geen crash, wél geldig)",
+      _gcgeldig([["0", "0"], ["5", "0"], ["5", "5"]]) is True)
+check("gebouw-svg: _contour_geldig verwerpt echt niet-numerieke coördinaten (geen TypeError)",
+      _gcgeldig([["abc", "0"], ["5", "0"], ["5", "5"]]) is False)
 _planv2_contour = {"data": {"plan_data": {"living_area": 12.0, "floors": [
     {"name": "Begane grond", "statistics": {"area": 12.0, "area_with_walls": 12.0},
      "image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}],
@@ -1031,6 +1099,15 @@ check("gebouw-svg: polygon-footprint wint zelfs als dos.schil geen (consistente)
       'data-footprint-bron="contour"' in _gpoly_svg and "Kon geen 3D-vorm afleiden" not in _gpoly_svg)
 check("gebouw-svg: contourmuren dragen geen id maar wél een data-contour-markering",
       all(p.attrib.get("data-contour") == "true" for p in _gpoly_gevels))
+# Stresstest-bevinding (14-8): een NaN/Infinity in contour_m mag nooit tot NaN-coördinaten in de
+# uiteindelijke SVG leiden -> _contour_geldig verwerpt 'm, aanroeper valt terug op de rechthoek-
+# fallback (die hier ook faalt, want dos.schil is leeg -> expliciete "Kon geen 3D-vorm afleiden").
+_gnan_dos = _GDos()
+_gnan_dos.opname.gevelhoogte_m = 5
+_gnan_dos.geometrie.vloeren = [_GVloer(naam="X", oppervlakte_m2=20,
+    contour_m=[[0, 0], [float("nan"), 0], [5, 5], [0, 5]])]
+check("gebouw-svg: NaN in contour_m -> geen NaN in de SVG (valt terug op fallback)",
+      "NaN" not in _gsvg(_gnan_dos) and "nan" not in _gsvg(_gnan_dos))
 # Concave U-vorm (bijt-uit-de-achterrand): schoenveter-teken bepaalt de buiten-normaal per rand.
 # Handmatig nagerekend (zie taak 007-review): met een simpel 'wijst van het gemiddelde af'-test
 # (het gemiddelde van de hoekpunten valt hier BUITEN de veelhoek, in de uitsparing) draaien
