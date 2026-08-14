@@ -487,17 +487,7 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 
 <details class=acc><summary><b>3 · Zelf de m² invoeren (9 geometrieën)</b></summary><div class=acc-body>
 <p class="muted small">Voor een lastig dak: vul per oriëntatie het (schuine) dakoppervlak in. Laat leeg wat er niet is.</p>
-<div class=dakwire><svg id="compasSvg" viewBox="0 0 300 300" width="260" height="260">
-<circle cx="150" cy="150" r="36" fill="var(--tint)" stroke="var(--sub)" stroke-width="1.5"/>
-<text id="compasHorizVal" x="150" y="155" font-size="var(--svg-fs-3)" text-anchor="middle" fill="var(--sub)">plat —</text>
-{% for o in ['N','NO','O','ZO','Z','ZW','W','NW'] %}
-<g id="compasSeg{{o}}" transform="rotate({{loop.index0 * 45}} 150 150)">
-<path d="M150 150 L150 40 A110 110 0 0 1 {{(150+110*0.3826834324)|round(1)}} {{(150-110*0.9238795325)|round(1)}} Z" fill="var(--tint)" stroke="var(--card)" stroke-width="2"/>
-<text x="150" y="66" font-size="var(--svg-fs-2)" font-weight="650" text-anchor="middle" fill="var(--ink)" transform="rotate({{-(loop.index0 * 45)}} 150 66)">{{o}}</text>
-<text id="compasVal{{o}}" x="150" y="82" font-size="var(--svg-fs-1)" text-anchor="middle" fill="var(--sub)" transform="rotate({{-(loop.index0 * 45)}} 150 82)">—</text>
-</g>
-{% endfor %}
-</svg></div>
+<div class=dakwire><svg id="compasSvg" class=isometrie-canvas viewBox="0 0 320 220" role=img aria-label="Isometrische voorbeeldtekening van de zelf ingevoerde dakvlakken"></svg></div>
 <form method=post action="{{url_for('opname_dak_negen', tag=tag)}}" oninput="compasPrev(this)"><div class=grid2>
 {% for o in ['N','NO','O','ZO','Z','ZW','W','NW','Horizontaal'] %}<div><label>{{o}} (m²)</label><input name="m2_{{o}}"></div>{% endfor %}
 <div><label>Hellingshoek schuine vlakken (° — optioneel)</label><input name=helling9></div>
@@ -533,20 +523,7 @@ Deze lijst blijft staan tot de volgende upload en gaat mee in IMPORTEREN.txt bij
 {% else %}<p class=muted>Voeg eerst een hellend dakvlak toe (optie 2 of 3 hierboven, met een hellingshoek &gt; 0°), dan kun je er een dakkapel in zetten.</p>{% endif %}
 </div></details>
 <script src="{{url_for('static', filename='isometrie.js')}}"></script>
-<script>
-function compasPrev(f){
-  var os=['N','NO','O','ZO','Z','ZW','W','NW'];
-  os.forEach(function(o){
-    var inp=f['m2_'+o],val=inp?parseFloat((inp.value||'').replace(',','.')):NaN,
-        seg=document.getElementById('compasSeg'+o),lbl=document.getElementById('compasVal'+o);
-    if(!lbl)return;
-    if(val>0){lbl.textContent=val.toFixed(1)+' m²';seg.querySelector('path').setAttribute('fill','var(--info-bg)');}
-    else{lbl.textContent='—';seg.querySelector('path').setAttribute('fill','var(--tint)');}
-  });
-  var hz=f['m2_Horizontaal'],hv=hz?parseFloat((hz.value||'').replace(',','.')):NaN,ht=document.getElementById('compasHorizVal');
-  if(ht)ht.textContent='plat '+(hv>0?hv.toFixed(1)+' m²':'—');
-}
-</script></div>
+</div>
 
 <div class=card><h2>Ventilatie</h2>
 <p class=muted>Nij Begun rekent met vuistregels: toevoer 0,7 dm³/s·m² per verblijfsgebied (min 7 l/s), afvoer keuken 21 / bad 14 / toilet 7, in balans. Ventilatie is een <b>verplicht</b> onderdeel van het isolatieplan.</p>

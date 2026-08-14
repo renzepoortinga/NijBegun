@@ -885,13 +885,47 @@ check("ventilatieplan-svg: toont toevoer + afvoer", "l/s in" in _svgtxt and "l/s
 from dashboard.gebouw_svg import gebouw_svg as _gsvg
 from core.dossier import Dossier as _GDos, SchilDeel as _GSchil
 _gdos = _GDos()
-_gdos.schil = [_GSchil(id="gevel-voor", type="gevel", orientatie="Z", oppervlakte_m2=20, rc_huidig=2.5),
+_gdos.opname.gevelhoogte_m = 5
+_gdos.opname.gebouwhoogte_m = 8
+_gdos.schil = [_GSchil(id="gevel-voor", type="gevel", gevel_naam="voor", orientatie="Z", oppervlakte_m2=40, rc_huidig=2.5),
+              _GSchil(id="gevel-achter", type="gevel", gevel_naam="achter", orientatie="N", oppervlakte_m2=40),
+              _GSchil(id="gevel-links", type="gevel", gevel_naam="links", orientatie="O", oppervlakte_m2=30),
+              _GSchil(id="gevel-rechts", type="gevel", gevel_naam="rechts", orientatie="W", oppervlakte_m2=30),
               _GSchil(id="dak1-schuin-z", type="dak", subtype="schuin (zadeldak)", orientatie="Z",
-                      oppervlakte_m2=25, hellingshoek=45)]
+                      oppervlakte_m2=25, hellingshoek=45, breedte_m=8, diepte_m=3,
+                      geometrie_groep="dak1"),
+              _GSchil(id="dak1-schuin-n", type="dak", subtype="schuin (zadeldak)", orientatie="N",
+                      oppervlakte_m2=25, hellingshoek=45, breedte_m=8, diepte_m=3,
+                      geometrie_groep="dak1"),
+              _GSchil(id="dakkapel1-voorvlak", type="gevel", subtype="Dakkapel voorvlak",
+                      oppervlakte_m2=3, breedte_m=2, diepte_m=1, hoogte_m=1.5,
+                      moedervlak_id="dak1-schuin-z", geometrie_groep="dakkapel1")]
 _gsvgtxt = _gsvg(_gdos)
 check("gebouw-svg: geldige SVG-string", _gsvgtxt.startswith("<svg") and _gsvgtxt.rstrip().endswith("</svg>"))
 check("gebouw-svg: well-formed XML", bool(_ETv.fromstring(_gsvgtxt)))
-check("gebouw-svg: toont gevel- en dakvlak-ids", "gevel-voor" in _gsvgtxt and "dak1-schuin-z" in _gsvgtxt)
+check("gebouw-svg: echte isometrie met herleidbare gevel en exacte dakvlakken",
+      'data-view="isometrisch"' in _gsvgtxt and 'data-id="gevel-voor"' in _gsvgtxt
+      and 'data-orientation="Z"' in _gsvgtxt and 'data-rendering="exact"' in _gsvgtxt
+      and "dak1-schuin-z" in _gsvgtxt)
+check("gebouw-svg: dakkapel staat gekoppeld op het juiste moederdak",
+      'data-parent="dak1-schuin-z"' in _gsvgtxt and 'data-group="dakkapel1"' in _gsvgtxt)
+_glegacy = _GDos.from_dict(_gdos.to_dict())
+_glegacy.schil = [s for s in _glegacy.schil if "dakkapel" not in s.id]
+for _gs in _glegacy.schil:
+    if _gs.type == "dak":
+        _gs.breedte_m = _gs.diepte_m = None
+_glegacy_svg = _gsvg(_glegacy)
+check("gebouw-svg: legacy-dak zichtbaar als benadering gemarkeerd",
+      'data-rendering="benaderd"' in _glegacy_svg and "dak benaderd" in _glegacy_svg)
+_gfallback = _GDos()
+_gfallback.schil = [_GSchil(id="gevel-los", type="gevel", oppervlakte_m2=20)]
+_gfallback_svg = _gsvg(_gfallback)
+check("gebouw-svg: ontbrekende hoogte geeft verklaarde fallback, geen gegokte box",
+      'data-state="fallback"' in _gfallback_svg and "gevelhoogte ontbreekt" in _gfallback_svg)
+_ginconsistent = _GDos.from_dict(_gdos.to_dict())
+next(s for s in _ginconsistent.schil if s.id == "gevel-achter").oppervlakte_m2 = 80
+check("gebouw-svg: inconsistente tegenoverliggende gevels geven fallback",
+      "tegenoverliggende gevelmaten zijn inconsistent" in _gsvg(_ginconsistent))
 check("gebouw-svg: leeg dossier -> nog steeds geldige SVG", bool(_ETv.fromstring(_gsvg(_GDos()))))
 
 print("\n35. Webapp (Flask) — laadt + kernroutes + Beoordelingscheck")
@@ -923,7 +957,8 @@ try:
           and 'selected' in _op.get_data(as_text=True))
     check("webapp: dakwizards laden losse isometriemodule en beschikbare canvassen",
           'static/isometrie.js' in _op.get_data(as_text=True)
-          and _op.get_data(as_text=True).count('class=isometrie-canvas') == 2)
+          and _op.get_data(as_text=True).count('class=isometrie-canvas') == 3
+          and 'function compasPrev' not in _op.get_data(as_text=True))
     check("webapp: huidige-staat-stap laadt (VABI-export terug)",
           _wc.get("/project/%s/huidig" % _ptag).status_code == 200)
     # dakkapel-route: zadeldak toevoegen, dan een dakkapel erin -> 4 nieuwe vlakken + moederdak kleiner
@@ -966,7 +1001,7 @@ try:
     check("webapp: renderingmetadata overleeft dossier save/reload",
           _kapel_rt.schil[-1].breedte_m == 2.5 and _kapel_rt.schil[-1].moedervlak_id == _na_dos.schil[0].id)
     check("webapp: dakkapelcanvas verschijnt bij een geldig hellend moederdak",
-          _wc.get("/project/%s/opname" % _ptag).get_data(as_text=True).count('class=isometrie-canvas') == 3)
+          _wc.get("/project/%s/opname" % _ptag).get_data(as_text=True).count('class=isometrie-canvas') == 4)
     _steil_i = next(i for i, s in enumerate(_na_dos.schil)
                     if (s.id or "").startswith("dak2-schuin-") and s.hellingshoek == 60)
     _voor_steil = len(_na_dos.schil)

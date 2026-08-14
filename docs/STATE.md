@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Codex (taak 005 afgerond, review PASS)
+Bijgewerkt: 2026-08-14 door Codex (taak 006 in review)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -19,6 +19,8 @@ Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 
 - Taak 003: kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export;
   implementatie gereed, onafhankelijke review nog vereist.
+- Taak 006: opgeslagen gebouwoverzicht en het vrije 9-vlakken-vangnet zijn
+  isometrisch doorgevoerd; 746 tests groen, onafhankelijke review loopt.
 
 Taak 004 (visuele laag SVG voor dak/dakkapel + gebouwoverzicht) is klaar en
 staat in `tasks/done/`: 4 reviewrondes (Codex), laatste VERDICT PASS. Onderweg

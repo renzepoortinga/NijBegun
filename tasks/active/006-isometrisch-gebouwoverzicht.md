@@ -1,6 +1,6 @@
 ---
 id: 006
-assigned:
+assigned: codex
 branch: feat/isometrisch-gebouwoverzicht
 depends_on: [005]
 ---
@@ -52,11 +52,16 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   output; nieuwe tests voor footprint-afleiding (happy path + fallback bij
   ontbrekende hoogte/inconsistente breedtes) + dakreconstructie met en
   zonder taak-005-velden + dakkapel-plaatsing.
+- Expliciete gebruikersuitbreiding (2026-08-14): ook het vrije 9-vlakken-
+  vangnet in "Dak toevoegen" krijgt een isometrische live indicatie. De
+  opgeslagen m² en serverlogica blijven ongewijzigd; zonder vaste vorm kan
+  deze preview alleen indicatief zijn.
 
 ## Out of scope
 - Gevels blijven uitsluitend via MagicPlan binnenkomen — geen nieuwe
   parametrische gevel-invoerweg.
-- Geen wijziging aan de taak-005-invoerwizards zelf (die staan al vast).
+- Geen wijziging aan de maatvaste taak-005-invoerwizards zelf; alleen het
+  destijds bewust uitgezonderde vrije 9-vlakken-vangnet wordt gelijkgetrokken.
 - Geen tekenmodule ("tekenen op plattegronden" à la Inbrix) — MagicPlan
   blijft de tekenlaag.
 
@@ -82,6 +87,15 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   (zie dat taakbestand voor de volledige context/aanleiding). Deze taak kan
   pas starten nadat taak 005 gemerged is (de nieuwe `SchilDeel`-velden
   moeten bestaan).
+- 2026-08-14 (Codex, Builder): taak geclaimd op
+  `feat/isometrisch-gebouwoverzicht`. `gebouw_svg()` vervangen door een
+  dependencyvrije isometrische projectie met footprint-afleiding uit vier
+  benoemde gevels, expliciete fallback bij ontbrekende/inconsistente maten,
+  exacte en als zodanig gemarkeerde legacy-dakrendering en dakkapel-
+  moederdakrelaties. Op expliciet verzoek ook de vrije 9-vlakken-dakpreview
+  van kompas naar isometrische indicatie omgezet. 746/746 tests, JS-syntax en
+  `git diff --check` groen. Browser-QA kon niet starten omdat geen browser aan
+  de sessie gekoppeld was; geen alternatieve browserlaag gebruikt.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.

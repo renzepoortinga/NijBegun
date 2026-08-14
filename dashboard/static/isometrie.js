@@ -130,10 +130,44 @@
     draw(svg, [roof].concat(dormer), width.toFixed(2) + " × " + depth.toFixed(2) + " × " + height.toFixed(2) + " m · moederdak " + angle.toFixed(0) + "°");
   };
 
+  window.compasPrev = function (form) {
+    var orientations = ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"];
+    var angle = n(form.helling9 && form.helling9.value), faces = [], total = 0;
+    if (!(angle > 0 && angle < 90)) angle = 35;
+    orientations.forEach(function (orientation, index) {
+      var area = n(form["m2_" + orientation] && form["m2_" + orientation].value);
+      if (!(area > 0)) return;
+      total += area;
+      var side = Math.sqrt(area), rad = index * Math.PI / 4;
+      var dx = Math.sin(rad), dz = -Math.cos(rad), tx = Math.cos(rad), tz = Math.sin(rad);
+      var half = side / 2, run = side * Math.cos(angle * Math.PI / 180);
+      var rise = run * Math.tan(angle * Math.PI / 180), gap = side * 0.12;
+      var cx = dx * gap, cz = dz * gap;
+      faces.push(slope([
+        {x: cx - tx * half, y: 0, z: cz - tz * half},
+        {x: cx + tx * half, y: 0, z: cz + tz * half},
+        {x: cx + tx * half + dx * run, y: rise, z: cz + tz * half + dz * run},
+        {x: cx - tx * half + dx * run, y: rise, z: cz - tz * half + dz * run}
+      ], "hellend-actief-" + orientation.toLowerCase()));
+    });
+    var flat = n(form.m2_Horizontaal && form.m2_Horizontaal.value);
+    if (flat > 0) {
+      total += flat;
+      var flatSide = Math.sqrt(flat) * 0.72;
+      faces.push(slope([{x: -flatSide / 2, y: 0, z: -flatSide / 2},
+        {x: flatSide / 2, y: 0, z: -flatSide / 2}, {x: flatSide / 2, y: 0, z: flatSide / 2},
+        {x: -flatSide / 2, y: 0, z: flatSide / 2}], "boven-actief"));
+    }
+    var svg = document.getElementById("compasSvg");
+    if (!faces.length) return empty(svg, "Vul één of meer dakvlakken in");
+    draw(svg, faces, faces.length + " vlak(ken) · " + total.toFixed(2) + " m² · isometrische indicatie");
+  };
+
   window.Isometrie = {project: project, polygon: polygon, block: block, slope: slope};
   document.addEventListener("DOMContentLoaded", function () {
     empty(document.getElementById("platSvg"), "Vul breedte en diepte in");
     empty(document.getElementById("zadelSvg"), "Vul de dakmaten in");
+    empty(document.getElementById("compasSvg"), "Vul één of meer dakvlakken in");
     empty(document.getElementById("kapelSvg"), "Vul breedte, hoogte en diepte in");
   });
 }());
