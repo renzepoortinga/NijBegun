@@ -13,6 +13,7 @@ import os, sys, json, math, argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
                           SchilDeel, save_json)
+from core.geometry import polygon_oppervlakte_m2
 from magicplan.extractor import _g, _functie, _map_ventilatie, _map_installaties, _maak_vloer, _maak_dak
 from magicplan import report_parser
 
@@ -22,6 +23,41 @@ def _value(values, vid):
         if isinstance(it, dict) and it.get("id") == vid:
             return it.get("value")
     return None
+
+
+def _floor_contour_m(fl):
+    """Reconstrueer de echte grondvlak-contour (meter) uit MagicPlans plattegrond-beeldkaart.
+
+    Elke bouwlaag levert een `image_map` met een `symbol_id: "floor"`-entry: de buitenomtrek van
+    die verdieping als polygon in PIXELS van de gerenderde plattegrond-SVG. Die coördinaten hebben
+    geen bekende schaal op zichzelf, maar `statistics.area_with_walls` (m2, bruto incl. wanden -
+    dezelfde grootheid als de omtrek beschrijft) laat een schaalfactor afleiden: schaal (m/px) =
+    sqrt(werkelijke oppervlakte / pixel-oppervlakte), aannemend dat x/y gelijk geschaald zijn
+    (bevestigd tegen een echte export: een losse kamer-omtrek gaf x- en y-schaal binnen ~1% van
+    elkaar). Dit is de ENIGE plek waar we een niet-vierkante footprint kunnen terugvinden -
+    zonder deze data valt de tool terug op de vierkant-benadering uit gevel-m2.
+
+    Geeft None als de data ontbreekt of te ontaard is om te vertrouwen (liever geen contour dan
+    een verzonnen vorm - zelfde 'niet gokken'-regel als de rest van de keten)."""
+    stats = fl.get("statistics") or {}
+    werkelijke_opp = float(stats.get("area_with_walls") or 0)
+    if werkelijke_opp <= 0:
+        return None
+    entry = next((e for e in (fl.get("image_map") or [])
+                  if (e or {}).get("symbol_id") == "floor"), None)
+    if not entry:
+        return None
+    coords = entry.get("coordinates") or []
+    if len(coords) < 8 or len(coords) % 2:  # minstens 4 punten, volledige (x, y)-paren
+        return None
+    punten_px = list(zip(coords[0::2], coords[1::2]))
+    opp_px = polygon_oppervlakte_m2(punten_px)  # eenheid hier: px2, functienaam blijft kloppen (m2-formule)
+    if opp_px <= 0:
+        return None
+    schaal = math.sqrt(werkelijke_opp / opp_px)  # m per pixel
+    min_x = min(p[0] for p in punten_px)
+    min_y = min(p[1] for p in punten_px)
+    return [[round((x - min_x) * schaal, 3), round((y - min_y) * schaal, 3)] for x, y in punten_px]
 
 
 def geometry_from_plan(plan):
@@ -34,7 +70,8 @@ def geometry_from_plan(plan):
         area = float((fl.get("statistics") or {}).get("area") or 0)
         ch = _value(fl.get("values"), "ceilingHeight")
         geo.vloeren.append(VloerInfo(naam=fl.get("name", ""), oppervlakte_m2=area,
-                                     hoogte_m=float(ch) if ch else None))
+                                     hoogte_m=float(ch) if ch else None,
+                                     contour_m=_floor_contour_m(fl)))
         if ch:
             total_h += float(ch)
         areas.append((fl.get("name", ""), area))

@@ -202,6 +202,33 @@ check("assemble schil gevel+vloer+dak+kozijn", {"gevel", "vloer", "dak", "kozijn
 check("assemble gevel-tag uit report", any(s.type == "gevel" and s.subtype == "Spouwmuur" for s in _ad.schil))
 check("assemble kozijn-glas uit report", any(s.type == "kozijn" and s.glastype == "HR++" for s in _ad.schil))
 
+print("15b. MagicPlan-contourextractie (echte plattegrondomtrek i.p.v. rechthoek-gok)")
+from magicplan.assemble import _floor_contour_m, geometry_from_plan
+from core.geometry import polygon_oppervlakte_m2
+check("polygon_oppervlakte_m2: rechthoek", polygon_oppervlakte_m2([(0, 0), (4, 0), (4, 3), (0, 3)]) == 12)
+check("polygon_oppervlakte_m2: minder dan 3 punten -> 0", polygon_oppervlakte_m2([(0, 0), (1, 1)]) == 0.0)
+_floor_ok = {"statistics": {"area_with_walls": 12.0},
+             "image_map": [{"symbol_id": "wall", "coordinates": [0, 0, 1, 1]},
+                           {"symbol_id": "floor", "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}]}
+_contour = _floor_contour_m(_floor_ok)
+check("assemble: contour gekalibreerd op de werkelijke oppervlakte (area_with_walls)",
+      _contour is not None and abs(polygon_oppervlakte_m2(_contour) - 12.0) < 0.01)
+check("assemble: contour genormaliseerd naar oorsprong (0,0)",
+      min(p[0] for p in _contour) == 0 and min(p[1] for p in _contour) == 0)
+check("assemble: geen 'floor'-symbol in image_map -> None (geen gegokte vorm)",
+      _floor_contour_m({"statistics": {"area_with_walls": 12.0},
+                        "image_map": [{"symbol_id": "wall", "coordinates": [0, 0, 1, 1]}]}) is None)
+check("assemble: geen werkelijke oppervlakte -> None",
+      _floor_contour_m({"image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 1, 0, 1, 1, 0, 1]}]}) is None)
+_planv2_contour = {"data": {"plan_data": {"living_area": 12.0, "floors": [
+    {"name": "Begane grond", "statistics": {"area": 12.0, "area_with_walls": 12.0},
+     "image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}],
+     "rooms": []}]}}}
+_geo, *_ = geometry_from_plan(_planv2_contour)
+check("assemble: geometry_from_plan zet de contour door op VloerInfo",
+      _geo.vloeren[0].contour_m is not None
+      and abs(polygon_oppervlakte_m2(_geo.vloeren[0].contour_m) - 12.0) < 0.01)
+
 print("16. VABI Constructiebibliotheek-generator (dossier -> importeerbare XML)")
 import tempfile as _tf
 import xml.etree.ElementTree as _ET
@@ -975,6 +1002,21 @@ check("gebouw-svg: inconsistente tegenoverliggende gevels geven fallback",
       "verschillen meer dan 25%" in _gsvg(_inconsistent)
       and 'data-face="gevel-voor"' not in _gsvg(_inconsistent))
 check("gebouw-svg: leeg dossier -> nog steeds geldige SVG", bool(_ETv.fromstring(_gsvg(_GDos()))))
+
+from core.dossier import VloerInfo as _GVloer
+_gpoly_dos = _GDos()
+_gpoly_dos.opname.gevelhoogte_m = 5
+_gpoly_dos.geometrie.vloeren = [_GVloer(naam="Begane grond", oppervlakte_m2=39,
+    contour_m=[[0, 0], [8, 0], [8, 3], [5, 3], [5, 6], [0, 6]])]  # L-vormige footprint
+_gpoly_svg = _gsvg(_gpoly_dos)
+check("gebouw-svg: L-vormige contour geeft geldige SVG", bool(_ETv.fromstring(_gpoly_svg)))
+_gpoly_root = _ETv.fromstring(_gpoly_svg)
+_gpoly_gevels = [p for p in _gpoly_root.iter("{http://www.w3.org/2000/svg}polygon")
+                 if p.attrib.get("data-face") == "gevel-contour"]
+check("gebouw-svg: echte L-vorm tekent meer dan 2 gevelvlakken (geen rechthoek-reductie)",
+      len(_gpoly_gevels) > 2)
+check("gebouw-svg: polygon-footprint wint zelfs als dos.schil geen (consistente) gevels heeft",
+      'data-footprint-bron="contour"' in _gpoly_svg and "Kon geen 3D-vorm afleiden" not in _gpoly_svg)
 
 print("\n35. Webapp (Flask) — laadt + kernroutes + Beoordelingscheck")
 try:

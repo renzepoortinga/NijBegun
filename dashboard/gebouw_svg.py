@@ -1,16 +1,23 @@
 """Read-only isometrisch gebouwoverzicht uit de opgeslagen dossiergeometrie.
 
-Dit is uitsluitend een presentatielaag. Een 3D-volume wordt alleen getekend als
-alle vier gevelrichtingen en een gevelhoogte een rechthoekige footprint dragen.
-Tegenoverliggende gevelbreedtes mogen maximaal 25% verschillen: dat is dezelfde
-grens waarmee de MagicPlan-import een mogelijke dubbeltelling signaleert. De
-renderer corrigeert geen invoer en rekent geen NTA 8800-resultaten.
+Dit is uitsluitend een presentatielaag. Twee footprint-bronnen, in deze volgorde:
+1. een ECHTE plattegrondcontour uit de MagicPlan-API (`VloerInfo.contour_m`, gevuld door
+   `magicplan/assemble.py`) -> de gevels volgen de werkelijke (ook niet-rechthoekige) vorm;
+2. zonder contour: een 3D-volume wordt alleen getekend als alle vier gevelrichtingen en een
+   gevelhoogte een rechthoekige footprint dragen. Tegenoverliggende gevelbreedtes mogen
+   maximaal 25% verschillen: dat is dezelfde grens waarmee de MagicPlan-import een mogelijke
+   dubbeltelling signaleert.
+Het dak blijft in beide gevallen op de rechthoekige (of bij een contour: bounding-box-)
+footprint getekend — een dak dat zelf de polygon-vorm volgt is nog niet gebouwd.
+De renderer corrigeert geen invoer en rekent geen NTA 8800-resultaten.
 """
 
 from __future__ import annotations
 
 import html
 import math
+
+from core.geometry import polygon_oppervlakte_m2
 
 C_INK = "var(--ink)"
 C_SUB = "var(--sub)"
@@ -90,6 +97,56 @@ def _footprint(dos):
     breedte = (maten["voor"] + maten["achter"]) / 2
     diepte = (maten["links"] + maten["rechts"]) / 2
     return (breedte, diepte, hoogte), groepen, ""
+
+
+def _polygon_footprint(dos):
+    """Geef (contour_xz, gevelhoogte) uit een ECHTE MagicPlan-plattegrondomtrek, of None.
+
+    Alleen gevuld als de API-route (`magicplan/assemble.py`) een `contour_m` op een bouwlaag
+    opsloeg (de CSV-route kent dit veld niet -> altijd None daar, aanroeper valt dan terug op
+    `_footprint()`). Neemt de contour van de grootste bouwlaag (zelfde 'footprint-proxy'-logica
+    als `assemble.geometry_from_plan`). Een lijnvormige/ontaarde contour wordt verworpen."""
+    vloeren = [v for v in (dos.geometrie.vloeren or []) if v.contour_m and len(v.contour_m) >= 3]
+    if not vloeren:
+        return None
+    hoogte = dos.opname.gevelhoogte_m
+    if not hoogte or not math.isfinite(hoogte) or hoogte <= 0:
+        return None
+    grootste = max(vloeren, key=lambda v: v.oppervlakte_m2 or 0)
+    if polygon_oppervlakte_m2(grootste.contour_m) <= 1.0:
+        return None
+    return grootste.contour_m, hoogte
+
+
+def _muurvlakken(punten, wall_h):
+    """Eén gevelvlak per zichtbare rand van een willekeurige veelhoek.
+
+    Backface-culling voor déze iso-camera (kijkrichting ~ (+x,+y,-z), zie `_project`): bereken
+    per rand de naar-buiten-wijzende normaal en teken de rand alleen als die kant zichtbaar is
+    (nx - nz > 0). Geen volledige z-buffer — bij een sterk concaaf grondvlak kan een verre rand
+    per ongeluk vóór een nabije rand belanden; de painter's-order-sortering hieronder dekt de
+    gebruikelijke L-vormige aanbouw, niet elke denkbare vorm.
+
+    Een contourrand komt niet 1-op-1 overeen met een MagicPlan-gevelnaam, dus deze vlakken
+    dragen geen `deel` — traceerbaarheid van de onderliggende SchilDelen loopt via de
+    render-metadata-laag onderaan `gebouw_svg`, niet via een label op de muur zelf."""
+    n = len(punten)
+    cx = sum(p[0] for p in punten) / n
+    cz = sum(p[1] for p in punten) / n
+    ranked = []
+    for i in range(n):
+        x1, z1 = punten[i]
+        x2, z2 = punten[(i + 1) % n]
+        mx, mz = (x1 + x2) / 2, (z1 + z2) / 2
+        nx, nz = (z2 - z1), -(x2 - x1)
+        if (mx - cx) * nx + (mz - cz) * nz < 0:   # normaal moet van het middelpunt af wijzen
+            nx, nz = -nx, -nz
+        if nx - nz <= 0:                          # niet zichtbaar voor deze camera -> weglaten
+            continue
+        diepte = mx + wall_h / 2 - mz
+        ranked.append((diepte, _face([(x1, 0, z1), (x2, 0, z2), (x2, wall_h, z2), (x1, wall_h, z1)],
+                                      None, "gevel-contour", C_HOUSE, C_HOUSE_LINE)))
+    return [f for _, f in sorted(ranked, key=lambda t: t[0])]
 
 
 def _dakvlakken(dos):
@@ -300,24 +357,37 @@ def _dakkapel_faces(dos, dakinfo):
 
 
 def gebouw_svg(dos, titel="Gebouwoverzicht"):
+    poly = _polygon_footprint(dos)
     footprint, gevelgroepen, reden = _footprint(dos)
-    if not footprint:
+    if not poly and not footprint:
         return _fallback(dos, titel, reden)
-    breedte, diepte, gevelhoogte = footprint
-    gevel_faces = {
-        "voor": [(0, 0, 0), (breedte, 0, 0), (breedte, gevelhoogte, 0), (0, gevelhoogte, 0)],
-        "rechts": [(breedte, 0, 0), (breedte, 0, diepte), (breedte, gevelhoogte, diepte), (breedte, gevelhoogte, 0)],
-        "achter": [(breedte, 0, diepte), (0, 0, diepte), (0, gevelhoogte, diepte), (breedte, gevelhoogte, diepte)],
-        "links": [(0, 0, diepte), (0, 0, 0), (0, gevelhoogte, 0), (0, gevelhoogte, diepte)],
-    }
-    faces = []
-    for naam, punten in gevel_faces.items():
-        delen = gevelgroepen[naam]
-        bekend = all(s.rc_huidig or s.u_huidig for s in delen)
-        faces.append(_face(punten, delen[0], "gevel-%s" % naam,
-                           C_HOUSE, C_KNOWN if bekend else C_UNKNOWN))
-        faces[-1]["delen"] = delen
-    dakfaces, dakinfo, dakfouten = _roof_faces(dos, footprint, gevelgroepen)
+
+    if poly:
+        # Echte, gemeten plattegrondcontour (assemble.py) -> geen rechthoek-aanname nodig voor
+        # de gevels. Het dak (hieronder, _roof_faces) blijft wel op de bounding-box staan.
+        contour, gevelhoogte = poly
+        bx = [p[0] for p in contour]
+        bz = [p[1] for p in contour]
+        breedte, diepte = max(bx) - min(bx), max(bz) - min(bz)
+        faces = _muurvlakken(contour, gevelhoogte)
+        faces.append(_face([(x, gevelhoogte, z) for x, z in contour], None, "bovenzijde-contour",
+                           C_HOUSE, C_HOUSE_LINE))
+    else:
+        breedte, diepte, gevelhoogte = footprint
+        gevel_faces = {
+            "voor": [(0, 0, 0), (breedte, 0, 0), (breedte, gevelhoogte, 0), (0, gevelhoogte, 0)],
+            "rechts": [(breedte, 0, 0), (breedte, 0, diepte), (breedte, gevelhoogte, diepte), (breedte, gevelhoogte, 0)],
+            "achter": [(breedte, 0, diepte), (0, 0, diepte), (0, gevelhoogte, diepte), (breedte, gevelhoogte, diepte)],
+            "links": [(0, 0, diepte), (0, 0, 0), (0, gevelhoogte, 0), (0, gevelhoogte, diepte)],
+        }
+        faces = []
+        for naam, punten in gevel_faces.items():
+            delen = gevelgroepen[naam]
+            bekend = all(s.rc_huidig or s.u_huidig for s in delen)
+            faces.append(_face(punten, delen[0], "gevel-%s" % naam,
+                               C_HOUSE, C_KNOWN if bekend else C_UNKNOWN))
+            faces[-1]["delen"] = delen
+    dakfaces, dakinfo, dakfouten = _roof_faces(dos, (breedte, diepte, gevelhoogte), gevelgroepen)
     faces.extend(dakfaces)
     faces.extend(_dakkapel_faces(dos, dakinfo))
 
@@ -338,8 +408,10 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
          '<rect width="900" height="540" fill="%s"/>' % C_CARD,
          '<text x="32" y="42" font-size="var(--svg-fs-8)" font-weight="700" fill="%s">%s</text>'
          % (C_INK, _esc(titel)),
-         '<text x="32" y="68" font-size="var(--svg-fs-3)" fill="%s">Footprint %.2f × %.2f m · gevel %.2f m</text>'
-         % (C_SUB, breedte, diepte, gevelhoogte)]
+         '<text x="32" y="68" font-size="var(--svg-fs-3)" fill="%s" data-footprint-bron="%s">'
+         'Footprint %.2f × %.2f m · gevel %.2f m%s</text>'
+         % (C_SUB, "contour" if poly else "afgeleid", breedte, diepte, gevelhoogte,
+            " · échte plattegrondcontour" if poly else "")]
     for face in faces:
         deel = face.get("deel")
         extra = ' data-geometrie="%s" data-punten-3d="%s"' % (
