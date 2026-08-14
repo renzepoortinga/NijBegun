@@ -61,20 +61,20 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   blijft de tekenlaag.
 
 ## Acceptance criteria
-- [ ] `gebouw_svg(dos)` levert een geldige, well-formed isometrische
+- [x] `gebouw_svg(dos)` levert een geldige, well-formed isometrische
       SVG-tekening op (geen labelkaartjes-lay-out) die de geladen gevels/
       daken/dakkapellen van een dossier toont, met id/m²/oriëntatie
       herleidbaar in de markup
-- [ ] Footprint wordt correct afgeleid uit de 4 gevelnamen + gevelhoogte,
+- [x] Footprint wordt correct afgeleid uit de 4 gevelnamen + gevelhoogte,
       met een zichtbare, niet-gegokte fallback als dat niet kan
-- [ ] Dakvlakken met taak-005-metadata renderen exact; legacy-dakvlakken
+- [x] Dakvlakken met taak-005-metadata renderen exact; legacy-dakvlakken
       zonder die metadata renderen benaderd én zichtbaar gemarkeerd als
       benadering
-- [ ] Dakkapel wordt op de juiste dakvlak-face geplaatst
-- [ ] Voldoet aan `docs/design-system.md` (zie taak 005 voor de exacte eisen)
-- [ ] `python tests/run_tests.py` slaagt
-- [ ] `./scripts/verify.sh` slaagt
-- [ ] AI-review PASS door een andere agent dan de bouwer (zelfde model of
+- [x] Dakkapel wordt op de juiste dakvlak-face geplaatst
+- [x] Voldoet aan `docs/design-system.md` (zie taak 005 voor de exacte eisen)
+- [x] `python tests/run_tests.py` slaagt
+- [x] `./scripts/verify.sh` slaagt
+- [x] AI-review PASS door een andere agent dan de bouwer (zelfde model of
       leverancier toegestaan)
 
 ## Sessions
@@ -107,6 +107,13 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   Nieuwe coördinaten-, conflict-, shuffle- en vier-face-regressies toegevoegd:
   746 PASS, uitsluitend dezelfde 2 taak-002-omgevingsfouten over; `verify.sh`,
   `py_compile` en `git diff --check` PASS.
+- 2026-08-14 (Codex, Reviewer): onafhankelijke herreview op `e157ce0`:
+  **PASS MET RISICO'S**, geen blockers. De drie eerdere blockers zijn aantoonbaar
+  hersteld. Niet-blokkerend vastgelegd: de vaste SVG-paintervolgorde kan bij
+  uitzonderlijke geometrie visueel overlappen en niet-eindige waarden in oude
+  renderingmetadata hebben nog geen afzonderlijke defensieve foutstaat. Geen
+  uitbreiding gedaan buiten de afgesproken taakscope. GitHub `verify` groen;
+  lokale suite 746 PASS plus de twee bekende taak-002-omgevingschecks.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.
