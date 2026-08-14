@@ -85,11 +85,12 @@ else ok "geen basis om tegen te vergelijken"; fi
 
 # ── ADVISORY: verweesde worktrees
 head_ "Worktrees"
+HIER=$(git rev-parse --show-toplevel)
 STALE=$(git worktree list --porcelain 2>/dev/null | awk '
   /^worktree / { wt=$0; sub(/^worktree /, "", wt) }
   /^branch /   { br=$0; sub(/^branch /, "", br); sub("refs/heads/","",br); print wt"|"br }
 ' | while IFS='|' read -r wt br; do
-  [ "$wt" = "$(git rev-parse --show-toplevel)" ] && continue
+  [ "$wt" = "$HIER" ] && continue
   [ "$br" = "main" ] && continue
   git merge-base --is-ancestor "$br" main 2>/dev/null && printf '%s (%s) ' "$wt" "$br"
 done)

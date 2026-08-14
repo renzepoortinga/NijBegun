@@ -34,7 +34,7 @@ gefixt en bewijs erbij (empirisch gereproduceerd, niet alleen geredeneerd).
 - [x] Na de fix: hetzelfde scenario opnieuw gedraaid, correct pad + correcte flag, opgeruimd
       (`git worktree remove` + `git branch -D` + `git worktree prune`).
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer (`/code-review high`, zie Sessions).
 
 ## Sessions
 - 2026-08-14 (claude): beide bugs gereproduceerd met een tijdelijke worktree onder
@@ -45,3 +45,11 @@ gefixt en bewijs erbij (empirisch gereproduceerd, niet alleen geredeneerd).
   fix: volledig pad correct getoond, tijdelijke worktree/branch opgeruimd binnen dezelfde run.
   Dit bestand stond al vóór deze sessie ongecommit klaar (niet door mij geschreven, wel door mij
   gefixt na de review-vondst op taak 008).
+- 2026-08-14 (claude), vervolg: `/code-review high` gaf 4 bevindingen. 3 daarvan gingen over een
+  ANDER, nog altijd ongecommit bestandencluster (`AGENTS.md`/`agents/*.md`/`docs/decisions/0001-
+  ai-project-os.md`/`.github/workflows/ai-review.yml` — een reviewer-beleidswijziging die al vóór
+  deze sessie op de machine stond, niet door deze taak aangeraakt; opnieuw gemeld aan Renze, niet
+  hier gefixt). De vierde was terecht en van mij: `git rev-parse --show-toplevel` werd per
+  worktree-iteratie opnieuw gespawned i.p.v. één keer vóór de loop. Gefixt (`HIER=$(...)` vóór de
+  `while`-loop) en het spatie-scenario opnieuw gereproduceerd + opgeruimd om te bevestigen dat de
+  fix het gedrag niet veranderde.
