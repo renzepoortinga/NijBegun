@@ -38,21 +38,30 @@ def _floor_contour_m(fl):
     zonder deze data valt de tool terug op de vierkant-benadering uit gevel-m2.
 
     Geeft None als de data ontbreekt of te ontaard is om te vertrouwen (liever geen contour dan
-    een verzonnen vorm - zelfde 'niet gokken'-regel als de rest van de keten)."""
+    een verzonnen vorm - zelfde 'niet gokken'-regel als de rest van de keten): geen/meerdere
+    'floor'-entries (bij >1 weten we niet welke bij area_with_walls hoort), niet-numerieke
+    coördinaten, of een bruto/netto-verhouding (area_with_walls vs. area) die niet aannemelijk is
+    (bruto hoort door de wanddikte iets groter te zijn dan netto, niet fors groter/kleiner -
+    anders hoort de schaal vermoedelijk niet bij déze polygon)."""
     stats = fl.get("statistics") or {}
     werkelijke_opp = float(stats.get("area_with_walls") or 0)
     if werkelijke_opp <= 0:
         return None
-    entry = next((e for e in (fl.get("image_map") or [])
-                  if (e or {}).get("symbol_id") == "floor"), None)
-    if not entry:
+    entries = [e for e in (fl.get("image_map") or []) if (e or {}).get("symbol_id") == "floor"]
+    if len(entries) != 1:
         return None
-    coords = entry.get("coordinates") or []
+    coords = entries[0].get("coordinates") or []
     if len(coords) < 8 or len(coords) % 2:  # minstens 4 punten, volledige (x, y)-paren
         return None
-    punten_px = list(zip(coords[0::2], coords[1::2]))
+    try:
+        punten_px = [(float(x), float(y)) for x, y in zip(coords[0::2], coords[1::2])]
+    except (TypeError, ValueError):
+        return None
     opp_px = polygon_oppervlakte_m2(punten_px)  # eenheid hier: px2, functienaam blijft kloppen (m2-formule)
     if opp_px <= 0:
+        return None
+    netto_opp = float(stats.get("area") or 0)
+    if netto_opp > 0 and not (netto_opp <= werkelijke_opp <= netto_opp * 1.5):
         return None
     schaal = math.sqrt(werkelijke_opp / opp_px)  # m per pixel
     min_x = min(p[0] for p in punten_px)

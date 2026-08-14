@@ -56,8 +56,8 @@ als eerste stap richting een Inbrix-achtige visuele kwaliteit met het gemak van 
 - [x] `dashboard/gebouw_svg.py`: polygon-footprint-pad met backface-culling, rechthoek-pad blijft
       intacte fallback.
 - [x] `./scripts/verify.sh` slaagt (Python-tests draaien via PowerShell, niet via de kapotte
-      `python3`-alias in Git Bash — zie Notes; 763/763 groen).
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+      `python3`-alias in Git Bash — zie Notes; 768/768 groen).
+- [x] AI-review PASS door een andere agent dan de bouwer (`/code-review high`, zie Sessions).
 
 ## Sessions
 - 2026-08-14 (claude): Bouwde eerst tegen een VERALTE lokale branch-tip
@@ -71,6 +71,31 @@ als eerste stap richting een Inbrix-achtige visuele kwaliteit met het gemak van 
   capture (`out/plan_raw.json`, niet gecommit — bevat een echt klantproject) inclusief onafhankelijke
   kruiscontrole van de schaal via een kamer-omtrek (~3% afwijking, binnen orde van grootte van
   bestaande benaderingen in de tool).
+- 2026-08-14 (claude), vervolg: `/code-review high` (fork, andere doorloop dan de bouwer) leverde
+  9 bevindingen op; 7 verwerkt, 2 bewust niet:
+  - **Echte bug gefixt**: `_muurvlakken`'s zichtbaarheidstest gebruikte het gemiddelde van de
+    hoekpunten als "binnen de veelhoek"-referentiepunt — valt bij een concaaf grondvlak (U-vorm)
+    buiten de veelhoek en draait dan de buiten-normaal van sommige randen om. Herschreven naar een
+    schoenveter-teken-gebaseerde normaal (geen referentiepunt nodig, correct voor élke enkelvoudige
+    veelhoek). Test toegevoegd op een U-vorm met handmatig nagerekende verwachte zichtbaarheid.
+  - **Robuustheid**: `_floor_contour_m` faalde hard (TypeError) op een niet-numerieke coördinaat;
+    verwerpt nu ook >1 `"floor"`-entry (welke hoort bij `area_with_walls`?) en een bruto/netto-
+    oppervlakteverhouding die niet aannemelijk is (>1,5x) — een nieuwe, onafhankelijke plausibiliteits-
+    check bovenop de bestaande kalibratie.
+  - **Traceerbaarheid**: contourmuren droegen geen enkel `data-*`-attribuut terwijl de SVG's eigen
+    bijschrift claimde dat "alle vlakken herleidbaar" zijn — nu `data-contour="true"` +
+    `data-geometrie`/`data-punten-3d`, en het bijschrift is conditioneel op de footprint-bron.
+  - **Opgeruimd**: gedeelde `_geldige_hoogte`-helper (was gedupliceerd), en `_footprint(dos)` wordt
+    niet meer volledig (incl. de 25%-consistentiecheck) uitgevoerd en weer weggegooid als de
+    polygon-contour toch al wint — alleen `_hoofgevels(dos)` (nodig voor dakzijde-oriëntatie).
+  - **Bewust niet gefixt**: contour wordt per bouwlaag berekend ook al gebruikt de renderer alleen
+    de grootste (verwaarloosbare kosten; assemble.py hoort geometrie op te slaan, niet te kiezen wélke
+    bouwlaag de render straks gebruikt — dat is een presentatiekeuze van `gebouw_svg.py`); en de
+    "grootste-bouwlaag-als-footprint-proxy"-heuristiek staat op twee plekken (verschillende
+    invoervormen — een schaalgetal in `assemble.py` vs. een `VloerInfo`-object in `gebouw_svg.py` —
+    een gedeelde helper zou de twee modules onnodig aan elkaar koppelen voor een kleine heuristiek).
+  768/768 tests groen. Twee losse commits: bugfix/robuustheid (assemble.py + geometry) en
+  gebouw_svg.py-opschoning, beide op deze branch.
 
 ## Notes
 - **Val niet in dezelfde kuil**: controleer bij het starten van een taak op een bestaande feature-

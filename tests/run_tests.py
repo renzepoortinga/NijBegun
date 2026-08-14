@@ -220,6 +220,18 @@ check("assemble: geen 'floor'-symbol in image_map -> None (geen gegokte vorm)",
                         "image_map": [{"symbol_id": "wall", "coordinates": [0, 0, 1, 1]}]}) is None)
 check("assemble: geen werkelijke oppervlakte -> None",
       _floor_contour_m({"image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 1, 0, 1, 1, 0, 1]}]}) is None)
+check("assemble: meerdere 'floor'-entries -> None (niet gokken welke bij area_with_walls hoort)",
+      _floor_contour_m({"statistics": {"area_with_walls": 12.0},
+                        "image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]},
+                                     {"symbol_id": "floor", "coordinates": [0, 0, 50, 0, 50, 50, 0, 50]}]}) is None)
+check("assemble: niet-numerieke coördinaat -> None (geen crash)",
+      _floor_contour_m({"statistics": {"area_with_walls": 12.0},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, 100, None, 100, 100, 0, 100]}]}) is None)
+check("assemble: bruto (area_with_walls) fors groter dan netto (area) -> None (schaal hoort er niet bij)",
+      _floor_contour_m({"statistics": {"area": 5.0, "area_with_walls": 12.0},
+                        "image_map": [{"symbol_id": "floor",
+                                      "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}]}) is None)
 _planv2_contour = {"data": {"plan_data": {"living_area": 12.0, "floors": [
     {"name": "Begane grond", "statistics": {"area": 12.0, "area_with_walls": 12.0},
      "image_map": [{"symbol_id": "floor", "coordinates": [0, 0, 100, 0, 100, 100, 0, 100]}],
@@ -909,7 +921,7 @@ import xml.etree.ElementTree as _ETv
 check("ventilatieplan-svg: well-formed XML", bool(_ETv.fromstring(_svgtxt)))
 check("ventilatieplan-svg: toont toevoer + afvoer", "l/s in" in _svgtxt and "l/s uit" in _svgtxt)
 
-from dashboard.gebouw_svg import gebouw_svg as _gsvg
+from dashboard.gebouw_svg import gebouw_svg as _gsvg, _muurvlakken as _gmuur
 from core.dossier import Dossier as _GDos, SchilDeel as _GSchil
 _gdos = _GDos()
 _gdos.opname.gevelhoogte_m = 3.0
@@ -1017,6 +1029,15 @@ check("gebouw-svg: echte L-vorm tekent meer dan 2 gevelvlakken (geen rechthoek-r
       len(_gpoly_gevels) > 2)
 check("gebouw-svg: polygon-footprint wint zelfs als dos.schil geen (consistente) gevels heeft",
       'data-footprint-bron="contour"' in _gpoly_svg and "Kon geen 3D-vorm afleiden" not in _gpoly_svg)
+check("gebouw-svg: contourmuren dragen geen id maar wél een data-contour-markering",
+      all(p.attrib.get("data-contour") == "true" for p in _gpoly_gevels))
+# Concave U-vorm (bijt-uit-de-achterrand): schoenveter-teken bepaalt de buiten-normaal per rand.
+# Handmatig nagerekend (zie taak 007-review): met een simpel 'wijst van het gemiddelde af'-test
+# (het gemiddelde van de hoekpunten valt hier BUITEN de veelhoek, in de uitsparing) draaien
+# meerdere randen om; de schoenveter-methode geeft altijd 3 zichtbare wanden voor déze vorm.
+_gu_vorm = [(0, 0), (10, 0), (10, 10), (7, 10), (7, 3), (3, 3), (3, 10), (0, 10)]
+check("gebouw-svg: concave U-vorm geeft de schoenveter-verwachte 3 zichtbare wanden",
+      len(_gmuur(_gu_vorm, 3)) == 3)
 
 print("\n35. Webapp (Flask) — laadt + kernroutes + Beoordelingscheck")
 try:

@@ -71,11 +71,15 @@ def _hoofgevels(dos):
     return groepen
 
 
+def _geldige_hoogte(hoogte):
+    return bool(hoogte) and math.isfinite(hoogte) and hoogte > 0
+
+
 def _footprint(dos):
     """Geef (breedte, diepte, gevelhoogte, groepen, reden) zonder maten te gokken."""
     groepen = _hoofgevels(dos)
     hoogte = dos.opname.gevelhoogte_m
-    if not hoogte or not math.isfinite(hoogte) or hoogte <= 0:
+    if not _geldige_hoogte(hoogte):
         return None, groepen, "gevelhoogte ontbreekt"
     if any(not groepen[naam] for naam in groepen):
         return None, groepen, "niet alle vier gevelnamen zijn aanwezig"
@@ -110,7 +114,7 @@ def _polygon_footprint(dos):
     if not vloeren:
         return None
     hoogte = dos.opname.gevelhoogte_m
-    if not hoogte or not math.isfinite(hoogte) or hoogte <= 0:
+    if not _geldige_hoogte(hoogte):
         return None
     grootste = max(vloeren, key=lambda v: v.oppervlakte_m2 or 0)
     if polygon_oppervlakte_m2(grootste.contour_m) <= 1.0:
@@ -119,30 +123,34 @@ def _polygon_footprint(dos):
 
 
 def _muurvlakken(punten, wall_h):
-    """Eén gevelvlak per zichtbare rand van een willekeurige veelhoek.
+    """Eén gevelvlak per zichtbare rand van een willekeurige (ook concave) veelhoek.
 
-    Backface-culling voor déze iso-camera (kijkrichting ~ (+x,+y,-z), zie `_project`): bereken
-    per rand de naar-buiten-wijzende normaal en teken de rand alleen als die kant zichtbaar is
-    (nx - nz > 0). Geen volledige z-buffer — bij een sterk concaaf grondvlak kan een verre rand
-    per ongeluk vóór een nabije rand belanden; de painter's-order-sortering hieronder dekt de
-    gebruikelijke L-vormige aanbouw, niet elke denkbare vorm.
+    Backface-culling voor déze iso-camera (kijkrichting ~ (+x,+y,-z), zie `_project`): een rand is
+    zichtbaar als zijn naar-buiten-wijzende normaal (nx, nz) voldoet aan nx - nz > 0. De
+    buiten-normaal volgt uit de omlooprichting (schoenveter-teken) van de hele veelhoek, NIET uit
+    een 'wijst van het middelpunt af'-test: bij een concaaf grondvlak (bv. een L- of U-vorm) kan
+    het simpele gemiddelde van de hoekpunten buiten de veelhoek vallen, wat bij sommige randen de
+    normaal zou omdraaien en een echte buitenmuur ten onrechte zou verbergen (of andersom). De
+    omlooprichting is wél altijd consistent voor een enkelvoudige (niet-zelfoverlappende) veelhoek.
+    Geen volledige z-buffer — bij een sterk concaaf grondvlak kan een verre rand per ongeluk vóór
+    een nabije rand belanden; de painter's-order-sortering hieronder dekt de gebruikelijke
+    L-vormige aanbouw, niet elke denkbare vorm.
 
     Een contourrand komt niet 1-op-1 overeen met een MagicPlan-gevelnaam, dus deze vlakken
     dragen geen `deel` — traceerbaarheid van de onderliggende SchilDelen loopt via de
     render-metadata-laag onderaan `gebouw_svg`, niet via een label op de muur zelf."""
     n = len(punten)
-    cx = sum(p[0] for p in punten) / n
-    cz = sum(p[1] for p in punten) / n
+    schoenveter = sum(punten[i][0] * punten[(i + 1) % n][1] - punten[(i + 1) % n][0] * punten[i][1]
+                      for i in range(n))
+    teken = 1 if schoenveter >= 0 else -1
     ranked = []
     for i in range(n):
         x1, z1 = punten[i]
         x2, z2 = punten[(i + 1) % n]
-        mx, mz = (x1 + x2) / 2, (z1 + z2) / 2
-        nx, nz = (z2 - z1), -(x2 - x1)
-        if (mx - cx) * nx + (mz - cz) * nz < 0:   # normaal moet van het middelpunt af wijzen
-            nx, nz = -nx, -nz
+        nx, nz = teken * (z2 - z1), teken * -(x2 - x1)
         if nx - nz <= 0:                          # niet zichtbaar voor deze camera -> weglaten
             continue
+        mx, mz = (x1 + x2) / 2, (z1 + z2) / 2
         diepte = mx + wall_h / 2 - mz
         ranked.append((diepte, _face([(x1, 0, z1), (x2, 0, z2), (x2, wall_h, z2), (x1, wall_h, z1)],
                                       None, "gevel-contour", C_HOUSE, C_HOUSE_LINE)))
@@ -358,13 +366,19 @@ def _dakkapel_faces(dos, dakinfo):
 
 def gebouw_svg(dos, titel="Gebouwoverzicht"):
     poly = _polygon_footprint(dos)
-    footprint, gevelgroepen, reden = _footprint(dos)
-    if not poly and not footprint:
-        return _fallback(dos, titel, reden)
+    if poly:
+        # Echte, gemeten plattegrondcontour (assemble.py) -> geen rechthoek-aanname nodig voor de
+        # gevels, dus de volledige _footprint()-consistentiecheck (25%-tolerantie tussen
+        # tegenoverliggende gevels) is hier niet van toepassing; alleen de gevelgroepering (voor
+        # de dakzijde-orientatie in _roof_faces) is nog nodig, zonder de rest van _footprint uit
+        # te voeren.
+        gevelgroepen = _hoofgevels(dos)
+    else:
+        footprint, gevelgroepen, reden = _footprint(dos)
+        if not footprint:
+            return _fallback(dos, titel, reden)
 
     if poly:
-        # Echte, gemeten plattegrondcontour (assemble.py) -> geen rechthoek-aanname nodig voor
-        # de gevels. Het dak (hieronder, _roof_faces) blijft wel op de bounding-box staan.
         contour, gevelhoogte = poly
         bx = [p[0] for p in contour]
         bz = [p[1] for p in contour]
@@ -417,7 +431,14 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
         extra = ' data-geometrie="%s" data-punten-3d="%s"' % (
             face["geometrie"],
             _esc(" ".join("%.3f,%.3f,%.3f" % punt for punt in face["points"])))
-        attrs = _attrs(deel, extra) if deel else ""
+        if deel:
+            attrs = _attrs(deel, extra)
+        elif face["kind"] in ("gevel-contour", "bovenzijde-contour"):
+            # Geen 1-op-1 SchilDeel voor een contourrand (zie _muurvlakken) -> geen
+            # data-element-id, wel expliciet gemarkeerd zodat "geen id" niet als omissie oogt.
+            attrs = 'data-contour="true"%s' % extra
+        else:
+            attrs = ""
         if face.get("delen"):
             ids = ",".join(s.id or "" for s in face["delen"])
             attrs += ' data-element-ids="%s"' % _esc(ids)
@@ -453,7 +474,12 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
     if dakfouten:
         p.append('<text x="32" y="486" font-size="var(--svg-fs-3)" fill="var(--err-fg)">'
                  'Dak niet getekend: %s</text>' % _esc("; ".join(dakfouten)))
-    p.append('<text x="32" y="532" font-size="var(--svg-fs-2)" fill="%s">'
-             'Vlakken blijven via id, m² en oriëntatie herleidbaar in de tekening.</text>' % C_SUB)
+    herleidbaarheid = (
+        'Gevelvlakken volgen de gemeten plattegrondcontour (data-contour); de onderliggende '
+        'gevel-id\'s blijven herleidbaar via de metadatalaag hierboven, niet per muurvlak.'
+        if poly else
+        'Vlakken blijven via id, m² en oriëntatie herleidbaar in de tekening.')
+    p.append('<text x="32" y="532" font-size="var(--svg-fs-2)" fill="%s">%s</text>'
+             % (C_SUB, herleidbaarheid))
     p.append('</svg>')
     return "".join(p)
