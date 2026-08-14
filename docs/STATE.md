@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Codex (taak 006 in review)
+Bijgewerkt: 2026-08-14 door Codex (taak 006 afgerond, review PASS)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -19,8 +19,6 @@ Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 
 - Taak 003: kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export;
   implementatie gereed, onafhankelijke review nog vereist.
-- Taak 006: opgeslagen gebouwoverzicht en het vrije 9-vlakken-vangnet zijn
-  isometrisch doorgevoerd; 751 tests groen, onafhankelijke herreview loopt.
 
 Taak 004 (visuele laag SVG voor dak/dakkapel + gebouwoverzicht) is klaar en
 staat in `tasks/done/`: 4 reviewrondes (Codex), laatste VERDICT PASS. Onderweg
@@ -34,6 +32,11 @@ Taak 005 (isometrische dak- en dakkapelwizards) is klaar en staat in
 renderingmetadata inclusief geometriegroepen/moederdakreferentie en identieke
 client/servervalidatie voor asymmetrische en steile daken. Onafhankelijke
 review op commit `9734d09`: PASS. `python tests/run_tests.py`: 742/742 groen.
+
+Taak 006 (isometrisch gebouwoverzicht) is klaar en staat in `tasks/done/`:
+maatvaste footprint/dak/dakkapelprojectie met verklaarde fallback voor
+onvolledige data; ook het vrije 9-vlakken-vangnet bij "Dak toevoegen" is nu
+isometrisch. Onafhankelijke review op commit `bce2421`: PASS. 751 tests groen.
 
 ## Blokkades
 - Geen bekende.

@@ -109,6 +109,9 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   (zadeldak) hersteld. Platte en enkelvoudige hellende vlakken liggen nu
   tussen beide footprint-randen; zadeldakparen blijven naar de centrale nok
   lopen. Bounds-regressies toegevoegd. 751/751 tests en diff-check groen.
+- 2026-08-14 (Codex, Reviewer): onafhankelijke derde review op commit
+  `bce2421` PASS. Platte/enkelvoudige/gepaarde dakcontracten, alle eerdere
+  geometriefixes, traceerbaarheid en regressiedekking akkoord; 751/751 groen.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.
