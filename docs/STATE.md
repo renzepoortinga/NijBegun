@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-14 door Claude (taak 011 afgerond)
+Bijgewerkt: 2026-08-15 door Claude (taak 012 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -86,6 +86,19 @@ edge-case invoer op de databoundary (`magicplan/assemble.py`) vond wél 9 echte 
 (`area_with_walls`/`area`/`ceilingHeight`/raammaten) die niet gevangen werden en ofwel crashten
 ofwel stil doorlekten naar de opgeslagen `dossier.json`. Alle 9 gefixt (gedeelde `_getal()`-helper
 i.p.v. losse patches), regressietests toegevoegd. 787/787 tests groen.
+
+Taak 012 (live MagicPlan-API-calls faalden op Python 3.14, SSL-profielcheck) is klaar en staat in
+`tasks/done/`: `python magicplan/extractor.py` faalde met `ssl.SSLCertVerificationError` — Python
+3.13+/OpenSSL 3.2+ zet `VERIFY_X509_STRICT` standaard aan, en cloud.magicplan.app's certificaatketen
+is niet 100% RFC-5280-profiel-conform (bevestigd géén MITM/proxy: curl/Windows accepteren dezelfde
+keten, google.com werkte al via Python). Gefixt door precies die ene profielvlag uit te zetten,
+verder niets aan certificaatverificatie veranderd. **Meteen live beproefd**: Essenhage 32
+opnieuw opgehaald, de contour (taak 007) bleek daadwerkelijk te werken — 31-punts grondvlak i.p.v.
+de platte doos, incl. de "berging" (MagicPlan: "Laundry Room", bevestigd via screenshot). Het
+PRODUCTIEDOSSIER van dat project is chirurgisch bijgewerkt (alleen `contour_m` toegevoegd, niet de
+rest van de opname vervangen zoals de normale JSON-upload zou doen), met backup + verificatie in
+de draaiende container. AI-review vond de fix eerst onvolledig (`--probe`-route gemist), verwerkt.
+790/790 tests groen.
 
 ## Blokkades
 - Claude-in-Chrome-extensie verbond niet vanuit deze sessie (meerdere pogingen) — visuele QA van
