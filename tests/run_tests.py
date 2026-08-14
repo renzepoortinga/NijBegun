@@ -1132,7 +1132,38 @@ try:
     check("webapp: plat dak berekent oppervlak en bewaart beide maten",
           _plat_dos.schil[_plat_i].oppervlakte_m2 == 10.0
           and _plat_dos.schil[_plat_i].breedte_m == 4.0 and _plat_dos.schil[_plat_i].diepte_m == 2.5)
-    _voor_n2 = len(_plat_dos.schil)
+    # Bevinding D (magicplan-velden-audit.md): alle drie de dak-wizards moeten de Constructies-DAK-
+    # standaard (isolatie/dikte/bouwjaarklasse/spouw/rc_bron) erven, niet alleen het platte dak.
+    from core.dossier import BouwdeelStandaard as _BJS
+    _plat_dos.opname.dak_standaard = _BJS(isolatie_aanwezig="Ja", isolatiedikte_mm=120.0,
+                                          bouwjaarklasse="Van 1975 t/m 1982", spouw_aanwezig=True,
+                                          rc_bron="Kwaliteitsverklaring", begrenzing="Buitenlucht")
+    _WA.save_json(_plat_dos, os.path.join(_WA._pdir(_ptag), _WA._load_state(_ptag)["dossier_file"]))
+    _wc.post("/project/%s/opname/dak/driehoek" % _ptag, data={"orient_hellend": "ZO", "helling1": "40",
+              "lange_zijde": "6", "breedte": "4", "rekenzone": "1"})
+    _wc.post("/project/%s/opname/dak/negen" % _ptag, data={"m2_N": "5", "helling9": "20", "rekenzone": "1"})
+    _erf_dos = _WA_dos(_ptag)
+    _erf_driehoek = next(s for s in _erf_dos.schil if (s.id or "").startswith("dak4-schuin-"))
+    _erf_negen = next(s for s in _erf_dos.schil if (s.id or "").startswith("dak5-"))
+    for _erf, _naam in ((_erf_driehoek, "driehoek"), (_erf_negen, "negen")):
+        check("webapp: dak-wizard '%s' erft de Constructies-DAK-standaard" % _naam,
+              _erf.isolatie_aanwezig == "Ja" and _erf.isolatiedikte_mm == 120.0
+              and _erf.bouwjaarklasse == "Van 1975 t/m 1982" and _erf.spouw_aanwezig is True
+              and _erf.rc_bron == "Kwaliteitsverklaring",
+              str((_erf.isolatie_aanwezig, _erf.isolatiedikte_mm, _erf.bouwjaarklasse,
+                   _erf.spouw_aanwezig, _erf.rc_bron)))
+    check("webapp: opname toont bouwjaarklasse- en Rc-bron-dropdown per vlak",
+          "Bouwjaarklasse (dit vlak" in _wc.get("/project/%s/opname" % _ptag).get_data(as_text=True)
+          and 'name=rc_bron' in _wc.get("/project/%s/opname" % _ptag).get_data(as_text=True))
+    _erf_i = next(i for i, s in enumerate(_erf_dos.schil) if s.id == _erf_driehoek.id)
+    _wc.post("/project/%s/opname/el/%d" % (_ptag, _erf_i),
+             data={"m2": str(_erf_driehoek.oppervlakte_m2), "orientatie": _erf_driehoek.orientatie,
+                   "begrenzing": "Buitenlucht", "rekenzone": "1", "rc": "2.1", "isolatie": "Ja",
+                   "dikte": "150", "bouwjaarklasse": "Vanaf 2006", "rc_bron": "Opgemeten dikte"})
+    _erf_bewerkt = next(s for s in _WA_dos(_ptag).schil if s.id == _erf_driehoek.id)
+    check("webapp: bouwjaarklasse en rc_bron per vlak handmatig overschrijfbaar",
+          _erf_bewerkt.bouwjaarklasse == "Vanaf 2006" and _erf_bewerkt.rc_bron == "Opgemeten dikte")
+    _voor_n2 = len(_erf_dos.schil)
     _wc.post("/project/%s/opname/dakkapel" % _ptag, data={"moederdak_i": str(_plat_i), "breedte": "2",
              "hoogte": "1.5", "diepte": "1.0", "rekenzone": "1"})
     check("webapp: dakkapel weigert plat dak als moederdak (geen nieuwe vlakken)",
