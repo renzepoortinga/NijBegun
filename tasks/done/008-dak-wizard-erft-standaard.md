@@ -53,7 +53,7 @@ te nemen bij een leeg woningtype. Geen actie nodig.)
 - [x] `python tests/run_tests.py` groen (772/772, incl. nieuwe tests voor beide wizards + de
       handmatige override in de editor).
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer (`/code-review high`, zie Sessions).
 
 ## Sessions
 - 2026-08-14 (claude): Bevinding C nagelopen -> bleek al opgelost, geen wijziging nodig.
@@ -65,6 +65,15 @@ te nemen bij een leeg woningtype. Geen actie nodig.)
   maar het platte dak van een eerdere test in dezelfde flow wel) — eerste testpoging faalde op een
   StopIteration door een verkeerd aangenomen dak-nummer, opgelost door de daadwerkelijke
   `_volgend_dak_nr`-telling na te rekenen i.p.v. te gokken. 772/772 groen.
+- 2026-08-14 (claude), vervolg: `/code-review high` gaf 3 bevindingen, waarvan er 2
+  (`scripts/verify.sh`: een awk-padsplitser die stukloopt op een spatie in het pad, en een
+  `main`-worktree die zichzelf als "al gemerged, opruimen" markeert) in een bestand zaten dat deze
+  taak niet heeft aangeraakt — dat stond al vóór deze sessie ongecommit klaar (niet van mij, dus
+  niet hier gefixt; wel gemeld aan Renze). De derde bevinding was terecht en van mij: de
+  `_ds.<veld> if _ds else <default>`-overerving stond drie keer letterlijk gedupliceerd
+  (plat/driehoek/negen) — een toekomstig nieuw `BouwdeelStandaard`-veld zou waarschijnlijk maar op
+  1-2 van de 3 plekken terechtkomen, precies de inconsistentie die deze taak net oploste.
+  Geëxtraheerd naar `_erf_dak_kwargs(dos)`, alle drie wizards gebruiken 'm nu. 772/772 blijft groen.
 
 ## Notes
 - `BOUWJAARKLASSE_OPTS`-fraseringen ("Tot 1946", "Van X t/m Y", "Vanaf 2006") zijn bewust gelijk
