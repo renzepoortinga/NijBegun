@@ -39,24 +39,33 @@ def _floor_contour_m(fl):
 
     Geeft None als de data ontbreekt of te ontaard is om te vertrouwen (liever geen contour dan
     een verzonnen vorm - zelfde 'niet gokken'-regel als de rest van de keten): geen/meerdere
-    'floor'-entries (bij >1 weten we niet welke bij area_with_walls hoort), niet-numerieke
-    coördinaten, of een bruto/netto-verhouding (area_with_walls vs. area) die niet aannemelijk is
-    (bruto hoort door de wanddikte iets groter te zijn dan netto, niet fors groter/kleiner -
-    anders hoort de schaal vermoedelijk niet bij déze polygon)."""
-    stats = fl.get("statistics") or {}
-    werkelijke_opp = float(stats.get("area_with_walls") or 0)
-    if werkelijke_opp <= 0:
+    'floor'-entries (bij >1 weten we niet welke bij area_with_walls hoort), niet-numerieke of
+    niet-eindige (NaN/Infinity) coördinaten, of een bruto/netto-verhouding (area_with_walls vs.
+    area) die niet aannemelijk is (bruto hoort door de wanddikte iets groter te zijn dan netto,
+    niet fors groter/kleiner - anders hoort de schaal vermoedelijk niet bij déze polygon)."""
+    if not isinstance(fl, dict):
         return None
-    entries = [e for e in (fl.get("image_map") or []) if (e or {}).get("symbol_id") == "floor"]
+    stats = fl.get("statistics")
+    stats = stats if isinstance(stats, dict) else {}
+    werkelijke_opp = float(stats.get("area_with_walls") or 0)
+    if not (math.isfinite(werkelijke_opp) and werkelijke_opp > 0):
+        return None
+    image_map = fl.get("image_map")
+    image_map = image_map if isinstance(image_map, list) else []
+    entries = [e for e in image_map if isinstance(e, dict) and e.get("symbol_id") == "floor"]
     if len(entries) != 1:
         return None
     coords = entries[0].get("coordinates") or []
+    if not isinstance(coords, list):
+        return None
     if len(coords) < 8 or len(coords) % 2:  # minstens 4 punten, volledige (x, y)-paren
         return None
     try:
         punten_px = [(float(x), float(y)) for x, y in zip(coords[0::2], coords[1::2])]
     except (TypeError, ValueError):
         return None
+    if any(not (math.isfinite(x) and math.isfinite(y)) for x, y in punten_px):
+        return None  # NaN/Infinity in de brondata -> geen contour vertrouwen (niet gokken)
     opp_px = polygon_oppervlakte_m2(punten_px)  # eenheid hier: px2, functienaam blijft kloppen (m2-formule)
     if opp_px <= 0:
         return None
@@ -96,8 +105,10 @@ def geometry_from_plan(plan):
                     windows.append({"area": a, "room": rn})
     footprint = max((a for _, a in areas), default=0.0)   # grootste verdieping = footprint-proxy
     # buitenomtrek BENADEREN uit de footprint (de MagicPlan-perimeter telt binnenwanden mee);
-    # 4*sqrt(opp) = omtrek vierkant, x1.15 voor niet-vierkante plattegrond.
-    perimeter = round(4 * math.sqrt(footprint) * 1.15, 1) if footprint else 0.0
+    # 4*sqrt(opp) = omtrek vierkant, x1.15 voor niet-vierkante plattegrond. footprint > 0 bewaakt
+    # zowel een lege/negatieve als een NaN-oppervlakte uit onbetrouwbare API-data (math.sqrt op een
+    # negatief getal crasht; NaN faalt de '> 0'-test en valt dus terecht op 0.0 terug).
+    perimeter = round(4 * math.sqrt(footprint) * 1.15, 1) if footprint > 0 else 0.0
     return geo, windows, footprint, perimeter, total_h
 
 

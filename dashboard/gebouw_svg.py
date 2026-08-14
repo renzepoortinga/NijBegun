@@ -103,6 +103,17 @@ def _footprint(dos):
     return (breedte, diepte, hoogte), groepen, ""
 
 
+def _contour_geldig(contour):
+    """Minstens 3 punten, en elke coördinaat een eindig getal (geen NaN/Infinity).
+
+    `assemble.py` filtert dit al bij het inlezen, maar een dossier kan ook handmatig bewerkt of
+    uit een ander pad komen -> hier nogmaals bewaken vóór er iets mee gerenderd wordt (zelfde
+    'niet gokken'-regel: liever de rechthoek-fallback dan onbruikbare NaN-coördinaten tekenen)."""
+    if not contour or len(contour) < 3:
+        return False
+    return all(len(p) == 2 and math.isfinite(p[0]) and math.isfinite(p[1]) for p in contour)
+
+
 def _polygon_footprint(dos):
     """Geef (contour_xz, gevelhoogte) uit een ECHTE MagicPlan-plattegrondomtrek, of None.
 
@@ -110,7 +121,7 @@ def _polygon_footprint(dos):
     opsloeg (de CSV-route kent dit veld niet -> altijd None daar, aanroeper valt dan terug op
     `_footprint()`). Neemt de contour van de grootste bouwlaag (zelfde 'footprint-proxy'-logica
     als `assemble.geometry_from_plan`). Een lijnvormige/ontaarde contour wordt verworpen."""
-    vloeren = [v for v in (dos.geometrie.vloeren or []) if v.contour_m and len(v.contour_m) >= 3]
+    vloeren = [v for v in (dos.geometrie.vloeren or []) if _contour_geldig(v.contour_m)]
     if not vloeren:
         return None
     hoogte = dos.opname.gevelhoogte_m
