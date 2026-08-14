@@ -36,6 +36,14 @@ def _getal(waarde, default=0.0):
     return v if math.isfinite(v) else default
 
 
+def _opp(waarde, default=0.0):
+    """Zoals `_getal`, maar dan voor een grootheid die nooit negatief kan zijn (oppervlakte,
+    raambreedte/-hoogte): een negatieve waarde uit onbetrouwbare brondata is even onbruikbaar als
+    NaN, en zou anders bv. een raam-'oppervlak' bij het gevelvlak OPTELLEN i.p.v. aftrekken."""
+    v = _getal(waarde, default)
+    return v if (v is not None and v >= 0) else default
+
+
 def _floor_contour_m(fl):
     """Reconstrueer de echte grondvlak-contour (meter) uit MagicPlans plattegrond-beeldkaart.
 
@@ -93,10 +101,10 @@ def geometry_from_plan(plan):
     """Lees de echte MagicPlan v2-structuur: data.plan_data.floors[].rooms[].objects[]."""
     data = plan.get("data", plan)
     pd = data.get("plan_data", {})
-    geo = Geometrie(gebruiksoppervlakte_ag_m2=_getal(pd.get("living_area")))
+    geo = Geometrie(gebruiksoppervlakte_ag_m2=_opp(pd.get("living_area")))
     windows, total_h, areas = [], 0.0, []
     for fl in pd.get("floors", []):
-        area = _getal((fl.get("statistics") or {}).get("area"))
+        area = _opp((fl.get("statistics") or {}).get("area"))
         ch = _getal(_value(fl.get("values"), "ceilingHeight"), None)
         geo.vloeren.append(VloerInfo(naam=fl.get("name", ""), oppervlakte_m2=area,
                                      hoogte_m=ch, contour_m=_floor_contour_m(fl)))
@@ -105,13 +113,13 @@ def geometry_from_plan(plan):
         areas.append((fl.get("name", ""), area))
         for rm in fl.get("rooms", []):
             rn = rm.get("name", "")
-            ra = _getal((rm.get("statistics") or {}).get("area"))
+            ra = _opp((rm.get("statistics") or {}).get("area"))
             geo.ruimtes.append(Ruimte(naam=rn, functie=_functie(rn), oppervlakte_m2=ra))
             for o in rm.get("objects", []):
                 sid = (o.get("symbol_id") or "").lower()
                 if sid.startswith("window") or sid == "doorwithwindow":
-                    w = _getal(_value(o.get("values"), "width"), None)
-                    h = _getal(_value(o.get("values"), "height"), None)
+                    w = _opp(_value(o.get("values"), "width"), None)
+                    h = _opp(_value(o.get("values"), "height"), None)
                     a = round(w * h, 2) if w and h else 0.0
                     windows.append({"area": a, "room": rn})
     footprint = max((a for _, a in areas), default=0.0)   # grootste verdieping = footprint-proxy

@@ -281,6 +281,20 @@ _planv2_bad_room = {"data": {"plan_data": {"living_area": 10.0, "floors": [
      "rooms": [{"name": "R", "statistics": {"area": "bad"}}]}]}}}
 check("assemble: niet-numerieke kamer-oppervlakte crasht niet",
       geometry_from_plan(_planv2_bad_room)[0].ruimtes[0].oppervlakte_m2 == 0.0)
+# Derde stresstestronde (review op taak 011, ronde 2): negatieve oppervlaktes uit onbetrouwbare
+# brondata werden door _getal() doorgelaten (eindig + numeriek, dus "geldig") maar zijn voor een
+# oppervlakte net zo onbruikbaar als NaN - _opp() klemt ze nu vast op 0.
+_planv2_neg_vloer = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "Kelder", "statistics": {"area": -5.0}, "rooms": []}]}}}
+check("assemble: negatieve vloeroppervlakte -> 0.0, lekt niet als negatief getal door",
+      geometry_from_plan(_planv2_neg_vloer)[0].vloeren[0].oppervlakte_m2 == 0.0)
+_planv2_neg_raam = {"data": {"plan_data": {"living_area": 10.0, "floors": [
+    {"name": "A", "statistics": {"area": 10.0}, "rooms": [
+        {"name": "R", "statistics": {"area": 5}, "objects": [
+            {"symbol_id": "windowHung", "values": [{"id": "width", "value": -1.2},
+                                                    {"id": "height", "value": 1.0}]}]}]}]}}}
+check("assemble: negatieve raambreedte -> raam-oppervlak 0.0 (geen inversie van de gevelaftrek)",
+      geometry_from_plan(_planv2_neg_raam)[1][0]["area"] == 0.0)
 from dashboard.gebouw_svg import _contour_geldig as _gcgeldig
 check("gebouw-svg: _contour_geldig accepteert numerieke strings (geen crash, wél geldig)",
       _gcgeldig([["0", "0"], ["5", "0"], ["5", "5"]]) is True)

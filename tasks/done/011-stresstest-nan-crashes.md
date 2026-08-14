@@ -83,3 +83,18 @@ GEEN enkele fout, dus de kern (schoenveter-visibility, shading, painter's-order)
   niet-numeriek of niet-eindig -> default, nooit een crash) i.p.v. per plek een losse try/except —
   voorkomt dat een volgend gevonden veld weer los gepatcht moet worden. Reviewer-repro's stuk voor
   stuk herbevestigd na de fix (0 fouten), plus regressietests toegevoegd. 787/787 tests groen.
+- 2026-08-14 (claude), derde ronde: nóg een `/code-review high` (uit voorzichtigheid, gezien het
+  patroon dat elke ronde tot dusver iets echt vond) leverde 2 laatste bevindingen op, beide in
+  dezelfde functie: `_getal()` accepteert negatieve waarden gewoon (eindig + numeriek = "geldig"),
+  maar een negatieve vloeroppervlakte of raambreedte/-hoogte uit onbetrouwbare brondata is voor een
+  oppervlakte-grootheid net zo onbruikbaar als NaN — en een negatief raam-'oppervlak' zou de
+  gevelaftrek zelfs OMKEREN (optellen i.p.v. aftrekken). Nieuwe `_opp(waarde, default)`-variant
+  (hergebruikt `_getal`, klemt negatief vast op `default`) toegepast op alle vier
+  oppervlakte-grootheden (`living_area`, vloer-`area`, kamer-`area`, raam-breedte/-hoogte) —
+  bewust NIET in `_getal()` zelf, want andere velden (contour-coördinaten) mogen wél legitiem
+  negatief zijn. Onderweg een eigen bug gevonden en gefixt vóór het committen: `_opp(x, None)` bij
+  een gefaalde conversie gaf `None >= 0` -> `TypeError` (`_getal` retourneerde al `None`, mijn
+  eigen vergelijking hield daar geen rekening mee). Reviewer-repro's herbevestigd (0.0 i.p.v.
+  negatief), 2 regressietests toegevoegd. 789/789 tests groen — geen vierde ronde meer nodig
+  geacht na drie opeenvolgende, steeds kleinere bevindingen op dezelfde, inmiddels goed
+  doorgelichte functie.
