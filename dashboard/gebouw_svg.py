@@ -62,6 +62,37 @@ def _face(points, fill, stroke, kind, label="", attrs=None):
             "label": label, "attrs": attrs or {}}
 
 
+def _richting(orientatie):
+    vectors = {"N": (0, -1), "NO": (1, -1), "O": (1, 0), "ZO": (1, 1),
+               "Z": (0, 1), "ZW": (-1, 1), "W": (-1, 0), "NW": (-1, -1)}
+    vx, vz = vectors.get((orientatie or "").strip().upper(), (0, 1))
+    length = math.hypot(vx, vz)
+    return vx / length, vz / length
+
+
+def _dakvlak_geometry(s, width, depth, eave, paired=False):
+    """Vier hoekpunten en basisdata voor één vlak, gedraaid naar zijn kompasrichting."""
+    vx, vz = _richting(s.orientatie)
+    tx, tz = -vz, vx
+    run = s.diepte_m or min(width, depth) / 2
+    span = s.breedte_m or math.sqrt(max(s.oppervlakte_m2 or 1, 1))
+    angle = math.radians(s.hellingshoek or 0)
+    rise = run * math.tan(angle)
+    cx, cz = width / 2, depth / 2
+    # Bij een dakpaar ligt de hoge rand op de gedeelde nok rond het midden;
+    # bij één vlak loopt de hoge rand vanaf de buitenrand naar binnen.
+    ridge = (cx, cz)
+    eave_center = (cx + vx * run, cz + vz * run)
+    half = span / 2
+    e1 = (eave_center[0] - tx * half, eave, eave_center[1] - tz * half)
+    e2 = (eave_center[0] + tx * half, eave, eave_center[1] + tz * half)
+    r2 = (ridge[0] + tx * half, eave + rise, ridge[1] + tz * half)
+    r1 = (ridge[0] - tx * half, eave + rise, ridge[1] - tz * half)
+    return [e1, e2, r2, r1], {"v": (vx, vz), "t": (tx, tz), "run": run,
+                               "span": span, "rise": rise, "eave_center": eave_center,
+                               "ridge": ridge, "eave": eave, "paired": paired}
+
+
 def _dak_faces(dos, width, depth, eave):
     daken = [s for s in dos.schil if (s.type or "").lower() == "dak"
              and "dakkapel" not in (s.id or "").lower()]
@@ -74,33 +105,24 @@ def _dak_faces(dos, width, depth, eave):
         exact = bool(delen and all((s.breedte_m or 0) > 0 and (s.diepte_m or 0) > 0 for s in delen))
         (exact_ids if exact else legacy_ids).update((s.id or "") for s in delen)
         mode = "exact" if exact else "benaderd"
-        if len(schuin) >= 2:
-            first, second = schuin[:2]
-            run1 = first.diepte_m if exact else depth / 2
-            run2 = second.diepte_m if exact else depth / 2
-            roof_w = first.breedte_m if exact else width
-            angle = math.radians(first.hellingshoek or 45)
-            ridge = run1 * math.tan(angle)
-            x0 = (width - roof_w) / 2
-            z0 = (depth - run1 - run2) / 2
-            r0, r1 = z0 + run1, z0 + run1 + run2
-            attrs = {"data-group": groep, "data-rendering": mode}
-            faces.append(_face([(x0, eave, z0), (x0 + roof_w, eave, z0),
-                                (x0 + roof_w, eave + ridge, r0), (x0, eave + ridge, r0)],
-                               C_DAK, C_DAK_LINE, "dak", first.id, attrs))
-            faces.append(_face([(x0, eave + ridge, r0), (x0 + roof_w, eave + ridge, r0),
-                                (x0 + roof_w, eave, r1), (x0, eave, r1)],
-                               C_DAK, C_DAK_LINE, "dak", second.id, attrs))
-        else:
-            s = delen[0]
-            roof_w = s.breedte_m if exact else width
-            roof_d = s.diepte_m if exact else ((s.oppervlakte_m2 or width * depth) / max(roof_w, .01))
-            x0, z0 = (width - roof_w) / 2, (depth - roof_d) / 2
-            rise = roof_d * math.tan(math.radians(s.hellingshoek or 0))
-            attrs = {"data-group": groep, "data-rendering": mode}
-            faces.append(_face([(x0, eave, z0), (x0 + roof_w, eave, z0),
-                                (x0 + roof_w, eave + rise, z0 + roof_d), (x0, eave + rise, z0 + roof_d)],
-                               C_DAK, C_DAK_LINE, "dak", s.id, attrs))
+        for s in delen:
+            if not exact:
+                s_width = width
+                s_run = (s.oppervlakte_m2 or width * depth) / max(s_width, .01)
+                # Alleen lokale renderwaarden; het dossier blijft onaangeroerd.
+                class _Legacy: pass
+                render_s = _Legacy()
+                render_s.id, render_s.orientatie = s.id, s.orientatie
+                render_s.oppervlakte_m2, render_s.hellingshoek = s.oppervlakte_m2, s.hellingshoek
+                render_s.breedte_m, render_s.diepte_m = s_width, s_run
+            else:
+                render_s = s
+            points, _ = _dakvlak_geometry(render_s, width, depth, eave, len(schuin) >= 2)
+            attrs = {"data-group": groep, "data-rendering": mode, "data-id": s.id or "",
+                     "data-m2": "%.2f" % (s.oppervlakte_m2 or 0),
+                     "data-orientation": s.orientatie or "Horizontaal",
+                     "data-angle": "%.2f" % (s.hellingshoek or 0)}
+            faces.append(_face(points, C_DAK, C_DAK_LINE, "dak", s.id, attrs))
     return faces, exact_ids, legacy_ids
 
 
@@ -115,16 +137,34 @@ def _dakkapel_faces(dos, width, depth, eave):
         if not maat:
             continue
         w, d, h = min(maat.breedte_m, width * .8), min(maat.diepte_m, depth * .6), maat.hoogte_m
-        x0, z0 = (width - w) / 2, depth * .28
         parent = maat.moedervlak_id or ""
         moeder = next((s for s in dos.schil if s.id == parent), None)
-        base = eave + z0 * math.tan(math.radians((moeder.hellingshoek if moeder else 0) or 0))
-        attrs = {"data-group": groep, "data-parent": parent, "data-rendering": "exact"}
+        if not moeder:
+            continue
+        _, geo = _dakvlak_geometry(moeder, width, depth, eave, True)
+        vx, vz = geo["v"]
+        tx, tz = geo["t"]
+        # 35% vanaf de goot richting nok; diepte loopt verder naar de nok.
+        along_front = min(geo["run"] * .35, max(0, geo["run"] - d))
+        front_c = (geo["eave_center"][0] - vx * along_front,
+                   geo["eave_center"][1] - vz * along_front)
+        back_c = (front_c[0] - vx * d, front_c[1] - vz * d)
+        angle = math.radians(moeder.hellingshoek or 0)
+        base_front = eave + along_front * math.tan(angle)
+        base_back = base_front + d * math.tan(angle)
+        top = base_front + h
+        lf = (front_c[0] - tx * w / 2, base_front, front_c[1] - tz * w / 2)
+        rf = (front_c[0] + tx * w / 2, base_front, front_c[1] + tz * w / 2)
+        lb = (back_c[0] - tx * w / 2, base_back, back_c[1] - tz * w / 2)
+        rb = (back_c[0] + tx * w / 2, base_back, back_c[1] + tz * w / 2)
+        lft, rft = (lf[0], top, lf[2]), (rf[0], top, rf[2])
+        lbt, rbt = (lb[0], top, lb[2]), (rb[0], top, rb[2])
+        attrs = {"data-group": groep, "data-parent": parent, "data-rendering": "exact",
+                 "data-id": maat.id or "", "data-m2": "%.2f" % (maat.oppervlakte_m2 or 0),
+                 "data-orientation": maat.orientatie or moeder.orientatie or ""}
         faces.extend([
-            _face([(x0, base, z0), (x0 + w, base, z0), (x0 + w, base + h, z0), (x0, base + h, z0)],
-                  C_DAKKAPEL, C_DAKKAPEL_LINE, "dakkapel", maat.id, attrs),
-            _face([(x0, base + h, z0), (x0 + w, base + h, z0), (x0 + w, base + h, z0 + d),
-                   (x0, base + h, z0 + d)], C_DAKKAPEL, C_DAKKAPEL_LINE, "dakkapel-dak", "", attrs),
+            _face([lf, rf, rft, lft], C_DAKKAPEL, C_DAKKAPEL_LINE, "dakkapel", maat.id, attrs),
+            _face([lft, rft, rbt, lbt], C_DAKKAPEL, C_DAKKAPEL_LINE, "dakkapel-dak", maat.id, attrs),
         ])
     return faces
 
@@ -185,11 +225,12 @@ def gebouw_svg(dos, titel="Gebouwoverzicht"):
     for face in faces:
         attrs = " ".join('%s="%s"' % (_esc(k), _esc(v)) for k, v in face["attrs"].items())
         result.append('<polygon points="%s" fill="%s" stroke="%s" stroke-width="2" '
-                      'stroke-linejoin="round" data-face="%s" %s/>' %
+                      'stroke-linejoin="round" data-face="%s" %s>' %
                       (" ".join(screen(p) for p in face["points"]), face["fill"], face["stroke"],
                        _esc(face["kind"]), attrs))
         if face["label"]:
             result.append('<title>%s</title>' % _esc(face["label"]))
+        result.append('</polygon>')
     result.append('</g>')
     # Traceerbaarheid blijft expliciet, ook voor niet-zichtbare achter-/linkergevels.
     result.append('<g data-layer="trace" aria-hidden="true">')

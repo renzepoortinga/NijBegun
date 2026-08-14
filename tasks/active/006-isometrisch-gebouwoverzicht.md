@@ -96,6 +96,14 @@ het dossier staat, in dezelfde visuele taal als de taak-005-invoerwizards.
   van kompas naar isometrische indicatie omgezet. 746/746 tests, JS-syntax en
   `git diff --check` groen. Browser-QA kon niet starten omdat geen browser aan
   de sessie gekoppeld was; geen alternatieve browserlaag gebruikt.
+- 2026-08-14 (Codex, Builder, reviewfix): eerste onafhankelijke review FAIL
+  verwerkt. Elk dakvlak wordt nu afzonderlijk vanuit zijn kompasvector en
+  eigen hellingshoek geprojecteerd (ook vierzijdig en asymmetrisch); dak- en
+  dakkapelpolygonen dragen id/m²/oriëntatie; `<title>` staat geldig binnen
+  de polygon. Dakkapellen worden geometrisch vanuit het gekozen moederdak
+  geplaatst, ook op de tegenoverliggende of gedraaide zijde. Nieuwe
+  regressies controleren vier dakrichtingen, eigen hoeken en wisselende
+  moederdakpositie. 749/749 tests, JS-syntax en diff-check groen.
 
 ## Notes
 - Zie taak 005 se Notes voor de Inbrix-referentie en marktonderzoek-pointer.

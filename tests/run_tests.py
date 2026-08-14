@@ -909,6 +909,40 @@ check("gebouw-svg: echte isometrie met herleidbare gevel en exacte dakvlakken",
       and "dak1-schuin-z" in _gsvgtxt)
 check("gebouw-svg: dakkapel staat gekoppeld op het juiste moederdak",
       'data-parent="dak1-schuin-z"' in _gsvgtxt and 'data-group="dakkapel1"' in _gsvgtxt)
+_groot = _ETv.fromstring(_gsvgtxt)
+_gpolys = list(_groot.iter("{http://www.w3.org/2000/svg}polygon"))
+_gdaken = {p.attrib.get("data-id"): p for p in _gpolys if p.attrib.get("data-face") == "dak"}
+check("gebouw-svg: ieder dakvlak draagt id, m2, orientatie en eigen hoek",
+      set(_gdaken) == {"dak1-schuin-z", "dak1-schuin-n"}
+      and _gdaken["dak1-schuin-z"].attrib.get("data-m2") == "25.00"
+      and _gdaken["dak1-schuin-n"].attrib.get("data-orientation") == "N"
+      and all(p.attrib.get("data-angle") == "45.00" for p in _gdaken.values()))
+_gschild = _GDos.from_dict(_gdos.to_dict())
+_gschild.schil = [s for s in _gschild.schil if s.type == "gevel"]
+for _go, _ga in (("N", 35), ("O", 40), ("Z", 45), ("W", 50)):
+    _gschild.schil.append(_GSchil(id="schild-" + _go.lower(), type="dak", orientatie=_go,
+                                  oppervlakte_m2=20, hellingshoek=_ga, breedte_m=6, diepte_m=3,
+                                  geometrie_groep="schild1"))
+_gschild_root = _ETv.fromstring(_gsvg(_gschild))
+_gschild_polys = [p for p in _gschild_root.iter("{http://www.w3.org/2000/svg}polygon")
+                  if p.attrib.get("data-group") == "schild1"]
+check("gebouw-svg: vier dakrichtingen blijven vier gedraaide vlakken met eigen hoek",
+      len(_gschild_polys) == 4
+      and {p.attrib.get("data-orientation") for p in _gschild_polys} == {"N", "O", "Z", "W"}
+      and {p.attrib.get("data-angle") for p in _gschild_polys} == {"35.00", "40.00", "45.00", "50.00"}
+      and len({p.attrib.get("points") for p in _gschild_polys}) == 4)
+_gkap_noord = _GDos.from_dict(_gdos.to_dict())
+_gkap_noord.schil[-1].id = "dakkapel2-voorvlak"
+_gkap_noord.schil[-1].geometrie_groep = "dakkapel2"
+_gkap_noord.schil[-1].moedervlak_id = "dak1-schuin-n"
+_gkap_noord_svg = _gsvg(_gkap_noord)
+_gkap_z = next(p.attrib["points"] for p in _gpolys
+               if p.attrib.get("data-face") == "dakkapel")
+_gkap_n_root = _ETv.fromstring(_gkap_noord_svg)
+_gkap_n = next(p.attrib["points"] for p in _gkap_n_root.iter("{http://www.w3.org/2000/svg}polygon")
+               if p.attrib.get("data-face") == "dakkapel")
+check("gebouw-svg: tegenoverliggend moederdak verandert de werkelijke dakkapelpositie",
+      'data-parent="dak1-schuin-n"' in _gkap_noord_svg and _gkap_n != _gkap_z)
 _glegacy = _GDos.from_dict(_gdos.to_dict())
 _glegacy.schil = [s for s in _glegacy.schil if "dakkapel" not in s.id]
 for _gs in _glegacy.schil:
