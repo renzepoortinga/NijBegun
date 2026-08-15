@@ -92,6 +92,22 @@ Zorgen dat de dakwizard een oud/importdak aantoonbaar vervangt of bewust aanvult
   herkenningslogica apart → nu één gedeelde `dak_fallback_schildelen()`-functie; de 3
   dak-wizard-routes herhaalden ook dezelfde flash-tekst-opbouw → nu `_dak_toegevoegd_melding()`.
   804/806 groen (2 bekende omgevingsfalen, ongewijzigd). `./scripts/verify.sh`: PASS.
+- 2026-08-15 (zelfde gesprek, review-ronde 3) — nog een `/code-review high` op de ronde-2-fixes
+  vond 3 punten: (1) **echt, mijn eigen over-correctie** — `_maak_dak()` tagde na ronde-1-fix ELK
+  dakvlak als fallback, ook een écht handmatig ingevoerd `dak_oppervlak_m2`; gefixt door alleen de
+  schatting (geen `handmatig`-veld) als fallback te taggen, net als de CSV-route al deed voor haar
+  eigen 'direct ingevoerde m²'-pad. (2) `opname_dakkapel` voegt ook een `type="dak"`-vlak toe maar
+  riep nooit de opschoning aan — bleek bij nader inzien GEEN kwestie van "ook opschonen": als het
+  gekozen moederdak toevallig de placeholder was, is die na de dakkapel-correctie een bewust
+  behouden, verkleind maar nog écht dakvlak — opschonen zou het gewoon weggooien. Fix: de moeder
+  wordt in dat geval herclassificeerd (`bron` -> "magicplan-import") i.p.v. verwijderd. Dat botste
+  eerst met het id=="dak"-legacy-signaal uit ronde 2 (die negeerde de herclassificatie) — opgelost
+  door `dak_fallback_schildelen()` een expliciet gezette, niet-lege `bron` te laten winnen van het
+  id-signaal. 3 nieuwe tests (AC9) dekken dit specifieke conflict. (3) een derde ongerelateerde
+  SSL-bevinding (`magicplan/photos.py`, zelfde patroon) toegevoegd aan taak 019 i.p.v. hier
+  meegefixt. 808/810 groen (2 bekende omgevingsfalen). `./scripts/verify.sh`: PASS. Geen verdere
+  blockers gevonden in deze ronde — drie reviewrondes totaal, elke ronde kleiner en dichter bij
+  alleen out-of-scope/pre-existente punten.
 
 ## Notes
 Live audit 15-8-2026: Essenhage bevat 55,56 m² legacydak plus 2 × 28,71 m² schuine wizardvlakken.

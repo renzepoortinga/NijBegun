@@ -288,12 +288,12 @@ def _maak_dak(p, footprint):
         isolatiedikte_mm=_g(p, "dak_isolatie_mm", float),
         rc_huidig=_g(p, "dak_rc", float),
         hellingshoek=helling, oppervlak_handmatig=handmatig,
-        # bronprovenance (taak 014/015): dit is altijd ÉÉN generiek dakvlak voor het hele dak
-        # (footprint- of hellingfactor-schatting, nooit per-oriëntatie zoals de webapp-dakwizard) —
-        # zelfde plaatshouder-rol als de footprint-fallback van de Statistics-CSV-route, dus dezelfde
-        # tag zodat dashboard.app._dak_fallback_opschonen()/vabi.preflight.
-        # assert_no_dubbel_dak_fallback() 'm ook op dit (hybride API+report-PDF) pad herkennen.
-        bron="magicplan-dak-fallback")
+        # bronprovenance (taak 014/015, bijgesteld na review): alleen een SCHATTING (footprint- of
+        # hellingfactor-benadering, geen 'dak_oppervlak_m2' ingevuld) is de placeholder-rol — een
+        # handmatig ingevoerde m² is een echte meting, ook al is het nog altijd één generiek
+        # dakvlak. Zelfde onderscheid als de Statistics-CSV-route's 'direct ingevoerde m²'-pad
+        # (statistics_csv.py, dakvlakken met een expliciet oppervlak krijgen ook GEEN fallback-tag).
+        bron=("magicplan-import" if handmatig else "magicplan-dak-fallback"))
 
 
 def _map_ventilatie(p, dos):

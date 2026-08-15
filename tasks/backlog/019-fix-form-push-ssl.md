@@ -5,37 +5,43 @@ branch:
 depends_on: []
 ---
 
-# Task 019 — Fix ontbrekende SSL-profielfix in `magicplan/form_push.py`
+# Task 019 — Fix ontbrekende SSL-profielfix in `magicplan/form_push.py` + `magicplan/photos.py`
 
 ## Goal
-`push_forms.bat`/`form_push.py` faalt op dezelfde Python 3.14/OpenSSL 3.2+-machines waar
-`magicplan/extractor.py` al eerder faalde (taak 012, `f4e9c04`), omdat de SSL-profielfix daar
-nooit is doorgevoerd.
+Meerdere `magicplan/*.py`-modules doen eigen `urllib.request.urlopen()`-calls naar
+`cloud.magicplan.app` zonder de Python 3.14/OpenSSL 3.2+-SSL-profielfix die
+`magicplan/extractor.py` al heeft (taak 012, `f4e9c04`) — diezelfde machines zullen daar dus
+dezelfde `SSLCertVerificationError` tegenkomen.
 
 ## Scope
-- `magicplan/form_push.py:343` — `_http()` roept `urllib.request.urlopen(req, timeout=60)` aan
-  ZONDER de `_ssl_context()`-fix die `magicplan/extractor.py` (`_ssl_context()`, sinds taak 012)
-  al heeft voor exact hetzelfde host (`cloud.magicplan.app`, zie `BASE_URL` in `form_push.py:33`).
+- `magicplan/form_push.py:343` — `_http()` roept `urlopen(req, timeout=60)` aan zonder
+  `_ssl_context()`, voor hetzelfde host (`BASE_URL` = `cloud.magicplan.app`, `form_push.py:33`).
+- `magicplan/photos.py:118` (`_client_fetch`) + regel ~152 (CLI-fallback) — idem, voor
+  MagicPlan-fotodownloads.
 - Root cause identiek aan taak 012: Python 3.13+/OpenSSL 3.2+ zet `VERIFY_X509_STRICT` standaard
   aan, en cloud.magicplan.app's certificaatketen is niet 100% RFC-5280-profiel-conform (geen
   MITM/proxy — zie de uitleg in `extractor.py::_ssl_context`).
-- Fix: dezelfde `_ssl_context()`-aanpak toepassen op de `urlopen()`-call in `form_push.py`
-  (bij voorkeur de bestaande helper hergebruiken/delen i.p.v. dupliceren).
+- Fix: `_ssl_context()` uit `extractor.py` DELEN (niet dupliceren) tussen alle drie modules —
+  overweeg 'm te verplaatsen naar een klein gedeeld hulpmodule (bv. `magicplan/_http.py` of een
+  functie in `magicplan/__init__.py`) zodat een volgend MagicPlan-callpad 'm niet weer vergeet.
 
 ## Out of scope
 - Andere SSL/TLS-wijzigingen.
-- Wijzigingen aan de form-merge-logica zelf.
+- Wijzigingen aan de form-merge- of foto-downloadlogica zelf.
 
 ## Acceptance criteria
-- [ ] `form_push.py` gebruikt dezelfde SSL-profielfix als `extractor.py` voor calls naar
-      `cloud.magicplan.app`.
+- [ ] `form_push.py` én `photos.py` gebruiken dezelfde SSL-profielfix als `extractor.py` voor
+      calls naar `cloud.magicplan.app`.
+- [ ] Bij voorkeur: één gedeelde `_ssl_context()`-functie i.p.v. drie losse kopieën (voorkomt dat
+      een vierde module het straks weer vergeet).
 - [ ] `./scripts/verify.sh` slaagt.
 - [ ] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 
 ## Notes
-Gevonden door de onafhankelijke reviewer van taak 014/015 (15-8-2026, `/code-review high`) —
-niet zelf live gereproduceerd deze sessie (geen `.env`/live MagicPlan-formulierwijziging
-uitgevoerd), maar de code-asymmetrie met de al bevestigde taak-012-fix is overtuigend. Verifieer
-live vóór het sluiten van deze taak (`push_forms.bat` draaien op een Python 3.13+-machine).
+Gevonden door twee onafhankelijke reviewrondes van taak 014/015 (15-8-2026, `/code-review high`)
+— niet zelf live gereproduceerd deze sessie (geen `.env`/live MagicPlan-API-call uitgevoerd),
+maar de code-asymmetrie met de al bevestigde taak-012-fix is in beide gevallen overtuigend.
+Verifieer live vóór het sluiten van deze taak (`push_forms.bat` + een fotodownload draaien op
+een Python 3.13+-machine).

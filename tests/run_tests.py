@@ -4479,6 +4479,44 @@ try:
             _osC.unlink(_uplC2)
     _shC.rmtree(_tdC4, ignore_errors=True)
 
+    # AC9 (review-fix ronde 3): een dakkapel op een fallback-getagd (bv. hybride-route) hellend
+    # dakvlak mag dat vlak NIET laten opruimen als "ongebruikte placeholder" — de moeder is na de
+    # dakkapel-correctie nog altijd echt (verkleind) dakoppervlak, geen dubbeling.
+    _d10 = _bsC()
+    _d10.schil = [s for s in _d10.schil if s.type != "dak"]
+    _d10.schil.append(_SDC(id="dak", type="dak", subtype="Hellend dak", begrenzing="Buitenlucht",
+                           orientatie="Z", oppervlakte_m2=60.0, hellingshoek=45.0,
+                           bron="magicplan-dak-fallback"))
+    _moeder_i9 = len(_d10.schil) - 1
+    _tdC5 = _tfC.mkdtemp(prefix="nb_dakkapel_fallback_")
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d10
+    _WAC._pdir = lambda _t: _tdC5
+    try:
+        _cC4 = _WAC.app.test_client()
+        with _cC4.session_transaction() as _sessC4:
+            _sessC4["ingelogd"] = True
+        _r9 = _cC4.post("/project/test-dakkapel-fallback/opname/dakkapel",
+                        data={"moederdak_i": str(_moeder_i9), "breedte": "2", "hoogte": "1.5",
+                              "diepte": "1", "rekenzone": "1"})
+        check("AC9: dakkapel-op-fallback-route redirect", _r9.status_code in (302, 303))
+        _moeder9 = _d10.schil[_moeder_i9]
+        check("AC9: moederdak (voorheen fallback) is niet meer weggooibaar getagd",
+              _moeder9.id == "dak" and _moeder9.bron == "magicplan-import"
+              and _moeder9.oppervlakte_m2 < 60.0)
+        check("AC9: dakje van de dakkapel is normaal webapp-wizard-getagd",
+              any(s.id == "dakkapel1-dakje" and s.bron == "webapp-wizard" for s in _d10.schil))
+        try:
+            _adfC(_d10)
+            check("AC9: preflight blokkeert NIET (geen echte dubbeling, alleen een gat + dakje)", True)
+        except _VEBC as _e9:
+            check("AC9: preflight blokkeert NIET (geen echte dubbeling, alleen een gat + dakje)",
+                  False)
+            print("     " + str(_e9)[:160])
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+    _shC.rmtree(_tdC5, ignore_errors=True)
+
     _shC.rmtree(_tdC, ignore_errors=True)
     _shC.rmtree(_tdC2, ignore_errors=True)
     _shC.rmtree(_tdC3, ignore_errors=True)

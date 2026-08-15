@@ -1843,6 +1843,13 @@ def opname_dakkapel(tag):
     dos.schil += [voorvlak, wang_l, wang_r, dakje]
     if gat:
         moeder.oppervlakte_m2 = round(moeder_m2_voor - gat, 2)
+    # Een dakkapel snijdt een gat uit het GEKOZEN moederdak — als dat toevallig de placeholder was
+    # (bv. via de hybride API+report-PDF-route, taak 014-review), is het na deze correctie geen
+    # onaangeroerde schatting meer maar bewust door de adviseur bevestigd/aangepast vlak: niet meer
+    # weggooibaar (_dak_fallback_opschonen zou anders dit resterende, nog altijd echte dakoppervlak
+    # verwijderen i.p.v. alleen een ongebruikte placeholder).
+    if moeder.bron == "magicplan-dak-fallback":
+        moeder.bron = "magicplan-import"
     _dos_save(tag, st, dos)
     flash("Dakkapel %d toegevoegd: %s. Nog een dakkapel? Herhaal hieronder." % (nr, vlakken["flag"]))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")

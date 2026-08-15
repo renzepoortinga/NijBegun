@@ -23,14 +23,22 @@ def dak_fallback_schildelen(schil):
     """Herken de dak-footprint-placeholder (taak 014/015): de expliciete `bron`-tag
     ('magicplan-dak-fallback') EN, voor dossiers van vóór dat veld bestond (o.a. het live
     Essenhage-project dat deze taak aanleiding gaf — die stond al op schijf toen de tag werd
-    toegevoegd en heeft dus bron==""), het legacy-signaal `id == "dak"`. Die kale id is UNIEK
-    voor de twee footprint-fallback-code-paden (statistics_csv.build_dossier + extractor._maak_dak)
-    — de dak-wizard nummert altijd ('dak1-...'), en de oudere expliciete CSV-dakvelden-route
-    gebruikt ook altijd een gesuffixte id ('dak-plat', 'dak-vlak1-zw', ...). Gedeeld door
-    `dashboard.app._dak_fallback_opschonen` en `assert_no_dubbel_dak_fallback` zodat beide precies
-    dezelfde definitie van "dit is de placeholder" gebruiken."""
-    return [s for s in schil if getattr(s, "type", "") == "dak"
-            and (getattr(s, "bron", "") == "magicplan-dak-fallback" or getattr(s, "id", "") == "dak")]
+    toegevoegd en heeft dus bron==""), het legacy-signaal `id == "dak"` — MITS `bron` nog leeg is.
+    Die kale id is UNIEK voor de twee footprint-fallback-code-paden (statistics_csv.build_dossier +
+    extractor._maak_dak) — de dak-wizard nummert altijd ('dak1-...'), en de oudere expliciete
+    CSV-dakvelden-route gebruikt ook altijd een gesuffixte id ('dak-plat', 'dak-vlak1-zw', ...).
+    Een NIET-lege, niet-fallback `bron` (bv. "magicplan-import", zoals `opname_dakkapel` zet
+    zodra een adviseur een placeholder bewust als moederdak kiest en aanpast) wint altijd van het
+    id-signaal — anders zou het id-vangnet voor legacy-dossiers een bewust behouden, verkleind maar
+    nog altijd écht dakvlak alsnog als weggooibare placeholder blijven behandelen.
+    Gedeeld door `dashboard.app._dak_fallback_opschonen` en `assert_no_dubbel_dak_fallback` zodat
+    beide precies dezelfde definitie van "dit is de placeholder" gebruiken."""
+    def _is_fallback(s):
+        bron = getattr(s, "bron", "")
+        if bron:
+            return bron == "magicplan-dak-fallback"
+        return getattr(s, "id", "") == "dak"
+    return [s for s in schil if getattr(s, "type", "") == "dak" and _is_fallback(s)]
 
 
 def assert_no_dubbel_dak_fallback(dos):
