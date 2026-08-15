@@ -4423,6 +4423,62 @@ try:
         _uplC = _osC.path.join(_WAC.UPLOAD_DIR, "opname_test-dak-reimport.csv")
         if _osC.path.exists(_uplC):
             _osC.unlink(_uplC)
+    # AC7 (review-fix): een dossier van VÓÓR het bron-veld bestond heeft bron=="" op zijn
+    # placeholder-dak — de gedeelde herkenning (vabi.preflight.dak_fallback_schildelen) moet die via
+    # het legacy-signaal id=="dak" alsnog vinden, anders is het bestaande, live Essenhage-dossier
+    # (de aanleiding voor deze hele taak) NIET beschermd door deze fix.
+    from vabi.preflight import dak_fallback_schildelen as _dfsC
+    _d8 = _bsC()
+    for _s in _d8.schil:
+        _s.bron = ""   # simuleer een dossier van vóór dit veld bestond
+    _d8.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0, bron=""))
+    check("AC7: legacy dossier (bron altijd '') -> id=='dak' herkend als placeholder",
+          [s.id for s in _dfsC(_d8.schil)] == ["dak"])
+    try:
+        _adfC(_d8)
+        check("AC7: preflight blokkeert ook het legacy (ongetagde) Essenhage-patroon", False)
+    except _VEBC:
+        check("AC7: preflight blokkeert ook het legacy (ongetagde) Essenhage-patroon", True)
+    check("AC7: webapp-helper ruimt het legacy-patroon ook op",
+          _dfoC(_d8) == (60.0, ["dak"]) and not any(s.id == "dak" for s in _d8.schil))
+
+    # AC8 (review-fix): een dossier-.JSON-herimport (niet alleen CSV) mag wizard-dakvlakken ook
+    # niet stil wegvegen.
+    _d9 = _bsC()
+    for _s in _d9.schil:
+        _s.bron = "magicplan-import"
+    _d9.schil = [s for s in _d9.schil if s.type != "dak"]
+    _d9.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=22.0,
+                          bron="webapp-wizard"))
+    _tdC4 = _tfC.mkdtemp(prefix="nb_dak_reimport_json_")
+    _osC.makedirs(_tdC4, exist_ok=True)
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d9
+    _WAC._pdir = lambda _t: _tdC4
+    try:
+        _cC3 = _WAC.app.test_client()
+        with _cC3.session_transaction() as _sessC3:
+            _sessC3["ingelogd"] = True
+        _nieuw_json = _bsC()
+        for _s in _nieuw_json.schil:
+            _s.bron = "magicplan-import"
+        _nieuw_json.schil = [s for s in _nieuw_json.schil if s.type != "dak"]
+        import json as _jsonC, io as _ioC2
+        _r8 = _cC3.post("/project/test-dak-reimport-json/opname/magicplan",
+                        data={"bestand": (_ioC2.BytesIO(_jsonC.dumps(_nieuw_json.to_dict()).encode("utf-8")),
+                                          "dossier.json")},
+                        content_type="multipart/form-data")
+        check("AC8: dossier-json-herimport-route redirect", _r8.status_code in (302, 303))
+        _herimportC2 = _ljC(_osC.path.join(_tdC4, "dossier.json"))
+        check("AC8: wizard-dakvlak overleeft ook een dossier-.json-herimport",
+              any(s.bron == "webapp-wizard" and s.id == "dak1-plat" for s in _herimportC2.schil))
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+        _uplC2 = _osC.path.join(_WAC.UPLOAD_DIR, "opname_test-dak-reimport-json.json")
+        if _osC.path.exists(_uplC2):
+            _osC.unlink(_uplC2)
+    _shC.rmtree(_tdC4, ignore_errors=True)
+
     _shC.rmtree(_tdC, ignore_errors=True)
     _shC.rmtree(_tdC2, ignore_errors=True)
     _shC.rmtree(_tdC3, ignore_errors=True)

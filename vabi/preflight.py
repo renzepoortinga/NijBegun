@@ -19,21 +19,33 @@ def assert_no_schil_kwaliteitsverklaring(dos):
         )
 
 
+def dak_fallback_schildelen(schil):
+    """Herken de dak-footprint-placeholder (taak 014/015): de expliciete `bron`-tag
+    ('magicplan-dak-fallback') EN, voor dossiers van vóór dat veld bestond (o.a. het live
+    Essenhage-project dat deze taak aanleiding gaf — die stond al op schijf toen de tag werd
+    toegevoegd en heeft dus bron==""), het legacy-signaal `id == "dak"`. Die kale id is UNIEK
+    voor de twee footprint-fallback-code-paden (statistics_csv.build_dossier + extractor._maak_dak)
+    — de dak-wizard nummert altijd ('dak1-...'), en de oudere expliciete CSV-dakvelden-route
+    gebruikt ook altijd een gesuffixte id ('dak-plat', 'dak-vlak1-zw', ...). Gedeeld door
+    `dashboard.app._dak_fallback_opschonen` en `assert_no_dubbel_dak_fallback` zodat beide precies
+    dezelfde definitie van "dit is de placeholder" gebruiken."""
+    return [s for s in schil if getattr(s, "type", "") == "dak"
+            and (getattr(s, "bron", "") == "magicplan-dak-fallback" or getattr(s, "id", "") == "dak")]
+
+
 def assert_no_dubbel_dak_fallback(dos):
-    """Taak 014: de parser-placeholder ('magicplan-dak-fallback' — een footprint-schatting die
-    ontstaat zolang een dossier geen enkel écht dakvlak heeft, zie statistics_csv.build_dossier)
-    telt het dak dubbel als hij naast een écht (webapp-wizard of legacy-CSV) dakvlak blijft staan.
-    De webapp verwijdert 'm automatisch zodra je een dakvlak toevoegt (dashboard.app.
-    _dak_fallback_opschonen); deze poort is het vangnet voor elk ANDER pad naar een Vabi-export
-    (CLI, JSON-upload, handmatig samengestelde dossiers, tests) waar die opschoning niet draait."""
-    fallback_ids = {id(s) for s in dos.schil if getattr(s, "type", "") == "dak"
-                    and getattr(s, "bron", "") == "magicplan-dak-fallback"}
-    if not fallback_ids:
+    """Taak 014: de parser-placeholder (zie `dak_fallback_schildelen`) telt het dak dubbel als hij
+    naast een écht (webapp-wizard of legacy-CSV) dakvlak blijft staan. De webapp verwijdert 'm
+    automatisch zodra je een dakvlak toevoegt (dashboard.app._dak_fallback_opschonen); deze poort
+    is het vangnet voor elk ANDER pad naar een Vabi-export (CLI, JSON-upload, handmatig
+    samengestelde dossiers, tests) waar die opschoning niet draait."""
+    fallback = dak_fallback_schildelen(dos.schil)
+    if not fallback:
         return
+    fallback_ids = {id(s) for s in fallback}
     andere = [s for s in dos.schil if getattr(s, "type", "") == "dak" and id(s) not in fallback_ids]
     if not andere:
         return
-    fallback = [s for s in dos.schil if id(s) in fallback_ids]
     raise VabiExportBlocked(
         "VABI-export geblokkeerd: er staat nog een placeholder-dak ('%s', %.2f m² footprint-"
         "schatting, geen meting) naast %d ander(e) dakvlak(ken) — samen zou dat dakoppervlak "

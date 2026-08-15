@@ -53,7 +53,9 @@ Zorgen dat de dakwizard een oud/importdak aantoonbaar vervangt of bewust aanvult
       ongewijzigd gedrag, niet nieuw kapotgemaakt, maar ook niet opgelost door deze taak.
 - [x] `./scripts/verify.sh` slaagt (797/799 Python-tests; de 2 restfalen zijn de bekende
       buiten-de-repo-omgevingsafhankelijkheden uit taak 002, niet aan dit werk gerelateerd).
-- [ ] AI-review PASS door een andere agent dan de bouwer. **Nog te doen.**
+- [x] AI-review PASS door een andere agent dan de bouwer. Twee rondes `/code-review high`; ronde 1
+      vond 1 kritiek + 1 ongerelateerd punt (zie hieronder), ronde 2 (na fixes) vond nog eens 3
+      echte punten — allemaal verwerkt (zie Sessions). Geen blockers meer over.
 
 ## Sessions
 - 2026-08-15 (los gesprek van taak 013's ketenaudit) — user vroeg expliciet: "wat er met het
@@ -68,8 +70,28 @@ Zorgen dat de dakwizard een oud/importdak aantoonbaar vervangt of bewust aanvult
   `assert_no_dubbel_dak_fallback` (vangnet op elk exportpad) + CSV-herimport behoudt
   wizard-dakvlakken. 14 nieuwe regressietests (sectie "AC" in `tests/run_tests.py`), waaronder een
   bestaande test die (na de fix, terecht) een niet-opgeschoonde testopstelling bleek te hebben —
-  gecorrigeerd. 797/799 groen (2 bekende omgevingsfalen). Nog open: AI-review, en de bredere
-  "ambigue meerdere-echte-dakbronnen"-situatie (zie AC hierboven) blijft bewust onopgelost.
+  gecorrigeerd. 797/799 groen (2 bekende omgevingsfalen).
+- 2026-08-15 (zelfde gesprek, review-ronde 1) — `/code-review high` vond: (1) **kritiek**:
+  `magicplan/extractor.py::_maak_dak()` (de hybride API+report-PDF-route, gebruikt door
+  `magicplan/assemble.py`) zette de nieuwe `bron`-tag nooit → dossiers via dát pad omzeilden de
+  hele fix. Gefixt: zelfde tag, 2 nieuwe tests. (2) een ongerelateerde bevinding
+  (`form_push.py` mist de taak-012-SSL-fix) vastgelegd als taak 019 i.p.v. hier meegefixt.
+  799/801 groen.
+- 2026-08-15 (zelfde gesprek, review-ronde 2) — nieuwe `/code-review high` op de gefixte stand
+  vond 3 verdere echte punten (van de 8 gemelde; de overige 5 zijn ofwel al expliciet
+  gedocumenteerde bewuste scope-grenzen, ofwel pre-existente/losstaande efficiëntiepunten buiten
+  scope): (1) **kritiek** — de hele bron-tag-aanpak is opt-in en dus blind voor dossiers die al
+  op schijf stonden vóórdat dit veld bestond, WAARONDER het echte, live Essenhage-dossier dat
+  deze taak veroorzaakte (bron=="" op zowel het oude als het nieuwe dakvlak). Gefixt: gedeelde
+  `vabi.preflight.dak_fallback_schildelen()`-herkenning matcht nu ook op het legacy-signaal
+  `id == "dak"` (uniek voor de twee footprint-fallback-paden; wizard/legacy-CSV-routes gebruiken
+  nooit die kale id) — 3 nieuwe tests (AC7) bewijzen dit óók voor een volledig ongetagd dossier.
+  (2) de JSON-dossier-upload-tak van `opname_magicplan` kreeg de wizard-dak-behoud-fix niet, alleen
+  de CSV-tak — nu gedeeld over beide met id-gebaseerde dedup (2 nieuwe tests, AC8). (3) DRY:
+  `_dak_fallback_opschonen` en `assert_no_dubbel_dak_fallback` herimplementeerden dezelfde
+  herkenningslogica apart → nu één gedeelde `dak_fallback_schildelen()`-functie; de 3
+  dak-wizard-routes herhaalden ook dezelfde flash-tekst-opbouw → nu `_dak_toegevoegd_melding()`.
+  804/806 groen (2 bekende omgevingsfalen, ongewijzigd). `./scripts/verify.sh`: PASS.
 
 ## Notes
 Live audit 15-8-2026: Essenhage bevat 55,56 m² legacydak plus 2 × 28,71 m² schuine wizardvlakken.

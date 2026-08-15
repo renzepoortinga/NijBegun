@@ -1378,16 +1378,18 @@ def opname_magicplan(tag):
             from magicplan.statistics_csv import build_dossier
             nieuw, notes = build_dossier(up, straat=oud.straat, postcode=oud.postcode,
                                          plaats=oud.plaats, woningtype=oud.woningtype)
-            # Herimport (taak 015): een MagicPlan-CSV kan NOOIT dakvlakken leveren (dak = webapp-
-            # sinds 23-7), dus een verse CSV-import mag handmatig dakwerk uit de webapp-wizard nooit
-            # stil wegvegen. Draag die vlakken over en schoon daarna de eventuele nieuwe placeholder
-            # op (zonder deze overdracht zou hij weer dubbel naast het behouden wizardwerk staan).
-            _behouden = [s for s in dos.schil if s.bron == "webapp-wizard"]
-            if _behouden:
-                nieuw.schil += _behouden
-                _dak_fallback_opschonen(nieuw)
-                notes.append("%d eerder met de webapp-dakwizard toegevoegde vlak(ken) zijn behouden "
-                             "bij deze herimport (MagicPlan levert geen dakgeometrie)." % len(_behouden))
+        # Herimport (taak 014/015): dakwerk uit de webapp-wizard mag een herimport nooit stil
+        # wegvegen — geldt voor ZOWEL een CSV (kan sowieso nooit dakgeometrie leveren, dak = webapp
+        # sinds 23-7) ALS een dossier-.json-upload (bv. een oudere export terugzetten). Alleen
+        # vlakken overdragen wier id nog niet in de nieuwe opname voorkomt (een .json-upload kan
+        # zijn eigen, al meegeëxporteerde wizardvlakken hebben — dan niet dubbel toevoegen).
+        _nieuwe_ids = {s.id for s in nieuw.schil}
+        _behouden = [s for s in dos.schil if s.bron == "webapp-wizard" and s.id not in _nieuwe_ids]
+        if _behouden:
+            nieuw.schil += _behouden
+            _dak_fallback_opschonen(nieuw)
+            notes.append("%d eerder met de webapp-dakwizard toegevoegde vlak(ken) zijn behouden "
+                         "bij deze herimport." % len(_behouden))
     except Exception as e:
         flash("Kon de opname niet lezen: %s" % e); return redirect(url_for("opname", tag=tag))
     # "ZELF DOEN IN VABI"-lijst: parser-notes (narekenen/KV/multi-zone/ontbrekend) + generator-flags
@@ -1546,23 +1548,36 @@ def _volgend_dak_nr(dos):
 
 
 def _dak_fallback_opschonen(dos):
-    """Verwijder de parser-placeholder ('magicplan-dak-fallback' — een footprint-schatting zonder
-    échte meting, zie statistics_csv.build_dossier) zodra er een écht dakvlak naast staat. Zonder
-    dit zou het dak dubbel meetellen in de Vabi-export (taak 014, live gevonden op het Essenhage-
-    testproject: 55,56 m² legacy-placeholder naast 2x28,71 m² wizardvlakken).
-    Verwijdert UITSLUITEND deze ondubbelzinnig getagde placeholder — andere dakvlakken (bv. uit een
-    oudere CSV met expliciete dakvelden, of eerder handmatig werk) worden nooit stil overschreven;
-    bij twijfel (geen aantoonbare placeholder-tag) doet deze functie niets."""
-    fallback_ids = {id(s) for s in dos.schil if s.type == "dak" and s.bron == "magicplan-dak-fallback"}
-    if not fallback_ids:
+    """Verwijder de parser-placeholder (zie `vabi.preflight.dak_fallback_schildelen` — de gedeelde
+    definitie, ook gebruikt door de Vabi-preflight-poort) zodra er een écht dakvlak naast staat.
+    Zonder dit zou het dak dubbel meetellen in de Vabi-export (taak 014, live gevonden op het
+    Essenhage-testproject: 55,56 m² legacy-placeholder naast 2x28,71 m² wizardvlakken).
+    Verwijdert UITSLUITEND de placeholder — andere dakvlakken (bv. uit een oudere CSV met
+    expliciete dakvelden, of eerder handmatig werk) worden nooit stil overschreven; bij twijfel
+    (geen aantoonbare placeholder) doet deze functie niets."""
+    from vabi.preflight import dak_fallback_schildelen
+    fallback = dak_fallback_schildelen(dos.schil)
+    if not fallback:
         return None
+    fallback_ids = {id(s) for s in fallback}
     if not any(s.type == "dak" and id(s) not in fallback_ids for s in dos.schil):
         return None
-    verwijderd = [s for s in dos.schil if id(s) in fallback_ids]
-    verwijderd_m2 = sum(s.oppervlakte_m2 or 0 for s in verwijderd)
-    verwijderd_ids = [s.id or "(zonder id)" for s in verwijderd]
+    verwijderd_m2 = sum(s.oppervlakte_m2 or 0 for s in fallback)
+    verwijderd_ids = [s.id or "(zonder id)" for s in fallback]
     dos.schil = [s for s in dos.schil if id(s) not in fallback_ids]
     return verwijderd_m2, verwijderd_ids
+
+
+def _dak_toegevoegd_melding(basis, verwijderd, vervolg="Nog een dak? Kies opnieuw hieronder."):
+    """Bouw de flash-tekst voor een dak-wizard-route: basismelding + (indien van toepassing) de
+    _dak_fallback_opschonen-uitkomst, gedeeld door alle dak-toevoeg-routes zodat de bewoording
+    maar op één plek hoeft te kloppen."""
+    melding = basis
+    if verwijderd:
+        v_m2, v_ids = verwijderd
+        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
+                    % (", ".join(v_ids), v_m2))
+    return melding + " " + vervolg
 
 
 def _erf_dak_kwargs(dos):
@@ -1606,12 +1621,7 @@ def opname_dak_plat(tag):
                                **_erf_dak_kwargs(dos)))
     verwijderd = _dak_fallback_opschonen(dos)
     _dos_save(tag, st, dos)
-    melding = "Plat dak %d toegevoegd (%.2f m²)." % (nr, m2)
-    if verwijderd:
-        _v_m2, _v_ids = verwijderd
-        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
-                    % (", ".join(_v_ids), _v_m2))
-    flash(melding + " Wil je nog een dak toevoegen? Kies opnieuw hieronder.")
+    flash(_dak_toegevoegd_melding("Plat dak %d toegevoegd (%.2f m²)." % (nr, m2), verwijderd))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
@@ -1679,12 +1689,8 @@ def opname_dak_driehoek(tag):
             n_dak += 1
     verwijderd = _dak_fallback_opschonen(dos)
     _dos_save(tag, st, dos)
-    melding = "Zadeldak %d toegevoegd: %d hellend vlak + %d kopgevel." % (nr, n_dak, n_kop)
-    if verwijderd:
-        _v_m2, _v_ids = verwijderd
-        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
-                    % (", ".join(_v_ids), _v_m2))
-    flash(melding + " Nog een dak? Kies opnieuw hieronder.")
+    flash(_dak_toegevoegd_melding(
+        "Zadeldak %d toegevoegd: %d hellend vlak + %d kopgevel." % (nr, n_dak, n_kop), verwijderd))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
@@ -1717,12 +1723,7 @@ def opname_dak_negen(tag):
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     verwijderd = _dak_fallback_opschonen(dos)
     _dos_save(tag, st, dos)
-    melding = "Dak %d toegevoegd: %d vlak(ken) met eigen m²." % (nr, n_add)
-    if verwijderd:
-        _v_m2, _v_ids = verwijderd
-        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
-                    % (", ".join(_v_ids), _v_m2))
-    flash(melding + " Nog een dak? Kies opnieuw hieronder.")
+    flash(_dak_toegevoegd_melding("Dak %d toegevoegd: %d vlak(ken) met eigen m²." % (nr, n_add), verwijderd))
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
