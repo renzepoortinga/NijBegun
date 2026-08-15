@@ -210,6 +210,21 @@ check("assemble geometrie uit plan (ruimte+functie)", any(r.functie == "keuken" 
 check("assemble schil gevel+vloer+dak+kozijn", {"gevel", "vloer", "dak", "kozijn"} <= {s.type for s in _ad.schil})
 check("assemble gevel-tag uit report", any(s.type == "gevel" and s.subtype == "Spouwmuur" for s in _ad.schil))
 check("assemble kozijn-glas uit report", any(s.type == "kozijn" and s.glastype == "HR++" for s in _ad.schil))
+# taak 014-review: de hybride API+report-PDF-route (_maak_dak, extractor.py) maakt net als de
+# Statistics-CSV-route altijd ÉÉN generiek dakvlak -> moet DEZELFDE fallback-tag krijgen, anders
+# ziet de dak-fallback-opschoning/-preflight 'm niet als een dossier via dit pad binnenkomt.
+check("assemble: dak krijgt dezelfde magicplan-dak-fallback-tag als de CSV-route",
+      any(s.type == "dak" and s.bron == "magicplan-dak-fallback" for s in _ad.schil))
+from vabi.preflight import assert_no_dubbel_dak_fallback as _adf15, VabiExportBlocked as _VEB15
+from core.dossier import SchilDeel as _SD15
+_ad2 = build_dossier(_p, _koz, _planv2)
+_ad2.schil.append(_SD15(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0,
+                        bron="webapp-wizard"))
+try:
+    _adf15(_ad2)
+    check("assemble: preflight blokkeert fallback+wizarddak ook op het hybride pad", False)
+except _VEB15:
+    check("assemble: preflight blokkeert fallback+wizarddak ook op het hybride pad", True)
 
 print("15b. MagicPlan-contourextractie (echte plattegrondomtrek i.p.v. rechthoek-gok)")
 from magicplan.assemble import _floor_contour_m, geometry_from_plan
