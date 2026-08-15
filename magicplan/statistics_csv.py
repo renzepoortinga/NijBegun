@@ -1523,7 +1523,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                                begrenzing=(d_b.get("begrenzing") or "Buitenlucht"),  # F6
                                orientatie="", oppervlakte_m2=bg_floor_area or 0.0,
                                isolatie_aanwezig=d_b["isolatie"], rekenzone=1, isolatiedikte_mm=d_b["dikte_mm"], rc_bron=dak_rc,
-                               opmerkingen="HELLINGSHOEK/dakvlakken ONTBREKEN -> dak-m2 = footprint (fallback)"))
+                               opmerkingen="HELLINGSHOEK/dakvlakken ONTBREKEN -> dak-m2 = footprint (fallback)",
+                               bron="magicplan-dak-fallback"))
         notes.append("Dak: geen hellingshoek/dakvlakken in de opname -> footprint-fallback. Voeg dak-velden toe "
                      "(Dak vloerbreedte/nokhoogte/knieschothoogte of Hellingshoek dak + oriëntaties schuine zijden).")
 
@@ -1640,6 +1641,11 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                 k = _klasse_per_type.get(s.type, "")
                 if k:
                     s.bouwjaarklasse = k
+        if not s.bron:
+            # bronprovenance (taak 015): alles wat hier nog geen tag heeft komt uit de CSV-import
+            # zelf (gevel/vloer/kozijn/dakvlak-uit-CSV/...); de dak-footprint-fallback is hierboven
+            # al expliciet als "magicplan-dak-fallback" getagd.
+            s.bron = "magicplan-import"
     dos.schil = schil
     # VERSHEID: toon de projectdatum bovenaan, zodat je nooit per ongeluk een oude export analyseert
     # (Essenhage-les 15-7: een CSV van 11-7 toonde nog oude geveltags terwijl MagicPlan al gecorrigeerd was).

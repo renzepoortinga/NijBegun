@@ -1378,6 +1378,16 @@ def opname_magicplan(tag):
             from magicplan.statistics_csv import build_dossier
             nieuw, notes = build_dossier(up, straat=oud.straat, postcode=oud.postcode,
                                          plaats=oud.plaats, woningtype=oud.woningtype)
+            # Herimport (taak 015): een MagicPlan-CSV kan NOOIT dakvlakken leveren (dak = webapp-
+            # sinds 23-7), dus een verse CSV-import mag handmatig dakwerk uit de webapp-wizard nooit
+            # stil wegvegen. Draag die vlakken over en schoon daarna de eventuele nieuwe placeholder
+            # op (zonder deze overdracht zou hij weer dubbel naast het behouden wizardwerk staan).
+            _behouden = [s for s in dos.schil if s.bron == "webapp-wizard"]
+            if _behouden:
+                nieuw.schil += _behouden
+                _dak_fallback_opschonen(nieuw)
+                notes.append("%d eerder met de webapp-dakwizard toegevoegde vlak(ken) zijn behouden "
+                             "bij deze herimport (MagicPlan levert geen dakgeometrie)." % len(_behouden))
     except Exception as e:
         flash("Kon de opname niet lezen: %s" % e); return redirect(url_for("opname", tag=tag))
     # "ZELF DOEN IN VABI"-lijst: parser-notes (narekenen/KV/multi-zone/ontbrekend) + generator-flags
@@ -1535,6 +1545,26 @@ def _volgend_dak_nr(dos):
     return n + 1
 
 
+def _dak_fallback_opschonen(dos):
+    """Verwijder de parser-placeholder ('magicplan-dak-fallback' — een footprint-schatting zonder
+    échte meting, zie statistics_csv.build_dossier) zodra er een écht dakvlak naast staat. Zonder
+    dit zou het dak dubbel meetellen in de Vabi-export (taak 014, live gevonden op het Essenhage-
+    testproject: 55,56 m² legacy-placeholder naast 2x28,71 m² wizardvlakken).
+    Verwijdert UITSLUITEND deze ondubbelzinnig getagde placeholder — andere dakvlakken (bv. uit een
+    oudere CSV met expliciete dakvelden, of eerder handmatig werk) worden nooit stil overschreven;
+    bij twijfel (geen aantoonbare placeholder-tag) doet deze functie niets."""
+    fallback_ids = {id(s) for s in dos.schil if s.type == "dak" and s.bron == "magicplan-dak-fallback"}
+    if not fallback_ids:
+        return None
+    if not any(s.type == "dak" and id(s) not in fallback_ids for s in dos.schil):
+        return None
+    verwijderd = [s for s in dos.schil if id(s) in fallback_ids]
+    verwijderd_m2 = sum(s.oppervlakte_m2 or 0 for s in verwijderd)
+    verwijderd_ids = [s.id or "(zonder id)" for s in verwijderd]
+    dos.schil = [s for s in dos.schil if id(s) not in fallback_ids]
+    return verwijderd_m2, verwijderd_ids
+
+
 def _erf_dak_kwargs(dos):
     """SchilDeel-kwargs die een nieuw dakvlak erft van de Constructies-DAK-standaard (MagicPlan-
     form, `dos.opname.dak_standaard`) — leeg/geen standaard -> Onbekend (geen gok). Gedeeld door
@@ -1572,10 +1602,16 @@ def opname_dak_plat(tag):
                                orientatie="", oppervlakte_m2=m2, hellingshoek=0,
                                breedte_m=breedte, diepte_m=diepte, geometrie_groep="dak%d" % nr,
                                rekenzone=int(request.form.get("rekenzone") or 1),
-                               opmerkingen="Dak %d (plat) — webapp-invoer" % nr,
+                               opmerkingen="Dak %d (plat) — webapp-invoer" % nr, bron="webapp-wizard",
                                **_erf_dak_kwargs(dos)))
+    verwijderd = _dak_fallback_opschonen(dos)
     _dos_save(tag, st, dos)
-    flash("Plat dak %d toegevoegd (%.2f m²). Wil je nog een dak toevoegen? Kies opnieuw hieronder." % (nr, m2))
+    melding = "Plat dak %d toegevoegd (%.2f m²)." % (nr, m2)
+    if verwijderd:
+        _v_m2, _v_ids = verwijderd
+        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
+                    % (", ".join(_v_ids), _v_m2))
+    flash(melding + " Wil je nog een dak toevoegen? Kies opnieuw hieronder.")
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
@@ -1628,7 +1664,7 @@ def opname_dak_driehoek(tag):
             dos.schil.append(SchilDeel(id="dak%d-kopgevel-%s" % (nr, (v["orientatie"] or "x").lower()),
                                        type="gevel", subtype="kopgevel-driehoek", begrenzing="Buitenlucht",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], isolatie_aanwezig="Onbekend",
-                                       geometrie_groep="dak%d" % nr,
+                                       geometrie_groep="dak%d" % nr, bron="webapp-wizard",
                                        rekenzone=rz, opmerkingen="Dak %d — kopgevel-driehoek (zadeldak, basis %.2f m)" % (nr, c)))
             n_kop += 1
         else:
@@ -1636,14 +1672,19 @@ def opname_dak_driehoek(tag):
                                        type="dak", subtype="schuin (zadeldak)",
                                        orientatie=v["orientatie"], oppervlakte_m2=v["m2"], hellingshoek=v.get("hellingshoek"),
                                        breedte_m=breedte, diepte_m=runs[v["orientatie"]], geometrie_groep="dak%d" % nr,
-                                       rekenzone=rz,
+                                       rekenzone=rz, bron="webapp-wizard",
                                        opmerkingen="Dak %d — hellend vlak %s (c=%.2f x breedte=%.2f, %.0f°)"
                                        % (nr, v["orientatie"], c, breedte, v.get("hellingshoek") or h1),
                                        **_erf_dak_kwargs(dos)))
             n_dak += 1
+    verwijderd = _dak_fallback_opschonen(dos)
     _dos_save(tag, st, dos)
-    flash("Zadeldak %d toegevoegd: %d hellend vlak + %d kopgevel. Nog een dak? Kies opnieuw hieronder."
-          % (nr, n_dak, n_kop))
+    melding = "Zadeldak %d toegevoegd: %d hellend vlak + %d kopgevel." % (nr, n_dak, n_kop)
+    if verwijderd:
+        _v_m2, _v_ids = verwijderd
+        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
+                    % (", ".join(_v_ids), _v_m2))
+    flash(melding + " Nog een dak? Kies opnieuw hieronder.")
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
@@ -1667,15 +1708,21 @@ def opname_dak_negen(tag):
         dos.schil.append(SchilDeel(id="dak%d-%s" % (nr, o.lower()[:4]), type="dak", subtype="vlak (zelf ingevoerd)",
                                    orientatie=("" if o == "Horizontaal" else o),
                                    oppervlakte_m2=m2, hellingshoek=(0 if o == "Horizontaal" else helling),
-                                   rekenzone=rz,
+                                   rekenzone=rz, bron="webapp-wizard",
                                    opmerkingen="Dak %d — m² zelf ingevoerd (%s)" % (nr, o),
                                    **_erf_dak_kwargs(dos)))
         n_add += 1
     if not n_add:
         flash("Geen m² ingevuld — vul minstens één oriëntatie in.")
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
+    verwijderd = _dak_fallback_opschonen(dos)
     _dos_save(tag, st, dos)
-    flash("Dak %d toegevoegd: %d vlak(ken) met eigen m². Nog een dak? Kies opnieuw hieronder." % (nr, n_add))
+    melding = "Dak %d toegevoegd: %d vlak(ken) met eigen m²." % (nr, n_add)
+    if verwijderd:
+        _v_m2, _v_ids = verwijderd
+        melding += (" Placeholder-dak %s (%.2f m² footprint-schatting) verwijderd."
+                    % (", ".join(_v_ids), _v_m2))
+    flash(melding + " Nog een dak? Kies opnieuw hieronder.")
     return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
 
 
@@ -1705,6 +1752,7 @@ def opname_dakraam(tag):
     dos.schil.append(SchilDeel(id="dakraam-%d-%s" % (nr, (o or "hor").lower()[:4]), type="kozijn", subtype="Dakraam",
                                orientatie=o, oppervlakte_m2=m2, glastype=f.get("glas", "").strip(),
                                kozijnmateriaal="Hout of kunststof", begrenzing="Buitenlucht", rekenzone=1,
+                               bron="webapp-wizard",
                                toevoerrooster=f.get("rooster", "").strip(),
                                zonwering=f.get("zonwering", "").strip(),
                                opmerkingen=("Dakraam in dakvlak %s (glas van het dakvlak afgetrokken in Vabi)"
@@ -1772,24 +1820,24 @@ def opname_dakkapel(tag):
     voorvlak = SchilDeel(id="dakkapel%d-voorvlak" % nr, type="gevel", subtype="Dakkapel voorvlak",
                          orientatie=orient, begrenzing="Buitenlucht", oppervlakte_m2=round(b * h, 2),
                          breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
-                         geometrie_groep="dakkapel%d" % nr,
+                         geometrie_groep="dakkapel%d" % nr, bron="webapp-wizard",
                          rekenzone=rekenzone, opmerkingen="Dakkapel %d — voorvlak in dakvlak %s" % (nr, moeder.id))
     wang_l = SchilDeel(id="dakkapel%d-wang-links" % nr, type="gevel", subtype="Dakkapel wang",
                        orientatie=zij_l, begrenzing="Buitenlucht", oppervlakte_m2=round(d * h, 2),
                        breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
-                       geometrie_groep="dakkapel%d" % nr,
+                       geometrie_groep="dakkapel%d" % nr, bron="webapp-wizard",
                        rekenzone=rekenzone, isolatie_aanwezig=("Ja" if wangen_geisoleerd else "Onbekend"),
                        opmerkingen="Dakkapel %d — linkerwang" % nr)
     wang_r = SchilDeel(id="dakkapel%d-wang-rechts" % nr, type="gevel", subtype="Dakkapel wang",
                        orientatie=zij_r, begrenzing="Buitenlucht", oppervlakte_m2=round(d * h, 2),
                        breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
-                       geometrie_groep="dakkapel%d" % nr,
+                       geometrie_groep="dakkapel%d" % nr, bron="webapp-wizard",
                        rekenzone=rekenzone, isolatie_aanwezig=("Ja" if wangen_geisoleerd else "Onbekend"),
                        opmerkingen="Dakkapel %d — rechterwang" % nr)
     dakje = SchilDeel(id="dakkapel%d-dakje" % nr, type="dak", subtype="plat (dakkapel)",
                       orientatie="", begrenzing="Buitenlucht", oppervlakte_m2=vlakken["dak_m2"],
                       breedte_m=b, diepte_m=d, hoogte_m=h, moedervlak_id=moeder.id,
-                      geometrie_groep="dakkapel%d" % nr,
+                      geometrie_groep="dakkapel%d" % nr, bron="webapp-wizard",
                       hellingshoek=0, rekenzone=rekenzone, opmerkingen="Dakkapel %d — plat dakje" % nr)
     dos.schil += [voorvlak, wang_l, wang_r, dakje]
     if gat:

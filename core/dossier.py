@@ -136,6 +136,10 @@ class SchilDeel:
     zonwering: str = ""                            # luik/rolluik/zonwering (NTA 8800 §8.2.2.3.4: bij een
                                                    # woonfunctie tellen bedienbare luiken/rolluiken mee in Uw)
     opmerkingen: str = ""
+    bron: str = ""                                 # herkomst-tag (bronprovenance, taak 015): "magicplan-import" |
+                                                   # "magicplan-dak-fallback" (parser-placeholder, GEEN meting —
+                                                   # zie build_dossier) | "webapp-wizard" (dak-/dakkapelwizard) |
+                                                   # "" = onbekend/legacy dossier van vóór dit veld
 
 @dataclass
 class Ventilatie:

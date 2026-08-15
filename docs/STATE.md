@@ -33,6 +33,12 @@ Taak 002 (draagbare tests) is afgerond: de plan-JSON- en loginchecks gebruiken e
 de suite is 786/786 groen en `verify.sh` blokkeert weer op Python-testfalen. Onafhankelijke
 AI-review: PASS.
 
+Taak 013 (ketenaudit MagicPlan → tool → Vabi) is afgerond en staat in `tasks/done/`; vond o.a. het
+Essenhage-dakdubbelingspatroon. Taken 014/015 zijn de vervolgstappen; 014 (dakmigratie) is
+grotendeels doorgevoerd op branch `feat/015-mappingmanifest-formulierversie` — zie dat taakbestand
+voor de scope-afbakening (het brede mappingmanifest/form-fingerprint van 015 is NIET af, alleen het
+dak-specifieke bronprovenance-stuk dat 014 nodig had). AI-review staat nog open voor beide.
+
 Taak 003 (kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export)
 is afgerond en staat in `tasks/done/`: onafhankelijke herreview van commit
 `4dd8221` met VERDICT PASS.

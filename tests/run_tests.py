@@ -733,7 +733,11 @@ check("obj-gen: onbekende begrenzing geflagd (niet gegokt)",
       any("sjabloon-GrenstAan" in i for i in _objbuild(_ad)[2]))
 
 # dak Hellingshoek-ENUM: plat=6 / hellend=3 (geverifieerd vabi_enums; GEEN rauwe graden)
+# Deze CSV had geen dakvelden -> _ad draagt nog de parser-placeholder ('magicplan-dak-fallback',
+# taak 014); die hoort net als in de webapp-wizard te verdwijnen zodra er echte dakvlakken bij
+# komen, anders blokkeert de Vabi-preflight terecht op dubbel dakoppervlak.
 from core.dossier import SchilDeel as _SD
+_ad.schil = [s for s in _ad.schil if not (s.type == "dak" and s.bron == "magicplan-dak-fallback")]
 _ad.schil.append(_SD(id="dakplat", type="dak", subtype="plat", begrenzing="Buitenlucht",
                      orientatie="", oppervlakte_m2=20.0, hellingshoek=0, rekenzone=1))
 _ad.schil.append(_SD(id="dakhel", type="dak", subtype="schuin", begrenzing="Buitenlucht",
@@ -4253,6 +4257,162 @@ try:
           not any("DUBBELE KAMER" in n and "Ground Floor" in n for n in _nB))
 except Exception as _e:
     check("dubbele-kamer-check: draait zonder fout", False); print("     " + repr(_e)[:220])
+
+print("AC. Dak-fallback bronprovenance: geen dubbel dakoppervlak (taak 014/015)")
+try:
+    import tempfile as _tfC, os as _osC, shutil as _shC
+    from magicplan.statistics_csv import build_dossier as _bdC
+
+    # AC1: zonder dak-velden in de CSV krijgt de footprint-fallback een aantoonbare herkomst-tag,
+    # en de rest van het geïmporteerde schil krijgt de generieke "magicplan-import"-tag.
+    _c1 = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\n"
+           "Gevelhoogte (m),5.4\nGevel - invoer,Beslisschema\nGevel - isolatie aanwezig?,Ja\n"
+           "Gevel - isolatiedikte onbekend?,Nee\nGevel - isolatiedikte (mm),80\nGevel - begrenzing,Buitenlucht\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+           "Ground Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _f1 = _tfC.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _f1.write(_c1); _f1.close()
+    _d1, _n1 = _bdC(_f1.name); _osC.unlink(_f1.name)
+    _fb1 = next((s for s in _d1.schil if s.type == "dak"), None)
+    check("AC1: footprint-fallback dak getagd als magicplan-dak-fallback",
+          _fb1 is not None and _fb1.bron == "magicplan-dak-fallback", str(_fb1))
+    check("AC1: gevel/vloer krijgen de generieke import-tag",
+          all(s.bron == "magicplan-import" for s in _d1.schil if s.type != "dak"))
+
+    # AC2: MET expliciete dakvlakken in de CSV komt er geen fallback-dak, en die vlakken krijgen
+    # de generieke import-tag (ze zijn geen webapp-wizard-invoer, maar ook geen placeholder).
+    _c2 = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\n"
+           "Gevelhoogte (m),5.4\nDakvlak 1 - daktype,Zadeldak\nDak - vloerbreedte (m),8\n"
+           "Dakvlak 1 - hellingshoek (°),45\nDakvlak 1 - oriëntatie,ZW\nDakvlak 2 - oriëntatie,NO\n"
+           "Dak - kopgevel oriëntatie 1,NW\nDak - kopgevel oriëntatie 2,ZO\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+           "Ground Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _f2 = _tfC.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _f2.write(_c2); _f2.close()
+    _d2, _n2 = _bdC(_f2.name); _osC.unlink(_f2.name)
+    _daks2 = [s for s in _d2.schil if s.type == "dak"]
+    check("AC2: expliciete dakvlakken -> GEEN fallback-tag",
+          len(_daks2) > 0 and all(s.bron != "magicplan-dak-fallback" for s in _daks2))
+
+    # AC3: dashboard-helper verwijdert de fallback zodra een echt dakvlak ernaast staat, en laat
+    # 'm met rust zolang hij alleen staat.
+    from dashboard.app import _dak_fallback_opschonen as _dfoC
+    from core.dossier import build_sample as _bsC, SchilDeel as _SDC
+    _d3 = _bsC()
+    for _s in _d3.schil:
+        _s.bron = "magicplan-import"
+    _dak_idx = next(i for i, s in enumerate(_d3.schil) if s.type == "dak")
+    _d3.schil[_dak_idx].bron = "magicplan-dak-fallback"
+    check("AC3: alleen-fallback -> niets verwijderd", _dfoC(_d3) is None and len(_d3.schil) == 5)
+    _d3.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0,
+                          bron="webapp-wizard"))
+    _verwijderd = _dfoC(_d3)
+    check("AC3: fallback + echt dakvlak -> fallback verwijderd, m² + id teruggegeven",
+          _verwijderd == (60.0, ["dak"]) and len(_d3.schil) == 5
+          and not any(s.bron == "magicplan-dak-fallback" for s in _d3.schil)
+          and any(s.id == "dak1-plat" for s in _d3.schil))
+
+    # AC4: de webapp-route voor "plat dak toevoegen" schoont de fallback zelf op (end-to-end via
+    # de Flask-testclient, niet alleen de losse helperfunctie).
+    import dashboard.app as _WAC
+    _WAC.app.config.update(TESTING=True, SECRET_KEY="test-dak-fallback")
+    _tdC = _tfC.mkdtemp(prefix="nb_dak_fallback_")
+    _d4 = _bsC()
+    for _s in _d4.schil:
+        _s.bron = "magicplan-import" if _s.type != "dak" else "magicplan-dak-fallback"
+    _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC = _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save
+    _stateC = {"dossier_file": "dossier.json"}
+    _WAC._load_state = lambda _t: _stateC
+    _WAC._dossier = lambda _t: _d4
+    _WAC._pdir = lambda _t: _tdC
+    _savedC = []
+    _WAC._dos_save = lambda _t, _st, _d: _savedC.append(_d)
+    try:
+        _cC = _WAC.app.test_client()
+        with _cC.session_transaction() as _sessC:
+            _sessC["ingelogd"] = True
+        _rC = _cC.post("/project/test-dak/opname/dak/plat", data={"breedte": "4", "diepte": "3", "rekenzone": "1"})
+        check("AC4: dak/plat-route redirect", _rC.status_code in (302, 303))
+        check("AC4: webapp-route verwijdert de fallback zelf",
+              len(_savedC) == 1 and not any(s.bron == "magicplan-dak-fallback" for s in _savedC[0].schil)
+              and any(s.subtype == "plat dak" and s.bron == "webapp-wizard" for s in _savedC[0].schil))
+        with _cC.session_transaction() as _sessC:
+            _flashesC = " ".join(m for _cat, m in _sessC.get("_flashes", []))
+        check("AC4: flash meldt de opschoning met het verwijderde id",
+              "Placeholder-dak" in _flashesC and "verwijderd" in _flashesC and "dak" in _flashesC)
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+
+    # AC5: VABI-preflight blokkeert fallback+echt-dak-naast-elkaar op ELK exportpad (niet alleen de
+    # webapp), en laat een dossier zonder die combinatie gewoon door.
+    from vabi.preflight import assert_no_dubbel_dak_fallback as _adfC, VabiExportBlocked as _VEBC
+    _d5 = _bsC()
+    for _s in _d5.schil:
+        _s.bron = "magicplan-import" if _s.type != "dak" else "magicplan-dak-fallback"
+    _d5.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0,
+                          bron="webapp-wizard"))
+    try:
+        _adfC(_d5)
+        check("AC5: preflight blokkeert fallback naast wizarddak", False)
+    except _VEBC as _eC5:
+        check("AC5: preflight blokkeert fallback naast wizarddak",
+              "dubbel" in str(_eC5).lower() and "dak" in str(_eC5).lower())
+    _d6 = _bsC()
+    for _s in _d6.schil:
+        _s.bron = "magicplan-import"
+    try:
+        _adfC(_d6)
+        check("AC5: preflight laat een dossier zonder fallback-tag door", True)
+    except _VEBC:
+        check("AC5: preflight laat een dossier zonder fallback-tag door", False)
+    from vabi import generate_all as _gaC
+    _tdC2 = _tfC.mkdtemp(prefix="nb_dak_fallback_export_")
+    try:
+        _gaC.generate_all(_d5, _tdC2, prefix="test")
+        check("AC5: generate_all blokkeert vóór schrijven bij fallback+wizarddak", False)
+    except _VEBC:
+        check("AC5: generate_all blokkeert vóór schrijven bij fallback+wizarddak",
+              not os.listdir(_tdC2))
+
+    # AC6: herimport van een verse CSV veegt eerder toegevoegde wizard-dakvlakken niet stil weg.
+    _d7 = _bsC()
+    for _s in _d7.schil:
+        _s.bron = "magicplan-import"
+    _d7.schil = [s for s in _d7.schil if s.type != "dak"]   # simuleer: dak al vervangen door de wizard
+    _d7.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=18.5,
+                          bron="webapp-wizard"))
+    _tdC3 = _tfC.mkdtemp(prefix="nb_dak_reimport_")
+    _osC.makedirs(_tdC3, exist_ok=True)
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d7
+    _WAC._pdir = lambda _t: _tdC3
+    from core.dossier import load_json as _ljC
+    try:
+        _cC2 = _WAC.app.test_client()
+        with _cC2.session_transaction() as _sessC2:
+            _sessC2["ingelogd"] = True
+        import io as _ioC
+        _r7 = _cC2.post("/project/test-dak-reimport/opname/magicplan",
+                        data={"bestand": (_ioC.BytesIO(_c1.encode("utf-8")), "opname.csv")},
+                        content_type="multipart/form-data")
+        check("AC6: herimport-route redirect", _r7.status_code in (302, 303))
+        _herimportC = _ljC(_osC.path.join(_tdC3, "dossier.json"))
+        check("AC6: eerder wizard-dakvlak overleeft de herimport",
+              any(s.bron == "webapp-wizard" and s.id == "dak1-plat" for s in _herimportC.schil))
+        check("AC6: geen dubbele/fallback dak naast het behouden wizardvlak",
+              not any(s.bron == "magicplan-dak-fallback" for s in _herimportC.schil))
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+        _uplC = _osC.path.join(_WAC.UPLOAD_DIR, "opname_test-dak-reimport.csv")
+        if _osC.path.exists(_uplC):
+            _osC.unlink(_uplC)
+    _shC.rmtree(_tdC, ignore_errors=True)
+    _shC.rmtree(_tdC2, ignore_errors=True)
+    _shC.rmtree(_tdC3, ignore_errors=True)
+except Exception as _e:
+    check("dak-fallback-opschoning: draait zonder fout", False); print("     " + repr(_e)[:220])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
