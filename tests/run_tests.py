@@ -4529,7 +4529,8 @@ try:
     from scripts.check_mapping_manifest import (run_checks as _mm_run_checks, render_doc as _mm_render_doc,
                                                  check_doc as _mm_check_doc, DOC_PATH as _mm_doc_path)
     from magicplan.form_fingerprint import (compute_fingerprint, snapshot_fingerprint, load_snapshot,
-                                            stamp_dossier_meta, DEFAULT_SNAPSHOT_PATH)
+                                            stamp_dossier_meta, refresh_snapshot_live,
+                                            DEFAULT_SNAPSHOT_PATH)
 
     check("manifest: minstens de bekende dropdowns zijn opgenomen",
           {"begrenzing", "glastype", "kozijnmateriaal"} <= {m.id for m in MANIFEST})
@@ -4578,6 +4579,42 @@ try:
     _forms_zelfde_volgorde_anders = {k: list(reversed(v)) for k, v in _snap["forms"].items()}
     check("form-fingerprint: ongevoelig voor volgorde (alleen inhoud telt)",
           compute_fingerprint(_forms_zelfde_volgorde_anders) == _fp1)
+
+    # Live-refresh blijft offline testbaar: bij een gelijknamige groep/veld uit beide API-routes
+    # moeten unieke velden én alle opties behouden blijven, zonder dubbele veldrecords.
+    import magicplan.form_push as _mfp_push
+    _orig_env_ad = _mfp_push._load_env
+    _orig_forms_ad = _mfp_push.fetch_forms
+    _orig_fields_ad = _mfp_push.fetch_fields
+    _tmp_snapshot_ad = tempfile.mktemp(suffix=".json")
+    try:
+        _mfp_push._load_env = lambda: {"offline": "test"}
+        _mfp_push.fetch_forms = lambda _env: [
+            {"name": "Object", "fields": [
+                {"name": "Gedeeld", "options": ["A"]},
+                {"name": "Alleen form", "options": None},
+            ]}
+        ]
+        _mfp_push.fetch_fields = lambda _env: [
+            {"name": "Object", "fields": [
+                {"name": "Gedeeld", "options": ["A", "B"]},
+                {"name": "Alleen fields", "options": ["X"]},
+            ]}
+        ]
+        _live_snap_ad = refresh_snapshot_live(_tmp_snapshot_ad)
+        _live_obj_ad = _live_snap_ad["forms"]["Object"]
+        check("form-fingerprint live-refresh: gelijknamige groepen worden samengevoegd",
+              {v["name"] for v in _live_obj_ad} == {"Gedeeld", "Alleen form", "Alleen fields"})
+        check("form-fingerprint live-refresh: opties uit beide routes blijven behouden",
+              next(v for v in _live_obj_ad if v["name"] == "Gedeeld")["options"] == ["A", "B"])
+        check("form-fingerprint live-refresh: gelijknamig veld staat maar één keer in snapshot",
+              sum(v["name"] == "Gedeeld" for v in _live_obj_ad) == 1)
+    finally:
+        _mfp_push._load_env = _orig_env_ad
+        _mfp_push.fetch_forms = _orig_forms_ad
+        _mfp_push.fetch_fields = _orig_fields_ad
+        if os.path.exists(_tmp_snapshot_ad):
+            os.unlink(_tmp_snapshot_ad)
 
     # dossier-meta: elke MagicPlan-importroute stempelt fingerprint + snapshotdatum.
     from core.dossier import Dossier

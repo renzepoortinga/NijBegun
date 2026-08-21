@@ -36,7 +36,7 @@ AI-review: PASS.
 Taak 013 (ketenaudit MagicPlan → tool → Vabi) en taak 014 (dakmigratie zonder dubbele
 legacyvlakken — het Essenhage-dakdubbelingspatroon uit taak 013) zijn afgerond en staan in
 `tasks/done/`. Taak 015 blijft `active/`: mappingmanifest, formulierfingerprint en de eerdere
-dakprovenance zijn gebouwd en na rebase op `main` met 838/838 tests geverifieerd; alleen de
+dakprovenance zijn gebouwd en na rebase op `main` met 841/841 tests geverifieerd; alleen de
 onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 (dakkapel/
 preflight) en 025 (MagicPlan-SSL) in `backlog/`.
 

@@ -91,8 +91,23 @@ def refresh_snapshot_live(path=DEFAULT_SNAPSHOT_PATH):
         # (setdefault deed dat eerder: bij een naamsbotsing verdween een heel veldenblok uit de
         # snapshot zonder foutmelding, mappingmanifest-audit 21-8).
         bestaand = forms_out.setdefault(naam, [])
-        bekende_namen = {v["name"] for v in bestaand}
-        bestaand.extend(v for v in velden if v["name"] not in bekende_namen)
+        per_naam = {v["name"]: v for v in bestaand}
+        for veld in velden:
+            veldnaam = veld["name"]
+            if veldnaam not in per_naam:
+                nieuw = {"name": veldnaam, "options": veld.get("options")}
+                bestaand.append(nieuw)
+                per_naam[veldnaam] = nieuw
+                continue
+            # Als beide API-routes hetzelfde veld leveren, mag geen van beide optielijsten
+            # stil verdwijnen: neem de unie. Dit houdt één canoniek veld per naam en maakt
+            # optiedrift uit een van beide bronnen zichtbaar in de snapshotdiff/fingerprint.
+            huidig = per_naam[veldnaam]
+            opties = list(huidig.get("options") or [])
+            for optie in veld.get("options") or []:
+                if optie not in opties:
+                    opties.append(optie)
+            huidig["options"] = opties or None
 
     for record in fetch_forms(env):
         naam = (record.get("name") or record.get("name_escaped") or "onbekend")
