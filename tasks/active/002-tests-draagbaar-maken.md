@@ -1,7 +1,7 @@
 ---
 id: 002
-assigned:
-branch:
+assigned: Codex Builder
+branch: feat/002-tests-draagbaar-maken
 depends_on: []
 ---
 
@@ -24,11 +24,18 @@ testcheck in `verify.sh` terug kan van advisory naar blocking.
 - Overige tests, nieuwe features, dashboard-wijzigingen
 
 ## Acceptance criteria
-- [ ] `python3 tests/run_tests.py` → 708/708 groen in een verse clone
-- [ ] Testcheck weer blocking en `./scripts/verify.sh` slaagt
+- [x] `python3 tests/run_tests.py` → 708/708 groen in een verse clone
+  (huidige suite: 786/786 via de beschikbare Windows-commandonaam `python`)
+- [x] Testcheck weer blocking en `./scripts/verify.sh` slaagt
 - [ ] AI-review PASS door een andere leverancier dan de bouwer
 
 ## Sessions
+
+- 2026-08-21 — Codex Builder: beide omgevingsafhankelijke tests zelfvoorzienend gemaakt.
+  De plan-JSON-test gebruikt een in-memory `build_sample()`-dossier en tijdelijke projectmap;
+  de login-test injecteert en herstelt een tijdelijke dashboardconfig. `verify.sh` is weer
+  blocking en kiest op Windows/Linux een daadwerkelijk werkende `python3` of `python`.
+  `python tests/run_tests.py`: 786/786 groen. Git Bash `scripts/verify.sh`: PASS.
 
 ## Notes
 Nulmeting 2026-08-08 in een kale container: 706 geslaagd, 2 gefaald —

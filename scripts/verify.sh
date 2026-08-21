@@ -32,10 +32,13 @@ has build     && runp build     "Build"
 # ── BLOCKING: Python-tests (dit project is een Python-pijplijn)
 if [ -f tests/run_tests.py ]; then
   head_ "Tests (Python)"
-  # Ratel: tijdelijk advisory — 2 van de 708 tests hangen aan lokale
-  # bestanden buiten de repo (config.json, plan-json) en falen dus in CI.
-  # Taak 002 maakt ze draagbaar en zet dit terug naar fail.
-  if python3 tests/run_tests.py; then ok "Tests (Python)"; else advise "Python-tests niet volledig groen (zie taak 002)"; fi
+  if python3 -c 'import sys' >/dev/null 2>&1; then PYTHON=python3
+  elif python -c 'import sys' >/dev/null 2>&1; then PYTHON=python
+  else PYTHON=""; fi
+  if [ -z "$PYTHON" ]; then
+    fail "geen werkende Python-interpreter gevonden (python3 of python)"
+  elif "$PYTHON" tests/run_tests.py; then ok "Tests (Python)"
+  else fail "Python-tests niet volledig groen"; fi
 fi
 
 # ── BLOCKING: secrets

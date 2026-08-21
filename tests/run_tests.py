@@ -1584,24 +1584,29 @@ try:
     _t30, _ = _BJ.hint(1930)
     check("bouwjaar-hint 1930 -> vooroorlogs", _t30 is not None and "1946" in _t30)
     check("bouwjaar-hint zonder bouwjaar -> None", _BJ.hint(None) == (None, None))
-    import os as _os, io as _io, shutil as _sh, json as _js
+    import os as _os, io as _io, json as _js, tempfile as _tf46
     import dashboard.app as _WA5
     _WA5.app.config.update(TESTING=True)
-    _c5 = _WA5.app.test_client()
-    with _c5.session_transaction() as _s5:
-        _s5["ingelogd"] = True
-    with open(os.path.join(ROOT, "out", "demo_dossier.json"), "rb") as _fh:
-        _r5 = _c5.post("/nieuw", data={"bestand": (_io.BytesIO(_fh.read()), "d.json"), "straat": "T 1",
-                       "plaats": "X", "woningtype": "Tussenwoning"}, content_type="multipart/form-data")
-    _tag5 = _r5.headers["Location"].rstrip("/").split("/")[-2]
-    _c5.get("/project/%s/afronden" % _tag5)
-    _jp = _os.path.join(_WA5._pdir(_tag5), "isolatieplan_%s.json" % _tag5)
-    check("isolatieplan-JSON gegenereerd bij afronden", _os.path.isfile(_jp))
-    _pj = _js.load(open(_jp, encoding="utf-8"))
-    check("plan-JSON: formaat + rekenkern + maatregelen-array",
-          _pj.get("formaat") == "nijbegun-isolatieplan" and "Vabi" in _pj["tool"]["rekenkern"]
-          and isinstance(_pj.get("maatregelen_subsidietabel"), list))
-    _sh.rmtree(_WA5._pdir(_tag5))
+    _projects5 = _WA5.PROJECTS_DIR
+    with _tf46.TemporaryDirectory() as _td5:
+        try:
+            _WA5.PROJECTS_DIR = _td5
+            _c5 = _WA5.app.test_client()
+            with _c5.session_transaction() as _s5:
+                _s5["ingelogd"] = True
+            _fixture5 = _js.dumps(build_sample().to_dict()).encode("utf-8")
+            _r5 = _c5.post("/nieuw", data={"bestand": (_io.BytesIO(_fixture5), "d.json"), "straat": "T 1",
+                           "plaats": "X", "woningtype": "Tussenwoning"}, content_type="multipart/form-data")
+            _tag5 = _r5.headers["Location"].rstrip("/").split("/")[-2]
+            _c5.get("/project/%s/afronden" % _tag5)
+            _jp = _os.path.join(_WA5._pdir(_tag5), "isolatieplan_%s.json" % _tag5)
+            check("isolatieplan-JSON gegenereerd bij afronden", _os.path.isfile(_jp))
+            _pj = _js.load(open(_jp, encoding="utf-8"))
+            check("plan-JSON: formaat + rekenkern + maatregelen-array",
+                  _pj.get("formaat") == "nijbegun-isolatieplan" and "Vabi" in _pj["tool"]["rekenkern"]
+                  and isinstance(_pj.get("maatregelen_subsidietabel"), list))
+        finally:
+            _WA5.PROJECTS_DIR = _projects5
 except Exception as _e:
     check("bouwjaar/plan-json: draait zonder fout", False); print("     " + repr(_e)[:170])
 
@@ -2953,9 +2958,14 @@ try:
     # de loginpagina toont het e-mailveld alleen als er een adres is geconfigureerd
     import dashboard.app as _W70
     _W70.app.config.update(TESTING=True)
-    _h70 = _W70.app.test_client().get("/login").get_data(as_text=True)
-    check("login-pagina: e-mailveld aanwezig (adviseur-adres staat in config.json)",
-          'name=email' in _h70 and 'type=email' in _h70)
+    _cfg70_orig = _W70._cfg
+    try:
+        _W70._cfg = lambda: {"dashboard": {"email": _MAIL}}
+        _h70 = _W70.app.test_client().get("/login").get_data(as_text=True)
+        check("login-pagina: e-mailveld aanwezig met tijdelijke testconfig",
+              'name=email' in _h70 and 'type=email' in _h70)
+    finally:
+        _W70._cfg = _cfg70_orig
 except Exception as _e:
     check("login met e-mailadres: draait zonder fout", False); print("     " + repr(_e)[:200])
 
