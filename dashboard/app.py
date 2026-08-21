@@ -33,6 +33,7 @@ from dashboard import security as sec                                           
 from dashboard import ai as ai_mod                                                    # noqa: E402
 from dashboard import knowledge as knowledge_mod                                      # noqa: E402
 from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
+from dashboard import plattegrond_import as pi_mod                                   # noqa: E402
 from engine.advies_text import genereer_advies                                        # noqa: E402
 from engine.standaard import verliesoppervlak, standaard_eis                          # noqa: E402
 from ventilatie.ventilatie import (bereken as vent_bereken, rapport as vent_rapport,  # noqa: E402
@@ -409,6 +410,9 @@ OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <div class=file-drop>Sleep hier de MagicPlan-CSV of dossier (.csv / .json)<br><input type=file name=bestand accept=".csv,.json"></div>
 <div class=btn-row><button class=btn>Inladen in de opname</button>
 <span class="muted small">Loop de gegevens daarna volledig na.</span></div></form></div></details></div>
+<div class=card><h2>Geen MagicPlan-opname?</h2><p class=muted>Lees één of meer bestaande
+plattegrondafbeeldingen uit met verplichte adviseurscontrole.</p>
+<a class="btn sec" href="{{url_for('plattegrond_import_pagina', tag=tag)}}">Plattegronden uploaden en controleren</a></div>
 {% if st.import_historie %}<div class=card><h2>🕓 Import-historie</h2>
 <p class="muted small">Elke MagicPlan-import met datum/tijd — zo zie je (ook vanaf een ander device) of dit de meest recente opname is.</p>
 <div class=table-wrap><table><thead><tr><th>Wanneer</th><th>Bestand</th><th>Vlakken</th></tr></thead><tbody>
@@ -2131,6 +2135,128 @@ def opname_vabi_huidig(tag):
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
                     headers={"Content-Disposition": "attachment; filename=vabi_huidig_%s.zip" % tag})
+
+
+# ---------------- plattegrond uit afbeelding (taak 022) ----------------
+PLATTEGROND_IMPORT_TMPL = """{{stepper|safe}}
+<h1>Plattegrond uit afbeelding — {{st.adres}}</h1>
+<p class=lead><a href="{{url_for('opname', tag=tag)}}">&larr; Terug naar de opname</a></p>
+<div class=warn><b>Gegevensbeleid:</b> pas na de knop <i>Afbeeldingen analyseren</i> worden de
+gekozen beelden naar Anthropic gestuurd. Gebruik plattegronden zonder namen of andere
+persoonsgegevens. De provider/modelversie wordt in het concept vastgelegd.</div>
+{% if bestaand %}<div class=warn>Dit dossier bevat al geometrie. De import overschrijft die nooit;
+maak hiervoor een leeg project.</div>{% endif %}
+<div class=card><h2>1 · Upload in verdiepingvolgorde</h2>
+<form method=post action="{{url_for('plattegrond_analyse', tag=tag)}}" enctype=multipart/form-data>
+<label>Verdiepingsnamen, één per regel</label><textarea name=verdiepingsnamen required
+placeholder="Begane grond&#10;1e verdieping"></textarea>
+<label>JPG/PNG-bestanden in exact dezelfde volgorde</label>
+<input type=file name=afbeeldingen accept="image/jpeg,image/png" multiple required>
+<p class="muted small">Live providercall: alleen na deze expliciete actie. Zonder aantoonbare maatlijn
+blijft oppervlakte onbekend en moet die in stap 2 handmatig worden ingevuld.</p>
+<button class=btn type=submit {% if bestaand %}disabled{% endif %}>Afbeeldingen analyseren</button>
+</form></div>
+{% if concept %}<div class=card><h2>2 · Controleren en corrigeren</h2>
+{% if concept.aandachtspunten %}<div class=warn><b>Aandachtspunten</b><ul>{% for a in concept.aandachtspunten %}<li>{{a}}</li>{% endfor %}</ul></div>{% endif %}
+<p>Controleer iedere naam, functie, oppervlakte, contour en verbinding. In JSON zijn alle waarden
+corrigeerbaar; <code>null</code>-oppervlakten moeten vóór bevestiging een gemeten waarde krijgen.</p>
+<form method=post action="{{url_for('plattegrond_bevestig', tag=tag)}}">
+<textarea name=bevestiging_json rows=28 required>{{bevestiging_json}}</textarea>
+<label><input type=checkbox name=expliciet_bevestigd value=ja required> Ik heb elke waarde en alle onzekerheden gecontroleerd.</label>
+<button class=btn type=submit>Gecontroleerde geometrie opslaan</button></form></div>{% endif %}
+"""
+
+
+def _pi_concept_pad(tag):
+    return os.path.join(_pdir(tag), "plattegrond_import", "concept.json")
+
+
+def _pi_bevestiging(concept):
+    return {"expliciet_bevestigd": True, "verdiepingen": [{
+        "bron_volgorde": v["volgorde"], "naam": v["naam"], "ruimtes": [{
+            "naam": r["naam"], "functie": r["functie"], "oppervlakte_m2": r["oppervlakte_m2"],
+            "contour_relatief": r["contour_relatief"], "aangrenzend": r["aangrenzend"]}
+            for r in v["ruimtes"]]} for v in concept["verdiepingen"]]}
+
+
+@app.route("/project/<tag>/plattegrond-import")
+@login_required
+def plattegrond_import_pagina(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    concept = None
+    try:
+        with open(_pi_concept_pad(tag), encoding="utf-8") as fh:
+            concept = json.load(fh)
+    except (OSError, ValueError):
+        pass
+    bevestiging = json.dumps(_pi_bevestiging(concept), ensure_ascii=False, indent=2) if concept else ""
+    return page(PLATTEGROND_IMPORT_TMPL, stepper=stepper("opname", st), tag=tag, st=st,
+                concept=concept, bevestiging_json=bevestiging,
+                bestaand=bool(dos.geometrie.vloeren or dos.geometrie.ruimtes))
+
+
+@app.route("/project/<tag>/plattegrond-import/analyse", methods=["POST"])
+@login_required
+def plattegrond_analyse(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    if dos.geometrie.vloeren or dos.geometrie.ruimtes:
+        flash("Bestaande geometrie wordt niet overschreven; gebruik een leeg project.")
+        return redirect(url_for("plattegrond_import_pagina", tag=tag))
+    uploads = [f for f in request.files.getlist("afbeeldingen") if f and f.filename]
+    namen = [x.strip() for x in request.form.get("verdiepingsnamen", "").splitlines() if x.strip()]
+    if not uploads or len(uploads) != len(namen) or len(set(namen)) != len(namen):
+        flash("Geef voor elk bestand precies één unieke verdiepingsnaam in dezelfde volgorde.")
+        return redirect(url_for("plattegrond_import_pagina", tag=tag))
+    root = os.path.join(_pdir(tag), "plattegrond_import")
+    os.makedirs(root, exist_ok=True)
+    beelden = []
+    try:
+        for i, (vloer_naam, upload) in enumerate(zip(namen, uploads), 1):
+            data = upload.read(25 * 1024 * 1024 + 1)
+            ext = ".png" if data.startswith(b"\x89PNG\r\n\x1a\n") else ".jpg" if data.startswith(b"\xff\xd8\xff") else ""
+            if not ext or len(data) > 25 * 1024 * 1024:
+                raise pi_mod.PlattegrondImportFout("Alleen echte JPG/PNG tot 25 MB is toegestaan.")
+            bestand = "%02d-%s%s" % (i, re.sub(r"[^a-z0-9]+", "-", vloer_naam.lower()).strip("-") or "vloer", ext)
+            with open(os.path.join(root, bestand), "wb") as fh:
+                fh.write(data)
+            beelden.append((bestand, data))
+        raw = pi_mod.analyseer_met_anthropic(beelden, _cfg())
+        if len(raw.get("verdiepingen") or []) != len(namen):
+            raise pi_mod.PlattegrondImportFout("Providerantwoord bevat niet precies elke geüploade verdieping.")
+        # De adviseursnamen en uploadvolgorde zijn leidend, nooit de provider.
+        for i, vloer in enumerate(raw.get("verdiepingen") or []):
+            vloer["naam"], vloer["afbeelding"] = namen[i], "plattegrond_import/" + beelden[i][0]
+        concept = pi_mod.valideer_vision_resultaat(raw, _pdir(tag))
+        with open(_pi_concept_pad(tag), "w", encoding="utf-8") as fh:
+            json.dump(concept, fh, ensure_ascii=False, indent=2)
+        flash("Analyse ontvangen. Controleer en corrigeer nu iedere waarde vóór bevestiging.")
+    except pi_mod.PlattegrondImportFout as exc:
+        flash(str(exc))
+    return redirect(url_for("plattegrond_import_pagina", tag=tag))
+
+
+@app.route("/project/<tag>/plattegrond-import/bevestig", methods=["POST"])
+@login_required
+def plattegrond_bevestig(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    try:
+        with open(_pi_concept_pad(tag), encoding="utf-8") as fh:
+            concept = json.load(fh)
+        bevestiging = json.loads(request.form.get("bevestiging_json", ""))
+        bevestiging["expliciet_bevestigd"] = request.form.get("expliciet_bevestigd") == "ja"
+        pi_mod.bevestig_in_dossier(dos, concept, bevestiging)
+        _dos_save(tag, st, dos)
+        flash("Gecontroleerde plattegrondgeometrie opgeslagen.")
+        return redirect(url_for("ventilatieplan_pagina", tag=tag))
+    except (OSError, ValueError, pi_mod.PlattegrondImportFout) as exc:
+        flash("Bevestigen mislukt: %s" % str(exc)[:180])
+        return redirect(url_for("plattegrond_import_pagina", tag=tag))
 
 
 # ---------------- ventilatieplan (taak 020: sleepbare pijlen op de plattegrond) ----------------

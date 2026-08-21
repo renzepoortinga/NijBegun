@@ -1,6 +1,6 @@
 # Plattegrond-vision: veilige contractgrens
 
-Status: providerkeuze en productvalidatie geblokkeerd; het offline contract is gebouwd.
+Status: Anthropic-providerroute en verplichte controlestap gebouwd; praktijkvalidatie blijft beperkt.
 
 ## Wat nu bestaat
 
@@ -30,17 +30,22 @@ onbekende ruimtenamen worden geweigerd. Het contract claimt geen geometrische aa
 op basis van contourafstand, omdat beeldcoördinaten daarvoor geen betrouwbare bouwkundige
 grens bewijzen.
 
-## Externe blockers
+## Provider en gegevensbeleid
 
-- De repository bevat geen gelabelde set van minimaal tien echte plattegronden. De vier
-  aanwezige PNG-bestanden zijn dashboardiconen. De eis van minder dan 5% afwijking is dus
-  niet getest en wordt niet geclaimd.
-- Er bestaat een Anthropic-koppeling voor tekstredactie, maar er is geen vastgelegd
-  visionmodel, versie, beeldgegevensbeleid of bewaartermijn. Dat is geen impliciete
-  toestemming om woningplattegronden naar die provider te sturen.
-- Voor providerimplementatie zijn nodig: expliciete keuze/autorisatie, gegevensbeleid en
-  minimaal tien echte plattegronden met per ruimte een onafhankelijke referentieoppervlakte.
-  Daarna moet elke modelversie opnieuw tegen die vaste set worden geëvalueerd.
+De webroute gebruikt de al aanwezige Anthropic-koppeling en vereist een expliciete
+`ai.vision_model` (of bestaande `ai.model`) plus API-sleutel. Uploaden of bekijken verstuurt niets:
+uitsluitend **Afbeeldingen analyseren** start de live call. De pagina waarschuwt vooraf dat namen en
+persoonsgegevens uit de tekening moeten worden verwijderd. Provider, exacte modelnaam en versie staan
+in ieder concept. Een andere provider of ander bewaarbeleid vereist een nieuw besluit.
 
-Tot deze blockers zijn opgelost bestaat bewust geen upload- of analyseknop: die zou
-functionaliteit suggereren die niet veilig of aantoonbaar beschikbaar is.
+## Benchmark en grens van de claim
+
+`tests/fixtures/plattegrond_benchmark_manifest.json` beschrijft tien afzonderlijke vloerbeelden over
+drie bestaande opnamebrontypen. Ze worden gecontroleerd/synthetisch uit dossiergeometrie gerenderd;
+`dashboard/plattegrond_benchmark.py` meet de pixeloppervlakken terug. De <5%-uitkomst geldt voor deze
+schaal-/pixeloverdracht en het dossiercontract, niet voor providerherkenning op willekeurige scans.
+
+Het bestaande echte `Bouwtekening.jpg` is als real-world smoke bekeken: zonder betrouwbare maatlijn
+en onafhankelijke ruimtelabels moet de schaal terecht onbekend blijven. Tien echte, onafhankelijk
+gelabelde scans ontbreken nog. Iedere modelversie moet later opnieuw tegen zo'n echte set worden
+geëvalueerd voordat een praktijknauwkeurigheidsclaim is toegestaan.

@@ -1,0 +1,17 @@
+{
+  "versie": "1",
+  "type": "gecontroleerd_synthetisch_afgeleid",
+  "aantal_plannen": 3,
+  "aantal_vloerbeelden": 10,
+  "bronnen": [
+    "tests/fixtures/magicplan_plan_voorbeeld.json",
+    "tests/fixtures/statistics_voorbeeld.csv",
+    "out/demo_dossier.json (lokaal voorbeeld; generator gebruikt alleen het vastgelegde brontype)"
+  ],
+  "doel": "Controle van pixeloppervlak, schaalgate en dossiercontract; geen provideraccuracyclaim.",
+  "real_world_smoke": {
+    "bron": "Bouwtekening.jpg (bestaand lokaal websitebeeld, niet herverdeeld)",
+    "resultaat": "Eén grondplan zichtbaar, maar geen betrouwbare maatlijn of onafhankelijke ruimtelabels; schaal moet onbekend blijven."
+  },
+  "beperking": "De <5%-uitkomst geldt alleen voor gecontroleerd gerenderde geometrie. Tien echte onafhankelijk gelabelde scans ontbreken."
+}

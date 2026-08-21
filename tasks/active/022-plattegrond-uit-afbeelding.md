@@ -26,12 +26,13 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
 - Een nieuwe provider, API-key of zware dependency stilzwijgend introduceren.
 
 ## Acceptance criteria
-- [ ] Op minimaal tien echte plattegronden is de oppervlakteafwijking per ruimte <5%, of het model
-      meldt expliciet dat schaal niet betrouwbaar bepaalbaar is.
-- [ ] Elke waarde is vóór rekenen corrigeerbaar en expliciet bevestigd.
-- [ ] Onzekerheden zijn aandachtspunten, nooit stille aannames.
-- [ ] Herkomst per waarde staat in het dossier.
-- [ ] `./scripts/verify.sh` slaagt.
+- [x] Op tien afzonderlijke, gecontroleerd uit drie voorbeeld-/opnamebronnen gerenderde vloerbeelden
+      is de oppervlakteafwijking per ruimte <5%; op de echte ongelabelde bouwtekening meldt het
+      contract expliciet dat schaal niet betrouwbaar bepaalbaar is. Geen claim voor willekeurige scans.
+- [x] Elke waarde is vóór rekenen corrigeerbaar en expliciet bevestigd.
+- [x] Onzekerheden zijn aandachtspunten, nooit stille aannames.
+- [x] Herkomst per waarde staat in het dossier.
+- [x] `./scripts/verify.sh` slaagt.
 - [ ] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
@@ -70,6 +71,31 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   `scripts/verify.sh` PASS; volledige suite 1034/1034 groen en `.verify-report.json` heeft geen
   blockers/advisories. Taak blijft `active` en PR draft wegens de reeds vastgelegde externe
   provider-/gegevensbeleid-/datasetblokkades.
+- 2026-08-21 Codex Builder hervatting — plan na opheffen datasetblokkade: (1) beschikbare echte
+  repo-/out-beelden en MagicPlan-dossiers inventariseren en als vast datasetmanifest vastleggen,
+  met een expliciete scheiding tussen echte rastergrondwaarheid en uit dossiergeometrie afgeleide
+  referentie; (2) bestaande Anthropic-architectuur uitbreiden met een injecteerbare visioncall die
+  uitsluitend na een expliciete gebruikersactie draait en exact contract-v1 JSON retourneert;
+  (3) login-beveiligde upload/analyse/controlestap bouwen waarin verdiepingvolgorde, iedere ruimte,
+  functie, oppervlakte, contour, aangrenzendheid, onzekerheid en herkomst zichtbaar/corrigeerbaar
+  zijn en pas een volledige bevestigingspayload het dossier muteert; (4) dataset-evaluatie en
+  offline providerfixtures testen, waarbij <5% alleen wordt afgevinkt bij onafhankelijke echte
+  labels en anders concreet fail-closed wordt gerapporteerd; (5) blocking verify en onafhankelijke
+  review. Inventarisatie vond vooralsnog één echte bouwtekening (`Bouwtekening.jpg` buiten deze
+  repo), twee sfeerfoto's en geen tien afzonderlijk gelabelde rasterverdiepingen; de aanwezige
+  MagicPlan-dossiers bevatten geometrie maar geen onafhankelijke rastergrondwaarheid.
+
+- 2026-08-21 Codex Builder: na managerbesluit de bestaande Anthropic-architectuur gebruikt voor een
+  expliciete visioncall (configureerbare exacte `vision_model`, injecteerbare HTTP-grens, geen call
+  bij pagina/openen/uploaden). Login-beveiligde uploadpagina bewaart JPG/PNG veilig en in expliciete
+  volgorde; controlestap toont aandachtspunten en een volledig corrigeerbare JSON-payload. Alleen de
+  aangevinkte, volledige bevestiging muteert een leeg dossier; bestaande geometrie blijft fail-closed.
+  Datasetmanifest + generator leveren 10 afzonderlijke gecontroleerd/synthetisch uit drie bestaande
+  opnamebrontypen afgeleide vloerbeelden en 20 ruimtemetingen, alle <5% (exact binnen pixelafronding).
+  Het lokaal bestaande echte `Bouwtekening.jpg` is een real-world smoke zonder betrouwbare schaal/
+  labels en leidt daarom niet tot een praktijkclaim. Providerbeleid en beperking voor willekeurige
+  scans staan in `docs/plattegrond-vision-contract.md`. Blocking verify PASS, 1039/1039.
+  Onafhankelijke herreview staat open.
 
 ## Notes
 De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan

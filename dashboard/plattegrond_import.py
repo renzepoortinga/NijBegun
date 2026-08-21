@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import math
 import os
+import base64
+import json
+import urllib.request
 from pathlib import Path, PureWindowsPath
 
 from core.dossier import Ruimte, VloerInfo
@@ -21,10 +24,57 @@ FUNCTIES = {
 BRON_AFGELEZEN = "afgelezen"
 BRON_HANDMATIG = "handmatig_gecorrigeerd"
 MAATLIJN_TOLERANTIE = 0.02  # 2%: ruimte voor OCR-/pixelafronding, niet voor een andere schaal.
+ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
+VISION_PROMPT = """Lees deze plattegronden in uploadvolgorde. Geef uitsluitend JSON volgens contractversie 1.
+Per verdieping: naam, afbeelding (exact aangeleverde bestandsnaam), schaal {betrouwbaar,
+meter_per_pixel, maatlijn_bewijzen}; per ruimte: naam, functie, oppervlakte_m2, contour_relatief
+(punten 0..1), aangrenzend en onzekerheden. Schaal is alleen betrouwbaar bij een zichtbare maatlijn;
+noem bron, letterlijk gelezen tekst, lengte_m en pixel_lengte. Zonder bewijs: betrouwbaar=false en
+oppervlakte_m2=null. Functies: verblijfsgebied, verblijfsruimte, keuken, badkamer, toilet, wasruimte,
+verkeer of overig. Verzin geen tekst, schaal, ruimte of verbinding."""
 
 
 class PlattegrondImportFout(ValueError):
     pass
+
+
+def analyseer_met_anthropic(afbeeldingen, cfg, opener=None):
+    """Expliciete live-providergrens; `opener` maakt de volledige call offline testbaar."""
+    ai = (cfg or {}).get("ai") or {}
+    sleutel = os.environ.get("ANTHROPIC_API_KEY") or ai.get("api_key", "")
+    model = str(ai.get("vision_model") or ai.get("model") or "").strip()
+    if not sleutel or not model:
+        raise PlattegrondImportFout("Configureer ai.api_key en ai.vision_model vóór beeldanalyse.")
+    if not afbeeldingen:
+        raise PlattegrondImportFout("Upload minimaal één plattegrond.")
+    content = [{"type": "text", "text": VISION_PROMPT}]
+    for naam, data in afbeeldingen:
+        media = "image/png" if data.startswith(b"\x89PNG") else "image/jpeg" if data.startswith(b"\xff\xd8\xff") else None
+        if not media:
+            raise PlattegrondImportFout(f"{naam}: alleen echte JPG/PNG is toegestaan.")
+        content.append({"type": "text", "text": "Bestandsnaam: " + naam})
+        content.append({"type": "image", "source": {"type": "base64", "media_type": media,
+                                                       "data": base64.b64encode(data).decode("ascii")}})
+    body = json.dumps({"model": model, "max_tokens": 7000,
+                       "messages": [{"role": "user", "content": content}]}).encode("utf-8")
+    req = urllib.request.Request(ANTHROPIC_URL, data=body, method="POST", headers={
+        "Content-Type": "application/json", "x-api-key": sleutel, "anthropic-version": "2023-06-01"})
+    try:
+        open_fn = opener or urllib.request.urlopen
+        with open_fn(req, timeout=120) as response:
+            antwoord = json.loads(response.read().decode("utf-8"))
+        tekst = "".join(x.get("text", "") for x in antwoord.get("content", []) if x.get("type") == "text").strip()
+        if tekst.startswith("```"):
+            tekst = tekst.split("\n", 1)[1].rsplit("```", 1)[0]
+        data = json.loads(tekst)
+        if not isinstance(data, dict):
+            raise ValueError("providerantwoord is geen JSON-object")
+    except PlattegrondImportFout:
+        raise
+    except Exception as exc:
+        raise PlattegrondImportFout("Beeldanalyse mislukt; controleer providerverbinding en antwoord.") from exc
+    data["model"] = {"provider": "Anthropic", "naam": model, "versie": model}
+    return data
 
 
 def _getal(waarde, label, *, nul_toegestaan=False):

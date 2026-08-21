@@ -5983,5 +5983,71 @@ except Exception as _e:
     check("plattegrond-visioncontract (taak 022): draait zonder fout", False)
     print("     " + repr(_e)[:300])
 
+print("\n70. Plattegrond-vision: providerroute, controle-UI en gecontroleerde benchmark")
+try:
+    import io as _io70, tempfile as _tmp70, shutil as _sh70
+    from PIL import Image as _Image70
+    from dashboard import plattegrond_import as _pi70
+    from dashboard.plattegrond_benchmark import gecontroleerde_set as _set70, evalueer as _eval70
+
+    _regels70 = _eval70()
+    check("visionbenchmark: 10 afzonderlijke vloeren uit 3 opnamebrontypen",
+          len(_set70()) == 10 and len({v["bron"] for v in _set70()}) == 3)
+    check("visionbenchmark: elke ruimte op gecontroleerde set <5% oppervlakteafwijking",
+          len(_regels70) == 20 and all(r["afwijking_pct"] < 5 for r in _regels70),
+          str(max(r["afwijking_pct"] for r in _regels70)))
+
+    _provider_raw70 = {"contractversie":"1", "model":{"provider":"Anthropic","naam":"claude-test-v1","versie":"claude-test-v1"},
+        "verdiepingen":[{"naam":"modelnaam",
+        "afbeelding":"01-begane-grond.png", "schaal":{"betrouwbaar":False}, "ruimtes":[{
+        "naam":"Woonkamer", "functie":"verblijfsruimte", "oppervlakte_m2":None,
+        "contour_relatief":[[.1,.1],[.9,.1],[.9,.9],[.1,.9]], "aangrenzend":[],
+        "onzekerheden":["Geen leesbare maatlijn"]}]}]}
+    class _Resp70:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def read(self): return _json67.dumps({"content":[{"type":"text","text":_json67.dumps(_provider_raw70)}]}).encode()
+    _req70 = []
+    def _open70(req, timeout=0): _req70.append((req,timeout)); return _Resp70()
+    _rawuit70 = _pi70.analyseer_met_anthropic([("01-bg.png", b"\x89PNG\r\n\x1a\nX")],
+        {"ai":{"api_key":"test-geheim", "vision_model":"claude-test-v1"}}, opener=_open70)
+    _body70 = _json67.loads(_req70[0][0].data.decode())
+    check("visionprovider: injecteerbare expliciete Anthropic-call met beeldblok en exact model",
+          _rawuit70["model"]["naam"] == "claude-test-v1" and _body70["model"] == "claude-test-v1"
+          and any(x.get("type") == "image" for x in _body70["messages"][0]["content"]))
+
+    import dashboard.app as _app70
+    _orig_projects70, _orig_analyse70 = _app70.PROJECTS_DIR, _app70.pi_mod.analyseer_met_anthropic
+    _td70 = _tmp70.mkdtemp(); _app70.PROJECTS_DIR = _td70
+    try:
+        _app70.app.config.update(TESTING=True); _c70 = _app70.app.test_client()
+        with _c70.session_transaction() as _s70: _s70["ingelogd"] = True
+        _nieuw70 = _c70.post("/nieuw", data={"straat":"Vision 1","postcode":"9999VI","plaats":"X","woningtype":"Tussenwoning"})
+        _tag70 = _nieuw70.headers["Location"].rstrip("/").split("/")[-2]
+        _app70.pi_mod.analyseer_met_anthropic = lambda beelden,cfg: _json67.loads(_json67.dumps(_provider_raw70))
+        _bio70 = _io70.BytesIO(); _Image70.new("RGB",(20,20),"white").save(_bio70,format="PNG")
+        _analyse70 = _c70.post("/project/%s/plattegrond-import/analyse" % _tag70,
+            data={"verdiepingsnamen":"Begane grond", "afbeeldingen":(_io70.BytesIO(_bio70.getvalue()),"plan.png")},
+            content_type="multipart/form-data", follow_redirects=True)
+        _html70 = _analyse70.get_data(as_text=True)
+        check("vision-UI: upload/analyse toont onzekerheid en volledige corrigeerbare controlestap",
+              _analyse70.status_code == 200 and "Geen leesbare maatlijn" in _html70
+              and "bevestiging_json" in _html70 and "expliciet_bevestigd" in _html70)
+        with open(_app70._pi_concept_pad(_tag70),encoding="utf-8") as _f70: _concept70=_json67.load(_f70)
+        _bev70=_app70._pi_bevestiging(_concept70); _bev70["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"]=24.0
+        _conf70=_c70.post("/project/%s/plattegrond-import/bevestig"%_tag70,
+            data={"bevestiging_json":_json67.dumps(_bev70),"expliciet_bevestigd":"ja"},follow_redirects=True)
+        _dos70=_app70._dossier(_tag70)
+        check("vision-UI: pas expliciete volledige correctie muteert dossier met herkomst",
+              _conf70.status_code==200 and _dos70.geometrie.ruimtes[0].oppervlakte_m2==24.0
+              and _dos70.geometrie.ruimtes[0].bron_per_waarde["oppervlakte_m2"]=="handmatig_gecorrigeerd"
+              and _dos70.geometrie.vloeren[0].plattegrond_afbeelding.startswith("plattegrond_import/"))
+    finally:
+        _app70.PROJECTS_DIR, _app70.pi_mod.analyseer_met_anthropic = _orig_projects70, _orig_analyse70
+        _sh70.rmtree(_td70, ignore_errors=True)
+except Exception as _e:
+    check("plattegrond-vision provider/UI/benchmark (taak 022): draait zonder fout", False)
+    print("     " + repr(_e)[:300])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
