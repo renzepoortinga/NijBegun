@@ -75,7 +75,7 @@ Zorgen dat de dakwizard een oud/importdak aantoonbaar vervangt of bewust aanvult
   `magicplan/extractor.py::_maak_dak()` (de hybride API+report-PDF-route, gebruikt door
   `magicplan/assemble.py`) zette de nieuwe `bron`-tag nooit → dossiers via dát pad omzeilden de
   hele fix. Gefixt: zelfde tag, 2 nieuwe tests. (2) een ongerelateerde bevinding
-  (`form_push.py` mist de taak-012-SSL-fix) vastgelegd als taak 019 i.p.v. hier meegefixt.
+  (`form_push.py` mist de taak-012-SSL-fix) vastgelegd als taak 025 i.p.v. hier meegefixt.
   799/801 groen.
 - 2026-08-15 (zelfde gesprek, review-ronde 2) — nieuwe `/code-review high` op de gefixte stand
   vond 3 verdere echte punten (van de 8 gemelde; de overige 5 zijn ofwel al expliciet
@@ -104,7 +104,7 @@ Zorgen dat de dakwizard een oud/importdak aantoonbaar vervangt of bewust aanvult
   eerst met het id=="dak"-legacy-signaal uit ronde 2 (die negeerde de herclassificatie) — opgelost
   door `dak_fallback_schildelen()` een expliciet gezette, niet-lege `bron` te laten winnen van het
   id-signaal. 3 nieuwe tests (AC9) dekken dit specifieke conflict. (3) een derde ongerelateerde
-  SSL-bevinding (`magicplan/photos.py`, zelfde patroon) toegevoegd aan taak 019 i.p.v. hier
+  SSL-bevinding (`magicplan/photos.py`, zelfde patroon) toegevoegd aan taak 025 i.p.v. hier
   meegefixt. 808/810 groen (2 bekende omgevingsfalen). `./scripts/verify.sh`: PASS. Geen verdere
   blockers gevonden in deze ronde — drie reviewrondes totaal, elke ronde kleiner en dichter bij
   alleen out-of-scope/pre-existente punten.

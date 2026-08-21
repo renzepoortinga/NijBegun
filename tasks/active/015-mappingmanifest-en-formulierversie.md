@@ -91,6 +91,10 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
   17 nieuwe checks uitgebreid (sectie AD: manifest-drift, doc-round-trip, fingerprint-stabiliteit/
   -gevoeligheid, dossier-meta-stempeling op alle 3 importroutes). 826/828 groen (2 bekende
   omgevingsfalen, ongewijzigd, taak 002). `./scripts/verify.sh`: PASS.
+- 2026-08-21 (Builder/Integrator, vervolgsessie) — vóór de rebase de twee lokaal aangemaakte
+  backlogtaken hernummerd om botsingen met de inmiddels gebruikte nummers te voorkomen:
+  dakkapel/preflight van 020 naar 023 en MagicPlan-SSL van 019 naar 025; interne verwijzingen
+  in taak 014 en 023 overeenkomstig bijgewerkt.
 
 ## Notes
 `magicplan-forms-live.md` (23-7) en de doorgevoerde dakvelden van 27-7 spreken elkaar nu tegen —

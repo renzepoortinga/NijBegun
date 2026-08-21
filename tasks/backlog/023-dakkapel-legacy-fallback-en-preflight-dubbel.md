@@ -1,16 +1,16 @@
 ---
-id: 020
+id: 023
 assigned:
 branch:
 depends_on: []
 ---
 
-# Task 020 — Dakkapel-op-legacy-placeholder mist het `id=="dak"`-signaal + 5x dubbele preflight-scan
+# Task 023 — Dakkapel-op-legacy-placeholder mist het `id=="dak"`-signaal + 5x dubbele preflight-scan
 
 ## Goal
 Twee kleine, niet aan elkaar gerelateerde bevindingen uit de `/code-review high`-ronde van taak 015
 (21-8-2026), die buiten die taak vallen (ze raken taak-014-code, al afgerond/`tasks/done/`) en dus
-hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak 019.
+hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak 025.
 
 ## Scope
 1. **`dashboard/app.py::opname_dakkapel()` (rond regel 1851)** — reclassificeert het moederdak alleen

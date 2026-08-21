@@ -1,11 +1,11 @@
 ---
-id: 019
+id: 025
 assigned:
 branch:
 depends_on: []
 ---
 
-# Task 019 — Fix ontbrekende SSL-profielfix in `magicplan/form_push.py` + `magicplan/photos.py`
+# Task 025 — Fix ontbrekende SSL-profielfix in `magicplan/form_push.py` + `magicplan/photos.py`
 
 ## Goal
 Meerdere `magicplan/*.py`-modules doen eigen `urllib.request.urlopen()`-calls naar
