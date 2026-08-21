@@ -35,17 +35,23 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
 - Andere catalogus- of maatregelkeuzelogica refactoren buiten noodzakelijke compatibiliteitsfixes.
 
 ## Acceptance criteria
-- [ ] `catalog/catalog.json` is uit de live API gegenereerd en bevat bron, API-specversie,
+- [x] `catalog/catalog.json` is uit de live API gegenereerd en bevat bron, API-specversie,
       ophaaltijd en contentfingerprint.
-- [ ] Geen geïmporteerde regel heeft leeg `onderdeel`, `level`, `code` of een ongeldige prijs.
-- [ ] Een gecommit verschilrapport verklaart toegevoegde/verwijderde codes en materiële
+- [x] Geen geïmporteerde regel heeft leeg `onderdeel`, `level`, `code` of een ongeldige prijs.
+- [x] Een gecommit verschilrapport verklaart toegevoegde/verwijderde codes en materiële
       prijsverschillen; alle projectreferenties naar verwijderde codes zijn afgehandeld of luid
       geblokkeerd.
-- [ ] Offline tests bewijzen de mapping en CI doet geen live netwerkcall.
-- [ ] `./scripts/verify.sh` slaagt met de Python-testcheck blocking.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] Offline tests bewijzen de mapping en CI doet geen live netwerkcall.
+- [x] `./scripts/verify.sh` slaagt met de Python-testcheck blocking.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
+
+- 2026-08-21 Codex integrator (afronding): onafhankelijke review-PASS op exact feature-HEAD
+  `431001a` bevestigd via reviewbewijscommit `65531a2`; alle acceptatiecriteria afgevinkt en taak
+  naar `tasks/done/` verplaatst. De eerste afrondingsrun raakte de bekende incidentele
+  atomische-VABI-test; een directe volledige suite was daarna 1034/1034 groen en de definitieve
+  blocking `verify.sh` PASS. Merge blijft aan de Manager.
 
 - 2026-08-21 Codex onafhankelijke reviewer op exact HEAD `431001a`: **VERDICT PASS**. De
   `V1-2-X3`-override matcht uitsluitend de exact vastgelegde hoogwerker en vereist daarna exact de
