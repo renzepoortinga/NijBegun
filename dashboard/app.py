@@ -1831,13 +1831,13 @@ def opname_vabi_huidig(tag):
         abort(404)
     outdir = os.path.join(_pdir(tag), "vabi_huidig")
     try:
-        generate_all.generate_all(dos, outdir, prefix="huidig")
+        export = generate_all.generate_all(dos, outdir, prefix="huidig")
     except Exception as e:
         flash("VABI-export genereren mislukte: %s" % e)
         return redirect(url_for("opname", tag=tag))
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as z:
-        for p in glob.glob(os.path.join(outdir, "*")):
+        for p in glob.glob(os.path.join(export["set_dir"], "*")):
             z.write(p, os.path.basename(p))
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
@@ -1973,7 +1973,8 @@ def vabi(tag):
         generate_all.generate_all(toekomst, outdir, prefix="na")
     except Exception as e:
         flash("VABI-import genereren mislukte: %s" % e)
-    vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(outdir, "*.xml")))
+    current_vabi_set = generate_all.current_set_dir(outdir)
+    vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(current_vabi_set, "*.xml"))) if current_vabi_set else []
     # gewogen verliesoppervlakte Als (NTA 8800 §6.7.3)
     verlies = verliesoppervlak(dos)
     # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen

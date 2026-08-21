@@ -3995,6 +3995,70 @@ try:
 except Exception as _e:
     check("KV exportgate: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("X3. VABI-exportset wordt atomisch gepubliceerd")
+try:
+    import json as _jsonX3
+    import shutil as _shX3
+    from vabi import generate_all as _gaX3
+    _tdX3 = tempfile.mkdtemp(prefix="nb_atomic_vabi_")
+    _dosX3 = build_sample()
+    _firstX3 = _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+    _manifest_pathX3 = os.path.join(_tdX3, _gaX3.MANIFEST)
+    with open(_manifest_pathX3, "rb") as _fhX3:
+        _manifest_beforeX3 = _fhX3.read()
+    _set_beforeX3 = _firstX3["set_dir"]
+    _files_beforeX3 = sorted(os.listdir(_set_beforeX3))
+
+    _targetsX3 = [
+        (_gaX3.constructie_generate, "write"),
+        (_gaX3.objecten_generate, "write"),
+        (_gaX3.installatie_generate, "write"),
+        (_gaX3, "_write_instructions"),
+    ]
+    _fault_resultsX3 = []
+    for _ownerX3, _attrX3 in _targetsX3:
+        _originalX3 = getattr(_ownerX3, _attrX3)
+        def _failX3(*_argsX3, **_kwargsX3):
+            raise RuntimeError("geinjecteerde writerfout")
+        setattr(_ownerX3, _attrX3, _failX3)
+        try:
+            try:
+                _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+                _raisedX3 = False
+            except RuntimeError:
+                _raisedX3 = True
+            with open(_manifest_pathX3, "rb") as _fhX3:
+                _manifest_afterX3 = _fhX3.read()
+            _setsX3 = [p for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR))
+                       if not p.startswith(".staging-")]
+            _stagingX3 = [p for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR))
+                          if p.startswith(".staging-")]
+            _fault_resultsX3.append(_raisedX3
+                                     and _manifest_afterX3 == _manifest_beforeX3
+                                     and _gaX3.current_set_dir(_tdX3) == _set_beforeX3
+                                     and sorted(os.listdir(_set_beforeX3)) == _files_beforeX3
+                                     and len(_setsX3) == 1 and not _stagingX3)
+        finally:
+            setattr(_ownerX3, _attrX3, _originalX3)
+    check("writerfout in elk van 4 fasen behoudt vorige complete set", all(_fault_resultsX3))
+
+    _secondX3 = _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+    with open(_manifest_pathX3, encoding="utf-8") as _fhX3:
+        _manifestX3 = _jsonX3.load(_fhX3)
+    _published_filesX3 = sorted(os.listdir(_secondX3["set_dir"]))
+    check("succes wijst naar precies een intern consistente immutable set",
+          _secondX3["set_dir"] != _set_beforeX3
+          and _gaX3.current_set_dir(_tdX3) == _secondX3["set_dir"]
+          and sorted(_manifestX3["files"]) == _published_filesX3
+          and all(os.path.dirname(_secondX3[k][0]) == _secondX3["set_dir"]
+                  for k in ("constructies", "objecten", "installaties")))
+    check("tijdelijke publicatiebestanden zijn na succes opgeruimd",
+          not any(p.startswith(".") for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR)))
+          and not any(p.startswith(".CURRENT-") for p in os.listdir(_tdX3)))
+    _shX3.rmtree(_tdX3, ignore_errors=True)
+except Exception as _e:
+    check("atomische VABI-exporttests draaien zonder fout", False); print("     " + repr(_e)[:220])
+
 print("Y. Gevel-onderbouwing + tegenoverliggende wand op dezelfde gevel (wandnummer +2)")
 try:
     import tempfile as _tfY, os as _osY
