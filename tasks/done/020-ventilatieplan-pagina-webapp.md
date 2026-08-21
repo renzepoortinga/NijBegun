@@ -83,6 +83,15 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   vanuit deze sessie (zelfde blokkade als taak 010, zie STATE.md); wél volledig end-to-end getest
   via de Flask test-client (GET/POST, validatie, persistentie over een 'herlaad', 404/400-paden).
   874/874 tests groen (49 nieuw t.o.v. taak 019: 34 datalaag + 15 route).
+- 2026-08-21: AI-review (`/code-review high`, andere agent, expliciet doel `feat/019...` zodat
+  precies de taak-020-diff werd beoordeeld — een eerste poging keek per ongeluk naar losse,
+  niet-gecommitte documentatiewijzigingen van een ander onderwerp in dezelfde werkmap). Vond 2
+  restbevindingen in `ventilatie/ventilatie.py` (taak 019, gemist door de vorige review): de
+  '0 m2'-waarschuwing toonde altijd '0 m2' i.p.v. het werkelijke (mogelijk negatieve) oppervlak,
+  en `deurbelasting()` valideerde alleen het eerste ruimtenaam in een overstroomweg tegen
+  `res['rows']`, niet de rest — een tikfout verderop gleed er stil doorheen, in tegenspraak met de
+  eigen docstring. Beide gefixt + 2 regressietests. 876/876 groen, verify.sh PASS. Taak gereed voor
+  tasks/done/.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.
