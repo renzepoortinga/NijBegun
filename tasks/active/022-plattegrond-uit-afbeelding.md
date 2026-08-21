@@ -37,6 +37,15 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
 
 ## Sessions
 
+- 2026-08-21 Codex onafhankelijke reviewer op feature-HEAD `db6bf40`: **VERDICT FAIL**.
+  Blocking verify zelf is PASS en `.verify-report.json` bevat geen advisories, maar twee
+  acceptatieblockers blijven: (1) de benchmark laadt of ontleedt geen van de drie genoemde
+  opnamebronnen en meet uitsluitend zelf hardgecodeerde, zelf gerenderde rechthoeken terug; daarmee
+  bewijst hij wel pixelboekhouding maar niet de afgevinkte claim “uit drie bronnen afgeleid”; (2)
+  upload en providergrens accepteren alleen op magic bytes, waardoor ook een ondecodeerbaar bestand
+  met PNG/JPEG-prefix als “echte JPG/PNG” wordt opgeslagen en verstuurd (de contracttest gebruikt
+  zelfs bewust zo'n nep-PNG). Daarnaast is de fallback van expliciet `ai.vision_model` naar het
+  algemene `ai.model` een niet-blokkerend configuratierisico. Geen featurewijzigingen door reviewer.
 - 2026-08-21 Codex Manager: door expliciete opdracht "alle openstaande taken" geclaimd. Eerst
   discovery op bestaande providers/dataset; geen live visioncall of providerkeuze zonder bewijs en
   autorisatie. Taak 020 is gemerged en levert de gecontroleerde ruimtegeometrie/topologieroute.
