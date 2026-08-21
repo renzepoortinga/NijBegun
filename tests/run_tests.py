@@ -34,9 +34,11 @@ check("sample heeft ruimtes", len(d.geometrie.ruimtes) > 0)
 print("2. Catalogus")
 cat = json.load(open(CATALOG, encoding="utf-8"))
 check("catalogus bevat >250 actuele API-regels", len(cat["maatregelen"]) > 250, str(len(cat["maatregelen"])))
-check("catalogus heeft herleidbare API-metadata",
-      cat.get("api_specversie") == "1.0" and str(cat.get("opgehaald_op", "")).endswith("+00:00")
-      and str(cat.get("contentfingerprint", "")).startswith("sha256:"))
+_is_api_catalog = cat.get("bron") == "https://api.nij-begun.project.abl.nu/api/v1/measures"
+check("catalogusbron is coherent herleidbaar",
+      (cat.get("api_specversie") == "1.0" and str(cat.get("opgehaald_op", "")).endswith("+00:00")
+       and str(cat.get("contentfingerprint", "")).startswith("sha256:")) if _is_api_catalog
+      else cat.get("versie") == "Q3_2026_21072026")
 check("V6 kierdichting aanwezig", any(m["code"].startswith("V6") for m in cat["maatregelen"]))
 
 print("3. VABI monitor-parser")
@@ -1354,8 +1356,8 @@ except Exception as _e:
 
 print("\n36. Catalogus-API live-mapping (JSON:API -> catalog.json)")
 try:
-    from catalog.api_client import (compare_catalogs, content_fingerprint, map_measures_to_catalog,
-                                    validate_catalog)
+    from catalog.api_client import (_stage_bytes, compare_catalogs, main as catalog_api_main,
+                                    map_measures_to_catalog, publish_outputs, validate_catalog)
     _raw = {"data": [
         {"id": "V1-1-A1", "type": "measure", "attributes": {
             "name": "Spouwmuurisolatie 60", "unit": "m²", "rcValue": 1.7, "thicknessInMm": 60,
@@ -1372,7 +1374,8 @@ try:
             "regularCosts": [{"id": "V1-2-A1", "type": "cost", "attributes": {
                 "contractorValuePerUnit": 50.0, "minUnits": 0, "maxUnits": None, "unit": "m²"}}],
             "additionalCosts": [{"id": "V1-1-X7", "type": "cost", "attributes": {
-                "contractorValuePerUnit": 91.13, "unit": "won", "notes": "Betreft: dubbel"}}]}},
+                "contractorValuePerUnit": 91.13, "unit": "won",
+                "notes": "Betreft: Spouw richting dak dichtmaken van binnenuit"}}]}},
     ]}
     _cat = map_measures_to_catalog(_raw, opgehaald_op="2026-08-21T12:00:00+00:00")
     _ms = {m["code"]: m for m in _cat["maatregelen"]}
@@ -1387,9 +1390,22 @@ try:
     check("api-map: extra rc_waarde meegenomen", _ms["V1-1-A1"].get("rc_waarde") == 1.7)
     check("api-map: specversie/ophaaltijd/fingerprint vastgelegd",
           _cat["api_specversie"] == "1.0" and _cat["opgehaald_op"] == "2026-08-21T12:00:00+00:00"
-          and _cat["contentfingerprint"] == content_fingerprint(_raw))
-    check("api-map: fingerprint onafhankelijk van API-lijstvolgorde",
-          content_fingerprint(_raw) == content_fingerprint({"data": list(reversed(_raw["data"]))}))
+          and _cat["contentfingerprint"].startswith("sha256:"))
+    _cat_reordered = map_measures_to_catalog({"data": list(reversed(_raw["data"]))},
+                                             opgehaald_op="2026-08-22T12:00:00+00:00")
+    check("api-map: output/fingerprint onafhankelijk van API-lijstvolgorde",
+          _cat["contentfingerprint"] == _cat_reordered["contentfingerprint"]
+          and _cat["maatregelen"] == _cat_reordered["maatregelen"])
+    _conflict = json.loads(json.dumps(_raw))
+    _conflict["data"][1]["attributes"]["additionalCosts"][0]["attributes"]["contractorValuePerUnit"] = 999
+    _conflict_blocked = []
+    for _payload in (_conflict, {"data": list(reversed(_conflict["data"]))}):
+        try:
+            map_measures_to_catalog(_payload)
+            _conflict_blocked.append(False)
+        except ValueError as _ce:
+            _conflict_blocked.append("Conflicterende dubbele cataloguscode V1-1-X7" in str(_ce))
+    check("api-map: conflicterende duplicate blokkeert in beide API-volgordes", all(_conflict_blocked))
     _diff = compare_catalogs({"maatregelen": [_ms["V1-1-A1"], {"code": "VERVALLEN"}]}, _cat)
     check("api-map: verschilvalidatie toegevoegd/verwijderd/gewijzigd",
           "VERVALLEN" in _diff["verwijderd"] and "V1-1-X7" in _diff["toegevoegd"]
@@ -1405,6 +1421,60 @@ try:
     _b5 = map_measures_to_catalog(_b5_raw)["maatregelen"][0]
     check("api-map: B5-kostcode erft expliciete V5-categorie",
           _b5["onderdeel"] == "E Ventilatie" and _b5["level"] == "Level 5 - VENTILATIE")
+
+    with tempfile.TemporaryDirectory() as _pubdir:
+        _outp = os.path.join(_pubdir, "catalog.json")
+        _repp = os.path.join(_pubdir, "diff.md")
+        open(_outp, "w", encoding="utf-8").write("OUDE CATALOGUS")
+        open(_repp, "w", encoding="utf-8").write("OUD RAPPORT")
+
+        def _stage_fail(_path, _payload):
+            raise OSError("schijf vol")
+        try:
+            publish_outputs(_cat, _outp, _repp, "NIEUW RAPPORT", stage_func=_stage_fail)
+            _write_rollback = False
+        except OSError:
+            _write_rollback = (open(_outp, encoding="utf-8").read() == "OUDE CATALOGUS"
+                               and open(_repp, encoding="utf-8").read() == "OUD RAPPORT")
+        check("api-publicatie: write/disk-fout behoudt beide oude bestanden", _write_rollback)
+
+        _stage_calls = [0]
+        def _stage_second_fails(path, payload):
+            _stage_calls[0] += 1
+            if _stage_calls[0] == 2:
+                raise OSError("tweede staging-write faalt")
+            return _stage_bytes(path, payload)
+        try:
+            publish_outputs(_cat, _outp, _repp, "NIEUW RAPPORT", stage_func=_stage_second_fails)
+            _partial_stage_clean = False
+        except OSError:
+            _partial_stage_clean = (open(_outp, encoding="utf-8").read() == "OUDE CATALOGUS"
+                                    and open(_repp, encoding="utf-8").read() == "OUD RAPPORT"
+                                    and not any(n.startswith(".catalog-stage-") for n in os.listdir(_pubdir)))
+        check("api-publicatie: gedeeltelijke stagingfout ruimt temp op zonder mutatie", _partial_stage_clean)
+
+        _replace_calls = [0]
+        def _replace_second_fails(src, dst):
+            _replace_calls[0] += 1
+            if _replace_calls[0] == 2:
+                raise OSError("replace rapport faalt")
+            os.replace(src, dst)
+        try:
+            publish_outputs(_cat, _outp, _repp, "NIEUW RAPPORT", replace_func=_replace_second_fails)
+            _replace_rollback = False
+        except OSError:
+            _replace_rollback = (open(_outp, encoding="utf-8").read() == "OUDE CATALOGUS"
+                                 and open(_repp, encoding="utf-8").read() == "OUD RAPPORT"
+                                 and not any(n.startswith(".catalog-stage-") for n in os.listdir(_pubdir)))
+        check("api-publicatie: tweede replace-fout rolt catalogus terug en ruimt temps op", _replace_rollback)
+
+        _fixture_path = os.path.join(HERE, "fixtures", "nijbegun_catalog_b5_response.json")
+        _missing = os.path.join(_pubdir, "bestaat-niet.json")
+        _precondition_rc = catalog_api_main(["--map-json", _fixture_path, "--out", _outp,
+                                             "--previous", _missing, "--diff-report", _repp])
+        check("api-publicatie: ontbrekende previous faalt vóór enige mutatie",
+              _precondition_rc == 1 and open(_outp, encoding="utf-8").read() == "OUDE CATALOGUS"
+              and open(_repp, encoding="utf-8").read() == "OUD RAPPORT")
 except Exception as _e:
     check("api-map: mapper draait zonder fout", False)
     print("     " + repr(_e)[:160])

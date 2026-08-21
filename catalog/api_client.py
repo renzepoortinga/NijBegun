@@ -26,7 +26,7 @@ Richtingen:
 BTW: contractorValuePerUnit = incl. btw (live geverifieerd: V1-1-A1 -> 23.09 ~= catalog 23.0867).
 excl. = incl / 1.21. De API geeft geen inhoudelijk versielabel; fingerprint + UTC-ophaaltijd pinnen de stand.
 """
-import os, sys, json, argparse, datetime, hashlib, math, shutil, urllib.request, urllib.error
+import os, sys, json, argparse, datetime, hashlib, math, tempfile, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -126,8 +126,9 @@ def _canonical(value):
     return value
 
 
-def content_fingerprint(raw):
-    payload = json.dumps(_canonical(raw), sort_keys=True, ensure_ascii=False,
+def content_fingerprint(mapped_rows):
+    """Fingerprint exact de gevalideerde, gemapte catalogusinhoud (zonder vluchtige metadata)."""
+    payload = json.dumps(_canonical(mapped_rows), sort_keys=True, ensure_ascii=False,
                          separators=(",", ":")).encode("utf-8")
     return "sha256:" + hashlib.sha256(payload).hexdigest()
 
@@ -176,13 +177,11 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
     data = raw.get("data") if isinstance(raw, dict) else raw
     if not isinstance(data, list):
         data = []
-    rows = []
-    seen = set()                     # dedupe op code (X-codes zijn gedeeld binnen een subcategorie)
+    by_code = {}                     # X-codes zijn soms identiek gedeeld binnen een subcategorie
 
     def add(code, onderdeel, level, oms, eenheid, incl, extra=None):
-        if not code or code in seen:
+        if not code:
             return
-        seen.add(code)
         incl = _to_float(incl)
         excl = round(incl / BTW, 4) if incl is not None else None
         row = {
@@ -196,7 +195,10 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
         }
         if extra:
             row.update({k: v for k, v in extra.items() if v not in (None, "")})
-        rows.append(row)
+        existing = by_code.get(code)
+        if existing is not None and existing != row:
+            raise ValueError("Conflicterende dubbele cataloguscode %s" % code)
+        by_code[code] = row           # identieke duplicaten expliciet en deterministisch dedupliceren
 
     for node in data:
         mid, at = _attr(node)
@@ -225,13 +227,15 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
                 _schoon_notitie(ca.get("notes")) or naam, ca.get("unit"),
                 ca.get("contractorValuePerUnit"))
 
+    rows = [by_code[code] for code in sorted(by_code)]
+    fingerprint = content_fingerprint(rows)
     fetched = opgehaald_op or datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
     catalog = {
         "bron": API_SOURCE,
         "api_specversie": API_SPEC_VERSION,
-        "versie": versie or "api-spec-1.0+" + content_fingerprint(raw).split(":", 1)[1][:12],
+        "versie": versie or "api-spec-1.0+" + fingerprint.split(":", 1)[1][:12],
         "opgehaald_op": fetched,
-        "contentfingerprint": content_fingerprint(raw),
+        "contentfingerprint": fingerprint,
         "gegenereerd_op": fetched[:10],
         "aantal_maatregelen": len(rows),
         "maatregelen": rows,
@@ -255,7 +259,7 @@ def compare_catalogs(previous, current):
             "gewijzigd": changed}
 
 
-def write_diff_report(diff, path, previous, current):
+def render_diff_report(diff, previous, current):
     lines = ["# Verschilrapport maatregelencatalogus", "",
              "Vergelijking van `%s` met API-fingerprint `%s`." %
              (previous.get("versie", "onbekend"), current["contentfingerprint"]), "",
@@ -270,26 +274,100 @@ def write_diff_report(diff, path, previous, current):
         for field, values in item["verschillen"].items():
             details.append("%s: `%s` -> `%s`" % (field, values["was"], values["wordt"]))
         lines.append("- **%s** — %s" % (item["code"], "; ".join(details)))
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines) + "\n")
+    return "\n".join(lines) + "\n"
 
 
-def write_catalog(catalog, out_path):
-    if os.path.exists(out_path):                # back-up van de huidige catalogus
-        shutil.copy2(out_path, out_path + ".bak")
-    with open(out_path, "w", encoding="utf-8") as fh:
-        json.dump(catalog, fh, ensure_ascii=False, indent=2)
+def _stage_bytes(path, payload):
+    directory = os.path.dirname(os.path.abspath(path))
+    fd, temp_path = tempfile.mkstemp(prefix=".catalog-stage-", dir=directory)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+            fh.flush()
+            os.fsync(fh.fileno())
+        return temp_path
+    except Exception:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        try:
+            os.unlink(temp_path)
+        except OSError:
+            pass
+        raise
 
 
-def main():
+def publish_outputs(catalog, out_path, report_path=None, report_text=None,
+                    stage_func=_stage_bytes, replace_func=os.replace):
+    """Publiceer catalogus + optioneel rapport als transactie, met rollback bij replace-fout."""
+    targets = [(os.path.abspath(out_path),
+                (json.dumps(catalog, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))]
+    if report_path is not None:
+        if report_text is None:
+            raise ValueError("report_text ontbreekt")
+        targets.append((os.path.abspath(report_path), report_text.encode("utf-8")))
+    paths = [path for path, _ in targets]
+    if len(set(os.path.normcase(path) for path in paths)) != len(paths):
+        raise ValueError("Catalogus en verschilrapport mogen niet hetzelfde pad zijn")
+    for path in paths:
+        directory = os.path.dirname(path)
+        if not os.path.isdir(directory):
+            raise ValueError("Doelmap bestaat niet: %s" % directory)
+
+    staged, rollback, published = {}, {}, []
+    try:
+        # Eerst alle nieuwe én oude inhoud duurzaam stagen; tot hier blijft zichtbare staat intact.
+        for path, payload in targets:
+            staged[path] = stage_func(path, payload)
+            rollback[path] = stage_func(path, open(path, "rb").read()) if os.path.exists(path) else None
+        for path, _ in targets:
+            replace_func(staged[path], path)
+            staged[path] = None
+            published.append(path)
+    except Exception:
+        for path in reversed(published):
+            old = rollback.get(path)
+            if old is None:
+                try:
+                    os.unlink(path)
+                except FileNotFoundError:
+                    pass
+            else:
+                os.replace(old, path)
+                rollback[path] = None
+        raise
+    finally:
+        for temp_path in list(staged.values()) + list(rollback.values()):
+            if temp_path:
+                try:
+                    os.unlink(temp_path)
+                except FileNotFoundError:
+                    pass
+
+
+def main(argv=None):
     ap = argparse.ArgumentParser(description="Nij Begun catalogus-API -> catalog.json")
-    ap.add_argument("--refresh", action="store_true", help="live ophalen en catalog.json herschrijven")
-    ap.add_argument("--map-json", help="offline: een opgeslagen API-response mappen")
+    source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--refresh", action="store_true", help="live ophalen en catalog.json herschrijven")
+    source.add_argument("--map-json", help="offline: een opgeslagen API-response mappen")
     ap.add_argument("--env", help="optioneel env-bestand; publieke API vereist dit niet")
     ap.add_argument("--out", default=os.path.join(HERE, "catalog.json"))
     ap.add_argument("--previous", help="vorige catalogus voor verschilrapport (default: bestaand --out)")
     ap.add_argument("--diff-report", help="schrijf controleerbaar Markdown-verschilrapport")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
+
+    previous_path = a.previous or a.out
+    if a.diff_report and not os.path.isfile(previous_path):
+        print("FOUT: --diff-report vereist een bestaande vorige catalogus")
+        return 1
+    if os.path.abspath(a.out) == os.path.abspath(a.diff_report or ""):
+        print("FOUT: catalogus en verschilrapport mogen niet hetzelfde pad zijn")
+        return 1
+    for target in (a.out, a.diff_report):
+        if target and not os.path.isdir(os.path.dirname(os.path.abspath(target))):
+            print("FOUT: doelmap bestaat niet: %s" % os.path.dirname(os.path.abspath(target)))
+            return 1
 
     if a.map_json:
         raw = json.load(open(a.map_json, encoding="utf-8"))
@@ -300,27 +378,27 @@ def main():
         except urllib.error.URLError as e:
             print("FOUT: kon de API niet bereiken (%s). Internet nodig; vanaf de tool-sandbox lukt dit niet."
                   % getattr(e, "reason", e))
-            sys.exit(2)
-        os.makedirs(os.path.join(ROOT, "out"), exist_ok=True)
-        with open(os.path.join(ROOT, "out", "catalog_api_raw.json"), "w", encoding="utf-8") as fh:
-            json.dump(raw, fh, ensure_ascii=False, indent=1)
-        print("  ruwe API-response -> out/catalog_api_raw.json")
+            return 2
+    if os.path.exists(previous_path):
+        with open(previous_path, encoding="utf-8") as fh:
+            previous = json.load(fh)
     else:
-        print("Geef --refresh (live) of --map-json <pad> (offline) op."); sys.exit(1)
-
-    previous_path = a.previous or a.out
-    previous = json.load(open(previous_path, encoding="utf-8")) if os.path.exists(previous_path) else None
-    catalog = map_measures_to_catalog(raw)
+        previous = None
+    try:
+        catalog = map_measures_to_catalog(raw)
+    except ValueError as exc:
+        print("FOUT: %s" % exc)
+        return 1
     if not catalog["maatregelen"]:
         print("FOUT: 0 maatregelen gemapt. Check de JSON:API-structuur tegen out/catalog_api_raw.json.")
-        sys.exit(1)
-    write_catalog(catalog, a.out)
+        return 1
+    report_text = None
     if a.diff_report:
-        if previous is None:
-            print("FOUT: --diff-report vereist een bestaande vorige catalogus"); sys.exit(1)
-        write_diff_report(compare_catalogs(previous, catalog), a.diff_report, previous, catalog)
+        report_text = render_diff_report(compare_catalogs(previous, catalog), previous, catalog)
+    publish_outputs(catalog, a.out, a.diff_report, report_text)
     print("OK: %s | %d catalogrijen | versie %s" % (a.out, catalog["aantal_maatregelen"], catalog["versie"]))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

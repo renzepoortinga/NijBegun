@@ -1,94 +1,125 @@
 {
-  "bron": "https://api.nij-begun.project.abl.nu/api/v1/measures",
-  "api_specversie": "1.0",
-  "versie": "api-spec-1.0+558ce9ae2c87",
-  "opgehaald_op": "2026-08-21T12:44:59+00:00",
-  "contentfingerprint": "sha256:558ce9ae2c871223bf62fb12f5a3c44315647fbf372d33b3ff8ea6199144797b",
-  "gegenereerd_op": "2026-08-21",
-  "aantal_maatregelen": 291,
+  "bron": "Maatregelencatalogus-Q3_2026_21072026.xlsx",
+  "versie": "Q3_2026_21072026",
+  "gegenereerd_op": "2026-07-27",
+  "aantal_maatregelen": 338,
   "maatregelen": [
     {
       "code": "V1-1-A1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie vlokken (minerale wol) 60 mm < 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Spouwmuurisolatie vlokken (minerale wol) 60 mm van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 19.0826,
-      "prijs_per_eenheid_incl_btw": 23.09,
-      "rc_waarde": 1.7,
-      "dikte_mm": 60.0
+      "prijs_per_eenheid_excl": 19.665,
+      "prijs_per_eenheid_incl_btw": 23.0867
     },
     {
-      "code": "V1-1-X4",
+      "code": "V1-1-A2",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Hoogwerker op-/afbouw/huur in weken",
-      "eenheid": "wk",
-      "prijs_per_eenheid_excl": 569.2562,
-      "prijs_per_eenheid_incl_btw": 688.8
-    },
-    {
-      "code": "V1-1-X5",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Knip-/snijvoegherstel boorgaten",
+      "omschrijving": "Spouwmuurisolatie vlokken (minerale wol) 60 mm van 45 m² tot 75 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 7.5289,
-      "prijs_per_eenheid_incl_btw": 9.11
+      "prijs_per_eenheid_excl": 18.0,
+      "prijs_per_eenheid_incl_btw": 21.132
     },
     {
-      "code": "V1-1-X6",
+      "code": "V1-1-A3",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Rolsteiger bij smalle doorgang woning",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 150.6281,
-      "prijs_per_eenheid_incl_btw": 182.26
+      "omschrijving": "Spouwmuurisolatie vlokken (minerale wol) 60 mm vanaf 75 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 17.595,
+      "prijs_per_eenheid_incl_btw": 20.6565
     },
     {
-      "code": "V1-1-X8",
+      "code": "V1-1-A4",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouw richting dak dichtmaken van buitenaf via dakpannen excl. hoogwerker",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 175.7355,
-      "prijs_per_eenheid_incl_btw": 212.64
+      "omschrijving": "╚ Vlokken meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.1035,
+      "prijs_per_eenheid_incl_btw": 0.1215
     },
     {
-      "code": "V1-1-X7",
+      "code": "V1-1-B1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouw richting dak dichtmaken van binnenuit",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 75.314,
-      "prijs_per_eenheid_incl_btw": 91.13
+      "omschrijving": "Spouwmuurisolatie EPS parels / korrels 60 mm van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 19.665,
+      "prijs_per_eenheid_incl_btw": 23.0867
     },
     {
-      "code": "V1-1-X9",
+      "code": "V1-1-B2",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwafscheiders",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 8.0331,
-      "prijs_per_eenheid_incl_btw": 9.72
+      "omschrijving": "Spouwmuurisolatie EPS parels / korrels 60 mm van 45 m² tot 75 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 18.63,
+      "prijs_per_eenheid_incl_btw": 21.8716
     },
     {
-      "code": "V1-1-X2",
+      "code": "V1-1-B3",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 150.6281,
-      "prijs_per_eenheid_incl_btw": 182.26
+      "omschrijving": "Spouwmuurisolatie EPS parels / korrels 60 mm vanaf 75 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 17.595,
+      "prijs_per_eenheid_incl_btw": 20.6565
     },
     {
-      "code": "V1-1-X3",
+      "code": "V1-1-B4",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Opname voor begin werkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 75.314,
-      "prijs_per_eenheid_incl_btw": 91.13
+      "omschrijving": "╚ EPS meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.1035,
+      "prijs_per_eenheid_incl_btw": 0.1215
+    },
+    {
+      "code": "V1-1-C1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Spouwmuurisolatie PUR schuim 60 mm van 0 m² tot 70 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 24.84,
+      "prijs_per_eenheid_incl_btw": 29.1622
+    },
+    {
+      "code": "V1-1-C2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Spouwmuurisolatie PUR schuim 60 mm van 70 m² tot 130 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 23.805,
+      "prijs_per_eenheid_incl_btw": 27.9471
+    },
+    {
+      "code": "V1-1-C3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Spouwmuurisolatie PUR schuim 60 mm vanaf 130 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 22.77,
+      "prijs_per_eenheid_incl_btw": 26.732
+    },
+    {
+      "code": "V1-1-C4",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "╚ PUR meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.2329,
+      "prijs_per_eenheid_incl_btw": 0.2734
+    },
+    {
+      "code": "V1-1-D1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Spouwmuurisolatie schuim (UF schuim) 60 mm.",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": null
     },
     {
       "code": "V1-1-X1",
@@ -96,62 +127,80 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Minimum Tarief (van toepassing indien totaal spuit en/of inblaas isoleren lager is dan € 750)",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 753.157,
-      "prijs_per_eenheid_incl_btw": 911.32
+      "prijs_per_eenheid_excl": 776.25,
+      "prijs_per_eenheid_incl_btw": 911.3175
     },
     {
-      "code": "V1-1-X11",
+      "code": "V1-1-X2",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Koekoekrooster incl. boorwerk",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 110.4628,
-      "prijs_per_eenheid_incl_btw": 133.66
-    },
-    {
-      "code": "V1-1-X15",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Betreft : eDNA sporenonderzoek tussen- of rijwoning",
+      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 400.0,
-      "prijs_per_eenheid_incl_btw": 484.0
+      "prijs_per_eenheid_excl": 155.25,
+      "prijs_per_eenheid_incl_btw": 182.2635
     },
     {
-      "code": "V1-1-X13",
+      "code": "V1-1-X3",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Natuurvrij maken tussen- of rijwoning",
+      "omschrijving": "Opname voor begin werkzaamheden",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 360.0,
-      "prijs_per_eenheid_incl_btw": 435.6
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 91.1317
     },
     {
-      "code": "V1-1-X14",
+      "code": "V1-1-X4",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Natuurvrij maken hoek- of vrijstaande woning",
+      "omschrijving": "Hoogwerker op-/afbouw/huur in weken",
+      "eenheid": "wk",
+      "prijs_per_eenheid_excl": 569.2544,
+      "prijs_per_eenheid_incl_btw": 688.7979
+    },
+    {
+      "code": "V1-1-X5",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Knip-/snijvoegherstel boorgaten",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 7.7625,
+      "prijs_per_eenheid_incl_btw": 9.1132
+    },
+    {
+      "code": "V1-1-X6",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Rolsteiger bij smalle doorgang woning",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 410.0,
-      "prijs_per_eenheid_incl_btw": 496.1
+      "prijs_per_eenheid_excl": 155.25,
+      "prijs_per_eenheid_incl_btw": 182.2635
     },
     {
-      "code": "V1-1-X16",
+      "code": "V1-1-X7",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Betreft : eDNA sporenonderzoek hoek- of vrijstaande woning",
+      "omschrijving": "Spouw richting dak dichtmaken van binnenuit",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 400.0,
-      "prijs_per_eenheid_incl_btw": 484.0
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 91.1317
     },
     {
-      "code": "V1-1-X17",
+      "code": "V1-1-X8",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Alternatieve verblijfplaats (stelpost)",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 125.0,
-      "prijs_per_eenheid_incl_btw": 151.25
+      "omschrijving": "Spouw richting dak dichtmaken van buitenaf via dakpannen excl. hoogwerker",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 181.125,
+      "prijs_per_eenheid_incl_btw": 212.6407
+    },
+    {
+      "code": "V1-1-X9",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Spouwafscheiders",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 8.28,
+      "prijs_per_eenheid_incl_btw": 9.7207
     },
     {
       "code": "V1-1-X10",
@@ -159,155 +208,116 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Ventilatiekokers min. 1 st/12m² BVO  incl. boorwerk",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 32.6364,
-      "prijs_per_eenheid_incl_btw": 39.49
+      "prijs_per_eenheid_excl": 33.6375,
+      "prijs_per_eenheid_incl_btw": 39.4904
     },
     {
-      "code": "V1-1-A2",
+      "code": "V1-1-X11",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie vlokken (minerale wol) 60 mm 46-75 m² van 45 m² tot 75 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 17.4628,
-      "prijs_per_eenheid_incl_btw": 21.13,
-      "rc_waarde": 1.7,
-      "dikte_mm": 60.0
+      "omschrijving": "Koekoekrooster incl. boorwerk",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 113.85,
+      "prijs_per_eenheid_incl_btw": 133.6599
     },
     {
-      "code": "V1-1-A3",
+      "code": "V1-1-X12",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie vlokken (minerale wol) 60 mm > 75 m² vanaf 76 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 17.0744,
-      "prijs_per_eenheid_incl_btw": 20.66,
-      "rc_waarde": 1.7,
-      "dikte_mm": 60.0
+      "omschrijving": "Natuurvrij maken bij spouwisolatie     {vervallen}  zie X13 X14",
+      "eenheid": "",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
     },
     {
-      "code": "V1-1-A4",
+      "code": "V1-1-X13",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Vlokken meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.0083,
-      "prijs_per_eenheid_incl_btw": 1.22,
-      "dikte_mm": 10.0
+      "omschrijving": "Natuurvrij maken tussen- of rijwoning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 371.04,
+      "prijs_per_eenheid_incl_btw": 435.601
     },
     {
-      "code": "V1-1-B1",
+      "code": "V1-1-X14",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie EPS parels / korrels 60 mm < 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 19.0826,
-      "prijs_per_eenheid_incl_btw": 23.09,
-      "rc_waarde": 1.67,
-      "dikte_mm": 60.0
+      "omschrijving": "Natuurvrij maken hoek- of vrijstaande woning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 422.57,
+      "prijs_per_eenheid_incl_btw": 496.0972
     },
     {
-      "code": "V1-1-B2",
+      "code": "V1-1-X15",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie EPS parels / korrels 60 mm 46-75 m² van 45 m² tot 75 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 18.0744,
-      "prijs_per_eenheid_incl_btw": 21.87,
-      "rc_waarde": 1.67,
-      "dikte_mm": 60.0
+      "omschrijving": "eDNA sporenonderzoek tussen- of rijwoning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 412.27,
+      "prijs_per_eenheid_incl_btw": 484.005
     },
     {
-      "code": "V1-1-B3",
+      "code": "V1-1-X16",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie EPS parels / korrels 60 mm > 75 m² vanaf 76 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 17.0744,
-      "prijs_per_eenheid_incl_btw": 20.66,
-      "rc_waarde": 1.67,
-      "dikte_mm": 60.0
+      "omschrijving": "eDNA sporenonderzoek hoek- of vrijstaande woning",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 412.27,
+      "prijs_per_eenheid_incl_btw": 484.005
     },
     {
-      "code": "V1-1-B4",
+      "code": "V1-1-X17",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "EPS meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.0083,
-      "prijs_per_eenheid_incl_btw": 1.22,
-      "dikte_mm": 10.0
-    },
-    {
-      "code": "V1-1-C1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie PUR schuim 60 mm < 70 m² van 0 m² tot 70 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 24.0992,
-      "prijs_per_eenheid_incl_btw": 29.16,
-      "rc_waarde": 2.6,
-      "dikte_mm": 60.0
-    },
-    {
-      "code": "V1-1-C2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie PUR schuim 60 mm 70-130 m² van 70 m² tot 130 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 23.0992,
-      "prijs_per_eenheid_incl_btw": 27.95,
-      "rc_waarde": 2.6,
-      "dikte_mm": 60.0
-    },
-    {
-      "code": "V1-1-C3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Spouwmuurisolatie PUR schuim 60 mm > 130 m² vanaf 130 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 22.0909,
-      "prijs_per_eenheid_incl_btw": 26.73,
-      "rc_waarde": 2.6,
-      "dikte_mm": 60.0
-    },
-    {
-      "code": "V1-1-C4",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "PUR meer-/minderprijs per 10 mm bredere/smallere spouw dan 60 mm.",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 2.2562,
-      "prijs_per_eenheid_incl_btw": 2.73,
-      "dikte_mm": 10.0
+      "omschrijving": "Alternatieve verblijfplaats (stelpost)",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 128.83,
+      "prijs_per_eenheid_incl_btw": 151.2464
     },
     {
       "code": "V1-2-A1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Gevelbekleding Vuren onbehandeld met isolatie EPS 170 mm",
+      "omschrijving": "Gevelbekleding onderhoudsarme rabatgevelbekleding met isolatie EPS 170 mm  Rc 4.70 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 238.0413,
-      "prijs_per_eenheid_incl_btw": 288.03,
-      "rc_waarde": 4.7,
-      "dikte_mm": 170.0
+      "prijs_per_eenheid_excl": 252.0651,
+      "prijs_per_eenheid_incl_btw": 288.0332
     },
     {
-      "code": "V1-2-X2",
+      "code": "V1-2-B1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Steigerwerk op-/afbouw/huur in m²",
+      "omschrijving": "Gevelbekleding HPL met isolatie EPS 170 mm Rc 4.70 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 27.2893,
-      "prijs_per_eenheid_incl_btw": 33.02
+      "prijs_per_eenheid_excl": 347.6207,
+      "prijs_per_eenheid_incl_btw": 400.9547
     },
     {
-      "code": "V1-2-X3",
+      "code": "V1-2-C1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Rolsteiger op-/afbouw/huur in dagen",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 206.9669,
-      "prijs_per_eenheid_incl_btw": 250.43
+      "omschrijving": "Gevelbekleding Eternit/vezelversterkt kunststof met isolatie EPS 170 mm Rc 4.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 355.3489,
+      "prijs_per_eenheid_incl_btw": 410.3059
+    },
+    {
+      "code": "V1-2-D1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Gevelbekleding met steenstrips op vezelplaat met isolatie PIR Rc 5.20 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 438.8728,
+      "prijs_per_eenheid_incl_btw": 495.8398
+    },
+    {
+      "code": "V1-2-E1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Gevelbekleding isolatie 120mm met afwerking sierpleister Rc 3.90 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 180.0786,
+      "prijs_per_eenheid_incl_btw": 203.4779
     },
     {
       "code": "V1-2-X1",
@@ -315,8 +325,26 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Sloop en afvoeren bestaande (betimmerde) gevel",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 38.4876,
-      "prijs_per_eenheid_incl_btw": 46.57
+      "prijs_per_eenheid_excl": 42.2063,
+      "prijs_per_eenheid_incl_btw": 46.5684
+    },
+    {
+      "code": "V1-2-X2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Steigerwerk op-/afbouw/huur in m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 28.7798,
+      "prijs_per_eenheid_incl_btw": 33.0231
+    },
+    {
+      "code": "V1-2-X3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Rolsteiger op-/afbouw/huur in dagen",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 218.9192,
+      "prijs_per_eenheid_incl_btw": 250.4276
     },
     {
       "code": "V1-2-X4",
@@ -324,17 +352,17 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Hoogwerker op-/afbouw/huur in weken",
       "eenheid": "wk",
-      "prijs_per_eenheid_excl": 569.2562,
-      "prijs_per_eenheid_incl_btw": 688.8
+      "prijs_per_eenheid_excl": 569.2544,
+      "prijs_per_eenheid_incl_btw": 688.7979
     },
     {
       "code": "V1-2-X5",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Herstelbestrating en terrein",
+      "omschrijving": "Herstel bestrating en terrein",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 71.3636,
-      "prijs_per_eenheid_incl_btw": 86.35
+      "prijs_per_eenheid_excl": 75.0805,
+      "prijs_per_eenheid_incl_btw": 86.3462
     },
     {
       "code": "V1-2-X6",
@@ -342,78 +370,350 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Natuurvrij maken bij gevelbekleding",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 9.8926,
-      "prijs_per_eenheid_incl_btw": 11.97
-    },
-    {
-      "code": "V1-2-B1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Gevelbekleding HPL met isolatie EPS 170 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 331.3636,
-      "prijs_per_eenheid_incl_btw": 400.95,
-      "rc_waarde": 4.7
-    },
-    {
-      "code": "V1-2-C1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Gevelbekleding Eternit/vezelversterkt kunststof met isolatie EPS 170 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 339.0992,
-      "prijs_per_eenheid_incl_btw": 410.31,
-      "rc_waarde": 4.7
-    },
-    {
-      "code": "V1-2-D1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Gevelbekleding met steenstrips op vezelplaat met isolatie PIR",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 409.7851,
-      "prijs_per_eenheid_incl_btw": 495.84,
-      "rc_waarde": 5.2
-    },
-    {
-      "code": "V1-2-E1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Gevelisolatie EPS isolatie 120mm met afwerking sierpleister",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 168.1653,
-      "prijs_per_eenheid_incl_btw": 203.48,
-      "rc_waarde": 3.9,
-      "dikte_mm": 120.0
+      "prijs_per_eenheid_excl": 10.6329,
+      "prijs_per_eenheid_incl_btw": 11.9655
     },
     {
       "code": "V1-3-A1",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 100 mm frame met glaswol deken dik 70 mm Rc ± 2.45 m²K/W",
+      "omschrijving": "Voorzetwand 100 mm houten frame met glaswol deken dik 70 mm Rc ± 2.45 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 119.4545,
-      "prijs_per_eenheid_incl_btw": 144.54,
-      "rc_waarde": 2.45,
-      "dikte_mm": 70.0
+      "prijs_per_eenheid_excl": 128.6572,
+      "prijs_per_eenheid_incl_btw": 144.5371
     },
     {
-      "code": "V1-3-X8",
+      "code": "V1-3-A2",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Stroompunten verleggen (incl. nieuwe inbouwdozen)",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 75.2149,
-      "prijs_per_eenheid_incl_btw": 91.01
+      "omschrijving": "Voorzetwand 120 mm houten frame met glaswol deken dik 90 mm Rc ± 3.15 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 129.8268,
+      "prijs_per_eenheid_incl_btw": 145.9524
     },
     {
-      "code": "V1-3-X9",
+      "code": "V1-3-A3",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Rolsteiger in woning",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 155.4545,
-      "prijs_per_eenheid_incl_btw": 188.1
+      "omschrijving": "Voorzetwand 150 mm houten frame met glaswol deken dik 120 mm Rc ± 4.00 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 132.1656,
+      "prijs_per_eenheid_incl_btw": 148.7823
+    },
+    {
+      "code": "V1-3-B1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm houten frame met vlasvezel deken dik 70 mm Rc ± 2.44 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 138.0329,
+      "prijs_per_eenheid_incl_btw": 155.8817
+    },
+    {
+      "code": "V1-3-B2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm houten frame met vlasvezel deken dik 90 mm Rc ± 3.00 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 142.1086,
+      "prijs_per_eenheid_incl_btw": 160.8134
+    },
+    {
+      "code": "V1-3-B3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm houten frame met vlasvezel deken dik 120 mm Rc ± 3.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 152.8763,
+      "prijs_per_eenheid_incl_btw": 173.8423
+    },
+    {
+      "code": "V1-3-C1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm houten frame met grasvezel deken dik 70 mm Rc ± 2.30 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 139.19,
+      "prijs_per_eenheid_incl_btw": 157.2819
+    },
+    {
+      "code": "V1-3-C2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm houten frame met grasvezel deken dik 90 mm Rc ± 2.80 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 142.582,
+      "prijs_per_eenheid_incl_btw": 161.3862
+    },
+    {
+      "code": "V1-3-C3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm houten frame met grasvezel deken dik 120 mm Rc ± 3.60 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 144.145,
+      "prijs_per_eenheid_incl_btw": 163.2773
+    },
+    {
+      "code": "V1-3-D1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm houten frame met hennepvezel deken dik 60 mm Rc ± 2.30 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 136.6127,
+      "prijs_per_eenheid_incl_btw": 154.1633
+    },
+    {
+      "code": "V1-3-D2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm houten frame met hennepvezel deken dik 80 mm Rc ± 2.65 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 140.1625,
+      "prijs_per_eenheid_incl_btw": 158.4585
+    },
+    {
+      "code": "V1-3-D3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm houten frame met hennepvezel deken dik 120 mm Rc ± 3.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 148.5764,
+      "prijs_per_eenheid_incl_btw": 168.6394
+    },
+    {
+      "code": "V1-3-E1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm houten frame met houtvezel platen dik 60 mm Rc ± 2.10 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 133.2595,
+      "prijs_per_eenheid_incl_btw": 150.1059
+    },
+    {
+      "code": "V1-3-E2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm houten frame met houtvezel platen dik 80 mm Rc ± 2.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 136.3754,
+      "prijs_per_eenheid_incl_btw": 153.8761
+    },
+    {
+      "code": "V1-3-E3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm houten frame met houtvezel platen dik 120 mm Rc ± 3.80 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 143.3691,
+      "prijs_per_eenheid_incl_btw": 162.3386
+    },
+    {
+      "code": "V1-3-F1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm houten frame met PIR platen dik 70 mm Rc ± 3.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 128.5029,
+      "prijs_per_eenheid_incl_btw": 144.8906
+    },
+    {
+      "code": "V1-3-F2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm houten frame met PIR platen dik 90 mm Rc ± 4.60 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 131.6319,
+      "prijs_per_eenheid_incl_btw": 148.6766
+    },
+    {
+      "code": "V1-3-F3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm houten frame met PIR platen dik 120 mm Rc ± 6.00 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 137.0345,
+      "prijs_per_eenheid_incl_btw": 155.2138
+    },
+    {
+      "code": "V1-3-G1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand  N.T.B.",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
+    },
+    {
+      "code": "V1-3-H1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm Metal Stud met glaswol deken dik 70 mm Rc ± 2.45 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 141.5772,
+      "prijs_per_eenheid_incl_btw": 160.1974
+    },
+    {
+      "code": "V1-3-H2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm Metal Stud met glaswol deken dik 90 mm Rc ± 3.15 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 142.5766,
+      "prijs_per_eenheid_incl_btw": 161.4066
+    },
+    {
+      "code": "V1-3-H3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm Metal Stud met glaswol deken dik 120 mm Rc ± 4.00 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 151.4593,
+      "prijs_per_eenheid_incl_btw": 171.2545
+    },
+    {
+      "code": "V1-3-I1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm Metal Stud met vlaswol deken dik 70 mm Rc ± 2.44 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 150.953,
+      "prijs_per_eenheid_incl_btw": 171.542
+    },
+    {
+      "code": "V1-3-I2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm Metal Stud met vlaswol deken dik 90 mm Rc ± 3.00 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 154.8584,
+      "prijs_per_eenheid_incl_btw": 176.2676
+    },
+    {
+      "code": "V1-3-I3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm Metal Stud met vlaswol deken dik 120 mm Rc ± 3.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 172.1701,
+      "prijs_per_eenheid_incl_btw": 196.3145
+    },
+    {
+      "code": "V1-3-J1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm Metal Stud met grasvezel deken dik 70 mm Rc ± 2.30 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 152.1101,
+      "prijs_per_eenheid_incl_btw": 172.9422
+    },
+    {
+      "code": "V1-3-J2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm Metal Stud met grasvezel deken dik 90 mm Rc ± 2.80 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 155.3318,
+      "prijs_per_eenheid_incl_btw": 176.8404
+    },
+    {
+      "code": "V1-3-J3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm Metal Stud met grasvezel deken dik 120 mm Rc ± 3.60 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 163.4387,
+      "prijs_per_eenheid_incl_btw": 185.7495
+    },
+    {
+      "code": "V1-3-K1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm Metal Stud met hennepvezel deken dik 60 mm Rc ± 2.30 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 147.8894,
+      "prijs_per_eenheid_incl_btw": 168.0323
+    },
+    {
+      "code": "V1-3-K2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm Metal Stud met hennepvezel deken dik 80 mm Rc ± 2.65 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 152.9123,
+      "prijs_per_eenheid_incl_btw": 173.9128
+    },
+    {
+      "code": "V1-3-K3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm Metal Stud met hennepvezel deken dik 120 mm Rc ± 3.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 167.8701,
+      "prijs_per_eenheid_incl_btw": 191.1115
+    },
+    {
+      "code": "V1-3-L1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm Metal Stud met houtvezel platen dik 60 mm Rc ± 2.10 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 146.1796,
+      "prijs_per_eenheid_incl_btw": 165.7663
+    },
+    {
+      "code": "V1-3-L2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm Metal Stud met houtvezel platen dik 80 mm Rc ± 2.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 149.1252,
+      "prijs_per_eenheid_incl_btw": 169.3304
+    },
+    {
+      "code": "V1-3-L3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm Metal Stud met houtvezel platen dik 120 mm Rc ± 3.80 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 162.6629,
+      "prijs_per_eenheid_incl_btw": 184.8107
+    },
+    {
+      "code": "V1-3-M1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 100 mm Metal Stud met PIR platen dik 70 mm Rc ± 3.70 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 145.9242,
+      "prijs_per_eenheid_incl_btw": 165.4572
+    },
+    {
+      "code": "V1-3-M2",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 120 mm Metal Stud met PIR platen dik 90 mm Rc ± 4.60 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 148.8829,
+      "prijs_per_eenheid_incl_btw": 169.0372
+    },
+    {
+      "code": "V1-3-M3",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Voorzetwand 150 mm Metal Stud met PIR platen dik 120 mm Rc ± 6.00 m².K/W",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 160.8295,
+      "prijs_per_eenheid_incl_btw": 182.5923
+    },
+    {
+      "code": "V1-3-R1",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Binnenzijde gevel massieve blokken (kalkhennep)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
     },
     {
       "code": "V1-3-X1",
@@ -421,26 +721,17 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Verwijderen bestaande voorzetwand",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 24.5702,
-      "prijs_per_eenheid_incl_btw": 29.73
+      "prijs_per_eenheid_excl": 25.3225,
+      "prijs_per_eenheid_incl_btw": 29.7286
     },
     {
       "code": "V1-3-X2",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "Vloer-/ plafondplint",
+      "omschrijving": "Vloer-/plafondplint",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 9.4793,
-      "prijs_per_eenheid_incl_btw": 11.47
-    },
-    {
-      "code": "V1-3-X7",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Aanpassen cv-leidingen",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 26.0744,
-      "prijs_per_eenheid_incl_btw": 31.55
+      "prijs_per_eenheid_excl": 9.7687,
+      "prijs_per_eenheid_incl_btw": 11.4685
     },
     {
       "code": "V1-3-X3",
@@ -448,8 +739,8 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Verwijderen/aanbrengen nieuwe vensterbanken",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 72.2314,
-      "prijs_per_eenheid_incl_btw": 87.4
+      "prijs_per_eenheid_excl": 74.45,
+      "prijs_per_eenheid_incl_btw": 87.4043
     },
     {
       "code": "V1-3-X4",
@@ -457,8 +748,8 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Sierlijsten om kozijnen",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 37.1322,
-      "prijs_per_eenheid_incl_btw": 44.93
+      "prijs_per_eenheid_excl": 38.27,
+      "prijs_per_eenheid_incl_btw": 44.929
     },
     {
       "code": "V1-3-X5",
@@ -466,8 +757,8 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "Dagkantbetimmering",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 19.562,
-      "prijs_per_eenheid_incl_btw": 23.67
+      "prijs_per_eenheid_excl": 20.1625,
+      "prijs_per_eenheid_incl_btw": 23.6708
     },
     {
       "code": "V1-3-X6",
@@ -475,268 +766,107 @@
       "level": "Level 1 - GEVEL",
       "omschrijving": "De-/hermonteren radiatoren  (incl. nieuwe koppelingen en kleine aanpassingen aan leidingwerk)",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 70.1983,
-      "prijs_per_eenheid_incl_btw": 84.94
+      "prijs_per_eenheid_excl": 72.35,
+      "prijs_per_eenheid_incl_btw": 84.9389
+    },
+    {
+      "code": "V1-3-X7",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Aanpassen cv-leidingen",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 26.875,
+      "prijs_per_eenheid_incl_btw": 31.5512
+    },
+    {
+      "code": "V1-3-X8",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Stroompunten verleggen (incl. nieuwe inbouwdozen)",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 77.525,
+      "prijs_per_eenheid_incl_btw": 91.0144
+    },
+    {
+      "code": "V1-3-X9",
+      "onderdeel": "A Gevel",
+      "level": "Level 1 - GEVEL",
+      "omschrijving": "Rolsteiger in woning",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 160.225,
+      "prijs_per_eenheid_incl_btw": 188.1041
     },
     {
       "code": "V1-3-X10",
       "onderdeel": "A Gevel",
       "level": "Level 1 - GEVEL",
-      "omschrijving": "OSB beplating 12mm als extra achterhout gipsbeplating",
+      "omschrijving": "OSB beplating 12 mm als extra achterhout gipsbeplating",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 29.3306,
-      "prijs_per_eenheid_incl_btw": 35.49
-    },
-    {
-      "code": "V1-3-A2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 120 mm frame met glaswol deken dik 90 mm Rc ± 3.15 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 120.6198,
-      "prijs_per_eenheid_incl_btw": 145.95,
-      "rc_waarde": 3.15,
-      "dikte_mm": 90.0
-    },
-    {
-      "code": "V1-3-A3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 150 mm frame met glaswol deken dik 120 mm Rc ± 4.00 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 122.9587,
-      "prijs_per_eenheid_incl_btw": 148.78,
-      "rc_waarde": 4.0,
-      "dikte_mm": 120.0
-    },
-    {
-      "code": "V1-3-B1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 100 mm frame met vlaswol deken dik 70 mm Rc ± 2.44 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 128.8264,
-      "prijs_per_eenheid_incl_btw": 155.88,
-      "rc_waarde": 2.44,
-      "dikte_mm": 70.0
-    },
-    {
-      "code": "V1-3-B2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 120 mm frame met vlaswol deken dik 90 mm Rc ± 3.00 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 132.9008,
-      "prijs_per_eenheid_incl_btw": 160.81,
-      "rc_waarde": 3.0,
-      "dikte_mm": 90.0
-    },
-    {
-      "code": "V1-3-B3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 150 mm frame met vlaswol deken dik 120 mm Rc ± 3.70 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 143.6694,
-      "prijs_per_eenheid_incl_btw": 173.84,
-      "rc_waarde": 3.7,
-      "dikte_mm": 120.0
-    },
-    {
-      "code": "V1-3-C1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 100 mm frame met grasvezel deken dik 70 mm Rc ± 2.30 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 129.9835,
-      "prijs_per_eenheid_incl_btw": 157.28,
-      "rc_waarde": 2.3,
-      "dikte_mm": 70.0
-    },
-    {
-      "code": "V1-3-C2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 120 mm frame met grasvezel deken dik 90 mm Rc ± 2.80 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 133.3802,
-      "prijs_per_eenheid_incl_btw": 161.39,
-      "rc_waarde": 2.8,
-      "dikte_mm": 90.0
-    },
-    {
-      "code": "V1-3-C3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 150 mm frame met grasvezel deken dik 120 mm Rc ± 3.60 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 134.9421,
-      "prijs_per_eenheid_incl_btw": 163.28,
-      "rc_waarde": 3.6,
-      "dikte_mm": 120.0
-    },
-    {
-      "code": "V1-3-D1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 100 mm frame met hennepvezel deken dik 60 mm Rc ± 2.30 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 127.405,
-      "prijs_per_eenheid_incl_btw": 154.16,
-      "rc_waarde": 2.3,
-      "dikte_mm": 60.0
-    },
-    {
-      "code": "V1-3-D2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 120 mm frame met hennepvezel deken dik 80 mm Rc ± 2.65 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 130.9587,
-      "prijs_per_eenheid_incl_btw": 158.46,
-      "rc_waarde": 2.65,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V1-3-D3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 150 mm frame met hennepvezel deken dik 120 mm Rc ± 3.70 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 139.3719,
-      "prijs_per_eenheid_incl_btw": 168.64,
-      "rc_waarde": 3.7,
-      "dikte_mm": 120.0
-    },
-    {
-      "code": "V1-3-E1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 100 mm frame met houtvezel platen dik 60 mm Rc ± 2.10 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 124.0579,
-      "prijs_per_eenheid_incl_btw": 150.11,
-      "rc_waarde": 2.1,
-      "dikte_mm": 60.0
-    },
-    {
-      "code": "V1-3-E2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 120 mm frame met houtvezel platen dik 80 mm Rc ± 2.70 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 127.1736,
-      "prijs_per_eenheid_incl_btw": 153.88,
-      "rc_waarde": 2.7,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V1-3-E3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 150 mm frame met houtvezel platen dik 120 mm Rc ± 3.80 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 134.1653,
-      "prijs_per_eenheid_incl_btw": 162.34,
-      "rc_waarde": 3.8,
-      "dikte_mm": 120.0
-    },
-    {
-      "code": "V1-3-F1",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 100 mm frame met PIR platen dik 70mm Rc ± 3.70 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 119.7438,
-      "prijs_per_eenheid_incl_btw": 144.89,
-      "rc_waarde": 3.7,
-      "dikte_mm": 70.0
-    },
-    {
-      "code": "V1-3-F2",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 120 mm frame met PIR platen dik 90 mm Rc ± 4.60 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 122.876,
-      "prijs_per_eenheid_incl_btw": 148.68,
-      "rc_waarde": 4.6,
-      "dikte_mm": 90.0
-    },
-    {
-      "code": "V1-3-F3",
-      "onderdeel": "A Gevel",
-      "level": "Level 1 - GEVEL",
-      "omschrijving": "Voorzetwand 150 mm frame met PIR platen dik 120 mm Rc ± 6.00 m²K/W",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 128.2727,
-      "prijs_per_eenheid_incl_btw": 155.21,
-      "rc_waarde": 6.0,
-      "dikte_mm": 120.0
+      "prijs_per_eenheid_excl": 30.228,
+      "prijs_per_eenheid_incl_btw": 35.4877
     },
     {
       "code": "V2-1-A1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen ongeïsoleerde buitendeur door geïsoleerd deur in bestaand kozijn",
+      "omschrijving": "Vervangen ongeïsoleerde buitendeur door geïsoleerde deur in bestaand kozijn",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 1530.1901,
-      "prijs_per_eenheid_incl_btw": 1851.53
+      "prijs_per_eenheid_excl": 1550.3408,
+      "prijs_per_eenheid_incl_btw": 1851.5275
+    },
+    {
+      "code": "V2-1-B1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Vervangen ongeïsoleerde buitendeur door geïsoleerde deur in bestaand kozijn (voordeur)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 1229.9708,
+      "prijs_per_eenheid_incl_btw": 1460.6334
     },
     {
       "code": "V2-2-A1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen ongeïsoleerd kozijnpaneel door geïsoleerd kozijnpaneel Rc  1.20 m²K/W",
+      "omschrijving": "Vervangen ongeïsoleerd kozijnpaneel door geïsoleerd kozijnpaneel Rc  1.20 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 150.9835,
-      "prijs_per_eenheid_incl_btw": 182.69,
-      "rc_waarde": 1.2
+      "prijs_per_eenheid_excl": 160.2873,
+      "prijs_per_eenheid_incl_btw": 182.6946
     },
     {
       "code": "V2-3-A4",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: van 0 m² tot 2 m² van 0 m² tot 2 m²",
+      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: van 0 m² tot 2 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 287.157,
-      "prijs_per_eenheid_incl_btw": 347.46
+      "prijs_per_eenheid_excl": 305.325,
+      "prijs_per_eenheid_incl_btw": 347.4598
     },
     {
-      "code": "V2-3-X14",
+      "code": "V2-3-A5",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Minimaal tarief (incl. starttarief)",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 442.6529,
-      "prijs_per_eenheid_incl_btw": 535.61
-    },
-    {
-      "code": "V2-3-X15",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Inmeten",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 69.9256,
-      "prijs_per_eenheid_incl_btw": 84.61
-    },
-    {
-      "code": "V2-3-X9",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Toeslag gehard/ veiligheidsglas",
+      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: van 2 m² tot 8 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 46.5785,
-      "prijs_per_eenheid_incl_btw": 56.36
+      "prijs_per_eenheid_excl": 258.75,
+      "prijs_per_eenheid_incl_btw": 294.4575
     },
     {
-      "code": "V2-3-X8",
+      "code": "V2-3-A6",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Toeslag Gefigureerd Glas / Matte folie",
-      "eenheid": "p/ruit",
-      "prijs_per_eenheid_excl": 77.6281,
-      "prijs_per_eenheid_incl_btw": 93.93
+      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: van 8 m² tot 15 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 222.525,
+      "prijs_per_eenheid_incl_btw": 253.2334
+    },
+    {
+      "code": "V2-3-A7",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: vanaf 15 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 181.125,
+      "prijs_per_eenheid_incl_btw": 206.1202
     },
     {
       "code": "V2-3-X13",
@@ -744,17 +874,35 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Starttarief",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 163.1653,
-      "prijs_per_eenheid_incl_btw": 197.43
+      "prijs_per_eenheid_excl": 181.125,
+      "prijs_per_eenheid_incl_btw": 197.4263
+    },
+    {
+      "code": "V2-3-X14",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Minimaal tarief (incl. starttarief)",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 465.75,
+      "prijs_per_eenheid_incl_btw": 535.6125
+    },
+    {
+      "code": "V2-3-X15",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Inmeten",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 84.6112
     },
     {
       "code": "V2-3-X1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Verwijderen bitumen/glaskit uit sponning",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 46.6198,
-      "prijs_per_eenheid_incl_btw": 56.41
+      "omschrijving": "Verwijderen butyleenkit /stopverf/glaskit uit sponning",
+      "eenheid": "m2",
+      "prijs_per_eenheid_excl": 51.75,
+      "prijs_per_eenheid_incl_btw": 56.4075
     },
     {
       "code": "V2-3-X2",
@@ -762,44 +910,71 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Inzet kraan bij ruiten > 80 kg. (minimaal inzet 3 uur)",
       "eenheid": "uur",
-      "prijs_per_eenheid_excl": 105.9504,
-      "prijs_per_eenheid_incl_btw": 128.2
+      "prijs_per_eenheid_excl": 113.85,
+      "prijs_per_eenheid_incl_btw": 128.1951
+    },
+    {
+      "code": "V1-2-X3",
+      "onderdeel": "A Gevel",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Hoogwerker op-/afbouw/huur in weken",
+      "eenheid": "wk",
+      "prijs_per_eenheid_excl": 470.4541,
+      "prijs_per_eenheid_incl_btw": 569.2494
     },
     {
       "code": "V2-3-X4",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Steigerwerk vanaf de 1e verdieping.",
+      "omschrijving": "Steigerwerk vanaf de 1e verdieping",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 335.3058,
+      "prijs_per_eenheid_excl": 362.25,
       "prijs_per_eenheid_incl_btw": 405.72
-    },
-    {
-      "code": "V2-3-X7",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Ventilatieroosters naturel.",
-      "eenheid": "cm1",
-      "prijs_per_eenheid_excl": 1.2975,
-      "prijs_per_eenheid_incl_btw": 1.57
     },
     {
       "code": "V2-3-X5",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Toeslag wienersprossen per vak.",
+      "omschrijving": "Toeslag wienersprossen per vak",
       "eenheid": "vak",
-      "prijs_per_eenheid_excl": 31.0496,
-      "prijs_per_eenheid_incl_btw": 37.57
+      "prijs_per_eenheid_excl": 31.05,
+      "prijs_per_eenheid_incl_btw": 37.5705
     },
     {
       "code": "V2-3-X6",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Toeslag kruisroeden per vak.",
+      "omschrijving": "Toeslag kruisroeden per vak",
       "eenheid": "vak",
-      "prijs_per_eenheid_excl": 12.9339,
-      "prijs_per_eenheid_incl_btw": 15.65
+      "prijs_per_eenheid_excl": 12.9375,
+      "prijs_per_eenheid_incl_btw": 15.6544
+    },
+    {
+      "code": "V2-3-X7",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Ventilatieroosters ZR naturel",
+      "eenheid": "cm¹",
+      "prijs_per_eenheid_excl": 1.2937,
+      "prijs_per_eenheid_incl_btw": 1.5654
+    },
+    {
+      "code": "V2-3-X8",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Toeslag Gefigureerd Glas / Matte folie",
+      "eenheid": "p/ruit",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 93.9262
+    },
+    {
+      "code": "V2-3-X9",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Toeslag gehard / veiligheidsglas",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 46.575,
+      "prijs_per_eenheid_incl_btw": 56.3557
     },
     {
       "code": "V2-3-X10",
@@ -807,8 +982,8 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Toeslag vervangen raam voor vast glas",
       "eenheid": "p/ruit",
-      "prijs_per_eenheid_excl": 155.3058,
-      "prijs_per_eenheid_incl_btw": 187.92
+      "prijs_per_eenheid_excl": 170.53,
+      "prijs_per_eenheid_incl_btw": 187.9241
     },
     {
       "code": "V2-3-X11",
@@ -816,8 +991,8 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Kleine draai- of uitzetraam vervangen door HR++ klepramen",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 346.0826,
-      "prijs_per_eenheid_incl_btw": 418.76
+      "prijs_per_eenheid_excl": 362.25,
+      "prijs_per_eenheid_incl_btw": 418.761
     },
     {
       "code": "V2-3-X12",
@@ -825,89 +1000,71 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Vervangen raamhout en hang en sluitwerk",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 410.2479,
+      "prijs_per_eenheid_excl": 425.0,
       "prijs_per_eenheid_incl_btw": 496.4
     },
     {
       "code": "V2-3-X16",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Plaatsen ventilatie rooster in gevel (indien geen mogelijkheid voor boven beglazing)/ monument",
+      "omschrijving": "Plaatsen ventilatie rooster in gevel (indien geen mogelijkheid voor boven beglazing)/monument",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 714.314,
+      "prijs_per_eenheid_excl": 740.0,
       "prijs_per_eenheid_incl_btw": 864.32
-    },
-    {
-      "code": "V2-3-A5",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: van 2 m² tot 8 m² van 2 m² tot 8 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 243.3554,
-      "prijs_per_eenheid_incl_btw": 294.46
-    },
-    {
-      "code": "V2-3-A6",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: van 8 m² tot 15 m² van 8 m² tot 15 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 209.281,
-      "prijs_per_eenheid_incl_btw": 253.23
-    },
-    {
-      "code": "V2-3-A7",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen glas door HR++ glas in bestaand houten kozijn: vanaf 15 m² vanaf 15 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 170.3471,
-      "prijs_per_eenheid_incl_btw": 206.12
-    },
-    {
-      "code": "V2-4-A1",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen houten kozijn door houten kozijn met triple glas (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 859.0248,
-      "prijs_per_eenheid_incl_btw": 1039.42
-    },
-    {
-      "code": "V2-4-B1",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen kunststof kozijn door kunststof kozijn met triple glas (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 875.7438,
-      "prijs_per_eenheid_incl_btw": 1059.65
-    },
-    {
-      "code": "V2-4-C1",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen aluminium kozijn door aluminium kozijn met triple glas (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1458.0909,
-      "prijs_per_eenheid_incl_btw": 1764.29
-    },
-    {
-      "code": "V2-4-D1",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen houten kozijn door kunststof kozijn met triple glas (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 950.562,
-      "prijs_per_eenheid_incl_btw": 1150.18
     },
     {
       "code": "V2-5-A1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Leveren en aanbrengen voor / achterzetraam tot 0,3 m²",
+      "omschrijving": "Leveren en aanbrengen voor-/achterzetbeglazing tot 0,3 m²",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 187.6777,
-      "prijs_per_eenheid_incl_btw": 227.09
+      "prijs_per_eenheid_excl": 191.475,
+      "prijs_per_eenheid_incl_btw": 227.0894
+    },
+    {
+      "code": "V2-5-A2",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Leveren en aanbrengen voor-/achterzetbeglazing tot 0,6 m²",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 222.525,
+      "prijs_per_eenheid_incl_btw": 263.9146
+    },
+    {
+      "code": "V2-5-A3",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Leveren en aanbrengen voor-/achterzetbeglazing tot 1,5 m²",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 351.9,
+      "prijs_per_eenheid_incl_btw": 417.3534
+    },
+    {
+      "code": "V2-5-A4",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Leveren en aanbrengen voor-/achterzetbeglazing tot 2,0 m²",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 631.35,
+      "prijs_per_eenheid_incl_btw": 748.7811
+    },
+    {
+      "code": "V2-5-B1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Voor-/achterzetbeglazing isolatieglas 14mm (4-6-4) met aluminium profiel rondom",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 329.5824,
+      "prijs_per_eenheid_incl_btw": 398.7946
+    },
+    {
+      "code": "V2-5-C1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Voor-/achterzetbeglazing isolatieglas 14mm (4-6-4) met houten profiel rondom",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 373.4146,
+      "prijs_per_eenheid_incl_btw": 439.2934
     },
     {
       "code": "V2-5-X1",
@@ -915,8 +1072,8 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Starttarief",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 163.1653,
-      "prijs_per_eenheid_incl_btw": 197.43
+      "prijs_per_eenheid_excl": 181.125,
+      "prijs_per_eenheid_incl_btw": 197.4263
     },
     {
       "code": "V2-5-X2",
@@ -924,8 +1081,8 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Minimaal tarief (incl. starttarief)",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 442.6529,
-      "prijs_per_eenheid_incl_btw": 535.61
+      "prijs_per_eenheid_excl": 465.75,
+      "prijs_per_eenheid_incl_btw": 535.6125
     },
     {
       "code": "V2-5-X3",
@@ -933,109 +1090,116 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Inmeten",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 69.9256,
-      "prijs_per_eenheid_incl_btw": 84.61
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 84.6112
     },
     {
-      "code": "V2-5-A2",
+      "code": "V2-5-X4",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Leveren en aanbrengen voor / achterzetraam tot 0,6 m²",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 218.1074,
-      "prijs_per_eenheid_incl_btw": 263.91
+      "omschrijving": "",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
     },
     {
-      "code": "V2-5-A3",
+      "code": "V2-6-A1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Leveren en aanbrengen voor / achterzetraam tot 1,5 m²",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 344.9174,
-      "prijs_per_eenheid_incl_btw": 417.35
-    },
-    {
-      "code": "V2-5-A4",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Leveren en aanbrengen voor / achterzetraam tot 2,0 m²",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 618.8264,
-      "prijs_per_eenheid_incl_btw": 748.78
-    },
-    {
-      "code": "V2-5-B1",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Voor- of achterzetbeglazing Isolatieglas 14mm (4-6-4) met aluminium profiel rondom",
+      "omschrijving": "Vervangen glas door monumentenglas  (Klassiek ca 11mm / U=2.0z) in houten kozijn",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 329.5785,
-      "prijs_per_eenheid_incl_btw": 398.79,
-      "dikte_mm": 14.0
+      "prijs_per_eenheid_excl": 615.7772,
+      "prijs_per_eenheid_incl_btw": 733.1246
     },
     {
-      "code": "V2-5-C1",
+      "code": "V2-6-B1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Voor- of achterzetbeglazing Isolatieglas 14mm (4-6-4) met houten profiel rondom",
+      "omschrijving": "Vervangen glas door monumentenglas  ( Klassiek ca 11mm / U=2.0z)  in stalen kozijnen ?",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 363.0496,
-      "prijs_per_eenheid_incl_btw": 439.29,
-      "dikte_mm": 14.0
+      "prijs_per_eenheid_excl": 704.2759,
+      "prijs_per_eenheid_incl_btw": 829.9614
+    },
+    {
+      "code": "V2-6-X1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Verwijderen butyleenkit /stopverf/glaskit uit sponning",
+      "eenheid": "p/ruit",
+      "prijs_per_eenheid_excl": 51.75,
+      "prijs_per_eenheid_incl_btw": 56.4075
+    },
+    {
+      "code": "V2-6-X2",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Inzet kraan bij ruiten > 80 kg. (minimaal inzet 3 uur)",
+      "eenheid": "uur",
+      "prijs_per_eenheid_excl": 113.85,
+      "prijs_per_eenheid_incl_btw": 128.1951
+    },
+    {
+      "code": "V2-6-X3",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Steigerwerk vanaf de 1e verdieping",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 362.25,
+      "prijs_per_eenheid_incl_btw": 405.72
+    },
+    {
+      "code": "V2-6-X4",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Toeslag wienersprossen per vak",
+      "eenheid": "vak",
+      "prijs_per_eenheid_excl": 31.05,
+      "prijs_per_eenheid_incl_btw": 37.5705
+    },
+    {
+      "code": "V2-6-X5",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Toeslag kruisroeden per vak",
+      "eenheid": "vak",
+      "prijs_per_eenheid_excl": 12.9375,
+      "prijs_per_eenheid_incl_btw": 15.6544
+    },
+    {
+      "code": "V2-6-X6",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Ventilatieroosters naturel",
+      "eenheid": "cm¹",
+      "prijs_per_eenheid_excl": 1.2937,
+      "prijs_per_eenheid_incl_btw": 1.5654
+    },
+    {
+      "code": "V2-6-X7",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Toeslag Gefigureerd Glas / matte folie",
+      "eenheid": "p/ruit",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 93.9262
+    },
+    {
+      "code": "V2-6-X8",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Toeslag gehard / veiligheidsglas",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 46.575,
+      "prijs_per_eenheid_incl_btw": 56.3557
     },
     {
       "code": "V2-7-A1",
       "onderdeel": "B Glas en kozijnen",
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Vervangen glas door vacuümglas vanaf 0.5 m²",
+      "omschrijving": "Vacuumglas per m² minimaal 0,5 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 412.9669,
-      "prijs_per_eenheid_incl_btw": 499.69
-    },
-    {
-      "code": "V2-7-X1",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Starttarief",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 163.1653,
-      "prijs_per_eenheid_incl_btw": 197.43
-    },
-    {
-      "code": "V2-7-X2",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Minimaal tarief (incl. starttarief)",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 442.6529,
-      "prijs_per_eenheid_incl_btw": 535.61
-    },
-    {
-      "code": "V2-7-X3",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Inmeten",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 69.9256,
-      "prijs_per_eenheid_incl_btw": 84.61
-    },
-    {
-      "code": "V2-7-X4",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Inzet kraan bij ruiten > 80 kg. (minimaal inzet 3 uur)",
-      "eenheid": "uur",
-      "prijs_per_eenheid_excl": 105.9504,
-      "prijs_per_eenheid_incl_btw": 128.2
-    },
-    {
-      "code": "V2-7-X5",
-      "onderdeel": "B Glas en kozijnen",
-      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
-      "omschrijving": "Steigerwerk vanaf de 2e verdieping.",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 335.3058,
-      "prijs_per_eenheid_incl_btw": 405.72
+      "prijs_per_eenheid_excl": 412.965,
+      "prijs_per_eenheid_incl_btw": 499.6876
     },
     {
       "code": "V2-7-A2",
@@ -1043,8 +1207,8 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Plaatsen ruiten tot 0,6 m²",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 149.1736,
-      "prijs_per_eenheid_incl_btw": 180.5
+      "prijs_per_eenheid_excl": 165.6,
+      "prijs_per_eenheid_incl_btw": 180.504
     },
     {
       "code": "V2-7-A3",
@@ -1052,8 +1216,8 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Plaatsen ruiten tot 1,2 m²",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 279.7107,
-      "prijs_per_eenheid_incl_btw": 338.45
+      "prijs_per_eenheid_excl": 310.5,
+      "prijs_per_eenheid_incl_btw": 338.445
     },
     {
       "code": "V2-7-A4",
@@ -1061,186 +1225,89 @@
       "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
       "omschrijving": "Plaatsen ruiten tot 2,0 m²",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 447.5289,
-      "prijs_per_eenheid_incl_btw": 541.51
+      "prijs_per_eenheid_excl": 496.8,
+      "prijs_per_eenheid_incl_btw": 541.512
+    },
+    {
+      "code": "V2-7-X1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Starttarief",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 181.125,
+      "prijs_per_eenheid_incl_btw": 197.4263
+    },
+    {
+      "code": "V2-7-X2",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Minimaal tarief (incl. starttarief)",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 465.75,
+      "prijs_per_eenheid_incl_btw": 535.6125
+    },
+    {
+      "code": "V2-7-X3",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Inmeten",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 84.6112
+    },
+    {
+      "code": "V2-7-X4",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Inzet kraan bij ruiten > 80 kg. (minimaal inzet 3 uur)",
+      "eenheid": "uur",
+      "prijs_per_eenheid_excl": 113.85,
+      "prijs_per_eenheid_incl_btw": 128.1951
+    },
+    {
+      "code": "V2-7-X5",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+      "omschrijving": "Steigerwerk vanaf de 1e verdieping.",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 362.25,
+      "prijs_per_eenheid_incl_btw": 405.72
     },
     {
       "code": "V3-1-A1",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Vloerisolatie PUR-schuim gesloten cel dik 100mm Rc 3.50 m².K/W (vlakkevloer)",
+      "omschrijving": "Vloerisolatie PUR-schuim gesloten cel dik 100mm Rc 3.50 m².K/W (vlakke loer)",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 37.2727,
-      "prijs_per_eenheid_incl_btw": 45.1,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
-    },
-    {
-      "code": "V3-1-X5",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Koekkoekrooster incl. boorwerk",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 109.3306,
-      "prijs_per_eenheid_incl_btw": 132.29
-    },
-    {
-      "code": "V3-1-X10",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Toeslag meerwerk t.a.v. leidingwerk",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 2.3388,
-      "prijs_per_eenheid_incl_btw": 2.83
-    },
-    {
-      "code": "V3-1-X9",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Kruipluik maken inclusief afwerken in houten vloer",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 447.2727,
-      "prijs_per_eenheid_incl_btw": 541.2
-    },
-    {
-      "code": "V3-1-X8",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Tijdelijk mangat zagen in houten vloer (geen afwerking)",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 149.0909,
-      "prijs_per_eenheid_incl_btw": 180.4
-    },
-    {
-      "code": "V3-1-X7",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Hakken gat in kruipruimte",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 173.9421,
-      "prijs_per_eenheid_incl_btw": 210.47
-    },
-    {
-      "code": "V3-1-X6",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Standaard geïsoleerd vloerluik",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 99.3967,
-      "prijs_per_eenheid_incl_btw": 120.27
-    },
-    {
-      "code": "V3-1-X12",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Verwijderen van bestaande vloer (hout,) indien schuimbeton ook vloer vervangt   (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 28.8264,
-      "prijs_per_eenheid_incl_btw": 34.88
-    },
-    {
-      "code": "V3-1-X13",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Gietdekvloer indien schuimbeton ook vloer vervangt   (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 32.8017,
-      "prijs_per_eenheid_incl_btw": 39.69
-    },
-    {
-      "code": "V3-1-X4",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Ventilatiekokers min. 1 st/12m² BVO",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 32.3058,
-      "prijs_per_eenheid_incl_btw": 39.09
-    },
-    {
-      "code": "V3-1-X2",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 347.876,
-      "prijs_per_eenheid_incl_btw": 420.93
-    },
-    {
-      "code": "V3-1-X3",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Opname voor begin werkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 74.5455,
-      "prijs_per_eenheid_incl_btw": 90.2
-    },
-    {
-      "code": "V3-1-X1",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "Minimum Tarief (van toepassing indien totaal spuit en/of inblaas isoleren lager is dan € 1365)",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 1356.7273,
-      "prijs_per_eenheid_incl_btw": 1641.64
-    },
-    {
-      "code": "V3-1-A2",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "╚ toeslag aanbrengen onder houten vloer  25%",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 9.3223,
-      "prijs_per_eenheid_incl_btw": 11.28
-    },
-    {
-      "code": "V3-1-A3",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "╚ toeslag aanbrengen onder broodjes vloer 20%",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 7.4545,
-      "prijs_per_eenheid_incl_btw": 9.02
-    },
-    {
-      "code": "V3-1-A4",
-      "onderdeel": "C Vloeren",
-      "level": "Level 3 - VLOER",
-      "omschrijving": "╚ toeslag aanbrengen onder manta vloer 30%",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 11.1818,
-      "prijs_per_eenheid_incl_btw": 13.53
+      "prijs_per_eenheid_excl": 38.8125,
+      "prijs_per_eenheid_incl_btw": 45.1001
     },
     {
       "code": "V3-1-A6",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "╚ PUR meer-/minderprijs per 10 mm",
+      "omschrijving": "╚ PUR meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 2.4876,
-      "prijs_per_eenheid_incl_btw": 3.01,
-      "dikte_mm": 10.0
+      "prijs_per_eenheid_excl": 0.2587,
+      "prijs_per_eenheid_incl_btw": 0.3007
     },
     {
       "code": "V3-1-B1",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Vloerisolatie - isolatiefolie Rc vanaf 3.50 m²K/W  0 m² tot 35 m² van 0 m² tot 35 m²",
+      "omschrijving": "Vloerisolatie isolatiefolie Rc vanaf 3.50 m².K/W  0 m² tot 35 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 46.2149,
-      "prijs_per_eenheid_incl_btw": 55.92,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0
+      "prijs_per_eenheid_excl": 48.1275,
+      "prijs_per_eenheid_incl_btw": 55.9242
     },
     {
       "code": "V3-1-B2",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Vloerisolatie - isolatiefolie vanaf Rc 3.50 m²K/W vanaf 35 m² vanaf 35 m²",
+      "omschrijving": "Vloerisolatie isolatiefolie Rc vanaf 3.50 m².K/W  vanaf 35 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 44.5289,
-      "prijs_per_eenheid_incl_btw": 53.88,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0
+      "prijs_per_eenheid_excl": 46.368,
+      "prijs_per_eenheid_incl_btw": 53.8796
     },
     {
       "code": "V3-1-B3",
@@ -1248,94 +1315,152 @@
       "level": "Level 3 - VLOER",
       "omschrijving": "Toeslag isolatiefolie uitvoering in biobased",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 4.2727,
-      "prijs_per_eenheid_incl_btw": 5.17,
-      "u_waarde": -1.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 4.4505,
+      "prijs_per_eenheid_incl_btw": 5.1715
     },
     {
       "code": "V3-1-C1",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Vloerisolatie - EPS-isolatie 130 mm Rc 3,7",
+      "omschrijving": "Vloerisolatie EPS-isolatie 130mm Rc 3.70  m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 26.8347,
-      "prijs_per_eenheid_incl_btw": 32.47,
-      "rc_waarde": 3.7,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 27.945,
+      "prijs_per_eenheid_incl_btw": 32.4721
     },
     {
       "code": "V3-1-C2",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "╚ EPS meer-/minderprijs per 10 mm",
+      "omschrijving": "╚ EPS meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.1901,
-      "prijs_per_eenheid_incl_btw": 1.44,
-      "rc_waarde": 3.9,
-      "dikte_mm": 140.0
+      "prijs_per_eenheid_excl": 0.1242,
+      "prijs_per_eenheid_incl_btw": 0.1443
     },
     {
-      "code": "V3-1-D1",
+      "code": "V3-1-X1",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Bodemisolatie - EPS-korrels laagdikte dik 200mm (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 21.0826,
-      "prijs_per_eenheid_incl_btw": 25.51,
-      "dikte_mm": 200.0
+      "omschrijving": "Minimum Tarief (van toepassing indien totaal spuit en/of inblaas isoleren lager is dan € 1365)",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 1412.775,
+      "prijs_per_eenheid_incl_btw": 1641.6445
     },
     {
-      "code": "V3-1-D2",
+      "code": "V3-1-X2",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Bodemisolatie - EPS-korrels laagdikte dik 300mm (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 27.5455,
-      "prijs_per_eenheid_incl_btw": 33.33,
-      "dikte_mm": 300.0
+      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 362.25,
+      "prijs_per_eenheid_incl_btw": 420.9345
     },
     {
-      "code": "V3-1-E1",
+      "code": "V3-1-X3",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Vloerisolatie schuimbeton 400 mm 500kg/m³ Rc 3.50       (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 133.3802,
-      "prijs_per_eenheid_incl_btw": 161.39,
-      "rc_waarde": 3.5,
-      "dikte_mm": 400.0
+      "omschrijving": "Opname voor begin werkzaamheden",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 90.2002
     },
     {
-      "code": "V3-1-E2",
+      "code": "V3-1-X4",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "╚ Schuimbeton meer-/minderprijs per cm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 16.6942,
-      "prijs_per_eenheid_incl_btw": 20.2
+      "omschrijving": "Ventilatiekokers min. 1 st/12m² BVO  incl. boorwerk",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 33.6375,
+      "prijs_per_eenheid_incl_btw": 39.0868
     },
     {
-      "code": "V3-2-A1",
+      "code": "V3-1-X5",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Zolder-/vlieringvloer tussen vloer en plafond -glaswol ingeblazen  dik 130mm Rc 3.50 m²K/W",
+      "omschrijving": "Koekoekrooster incl. boorwerk",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 113.85,
+      "prijs_per_eenheid_incl_btw": 132.2937
+    },
+    {
+      "code": "V3-1-X6",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Standaard geïsoleerd vloerluik",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 103.5,
+      "prijs_per_eenheid_incl_btw": 120.267
+    },
+    {
+      "code": "V3-1-X7",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Hakken gat in kruipruimte",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 181.125,
+      "prijs_per_eenheid_incl_btw": 210.4673
+    },
+    {
+      "code": "V3-1-X8",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Tijdelijk mangat zagen in houten vloer (geen afwerking)",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 155.25,
+      "prijs_per_eenheid_incl_btw": 180.4005
+    },
+    {
+      "code": "V3-1-X9",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Kruipluik maken inclusief afwerken in houten vloer",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 465.75,
+      "prijs_per_eenheid_incl_btw": 541.2015
+    },
+    {
+      "code": "V3-1-X10",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Toeslag meerwerk t.a.v. leidingwerk",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 52.9752,
-      "prijs_per_eenheid_incl_btw": 64.1,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 2.4322,
+      "prijs_per_eenheid_incl_btw": 2.8263
+    },
+    {
+      "code": "V3-1-X11",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Bodemfolie voor vloerisolatie (zit in prijs V3-1-B)",
+      "eenheid": "elders",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": null
+    },
+    {
+      "code": "V3-1-X12",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Verwijderen van bestaande vloer (hout) indien schuimbeton ook vloer vervangt   (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 30.015,
+      "prijs_per_eenheid_incl_btw": 34.8774
+    },
+    {
+      "code": "V3-1-X13",
+      "onderdeel": "C Vloeren",
+      "level": "Level 3 - VLOER",
+      "omschrijving": "Cementgebonden gietdekvloer indien schuimbeton ook vloer vervangt   (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 34.155,
+      "prijs_per_eenheid_incl_btw": 39.6881
     },
     {
       "code": "V3-2-A2",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "╚ Glaswol meer-/minderprijs per 10 mm",
+      "omschrijving": "╚ Meerprijs glaswol ingeblazen dik 200mm Rc  4.50 > 5.20 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.9256,
-      "prijs_per_eenheid_incl_btw": 2.33,
-      "rc_waarde": 3.7,
-      "dikte_mm": 140.0
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
     },
     {
       "code": "V3-2-B1",
@@ -1343,84 +1468,350 @@
       "level": "Level 3 - VLOER",
       "omschrijving": "Zolder-/vliering niet beloopbaar bovenzijde isolatie (glaswol los op plafond) Rc 2.10 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 21.0413,
-      "prijs_per_eenheid_incl_btw": 25.46,
-      "rc_waarde": 2.1
+      "prijs_per_eenheid_excl": 22.3601,
+      "prijs_per_eenheid_incl_btw": 25.4621
     },
     {
       "code": "V3-2-C1",
       "onderdeel": "C Vloeren",
       "level": "Level 3 - VLOER",
-      "omschrijving": "Zolder-/vlieringvloer bovenzijde isolatie incl. regelwerk en beplating Rc 2.60  m²K/W",
+      "omschrijving": "Zolder-/vlieringvloer bovenzijde isolatie incl. regelwerk en beplating Rc 2.60 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 62.0661,
-      "prijs_per_eenheid_incl_btw": 75.1,
-      "rc_waarde": 2.6
+      "prijs_per_eenheid_excl": 65.6175,
+      "prijs_per_eenheid_incl_btw": 75.1028
     },
     {
       "code": "V4-1-A1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 103.157,
-      "prijs_per_eenheid_incl_btw": 124.82,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
+      "prijs_per_eenheid_excl": 110.8485,
+      "prijs_per_eenheid_incl_btw": 124.8154
     },
     {
-      "code": "V4-1-X12",
+      "code": "V4-1-A2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Afdekken trap. beschermen interieur met bijv. stucloper",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 120.3967,
-      "prijs_per_eenheid_incl_btw": 145.68
-    },
-    {
-      "code": "V4-1-X8",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Isolatie rondom dakopeningen",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 120.3967,
-      "prijs_per_eenheid_incl_btw": 145.68
-    },
-    {
-      "code": "V4-1-X7",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Nokbalk opdikken",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 24.0826,
-      "prijs_per_eenheid_incl_btw": 29.14
-    },
-    {
-      "code": "V4-1-X2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 337.0992,
-      "prijs_per_eenheid_incl_btw": 407.89
-    },
-    {
-      "code": "V4-1-X5",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Uitvlakken bestaande constructie",
+      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 16.3471,
-      "prijs_per_eenheid_incl_btw": 19.78
+      "prijs_per_eenheid_excl": 100.4985,
+      "prijs_per_eenheid_incl_btw": 113.1613
     },
     {
-      "code": "V4-1-X3",
+      "code": "V4-1-A3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Opname voor begin werkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 72.2397,
-      "prijs_per_eenheid_incl_btw": 87.41
+      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W  vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 90.1485,
+      "prijs_per_eenheid_incl_btw": 101.5072
+    },
+    {
+      "code": "V4-1-A4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ PUR meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.2587,
+      "prijs_per_eenheid_incl_btw": 0.2914
+    },
+    {
+      "code": "V4-1-B1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie glaswol deken dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 125.3385,
+      "prijs_per_eenheid_incl_btw": 141.1312
+    },
+    {
+      "code": "V4-1-B2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 114.9885,
+      "prijs_per_eenheid_incl_btw": 129.4771
+    },
+    {
+      "code": "V4-1-B3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 104.6385,
+      "prijs_per_eenheid_incl_btw": 117.823
+    },
+    {
+      "code": "V4-1-B4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ Glaswol deken meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.4657,
+      "prijs_per_eenheid_incl_btw": 0.5244
+    },
+    {
+      "code": "V4-1-C1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 67.275,
+      "prijs_per_eenheid_incl_btw": 75.7516
+    },
+    {
+      "code": "V4-1-C2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 56.925,
+      "prijs_per_eenheid_incl_btw": 64.0975
+    },
+    {
+      "code": "V4-1-C3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 46.575,
+      "prijs_per_eenheid_incl_btw": 52.4434
+    },
+    {
+      "code": "V4-1-C4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ Glaswol ingeblazen meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.207,
+      "prijs_per_eenheid_incl_btw": 0.2331
+    },
+    {
+      "code": "V4-1-D1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie vlasvezel dik 140mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 140.8635,
+      "prijs_per_eenheid_incl_btw": 158.6123
+    },
+    {
+      "code": "V4-1-D2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 135.6885,
+      "prijs_per_eenheid_incl_btw": 152.7853
+    },
+    {
+      "code": "V4-1-D3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 125.3385,
+      "prijs_per_eenheid_incl_btw": 141.1312
+    },
+    {
+      "code": "V4-1-D4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ Vlasvezel meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.3415,
+      "prijs_per_eenheid_incl_btw": 0.3846
+    },
+    {
+      "code": "V4-1-E1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie grasvezel dik 150mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 146.0385,
+      "prijs_per_eenheid_incl_btw": 164.4394
+    },
+    {
+      "code": "V4-1-E2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 140.8635,
+      "prijs_per_eenheid_incl_btw": 158.6123
+    },
+    {
+      "code": "V4-1-E3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 135.6885,
+      "prijs_per_eenheid_incl_btw": 152.7853
+    },
+    {
+      "code": "V4-1-E4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ Grasvezel meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.3933,
+      "prijs_per_eenheid_incl_btw": 0.4429
+    },
+    {
+      "code": "V4-1-F1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie hennepvezel dik 150mm van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 146.0385,
+      "prijs_per_eenheid_incl_btw": 164.4394
+    },
+    {
+      "code": "V4-1-F2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 140.8635,
+      "prijs_per_eenheid_incl_btw": 158.6123
+    },
+    {
+      "code": "V4-1-F3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 135.6885,
+      "prijs_per_eenheid_incl_btw": 152.7853
+    },
+    {
+      "code": "V4-1-F4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ Hennepvezel meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.3933,
+      "prijs_per_eenheid_incl_btw": 0.4429
+    },
+    {
+      "code": "V4-1-G1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie PIR-platen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 141.8985,
+      "prijs_per_eenheid_incl_btw": 159.7777
+    },
+    {
+      "code": "V4-1-G2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 132.5835,
+      "prijs_per_eenheid_incl_btw": 149.289
+    },
+    {
+      "code": "V4-1-G3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 129.4785,
+      "prijs_per_eenheid_incl_btw": 145.7928
+    },
+    {
+      "code": "V4-1-G4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ PIR-platen meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.1863,
+      "prijs_per_eenheid_incl_btw": 0.2098
+    },
+    {
+      "code": "V4-1-H1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie PIR-panelen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 101.9475,
+      "prijs_per_eenheid_incl_btw": 114.7929
+    },
+    {
+      "code": "V4-1-H2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie PIR-panelen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 96.7725,
+      "prijs_per_eenheid_incl_btw": 108.9658
+    },
+    {
+      "code": "V4-1-H3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie PIR-panelen dik 80mm  Rc 3.50 m².K/W vanaf 120 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 91.5975,
+      "prijs_per_eenheid_incl_btw": 103.1388
+    },
+    {
+      "code": "V4-1-H4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "╚ PIR-panelen meer-/minderprijs per mm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 0.3622,
+      "prijs_per_eenheid_incl_btw": 0.4079
+    },
+    {
+      "code": "V4-1-I1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 120.0,
+      "prijs_per_eenheid_incl_btw": 135.12
+    },
+    {
+      "code": "V4-1-I2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W vanaf 45 m² tot",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 118.0,
+      "prijs_per_eenheid_incl_btw": 132.868
+    },
+    {
+      "code": "V4-1-I3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Toeslag dakisolatie isolatiefolie uitvoeren in biobased",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 18.3712,
+      "prijs_per_eenheid_incl_btw": 20.686
+    },
+    {
+      "code": "V4-1-J1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Minderpijs V4-1- A, B, D, E, F, G. uitvoeren zonder gipsbeplating en regelwerk.",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": -52.8885,
+      "prijs_per_eenheid_incl_btw": -59.5525
+    },
+    {
+      "code": "V4-1-X",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "",
+      "prijs_per_eenheid_excl": 2330.4267,
+      "prijs_per_eenheid_incl_btw": 2624.0605
     },
     {
       "code": "V4-1-X1",
@@ -1428,44 +1819,26 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Minimum Tarief (van toepassing indien totaal spuit en of inblaas isoleren lager is dan € 750)",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 722.3636,
-      "prijs_per_eenheid_incl_btw": 874.06
+      "prijs_per_eenheid_excl": 776.25,
+      "prijs_per_eenheid_incl_btw": 874.0575
     },
     {
-      "code": "V4-1-X11",
+      "code": "V4-1-X2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Stroom verleggen per aansluitpunt",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 72.2397,
-      "prijs_per_eenheid_incl_btw": 87.41
-    },
-    {
-      "code": "V4-1-X10",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Knieschot plaatsen tot 60cm",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 48.157,
-      "prijs_per_eenheid_incl_btw": 58.27
-    },
-    {
-      "code": "V4-1-X9",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Steigerwerk (rolsteiger. steiger in trap. etc.)",
+      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 288.9421,
-      "prijs_per_eenheid_incl_btw": 349.62
+      "prijs_per_eenheid_excl": 362.25,
+      "prijs_per_eenheid_incl_btw": 407.8935
     },
     {
-      "code": "V4-1-X6",
+      "code": "V4-1-X3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Opdikken gording i.v.m. dikkere isolatieplaat",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 4.8182,
-      "prijs_per_eenheid_incl_btw": 5.83
+      "omschrijving": "Opname voor begin werkzaamheden",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 87.4057
     },
     {
       "code": "V4-1-X4",
@@ -1473,8 +1846,80 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Demonteren/slopen/afvoeren bestaande betimmering",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 28.5537,
-      "prijs_per_eenheid_incl_btw": 34.55
+      "prijs_per_eenheid_excl": 30.6878,
+      "prijs_per_eenheid_incl_btw": 34.5544
+    },
+    {
+      "code": "V4-1-X5",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Uitvlakken bestaande constructie",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 17.5639,
+      "prijs_per_eenheid_incl_btw": 19.777
+    },
+    {
+      "code": "V4-1-X6",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Opdikken balklaag/gording i.v.m. dikkere isolatieplaat",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 5.175,
+      "prijs_per_eenheid_incl_btw": 5.827
+    },
+    {
+      "code": "V4-1-X7",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Nokbalk opdikken",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 25.875,
+      "prijs_per_eenheid_incl_btw": 29.1352
+    },
+    {
+      "code": "V4-1-X8",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Isolatie rondom dakopeningen",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 129.375,
+      "prijs_per_eenheid_incl_btw": 145.6763
+    },
+    {
+      "code": "V4-1-X9",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Steigerwerk (rolsteiger. steiger in trap. etc.)",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 310.5,
+      "prijs_per_eenheid_incl_btw": 349.623
+    },
+    {
+      "code": "V4-1-X10",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Knieschot plaatsen tot 60cm",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 51.75,
+      "prijs_per_eenheid_incl_btw": 58.2705
+    },
+    {
+      "code": "V4-1-X11",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Stroom verleggen per aansluitpunt",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 87.4057
+    },
+    {
+      "code": "V4-1-X12",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Afdekken trap beschermen interieur met bijv. stucloper",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 129.375,
+      "prijs_per_eenheid_incl_btw": 145.6763
     },
     {
       "code": "V4-1-X13",
@@ -1482,8 +1927,8 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Indien zolder toegang alleen bereikbaar met vliezotrap toeslag op prijzen",
       "eenheid": "won",
-      "prijs_per_eenheid_excl": 240.7851,
-      "prijs_per_eenheid_incl_btw": 291.35
+      "prijs_per_eenheid_excl": 258.75,
+      "prijs_per_eenheid_incl_btw": 291.3525
     },
     {
       "code": "V4-1-X14",
@@ -1491,447 +1936,17 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Dakdoorvoeren (manchetten etc.)",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 72.2397,
-      "prijs_per_eenheid_incl_btw": 87.41
-    },
-    {
-      "code": "V4-1-A2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 93.5207,
-      "prijs_per_eenheid_incl_btw": 113.16,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
-    },
-    {
-      "code": "V4-1-A3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W  vanaf 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 83.8926,
-      "prijs_per_eenheid_incl_btw": 101.51,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
-    },
-    {
-      "code": "V4-1-A4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ PUR meer-/minderprijs per 10 mm vanaf 170 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 2.405,
-      "prijs_per_eenheid_incl_btw": 2.91,
-      "dikte_mm": 10.0
-    },
-    {
-      "code": "V4-1-B1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol deken dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 116.6364,
-      "prijs_per_eenheid_incl_btw": 141.13,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
-    },
-    {
-      "code": "V4-1-B2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 107.0083,
-      "prijs_per_eenheid_incl_btw": 129.48,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
-    },
-    {
-      "code": "V4-1-B3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 97.3719,
-      "prijs_per_eenheid_incl_btw": 117.82,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
-    },
-    {
-      "code": "V4-1-B4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ Glaswol deken meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 4.3306,
-      "prijs_per_eenheid_incl_btw": 5.24,
-      "rc_waarde": 4.5,
-      "dikte_mm": 140.0
-    },
-    {
-      "code": "V4-1-C1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 62.6033,
-      "prijs_per_eenheid_incl_btw": 75.75,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
-    },
-    {
-      "code": "V4-1-C2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 52.9752,
-      "prijs_per_eenheid_incl_btw": 64.1,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
-    },
-    {
-      "code": "V4-1-C3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 43.3388,
-      "prijs_per_eenheid_incl_btw": 52.44,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
-    },
-    {
-      "code": "V4-1-C4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ Glaswol ingeblazen meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.9256,
-      "prijs_per_eenheid_incl_btw": 2.33,
-      "dikte_mm": 10.0
-    },
-    {
-      "code": "V4-1-D1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie vlasvezel dik 140mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 131.0826,
-      "prijs_per_eenheid_incl_btw": 158.61,
-      "rc_waarde": 3.5,
-      "dikte_mm": 140.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-D2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 126.2727,
-      "prijs_per_eenheid_incl_btw": 152.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 140.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-D3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 116.6364,
-      "prijs_per_eenheid_incl_btw": 141.13,
-      "rc_waarde": 3.5,
-      "dikte_mm": 140.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-D4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ Vlasvezel meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.1818,
-      "prijs_per_eenheid_incl_btw": 3.85,
-      "rc_waarde": 4.5,
-      "dikte_mm": 190.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-E1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie grasvezel dik 150mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 135.9008,
-      "prijs_per_eenheid_incl_btw": 164.44,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-E2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 131.0826,
-      "prijs_per_eenheid_incl_btw": 158.61,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-E3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 126.2727,
-      "prijs_per_eenheid_incl_btw": 152.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-E4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ Grasvezel meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.6612,
-      "prijs_per_eenheid_incl_btw": 4.43,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-F1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie hennepvezel dik 150mm van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 135.9008,
-      "prijs_per_eenheid_incl_btw": 164.44,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-F2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 131.0826,
-      "prijs_per_eenheid_incl_btw": 158.61,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-F3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 121 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 126.2727,
-      "prijs_per_eenheid_incl_btw": 152.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-F4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ Hennepvezel meer-/minderprijs per 10 mm",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.6612,
-      "prijs_per_eenheid_incl_btw": 4.43,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-G1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 132.0496,
-      "prijs_per_eenheid_incl_btw": 159.78,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V4-1-G2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 123.3802,
-      "prijs_per_eenheid_incl_btw": 149.29,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V4-1-G3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 120.4876,
-      "prijs_per_eenheid_incl_btw": 145.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V4-1-G4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ PIR-platen meer-/minderprijs per 10 mm.",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.7355,
-      "prijs_per_eenheid_incl_btw": 2.1
-    },
-    {
-      "code": "V4-1-H1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm Rc 3.50 m².K/W  < 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 94.8678,
-      "prijs_per_eenheid_incl_btw": 114.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V4-1-H2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W  45- 120 m² van 45 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 90.0579,
-      "prijs_per_eenheid_incl_btw": 108.97,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V4-1-H3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W  > 120 m² vanaf 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 85.2397,
-      "prijs_per_eenheid_incl_btw": 103.14,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
-    },
-    {
-      "code": "V4-1-H4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "╚ PIR-afgewerkte panelen meer-/minderprijs per 10 mm’",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.3719,
-      "prijs_per_eenheid_incl_btw": 4.08,
-      "dikte_mm": 10.0
-    },
-    {
-      "code": "V4-1-I",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Isoleren binnenzijde wangen dakkapel (30% subsidiabel)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 143.3884,
-      "prijs_per_eenheid_incl_btw": 173.5
-    },
-    {
-      "code": "V4-1-I1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 111.6694,
-      "prijs_per_eenheid_incl_btw": 135.12,
-      "rc_waarde": 3.5
-    },
-    {
-      "code": "V4-1-I2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W vanaf 45 m² tot 120 m2 van 44 m² tot 120 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 109.8099,
-      "prijs_per_eenheid_incl_btw": 132.87,
-      "rc_waarde": 3.5
-    },
-    {
-      "code": "V4-1-I3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Toeslag dakisolatie isolatiefolie uitvoeren in biobased van 0 m² tot 0 m²",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 17.0992,
-      "prijs_per_eenheid_incl_btw": 20.69,
-      "rc_waarde": 3.5,
-      "biobased": true
-    },
-    {
-      "code": "V4-1-J1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Minderprijs V4-1- A,B,D,E,F,G. Uitvoeren zonder gipsbeplating en regelwerk",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": -49.2149,
-      "prijs_per_eenheid_incl_btw": -59.55
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 87.4057
     },
     {
       "code": "V4-2-A1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakbedekking en aanbrengen isolatie met Bitumendakbedekking Rc 3.70 m²K/W.",
+      "omschrijving": "Vervangen dakbedekking en aanbrengen isolatie met Bitumendakbedekking Rc 3.70 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 133.7273,
-      "prijs_per_eenheid_incl_btw": 161.81,
-      "rc_waarde": 3.7
-    },
-    {
-      "code": "V4-2-X2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "verwijderen en reinigen ballastlaag grind",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 20.9008,
-      "prijs_per_eenheid_incl_btw": 25.29
-    },
-    {
-      "code": "V4-2-X3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "aanbr.ballastlaag grind (hergebruik)",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 6.7603,
-      "prijs_per_eenheid_incl_btw": 8.18
-    },
-    {
-      "code": "V4-2-X1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "beveiliging dakranden",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 16.6446,
-      "prijs_per_eenheid_incl_btw": 20.14
-    },
-    {
-      "code": "V4-2-X4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakdoorvoeren incl. inplakken",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 94.2893,
-      "prijs_per_eenheid_incl_btw": 114.09
+      "prijs_per_eenheid_excl": 142.3321,
+      "prijs_per_eenheid_incl_btw": 161.8092
     },
     {
       "code": "V4-2-A2",
@@ -1939,37 +1954,35 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Toeslag vervangen dakbedekking indien minder dan 8 m²",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 345.4628,
-      "prijs_per_eenheid_incl_btw": 418.01
+      "prijs_per_eenheid_excl": 375.221,
+      "prijs_per_eenheid_incl_btw": 418.0078
     },
     {
       "code": "V4-2-B1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakbedekking en aanbrengen isolatie met EPDM dakbedekking Rc 3.70 m²K/W.",
+      "omschrijving": "Vervangen dakbedekking en aanbrengen isolatie met EPDM dakbedekking Rc 3.70 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 188.0331,
-      "prijs_per_eenheid_incl_btw": 227.52,
-      "rc_waarde": 3.7
+      "prijs_per_eenheid_excl": 200.0439,
+      "prijs_per_eenheid_incl_btw": 227.5174
     },
     {
       "code": "V4-2-B2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Toeslag vervangen dakbedekking indien minder dan 8 m² (EPDM dakbedekking)",
+      "omschrijving": "Toeslag vervangen dakbedekking indien minder dan 8 m²",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 376.7686,
-      "prijs_per_eenheid_incl_btw": 455.89
+      "prijs_per_eenheid_excl": 406.5297,
+      "prijs_per_eenheid_incl_btw": 455.8914
     },
     {
       "code": "V4-2-C1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Aanbrengen isolatie op platdak (Omgekeerd dak) Rc 3.00 m²K/W",
+      "omschrijving": "Aanbrengen isolatie op platdak (Omgekeerd dak) Rc 3.00 m².K/W",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 32.6777,
-      "prijs_per_eenheid_incl_btw": 39.54,
-      "rc_waarde": 3.0
+      "prijs_per_eenheid_excl": 34.5963,
+      "prijs_per_eenheid_incl_btw": 39.5374
     },
     {
       "code": "V4-2-C2",
@@ -1977,17 +1990,71 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Toeslag vervangen isolatie indien minder dan 8 m²",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 172.7273,
-      "prijs_per_eenheid_incl_btw": 209.0
+      "prijs_per_eenheid_excl": 187.6105,
+      "prijs_per_eenheid_incl_btw": 209.0039
+    },
+    {
+      "code": "V4-2-X1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Beveiliging dakranden",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 18.1349,
+      "prijs_per_eenheid_incl_btw": 20.1427
+    },
+    {
+      "code": "V4-2-X2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Verwijderen en reinigen ballastlaag grind",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 22.3929,
+      "prijs_per_eenheid_incl_btw": 25.2949
+    },
+    {
+      "code": "V4-2-X3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Aanbr. ballastlaag grind (hergebruik)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 7.502,
+      "prijs_per_eenheid_incl_btw": 8.1772
+    },
+    {
+      "code": "V4-2-X4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakdoorvoeren incl. inplakken",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 98.01,
+      "prijs_per_eenheid_incl_btw": 114.0909
     },
     {
       "code": "V4-3-A1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen vierpans dakraam voor geisoleerd dakraam  in pannen dak",
+      "omschrijving": "Vervangen vierpans dakraam 45 x 55 cm- pannendak",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 519.6942,
-      "prijs_per_eenheid_incl_btw": 628.83
+      "prijs_per_eenheid_excl": 534.5741,
+      "prijs_per_eenheid_incl_btw": 628.8298
+    },
+    {
+      "code": "V4-3-B1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen vierpans dakraam 45 x 55 cm- rieten dak",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1189.1317,
+      "prijs_per_eenheid_incl_btw": 1384.835
+    },
+    {
+      "code": "V4-3-X",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 97.5865,
+      "prijs_per_eenheid_incl_btw": 110.8777
     },
     {
       "code": "V4-3-X1",
@@ -1995,26 +2062,233 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Dagkantaftimmering",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 91.6364,
-      "prijs_per_eenheid_incl_btw": 110.88
-    },
-    {
-      "code": "V4-3-B1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen vierpans dakraam voor geisoleerd dakraam in rieten dak",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1144.4876,
-      "prijs_per_eenheid_incl_btw": 1384.83
+      "prijs_per_eenheid_excl": 97.5865,
+      "prijs_per_eenheid_incl_btw": 110.8777
     },
     {
       "code": "V4-4-A1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 55 x 78 cm",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 55 x 78 cm",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 822.4793,
-      "prijs_per_eenheid_incl_btw": 995.2
+      "prijs_per_eenheid_excl": 856.8253,
+      "prijs_per_eenheid_incl_btw": 995.2036
+    },
+    {
+      "code": "V4-4-A2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 78 x 98 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 958.3555,
+      "prijs_per_eenheid_incl_btw": 1117.2808
+    },
+    {
+      "code": "V4-4-A3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 114 x 118 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1324.3315,
+      "prijs_per_eenheid_incl_btw": 1539.7484
+    },
+    {
+      "code": "V4-4-A4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 55 x 70 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 850.8535,
+      "prijs_per_eenheid_incl_btw": 988.1218
+    },
+    {
+      "code": "V4-4-A5",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 55 x 98 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 886.9653,
+      "prijs_per_eenheid_incl_btw": 1031.3128
+    },
+    {
+      "code": "V4-4-A6",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 55 x 118 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1019.1244,
+      "prijs_per_eenheid_incl_btw": 1181.8629
+    },
+    {
+      "code": "V4-4-A7",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 66 x 98 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 936.4923,
+      "prijs_per_eenheid_incl_btw": 1091.0425
+    },
+    {
+      "code": "V4-4-A8",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 66 x 118 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1050.393,
+      "prijs_per_eenheid_incl_btw": 1219.4998
+    },
+    {
+      "code": "V4-4-A9",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 66 x 140 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1197.337,
+      "prijs_per_eenheid_incl_btw": 1386.5532
+    },
+    {
+      "code": "V4-4-A10",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 78 x 118 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1088.9624,
+      "prijs_per_eenheid_incl_btw": 1265.9528
+    },
+    {
+      "code": "V4-4-A11",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 78 x 140 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1227.1525,
+      "prijs_per_eenheid_incl_btw": 1422.4139
+    },
+    {
+      "code": "V4-4-A12",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 78 x 160 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1440.9177,
+      "prijs_per_eenheid_incl_btw": 1667.206
+    },
+    {
+      "code": "V4-4-A13",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 94 x 55 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1095.5695,
+      "prijs_per_eenheid_incl_btw": 1283.7959
+    },
+    {
+      "code": "V4-4-A14",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 94 x 98 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1240.0384,
+      "prijs_per_eenheid_incl_btw": 1436.0793
+    },
+    {
+      "code": "V4-4-A15",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 94 x 118 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1285.3757,
+      "prijs_per_eenheid_incl_btw": 1492.972
+    },
+    {
+      "code": "V4-4-A16",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 94 x 140 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1449.1341,
+      "prijs_per_eenheid_incl_btw": 1677.2199
+    },
+    {
+      "code": "V4-4-A17",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 94 x 160 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1506.4117,
+      "prijs_per_eenheid_incl_btw": 1746.1657
+    },
+    {
+      "code": "V4-4-A18",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 114 x 70 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1286.8227,
+      "prijs_per_eenheid_incl_btw": 1495.227
+    },
+    {
+      "code": "V4-4-A19",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 114 x 140 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1518.3967,
+      "prijs_per_eenheid_incl_btw": 1760.6676
+    },
+    {
+      "code": "V4-4-A20",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 114 x 160 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1601.1972,
+      "prijs_per_eenheid_incl_btw": 1860.4961
+    },
+    {
+      "code": "V4-4-A21",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 134 x 98 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1354.7511,
+      "prijs_per_eenheid_incl_btw": 1576.5561
+    },
+    {
+      "code": "V4-4-A22",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 134 x 118 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1528.3283,
+      "prijs_per_eenheid_incl_btw": 1772.7208
+    },
+    {
+      "code": "V4-4-A23",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 134 x 140 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1614.0463,
+      "prijs_per_eenheid_incl_btw": 1876.0436
+    },
+    {
+      "code": "V4-4-A24",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Vervangen dakraam  tuimelvenster 134 x 160 cm",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 1730.5101,
+      "prijs_per_eenheid_incl_btw": 2016.6046
+    },
+    {
+      "code": "V4-4-X",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 118.8522,
+      "prijs_per_eenheid_incl_btw": 134.8088
     },
     {
       "code": "V4-4-X1",
@@ -2022,682 +2296,314 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Dagkantaftimmering",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 111.4132,
-      "prijs_per_eenheid_incl_btw": 134.81
-    },
-    {
-      "code": "V4-4-A10",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 78 x 118 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1046.2397,
-      "prijs_per_eenheid_incl_btw": 1265.95
-    },
-    {
-      "code": "V4-4-A11",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 78 x 140 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1175.5455,
-      "prijs_per_eenheid_incl_btw": 1422.41
-    },
-    {
-      "code": "V4-4-A12",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 78 x 160 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1377.8595,
-      "prijs_per_eenheid_incl_btw": 1667.21
-    },
-    {
-      "code": "V4-4-A13",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 94 x 55 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1060.9917,
-      "prijs_per_eenheid_incl_btw": 1283.8
-    },
-    {
-      "code": "V4-4-A14",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 94 x 98 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1186.843,
-      "prijs_per_eenheid_incl_btw": 1436.08
-    },
-    {
-      "code": "V4-4-A15",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 94 x 118 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1233.8595,
-      "prijs_per_eenheid_incl_btw": 1492.97
-    },
-    {
-      "code": "V4-4-A16",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 94 x 140 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1386.1322,
-      "prijs_per_eenheid_incl_btw": 1677.22
-    },
-    {
-      "code": "V4-4-A17",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 94 x 160 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1443.1157,
-      "prijs_per_eenheid_incl_btw": 1746.17
-    },
-    {
-      "code": "V4-4-A18",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 114 x 70 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1235.7273,
-      "prijs_per_eenheid_incl_btw": 1495.23
-    },
-    {
-      "code": "V4-4-A19",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 114 x 140 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1455.0992,
-      "prijs_per_eenheid_incl_btw": 1760.67
-    },
-    {
-      "code": "V4-4-A2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 78 x 98 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 923.3719,
-      "prijs_per_eenheid_incl_btw": 1117.28
-    },
-    {
-      "code": "V4-4-A20",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 114 x 160 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1537.6033,
-      "prijs_per_eenheid_incl_btw": 1860.5
-    },
-    {
-      "code": "V4-4-A21",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 134 x 98 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1302.9421,
-      "prijs_per_eenheid_incl_btw": 1576.56
-    },
-    {
-      "code": "V4-4-A22",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 134 x 118 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1465.0579,
-      "prijs_per_eenheid_incl_btw": 1772.72
-    },
-    {
-      "code": "V4-4-A23",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 134 x 140 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1550.4463,
-      "prijs_per_eenheid_incl_btw": 1876.04
-    },
-    {
-      "code": "V4-4-A24",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 134 x 160 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1666.6116,
-      "prijs_per_eenheid_incl_btw": 2016.6
-    },
-    {
-      "code": "V4-4-A3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 114 x 118 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1272.5207,
-      "prijs_per_eenheid_incl_btw": 1539.75
-    },
-    {
-      "code": "V4-4-A4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 55 x 70 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 816.6281,
-      "prijs_per_eenheid_incl_btw": 988.12
-    },
-    {
-      "code": "V4-4-A5",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 55 x 98 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 852.3223,
-      "prijs_per_eenheid_incl_btw": 1031.31
-    },
-    {
-      "code": "V4-4-A6",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 55 x 118 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 976.7438,
-      "prijs_per_eenheid_incl_btw": 1181.86
-    },
-    {
-      "code": "V4-4-A7",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 66 x 98 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 901.686,
-      "prijs_per_eenheid_incl_btw": 1091.04
-    },
-    {
-      "code": "V4-4-A8",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 66 x 118 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1007.8512,
-      "prijs_per_eenheid_incl_btw": 1219.5
-    },
-    {
-      "code": "V4-4-A9",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Vervangen dakraam tuimelvenster 66 x 140 cm",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 1145.9091,
-      "prijs_per_eenheid_incl_btw": 1386.55
+      "prijs_per_eenheid_excl": 118.8522,
+      "prijs_per_eenheid_incl_btw": 134.8088
     },
     {
       "code": "V4-5-A1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100 mm Rc 3.50 m2. K/W van 0 m2 tot 45 m2 van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 103.157,
-      "prijs_per_eenheid_incl_btw": 124.82,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
-    },
-    {
-      "code": "V4-5-X11",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Dakdoorvoeren (manchetten etc.)",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 72.2397,
-      "prijs_per_eenheid_incl_btw": 87.41
-    },
-    {
-      "code": "V4-5-X1",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Minimum Tarief (van toepassing indien totaal spuit en of inblaas isoleren lager is dan € 750)",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 722.3636,
-      "prijs_per_eenheid_incl_btw": 874.06
-    },
-    {
-      "code": "V4-5-X2",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 337.0992,
-      "prijs_per_eenheid_incl_btw": 407.89
-    },
-    {
-      "code": "V4-5-X3",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Opname voor begin werkzaamheden",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 72.2397,
-      "prijs_per_eenheid_incl_btw": 87.41
-    },
-    {
-      "code": "V4-5-X4",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Demonteren/slopen/afvoeren bestaande betimmering",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 28.5537,
-      "prijs_per_eenheid_incl_btw": 34.55
-    },
-    {
-      "code": "V4-5-X5",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Uitvlakken bestaande constructie",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 16.3471,
-      "prijs_per_eenheid_incl_btw": 19.78
-    },
-    {
-      "code": "V4-5-X6",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Opdikken balklaag i.v.m. dikkere isolatieplaat",
-      "eenheid": "m²",
-      "prijs_per_eenheid_excl": 4.8182,
-      "prijs_per_eenheid_incl_btw": 5.83
-    },
-    {
-      "code": "V4-5-X7",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Isolatie rondom dakopeningen",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 120.3967,
-      "prijs_per_eenheid_incl_btw": 145.68
-    },
-    {
-      "code": "V4-5-X8",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Steigerwerk (rolsteiger. steiger in trap. etc.)",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 288.9421,
-      "prijs_per_eenheid_incl_btw": 349.62
-    },
-    {
-      "code": "V4-5-X9",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Stroom verleggen per aansluitpunt",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 72.2397,
-      "prijs_per_eenheid_incl_btw": 87.41
-    },
-    {
-      "code": "V4-5-X10",
-      "onderdeel": "D Daken",
-      "level": "Level 4 - DAK",
-      "omschrijving": "Beschermen interieur met bijv. stucloper",
-      "eenheid": "won",
-      "prijs_per_eenheid_excl": 120.3967,
-      "prijs_per_eenheid_incl_btw": 145.68
+      "prijs_per_eenheid_excl": 110.8485,
+      "prijs_per_eenheid_incl_btw": 124.8154
     },
     {
       "code": "V4-5-A2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 93.5207,
-      "prijs_per_eenheid_incl_btw": 113.16,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
+      "prijs_per_eenheid_excl": 100.4985,
+      "prijs_per_eenheid_incl_btw": 113.1613
     },
     {
       "code": "V4-5-A3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W  vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie gespoten isolatieschuim dik 100mm Rc 3.50 m².K/W  vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 83.8926,
-      "prijs_per_eenheid_incl_btw": 101.51,
-      "rc_waarde": 3.5,
-      "dikte_mm": 100.0
+      "prijs_per_eenheid_excl": 90.1485,
+      "prijs_per_eenheid_incl_btw": 101.5072
     },
     {
       "code": "V4-5-A4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ PUR meer-/minderprijs per mm \t110 mm Rc 4.03 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ PUR meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 2.405,
-      "prijs_per_eenheid_incl_btw": 2.91
+      "prijs_per_eenheid_excl": 0.2587,
+      "prijs_per_eenheid_incl_btw": 0.2914
     },
     {
       "code": "V4-5-B1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol deken dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie glaswol deken dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 116.6364,
-      "prijs_per_eenheid_incl_btw": 141.13,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 125.3385,
+      "prijs_per_eenheid_incl_btw": 141.1312
     },
     {
       "code": "V4-5-B2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 107.0083,
-      "prijs_per_eenheid_incl_btw": 129.48,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 114.9885,
+      "prijs_per_eenheid_incl_btw": 129.4771
     },
     {
       "code": "V4-5-B3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie glaswol deken dik 130mm  Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 97.3719,
-      "prijs_per_eenheid_incl_btw": 117.82,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 104.6385,
+      "prijs_per_eenheid_incl_btw": 117.823
     },
     {
       "code": "V4-5-B4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ Glaswol deken meer-/minderprijs per mm \t140 mm Rc 3.70 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ Glaswol deken meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 4.3306,
-      "prijs_per_eenheid_incl_btw": 5.24
+      "prijs_per_eenheid_excl": 0.4657,
+      "prijs_per_eenheid_incl_btw": 0.5244
     },
     {
       "code": "V4-5-C1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 62.6033,
-      "prijs_per_eenheid_incl_btw": 75.75,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 67.275,
+      "prijs_per_eenheid_incl_btw": 75.7516
     },
     {
       "code": "V4-5-C2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 52.9752,
-      "prijs_per_eenheid_incl_btw": 64.1,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 56.925,
+      "prijs_per_eenheid_incl_btw": 64.0975
     },
     {
       "code": "V4-5-C3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie glaswol ingeblazen dik 130mm Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 43.3388,
-      "prijs_per_eenheid_incl_btw": 52.44,
-      "rc_waarde": 3.5,
-      "dikte_mm": 130.0
+      "prijs_per_eenheid_excl": 46.575,
+      "prijs_per_eenheid_incl_btw": 52.4434
     },
     {
       "code": "V4-5-C4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ Glaswol ingeblazen meer-/minderprijs per mm \t140 mm Rc 3.70 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ Glaswol ingeblazen meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.9256,
-      "prijs_per_eenheid_incl_btw": 2.33
+      "prijs_per_eenheid_excl": 0.207,
+      "prijs_per_eenheid_incl_btw": 0.2331
     },
     {
       "code": "V4-5-D1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie vlasvezel dik 140mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie vlasvezel dik 140mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 131.0826,
-      "prijs_per_eenheid_incl_btw": 158.61,
-      "rc_waarde": 3.5,
-      "dikte_mm": 140.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 140.8635,
+      "prijs_per_eenheid_incl_btw": 158.6123
     },
     {
       "code": "V4-5-D2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 126.2727,
-      "prijs_per_eenheid_incl_btw": 152.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 140.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 135.6885,
+      "prijs_per_eenheid_incl_btw": 152.7853
     },
     {
       "code": "V4-5-D3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie vlasvezel dik 140mm  Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 116.6364,
-      "prijs_per_eenheid_incl_btw": 141.13,
-      "rc_waarde": 3.5,
-      "dikte_mm": 140.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 125.3385,
+      "prijs_per_eenheid_incl_btw": 141.1312
     },
     {
       "code": "V4-5-D4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ Vlasvezel meer-/minderprijs per mm \t150 mm Rc 3.75 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ Vlasvezel meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.1818,
-      "prijs_per_eenheid_incl_btw": 3.85,
-      "biobased": true
+      "prijs_per_eenheid_excl": 0.3415,
+      "prijs_per_eenheid_incl_btw": 0.3846
     },
     {
       "code": "V4-5-E1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie grasvezel dik 150mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie grasvezel dik 150mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 135.9008,
-      "prijs_per_eenheid_incl_btw": 164.44,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 146.0385,
+      "prijs_per_eenheid_incl_btw": 164.4394
     },
     {
       "code": "V4-5-E2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 131.0826,
-      "prijs_per_eenheid_incl_btw": 158.61,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 140.8635,
+      "prijs_per_eenheid_incl_btw": 158.6123
     },
     {
       "code": "V4-5-E3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie grasvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 126.2727,
-      "prijs_per_eenheid_incl_btw": 152.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 135.6885,
+      "prijs_per_eenheid_incl_btw": 152.7853
     },
     {
       "code": "V4-5-E4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ Grasvezel meer-/minderprijs per mm \t160 mm Rc 3.76 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ Grasvezel meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.6612,
-      "prijs_per_eenheid_incl_btw": 4.43,
-      "biobased": true
+      "prijs_per_eenheid_excl": 0.3933,
+      "prijs_per_eenheid_incl_btw": 0.4429
     },
     {
       "code": "V4-5-F1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie hennepvezel dik 150mm van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie hennepvezel dik 150mm van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 135.9008,
-      "prijs_per_eenheid_incl_btw": 164.44,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 146.0385,
+      "prijs_per_eenheid_incl_btw": 164.4394
     },
     {
       "code": "V4-5-F2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 131.0826,
-      "prijs_per_eenheid_incl_btw": 158.61,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 140.8635,
+      "prijs_per_eenheid_incl_btw": 158.6123
     },
     {
       "code": "V4-5-F3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie hennepvezel dik 150mm  Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 126.2727,
-      "prijs_per_eenheid_incl_btw": 152.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 150.0,
-      "biobased": true
+      "prijs_per_eenheid_excl": 135.6885,
+      "prijs_per_eenheid_incl_btw": 152.7853
     },
     {
       "code": "V4-5-F4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ Hennepvezel meer-/minderprijs per mm \t160 mm Rc 3.76 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ Hennepvezel meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.6612,
-      "prijs_per_eenheid_incl_btw": 4.43,
-      "biobased": true
+      "prijs_per_eenheid_excl": 0.3933,
+      "prijs_per_eenheid_incl_btw": 0.4429
     },
     {
       "code": "V4-5-G1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie PIR-platen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 132.0496,
-      "prijs_per_eenheid_incl_btw": 159.78,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
+      "prijs_per_eenheid_excl": 141.8985,
+      "prijs_per_eenheid_incl_btw": 159.7777
     },
     {
       "code": "V4-5-G2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 123.3802,
-      "prijs_per_eenheid_incl_btw": 149.29,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
+      "prijs_per_eenheid_excl": 132.5835,
+      "prijs_per_eenheid_incl_btw": 149.289
     },
     {
       "code": "V4-5-G3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie PIR-platen dik 80mm  Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 120.4876,
-      "prijs_per_eenheid_incl_btw": 145.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
+      "prijs_per_eenheid_excl": 129.4785,
+      "prijs_per_eenheid_incl_btw": 145.7928
     },
     {
       "code": "V4-5-G4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ PIR-platen meer-/minderprijs per mm \t90 mm Rc 3.90 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ PIR-platen meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 1.7355,
-      "prijs_per_eenheid_incl_btw": 2.1
+      "prijs_per_eenheid_excl": 0.1863,
+      "prijs_per_eenheid_incl_btw": 0.2098
     },
     {
       "code": "V4-5-H1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-panelen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 pst tot 45 pst",
-      "eenheid": "pst",
-      "prijs_per_eenheid_excl": 94.8678,
-      "prijs_per_eenheid_incl_btw": 114.79,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
+      "omschrijving": "Dakisolatie PIR-panelen dik 80mm Rc 3.50 m².K/W van 0 m² tot 45 m²",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 101.9475,
+      "prijs_per_eenheid_incl_btw": 114.7929
     },
     {
       "code": "V4-5-H2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-panelen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m² van 45 m² tot 120 m²",
+      "omschrijving": "Dakisolatie PIR-panelen dik 80mm  Rc 3.50 m².K/W van 45 m² tot 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 90.0579,
-      "prijs_per_eenheid_incl_btw": 108.97,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
+      "prijs_per_eenheid_excl": 96.7725,
+      "prijs_per_eenheid_incl_btw": 108.9658
     },
     {
       "code": "V4-5-H3",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie PIR-panelen dik 80mm  Rc 3.50 m².K/W vanaf 120 m² vanaf 120 m²",
+      "omschrijving": "Dakisolatie PIR-panelen dik 80mm  Rc 3.50 m².K/W vanaf 120 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 85.2397,
-      "prijs_per_eenheid_incl_btw": 103.14,
-      "rc_waarde": 3.5,
-      "dikte_mm": 80.0
+      "prijs_per_eenheid_excl": 91.5975,
+      "prijs_per_eenheid_incl_btw": 103.1388
     },
     {
       "code": "V4-5-H4",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "╚ PIR-panelen meer-/minderprijs per mm \t90 mm Rc 3.90 m².K/W\t\t10 \t mm",
+      "omschrijving": "╚ PIR-panelen meer-/minderprijs per mm",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 3.3719,
-      "prijs_per_eenheid_incl_btw": 4.08
+      "prijs_per_eenheid_excl": 0.3622,
+      "prijs_per_eenheid_incl_btw": 0.4079
     },
     {
       "code": "V4-5-I1",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W van 0 m² tot 45 m² van 0 m² tot 45 m²",
+      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W van 0 m² tot 45 m²",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 111.6694,
-      "prijs_per_eenheid_incl_btw": 135.12,
-      "rc_waarde": 3.5
+      "prijs_per_eenheid_excl": 120.0,
+      "prijs_per_eenheid_incl_btw": 135.12
     },
     {
       "code": "V4-5-I2",
       "onderdeel": "D Daken",
       "level": "Level 4 - DAK",
-      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W vanaf 45 m² tot vanaf 45 m²",
+      "omschrijving": "Dakisolatie isolatiefolie vanaf Rc 3.50 m².K/W vanaf 45 m² tot",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 109.8099,
-      "prijs_per_eenheid_incl_btw": 132.87,
-      "rc_waarde": 3.5
+      "prijs_per_eenheid_excl": 118.0,
+      "prijs_per_eenheid_incl_btw": 132.868
     },
     {
       "code": "V4-5-I3",
@@ -2705,9 +2611,8 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Toeslag dakisolatie isolatiefolie uitvoeren in biobased",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": 17.0992,
-      "prijs_per_eenheid_incl_btw": 20.69,
-      "biobased": true
+      "prijs_per_eenheid_excl": 18.3712,
+      "prijs_per_eenheid_incl_btw": 20.686
     },
     {
       "code": "V4-5-J1",
@@ -2715,44 +2620,143 @@
       "level": "Level 4 - DAK",
       "omschrijving": "Minderpijs V4-5- A, B, D, E, F, G. uitvoeren zonder gipsbeplating en regelwerk.",
       "eenheid": "m²",
-      "prijs_per_eenheid_excl": -49.2149,
-      "prijs_per_eenheid_incl_btw": -59.55
+      "prijs_per_eenheid_excl": -52.8885,
+      "prijs_per_eenheid_incl_btw": -59.5525
     },
     {
-      "code": "B5-1-A1",
+      "code": "V4-5-X",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "",
+      "prijs_per_eenheid_excl": 1994.0517,
+      "prijs_per_eenheid_incl_btw": 2245.3022
+    },
+    {
+      "code": "V4-5-X1",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Minimum Tarief (van toepassing indien totaal spuit en of inblaas isoleren lager is dan € 750)",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 776.25,
+      "prijs_per_eenheid_incl_btw": 874.0575
+    },
+    {
+      "code": "V4-5-X2",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Minimum Tarief timmerwerkzaamheden",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 362.25,
+      "prijs_per_eenheid_incl_btw": 407.8935
+    },
+    {
+      "code": "V4-5-X3",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Opname voor begin werkzaamheden",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 87.4057
+    },
+    {
+      "code": "V4-5-X4",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Demonteren/slopen/afvoeren bestaande betimmering",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 30.6878,
+      "prijs_per_eenheid_incl_btw": 34.5544
+    },
+    {
+      "code": "V4-5-X5",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Uitvlakken bestaande constructie",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 17.5639,
+      "prijs_per_eenheid_incl_btw": 19.777
+    },
+    {
+      "code": "V4-5-X6",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Opdikken balklaag i.v.m. dikkere isolatieplaat",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 5.175,
+      "prijs_per_eenheid_incl_btw": 5.827
+    },
+    {
+      "code": "V4-5-X7",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Isolatie rondom dakopeningen",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 129.375,
+      "prijs_per_eenheid_incl_btw": 145.6763
+    },
+    {
+      "code": "V4-5-X8",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Steigerwerk (rolsteiger. steiger in trap. etc.)",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 310.5,
+      "prijs_per_eenheid_incl_btw": 349.623
+    },
+    {
+      "code": "V4-5-X9",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Stroom verleggen per aansluitpunt",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 87.4057
+    },
+    {
+      "code": "V4-5-X10",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Beschermen interieur met bijv. stucloper",
+      "eenheid": "won",
+      "prijs_per_eenheid_excl": 129.375,
+      "prijs_per_eenheid_incl_btw": 145.6763
+    },
+    {
+      "code": "V4-5-X11",
+      "onderdeel": "D Daken",
+      "level": "Level 4 - DAK",
+      "omschrijving": "Dakdoorvoeren (manchetten etc.)",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 77.625,
+      "prijs_per_eenheid_incl_btw": 87.4057
+    },
+    {
+      "code": "V5-1-A",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "voorbereiding",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": 0.0
+    },
+    {
+      "code": "V5-1-A1",
       "onderdeel": "E Ventilatie",
       "level": "Level 5 - VENTILATIE",
       "omschrijving": "Schouw op locatie",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 0.0,
-      "prijs_per_eenheid_incl_btw": 0.0
+      "prijs_per_eenheid_excl": 75.0,
+      "prijs_per_eenheid_incl_btw": 81.75
     },
     {
-      "code": "V5-1-X2",
-      "onderdeel": "E Ventilatie",
-      "level": "Level 5 - VENTILATIE",
-      "omschrijving": "inkorten deuren. Prijs is incl.: de- en hermonteren deur, inkorten deuren",
-      "eenheid": "st",
-      "prijs_per_eenheid_excl": 56.4463,
-      "prijs_per_eenheid_incl_btw": 68.3
-    },
-    {
-      "code": "V5-2-X1",
-      "onderdeel": "E Ventilatie",
-      "level": "Level 5 - VENTILATIE",
-      "omschrijving": "Aftimmeren kanalen 3-zijdig",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 154.4463,
-      "prijs_per_eenheid_incl_btw": 186.88
-    },
-    {
-      "code": "B5-1-A2",
+      "code": "V5-1-A2",
       "onderdeel": "E Ventilatie",
       "level": "Level 5 - VENTILATIE",
       "omschrijving": "Gebruik steiger",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 0.0,
-      "prijs_per_eenheid_incl_btw": 0.0
+      "prijs_per_eenheid_excl": 150.0,
+      "prijs_per_eenheid_incl_btw": 176.1
     },
     {
       "code": "V5-1-B1",
@@ -2760,17 +2764,17 @@
       "level": "Level 5 - VENTILATIE",
       "omschrijving": "Vervangen bestaande mechanische ventilatiebox",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 1697.6364,
-      "prijs_per_eenheid_incl_btw": 2054.14
+      "prijs_per_eenheid_excl": 1755.0612,
+      "prijs_per_eenheid_incl_btw": 2054.1418
     },
     {
       "code": "V5-1-C1",
       "onderdeel": "E Ventilatie",
       "level": "Level 5 - VENTILATIE",
-      "omschrijving": "Plaatsen van mechanische ventilatiebox",
+      "omschrijving": "Plaatsen van mechanische ventilatiebox systeem",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 4053.1818,
-      "prijs_per_eenheid_incl_btw": 4904.35
+      "prijs_per_eenheid_excl": 4196.3284,
+      "prijs_per_eenheid_incl_btw": 4904.3496
     },
     {
       "code": "V5-1-C7",
@@ -2778,80 +2782,949 @@
       "level": "Level 5 - VENTILATIE",
       "omschrijving": "Kanaalwerk boven de 8,0 m¹",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 158.4545,
+      "prijs_per_eenheid_excl": 165.0,
       "prijs_per_eenheid_incl_btw": 191.73
     },
     {
       "code": "V5-1-D1",
       "onderdeel": "E Ventilatie",
       "level": "Level 5 - VENTILATIE",
-      "omschrijving": "Plaatsen van decentrale mechanische WTW",
+      "omschrijving": "Plaatsen decentrale balans ventilatie WTW",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 3116.4215,
-      "prijs_per_eenheid_incl_btw": 3770.87
+      "prijs_per_eenheid_excl": 3232.875,
+      "prijs_per_eenheid_incl_btw": 3770.8747
+    },
+    {
+      "code": "V5-1-X",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": null
+    },
+    {
+      "code": "V5-1-X1",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Aftimmeren kanalen 3-zijdig",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 166.7186,
+      "prijs_per_eenheid_incl_btw": 186.8756
+    },
+    {
+      "code": "V5-1-X2",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Inkorten deuren",
+      "eenheid": "st",
+      "prijs_per_eenheid_excl": 62.0258,
+      "prijs_per_eenheid_incl_btw": 68.2994
     },
     {
       "code": "V5-2-D1",
       "onderdeel": "E Ventilatie",
       "level": "Level 5 - VENTILATIE",
-      "omschrijving": "Centrale balansventilatie (met name bij monumenten)",
+      "omschrijving": "Plaatsen centrale balans ventilatie WTW",
       "eenheid": "pst",
-      "prijs_per_eenheid_excl": 9522.5702,
-      "prijs_per_eenheid_incl_btw": 11522.31
+      "prijs_per_eenheid_excl": 9888.9554,
+      "prijs_per_eenheid_incl_btw": 11522.3098
+    },
+    {
+      "code": "V5-2-A1",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Schouw op locatie",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 75.0,
+      "prijs_per_eenheid_incl_btw": 81.75
+    },
+    {
+      "code": "V5-2-A2",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Gebruik steiger",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 150.0,
+      "prijs_per_eenheid_incl_btw": 176.1
+    },
+    {
+      "code": "V5-2-D6",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Kanaalwerk ten behoeve van WTW minimaal 16,0 m¹",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 3840.0,
+      "prijs_per_eenheid_incl_btw": 4462.08
     },
     {
       "code": "V5-2-D7",
       "onderdeel": "E Ventilatie",
       "level": "Level 5 - VENTILATIE",
-      "omschrijving": "Centrale balansventilatie (met name bij monumenten)",
+      "omschrijving": "Kanaalwerk boven de 16,0 m¹",
       "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 230.4793,
+      "prijs_per_eenheid_excl": 240.0,
       "prijs_per_eenheid_incl_btw": 278.88
     },
     {
-      "code": "V6-1-A1",
+      "code": "V5-2-A",
       "onderdeel": "E Ventilatie",
-      "level": "Level 6 - KIERDICHTING",
-      "omschrijving": "Kierdichting bij muurplaten",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 22.9587,
-      "prijs_per_eenheid_incl_btw": 27.78
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Centrale balansventilatie",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": null
     },
     {
-      "code": "V6-1-X1",
+      "code": "V5-2-B",
       "onderdeel": "E Ventilatie",
-      "level": "Level 6 - KIERDICHTING",
-      "omschrijving": "Blowerdoortest voor woningen met bouwjaar na 1983",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Optie B ?",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": null
+    },
+    {
+      "code": "V5-2-X",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 0.0,
+      "prijs_per_eenheid_incl_btw": null
+    },
+    {
+      "code": "V5-2-X1",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Aftimmeren kanalen 3-zijdig",
+      "eenheid": "m¹",
+      "prijs_per_eenheid_excl": 166.7186,
+      "prijs_per_eenheid_incl_btw": 186.8756
+    },
+    {
+      "code": "V5-2-X2",
+      "onderdeel": "E Ventilatie",
+      "level": "Level 5 - VENTILATIE",
+      "omschrijving": "Inkorten deuren",
       "eenheid": "st",
-      "prijs_per_eenheid_excl": 428.9669,
-      "prijs_per_eenheid_incl_btw": 519.05
+      "prijs_per_eenheid_excl": 62.0258,
+      "prijs_per_eenheid_incl_btw": 68.2994
+    },
+    {
+      "code": "V6-1-A1",
+      "onderdeel": "",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Kierdichting bij muurplaten",
+      "eenheid": "m1",
+      "prijs_per_eenheid_excl": 25.1676,
+      "prijs_per_eenheid_incl_btw": 27.7802
     },
     {
       "code": "V6-1-B1",
-      "onderdeel": "E Ventilatie",
+      "onderdeel": "",
       "level": "Level 6 - KIERDICHTING",
       "omschrijving": "Kierdichting bij vloerranden",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 14.7273,
-      "prijs_per_eenheid_incl_btw": 17.82
+      "eenheid": "m1",
+      "prijs_per_eenheid_excl": 16.0781,
+      "prijs_per_eenheid_incl_btw": 17.8228
     },
     {
       "code": "V6-1-C1",
-      "onderdeel": "E Ventilatie",
+      "onderdeel": "",
       "level": "Level 6 - KIERDICHTING",
       "omschrijving": "Kierdichting bij buitenkozijnen",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 11.1901,
-      "prijs_per_eenheid_incl_btw": 13.54
+      "eenheid": "m1",
+      "prijs_per_eenheid_excl": 11.9723,
+      "prijs_per_eenheid_incl_btw": 13.5412
     },
     {
       "code": "V6-1-D1",
-      "onderdeel": "E Ventilatie",
+      "onderdeel": "",
       "level": "Level 6 - KIERDICHTING",
       "omschrijving": "Kierdichting tochtprofiel rondom draaiende delen buitenkozijnen",
-      "eenheid": "m¹",
-      "prijs_per_eenheid_excl": 9.7107,
-      "prijs_per_eenheid_incl_btw": 11.75
+      "eenheid": "m1",
+      "prijs_per_eenheid_excl": 10.4575,
+      "prijs_per_eenheid_incl_btw": 11.7534
+    },
+    {
+      "code": "V6-1-X",
+      "onderdeel": "",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Bijkomende kosten",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 439.875,
+      "prijs_per_eenheid_incl_btw": 519.0525
+    },
+    {
+      "code": "V6-1-X1",
+      "onderdeel": "",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Blowerdoortest voor woningen met bouwjaar na 1983",
+      "eenheid": "pst",
+      "prijs_per_eenheid_excl": 439.875,
+      "prijs_per_eenheid_incl_btw": 519.0525
+    },
+    {
+      "code": "V2-4-A1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Vervangen houten kozijn door houten kozijn met triple glas (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 878.6059,
+      "prijs_per_eenheid_incl_btw": 1039.4233
+    },
+    {
+      "code": "V2-4-B1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Vervangen kunststof kozijn door kunststof kozijn met triple glas (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 918.0362,
+      "prijs_per_eenheid_incl_btw": 1059.6542
+    },
+    {
+      "code": "V2-4-C1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Vervangen aluminium kozijn door aluminium kozijn met triple glas (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 1500.3789,
+      "prijs_per_eenheid_incl_btw": 1764.2889
+    },
+    {
+      "code": "V2-4-D1",
+      "onderdeel": "B Glas en kozijnen",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Vervangen houten kozijn door kunststof kozijn met triple glas (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 996.8689,
+      "prijs_per_eenheid_incl_btw": 1150.1804
+    },
+    {
+      "code": "V3-1-D1",
+      "onderdeel": "C Vloeren",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Bodemisolatie EPS-korrels laagdikte dik 200mm  (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 21.9523,
+      "prijs_per_eenheid_incl_btw": 25.5086
+    },
+    {
+      "code": "V3-1-D2",
+      "onderdeel": "C Vloeren",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Bodemisolatie EPS-korrels laagdikte dik 300mm   (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 28.6798,
+      "prijs_per_eenheid_incl_btw": 33.326
+    },
+    {
+      "code": "V3-1-E1",
+      "onderdeel": "C Vloeren",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Vloerisolatie schuimbeton 400 mm Rc 3.50  m².K/W       (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 138.8899,
+      "prijs_per_eenheid_incl_btw": 161.3901
+    },
+    {
+      "code": "V3-1-E2",
+      "onderdeel": "C Vloeren",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "╚ Schuimbeton meer-/minderprijs per cm",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 1.7388,
+      "prijs_per_eenheid_incl_btw": 2.0205
+    },
+    {
+      "code": "V4-1-I",
+      "onderdeel": "D Daken",
+      "level": "Level 6 - KIERDICHTING",
+      "omschrijving": "Isoleren binnenzijde wangen dakkapel (30% subsidiabel)",
+      "eenheid": "m²",
+      "prijs_per_eenheid_excl": 155.9119,
+      "prijs_per_eenheid_incl_btw": 173.5032
+    }
+  ],
+  "rc_tabellen": [
+    {
+      "component": "Spouw",
+      "materiaal": "Vlokken",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 40.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.14
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 50.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.43
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 60.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.71
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 70.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.0
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.29
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.57
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 100.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.86
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 40.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.11
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 50.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.39
+        }
+      ]
+    },
+    {
+      "component": "bgg Vloer",
+      "materiaal": "Schuimbeton",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 20.0,
+          "dikte_eenheid": "cm",
+          "rc": 2.31
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 30.0,
+          "dikte_eenheid": "cm",
+          "rc": 2.8
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 40.0,
+          "dikte_eenheid": "cm",
+          "rc": 3.6
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 50.0,
+          "dikte_eenheid": "cm",
+          "rc": 4.3
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 60.0,
+          "dikte_eenheid": "cm",
+          "rc": 5.38
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 70.0,
+          "dikte_eenheid": "cm",
+          "rc": 6.45
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "cm",
+          "rc": 7.52
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.31
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.55
+        }
+      ]
+    },
+    {
+      "component": "Spouw",
+      "materiaal": "EPS",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 40.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.11
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 50.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.39
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 60.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.67
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 70.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.95
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.22
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.5
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 100.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.78
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 40.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.74
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 50.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.17
+        }
+      ]
+    },
+    {
+      "component": "bgg Vloer",
+      "materiaal": "PUR",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.31
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.55
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 100.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.03
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 110.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.94
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.44
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.79
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 5.15
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.47
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.95
+        }
+      ]
+    },
+    {
+      "component": "Spouw",
+      "materiaal": "PUR",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 40.0,
+          "dikte_eenheid": "mm",
+          "rc": 1.74
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 50.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.17
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 60.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.6
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 70.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.04
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.48
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.91
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 100.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.35
+        }
+      ]
+    },
+    {
+      "component": "Binnenzijde kap",
+      "materiaal": "PUR",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.47
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.95
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 100.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.5
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 110.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.03
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.48
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.97
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 5.46
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 110.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.0
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.25
+        }
+      ]
+    },
+    {
+      "component": "Binnenzijde kap",
+      "materiaal": "Glaswol ingeblazen",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 110.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.0
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.25
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.7
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 150.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.9
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 160.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.2
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 170.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.5
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.0
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.25
+        }
+      ]
+    },
+    {
+      "component": "Binnenzijde kap",
+      "materiaal": "Vlasvezel",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.0
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.25
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.5
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 150.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.75
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 160.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.0
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 170.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.25
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 180.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.5
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.95
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.2
+        }
+      ]
+    },
+    {
+      "component": "VLOER",
+      "materiaal": "EPS",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 110.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.02
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.3
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.7
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.9
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 150.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.2
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 160.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.45
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 170.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.7
+        }
+      ]
+    },
+    {
+      "component": "Binnenzijde kap",
+      "materiaal": "Grasvezel",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.95
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.2
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 150.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.5
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 160.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.76
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 170.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.97
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 180.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.21
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 190.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.47
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.95
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.2
+        }
+      ]
+    },
+    {
+      "component": "Binnenzijde kap",
+      "materiaal": "Hennepvezel",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 130.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.95
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.2
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 140.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.5
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 160.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.76
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 170.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.97
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 180.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.21
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 190.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.47
+        },
+        {
+          "prijs_delta": -20.0,
+          "dikte": 60.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.62
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 70.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.0
+        }
+      ]
+    },
+    {
+      "component": "Binnenzijde kap",
+      "materiaal": "PIR-platen",
+      "stappen": [
+        {
+          "prijs_delta": -20.0,
+          "dikte": 60.0,
+          "dikte_eenheid": "mm",
+          "rc": 2.62
+        },
+        {
+          "prijs_delta": -10.0,
+          "dikte": 70.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.0
+        },
+        {
+          "prijs_delta": 0.0,
+          "dikte": 80.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.5
+        },
+        {
+          "prijs_delta": 10.0,
+          "dikte": 90.0,
+          "dikte_eenheid": "mm",
+          "rc": 3.9
+        },
+        {
+          "prijs_delta": 20.0,
+          "dikte": 100.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.4
+        },
+        {
+          "prijs_delta": 30.0,
+          "dikte": 110.0,
+          "dikte_eenheid": "mm",
+          "rc": 4.95
+        },
+        {
+          "prijs_delta": 40.0,
+          "dikte": 120.0,
+          "dikte_eenheid": "mm",
+          "rc": 5.3
+        }
+      ]
     }
   ]
 }

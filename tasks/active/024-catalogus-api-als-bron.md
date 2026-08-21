@@ -60,6 +60,19 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
   Offline fixture/tests dekken B5, fingerprint, metadata, validatie en diff. `verify.sh`: PASS,
   801/801 Python-checks groen. Onafhankelijke AI-review is nog aan de Manager.
 
+- 2026-08-21 Codex Builder (reviewfix): review FAIL terecht verwerkt. Duplicatecodes worden nu
+  alleen identiek gededupliceerd; conflicten blokkeren onafhankelijk van API-volgorde. Daardoor is
+  een echte API-bronfout ontdekt: `V1-2-X3` is zowel rolsteiger EUR 250,43/st onder V1-2 als
+  hoogwerker EUR 569,25/wk onder V2-3. De orderafhankelijke API-snapshot is teruggedraaid naar de
+  geldige XLSX-catalogus; lokaal kiezen is expliciet out-of-scope. Fingerprint baseert zich voortaan
+  op gevalideerde gemapte regels. Catalogus en optioneel rapport worden volledig gestaged/gefsynct
+  en transactioneel vervangen met rollback en tempcleanup bij schrijf-/replacefouten. Offline
+  regressies dekken omgekeerde volgorde, conflicterende duplicates, disk-/replacefouten en ontbrekende
+  `previous` vóór mutatie. Eerste blocking run gaf incidenteel 804/805 zonder bewaarde foutregel;
+  een directe run en vijf extra volledige suites gaven elk 805/805. Niet deterministisch
+  reproduceerbaar en geen relatie met cataloguscode gevonden. Definitieve Git-Bash `verify.sh` na
+  extra gedeeltelijke-stagingregressie: PASS met 806/806; herreview blijft aan de Manager.
+
 ## Notes
 De API-response bevat geen inhoudelijke catalogusversie of `updatedAt`; noem de live stand dus
 niet bijvoorbeeld “Q4” zonder bronbewijs. Gebruik ophaaltijd + fingerprint voor herleidbaarheid.

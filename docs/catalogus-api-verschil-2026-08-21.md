@@ -1,5 +1,10 @@
 # Verschilrapport maatregelencatalogus
 
+> **Inventarisatie, niet gepubliceerd.** Na onafhankelijke review bleek de live API dezelfde code
+> `V1-2-X3` met twee conflicterende betekenissen/prijzen te leveren. De 291-regelsnapshot hieronder
+> was daardoor orderafhankelijk en is teruggedraaid; `catalog/catalog.json` blijft op de geldige
+> XLSX-snapshot totdat de API-eigenaar dit bronconflict corrigeert.
+
 Vergelijking van `Q3_2026_21072026` met API-fingerprint `sha256:558ce9ae2c871223bf62fb12f5a3c44315647fbf372d33b3ff8ea6199144797b`.
 
 - Toegevoegd: 6
