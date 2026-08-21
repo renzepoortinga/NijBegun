@@ -47,6 +47,11 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
   PDF-rasterinspectie daarmee kon niet worden uitgevoerd; de in de PDF ingebedde, identieke
   vloer-rastering is rechtstreeks geïnspecteerd. Leegte-, auth-, route-, offline- en inhoudstests
   toegevoegd. `scripts/verify.sh` via Git Bash: PASS, 967/967 tests. Review staat nog open.
+- 2026-08-21 Codex Builder: gerebased op de nieuwste `origin/main` (inclusief parallel afgeronde
+  taken 020/023), zonder conflicten. Gericht gezocht naar `pdftoppm.exe`/`pdfinfo.exe` via PATH en
+  de lokale Codex PDF-runtime; niet aanwezig. De eerste post-rebase verify-run rapporteerde één
+  niet-zichtbaar/transiënt testfalen; een directe volledige testrun was 973/973 groen en de daarop
+  volgende blocking `scripts/verify.sh` was PASS (973/973). Geen bronwijziging nodig.
 
 ## Notes
 Het aantal pagina's is variabel: voorblad + één pagina per verdieping + berekeningspagina.
