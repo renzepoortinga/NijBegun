@@ -119,6 +119,21 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   Een reeds op main aanwezige verouderde STATE-regel die taak 015 nog `active` noemde verwijderd;
   het taakbestand staat daadwerkelijk in `tasks/done/`. Actuele blocking `scripts/verify.sh`:
   PASS, 939/939 tests groen. Taak 020 blijft `active` tot onafhankelijke herreview PASS.
+- 2026-08-21: Tweede herreview FAIL verwerkt. Productieroute toegevoegd om per verdieping op de
+  bestaande achtergrond expliciete ruimtepolygonen te tekenen, voor te vertonen, valideren
+  (minimaal 3 punten, 0..1) en via POST in `Ruimte.contour_relatief` op te slaan; daarna activeert
+  dezelfde echte dossierroute het slepen. Fantoom-overstroom verwijderd: zonder opgeslagen
+  bronruimte→natte-doelruimte-topologie geen groene marker en de vuistregel blijft `niet te bepalen`.
+  De adviseur legt de verbinding via een eigen CTA vast; server valideert toevoerbron, nat doel en
+  verdieping, bewaart `Ventilatieplan.topologie`, voert die door naar `toets_vuistregels()` en zet
+  pas dan de marker op de geometrisch bepaalde bronrand richting doel. Oude fantoommarkers zonder
+  topologie worden gemigreerd/verwijderd en de losse `+ Overstroom`-knop is weg. Markers hebben nu
+  `tabindex`, buttonrol en aria-label; pijltjestoetsen verplaatsen binnen echte ruimtegeometrie,
+  Enter/spatie opent dezelfde wijzigen/splitsen-flow en Delete/Backspace verwijdert na concrete
+  bevestiging. Blocking `scripts/verify.sh`: PASS, 949/949 tests groen. Browser-QA opnieuw geprobeerd:
+  de plugin was tussentijds geüpdatet; met de nieuwe geldige pluginbron stopte de verbinding op
+  `Browser use requires a trusted Node REPL browser service`, dus screenshots bleven onmogelijk.
+  Taak blijft `active` tot onafhankelijke herreview PASS.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.

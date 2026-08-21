@@ -195,6 +195,9 @@ class VentilatieplanVerdieping:
 class Ventilatieplan:
     systeem: str = ""           # gespiegeld aan Ventilatie.systeem (A-E), voor de koptekst van het plan
     verdiepingen: List[VentilatieplanVerdieping] = field(default_factory=list)
+    # Expliciet door de adviseur bevestigde luchtwegen [bronruimte, natte doelruimte]. Geen entry
+    # betekent: topologie niet te bepalen; de UI tekent dan ook geen overstroommarker.
+    topologie: List[List[str]] = field(default_factory=list)
 
 # ---------- installaties (gespiegeld aan VABI EPA 12) ----------
 @dataclass

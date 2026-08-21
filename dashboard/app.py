@@ -1946,10 +1946,23 @@ veranderen niet mee; ze zijn het uitgangspunt waarmee de tekening is voorgevuld.
 <div class=btn-row>
 <button type=button class="btn sec vp-add" data-type=toevoer data-verdieping="{{v.naam}}">+ Toevoer</button>
 <button type=button class="btn sec vp-add" data-type=afvoer data-verdieping="{{v.naam}}">+ Afvoer</button>
-<button type=button class="btn sec vp-add" data-type=overstroom data-verdieping="{{v.naam}}">+ Overstroom</button>
 <span class=spacer></span>
 <button type=button class="btn sec vp-herstel" data-verdieping="{{v.naam}}">Herstel</button>
 </div>
+<details class=vp-instellen><summary>Ruimtecontouren kalibreren</summary>
+<p class="muted small">Kies een ruimte, klik minimaal drie punten op de bestaande plattegrond en sla op. De preview is pas definitief na opslaan.</p>
+<div class=btn-row><select class=vp-kalibratie-ruimte data-verdieping="{{v.naam}}">{% for r in v.ruimtes %}<option value="{{r.naam}}">{{r.naam}}</option>{% endfor %}</select>
+<button type=button class="btn sec vp-kalibratie-start" data-verdieping="{{v.naam}}">Contour tekenen</button>
+<button type=button class="btn sec vp-kalibratie-wis" data-verdieping="{{v.naam}}">Punten wissen</button>
+<button type=button class="btn vp-kalibratie-save" data-verdieping="{{v.naam}}">Ruimtecontouren opslaan</button></div>
+<p class="muted small vp-kalibratie-status" data-verdieping="{{v.naam}}" aria-live=polite></p>
+</details>
+<details class=vp-instellen><summary>Overstroomverbinding vastleggen</summary>
+<p class="muted small">Leg expliciet vast van welke toevoerruimte de lucht naar welke natte ruimte stroomt. Zonder verbinding blijft de toets niet te bepalen en verschijnt geen groene pijl.</p>
+<div class=btn-row><select class=vp-topologie-bron data-verdieping="{{v.naam}}">{% for r in v.ruimtes if r.toevoer %}<option value="{{r.naam}}">{{r.naam}}</option>{% endfor %}</select>
+<span aria-hidden=true>→</span><select class=vp-topologie-doel data-verdieping="{{v.naam}}">{% for r in v.ruimtes if r.afvoerpunt %}<option value="{{r.naam}}">{{r.naam}}</option>{% endfor %}</select>
+<button type=button class="btn vp-topologie-save" data-verdieping="{{v.naam}}">Verbinding toevoegen</button></div>
+</details>
 </div>
 {% endfor %}
 <div class=card><h3>Legenda</h3>
@@ -2040,7 +2053,7 @@ def ventilatieplan_pagina(tag):
     if gewijzigd:
         _dos_save(tag, st, dos)
     balans = vp_mod.marker_balans(dos)
-    toets = vent_toets_vuistregels(res)   # nog zonder topologie/plan-gegevens -> 'niet te bepalen' waar dat hoort
+    toets = vent_toets_vuistregels(res, {"topologie": dos.ventilatieplan.topologie})
     return page(VENTILATIEPLAN_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 res=res, balans=balans, toets=toets, verdiepingen_json=verdiepingen_json,
                 marker_types=vp_mod.MARKER_TYPES)
@@ -2082,6 +2095,54 @@ def ventilatieplan_herstel(tag, verdieping):
     _dos_save(tag, st, dos)
     return {"ok": True, "markers": [dataclasses.asdict(m) for m in v.markers],
             "balans": vp_mod.marker_balans(dos)}
+
+
+@app.route("/project/<tag>/ventilatieplan/<verdieping>/ruimtepolygonen", methods=["POST"])
+@login_required
+def ventilatieplan_ruimtepolygonen(tag, verdieping):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    geldig = vp_mod.geldige_ruimtenamen_op_verdieping(dos, verdieping)
+    if not geldig:
+        return {"ok": False, "fout": "Onbekende verdieping '%s'." % verdieping}, 404
+    polygonen, fout = vp_mod.valideer_ruimtepolygonen(
+        (request.get_json(silent=True) or {}).get("polygonen"), geldig)
+    if fout:
+        return {"ok": False, "fout": fout}, 400
+    for ruimte in dos.geometrie.ruimtes:
+        if ruimte.naam in polygonen:
+            ruimte.contour_relatief = polygonen[ruimte.naam]
+    _dos_save(tag, st, dos)
+    return {"ok": True}
+
+
+@app.route("/project/<tag>/ventilatieplan/<verdieping>/topologie", methods=["POST"])
+@login_required
+def ventilatieplan_topologie(tag, verdieping):
+    import dataclasses
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    data = request.get_json(silent=True) or {}
+    bron, doel = (data.get("bron") or "").strip(), (data.get("doel") or "").strip()
+    groepen = {naam: ruimtes for naam, _vloer, ruimtes in vp_mod.groepeer_per_verdieping(dos)}
+    ruimtes = groepen.get(verdieping)
+    if ruimtes is None:
+        return {"ok": False, "fout": "Onbekende verdieping '%s'." % verdieping}, 404
+    res = vent_verdeel_balans(vent_bereken(dos.geometrie.ruimtes))
+    rows = {r["naam"]: r for r in res["rows"]}
+    namen = {r.naam for r in ruimtes}
+    if bron not in namen or not (rows.get(bron) or {}).get("toevoer"):
+        return {"ok": False, "fout": "Kies een toevoerruimte op deze verdieping."}, 400
+    if doel not in namen or not (rows.get(doel) or {}).get("afvoerpunt"):
+        return {"ok": False, "fout": "Kies een natte doelruimte op deze verdieping."}, 400
+    if [bron, doel] not in dos.ventilatieplan.topologie:
+        dos.ventilatieplan.topologie.append([bron, doel])
+    v = vp_mod.herstel_verdieping(dos, verdieping, res["rows"])
+    _dos_save(tag, st, dos)
+    return {"ok": True, "markers": [dataclasses.asdict(m) for m in v.markers],
+            "topologie": dos.ventilatieplan.topologie, "balans": vp_mod.marker_balans(dos)}
 
 
 @app.route("/project/<tag>/naar_maatregelen")

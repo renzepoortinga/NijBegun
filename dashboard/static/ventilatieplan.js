@@ -31,6 +31,8 @@
     verdieping.markers.forEach(function (m) {
       var g = svgEl("g", {
         "class": "vp-marker", "data-id": m.id, "data-type": m.type,
+        tabindex: "0", role: "button", "aria-label": m.type + " " + m.waarde_ls.toFixed(1)
+          + " liter per seconde, ruimte " + m.ruimte_id,
         transform: "translate(" + (m.x * 1000) + " " + (m.y * 750) + ") rotate(" + (m.rotatie || 0) + ")"
       });
       g.appendChild(markerVorm(m.type));
@@ -169,8 +171,7 @@
         opslaan(verdieping);
       }
     });
-    g.addEventListener("dblclick", function (ev) {
-      ev.preventDefault();
+    function bewerkMarker() {
       var m = vindMarker(verdieping, g.dataset.id);
       var antwoord = window.prompt("Nieuwe waarde in l/s. Splits met + (bijvoorbeeld 10+11); leeg verwijdert:", m.waarde_ls.toFixed(1));
       if (antwoord === null) return;                 // geannuleerd
@@ -192,6 +193,67 @@
           bron: "handmatig" });
       }
       teken(verdieping); opslaan(verdieping);
+    }
+    g.addEventListener("dblclick", function (ev) {
+      ev.preventDefault(); bewerkMarker();
+    });
+    g.addEventListener("keydown", function (ev) {
+      var m = vindMarker(verdieping, g.dataset.id);
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); bewerkMarker(); return; }
+      if (ev.key === "Delete" || ev.key === "Backspace") {
+        ev.preventDefault();
+        if (window.confirm("Marker " + m.type + " uit " + m.ruimte_id + " verwijderen?")) {
+          verdieping.markers = verdieping.markers.filter(function (x) { return x.id !== m.id; });
+          teken(verdieping); opslaan(verdieping);
+        }
+        return;
+      }
+      var stap = ev.shiftKey ? 0.02 : 0.005, dx = 0, dy = 0;
+      if (ev.key === "ArrowLeft") dx = -stap; else if (ev.key === "ArrowRight") dx = stap;
+      else if (ev.key === "ArrowUp") dy = -stap; else if (ev.key === "ArrowDown") dy = stap; else return;
+      ev.preventDefault();
+      if (!verdieping.heeft_ruimtegeometrie) { alert("Toetsenbordverplaatsing vereist gemeten ruimtecontouren."); return; }
+      var nx = Math.max(0, Math.min(1, m.x + dx)), ny = Math.max(0, Math.min(1, m.y + dy));
+      var ruimte = ruimteOpPunt(verdieping, nx, ny);
+      if (!ruimte) return;
+      m.x = Math.round(nx * 10000) / 10000; m.y = Math.round(ny * 10000) / 10000;
+      m.ruimte_id = ruimte.naam; m.bron = "handmatig";
+      teken(verdieping); opslaan(verdieping);
+    });
+  }
+
+  function initKalibratie(verdieping) {
+    var svg = document.querySelector('.vp-canvas[data-verdieping="' + cssEsc(verdieping.naam) + '"]');
+    var punten = {}, actief = null;
+    verdieping.ruimtes.forEach(function (r) { if (r.contour) punten[r.naam] = r.contour.slice(); });
+    function status(tekst) {
+      var n = document.querySelector('.vp-kalibratie-status[data-verdieping="' + cssEsc(verdieping.naam) + '"]');
+      if (n) n.textContent = tekst;
+    }
+    var start = document.querySelector('.vp-kalibratie-start[data-verdieping="' + cssEsc(verdieping.naam) + '"]');
+    if (!start || !svg) return;
+    start.addEventListener("click", function () {
+      var select = document.querySelector('.vp-kalibratie-ruimte[data-verdieping="' + cssEsc(verdieping.naam) + '"]');
+      actief = select.value; punten[actief] = []; status("Klik minimaal drie hoekpunten voor " + actief + ".");
+    });
+    svg.addEventListener("click", function (ev) {
+      if (!actief || ev.target.closest(".vp-marker")) return;
+      var rect = svg.getBoundingClientRect();
+      punten[actief].push([Math.round((ev.clientX - rect.left) / rect.width * 10000) / 10000,
+                           Math.round((ev.clientY - rect.top) / rect.height * 10000) / 10000]);
+      var preview = svg.querySelector(".vp-kalibratie-preview") || svg.appendChild(svgEl("polyline", {"class":"vp-kalibratie-preview"}));
+      preview.setAttribute("points", punten[actief].map(function (p) { return (p[0]*1000)+","+(p[1]*750); }).join(" "));
+      status(punten[actief].length + " punten voor " + actief + ".");
+    });
+    document.querySelector('.vp-kalibratie-wis[data-verdieping="' + cssEsc(verdieping.naam) + '"]').addEventListener("click", function () {
+      if (actief) punten[actief] = []; var p = svg.querySelector(".vp-kalibratie-preview"); if (p) p.remove(); status("Punten gewist.");
+    });
+    document.querySelector('.vp-kalibratie-save[data-verdieping="' + cssEsc(verdieping.naam) + '"]').addEventListener("click", function () {
+      if (Object.keys(punten).some(function (naam) { return punten[naam].length < 3; })) { status("Elke getekende ruimte heeft minimaal drie punten nodig."); return; }
+      fetch("/project/" + encodeURIComponent(window.VP_TAG) + "/ventilatieplan/" + encodeURIComponent(verdieping.naam) + "/ruimtepolygonen",
+        {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({polygonen:punten})})
+        .then(function(r){return r.json();}).then(function(data){ if(!data.ok){status(data.fout);return;} window.location.reload(); })
+        .catch(function(){status("Opslaan mislukt (geen verbinding).");});
     });
   }
 
@@ -213,6 +275,7 @@
 
   window.ventilatieplanInit = function () {
     window.VP_VERDIEPINGEN.forEach(teken);
+    window.VP_VERDIEPINGEN.forEach(initKalibratie);
 
     [].slice.call(document.querySelectorAll(".vp-add")).forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -241,5 +304,15 @@
 
     var herbeerknop = document.getElementById("vp-herbereken");
     if (herbeerknop) herbeerknop.addEventListener("click", herbereken);
+    [].slice.call(document.querySelectorAll(".vp-topologie-save")).forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var naam=btn.dataset.verdieping, bron=document.querySelector('.vp-topologie-bron[data-verdieping="'+cssEsc(naam)+'"]').value;
+        var doel=document.querySelector('.vp-topologie-doel[data-verdieping="'+cssEsc(naam)+'"]').value;
+        fetch("/project/"+encodeURIComponent(window.VP_TAG)+"/ventilatieplan/"+encodeURIComponent(naam)+"/topologie",
+          {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({bron:bron,doel:doel})})
+          .then(function(r){return r.json();}).then(function(data){if(!data.ok){alert(data.fout);return;} var v=verdiepingBijNaam(naam);v.markers=data.markers;teken(v);toonBalans(data.balans);})
+          .catch(function(){alert("Verbinding opslaan mislukt.");});
+      });
+    });
   };
 })();

@@ -84,7 +84,25 @@ def _nieuw_marker_id(bestaande_ids):
             return kandidaat
 
 
-def auto_markers(ruimtes, res_rows):
+def _randpunt_van_naar(bron, doel):
+    """Punt net binnen de rand van bron, op de lijn bronmidden -> doelmidden."""
+    if not bron.contour_relatief or not doel.contour_relatief:
+        return None
+    a = polygoon_middelpunt(bron.contour_relatief)
+    b = polygoon_middelpunt(doel.contour_relatief)
+    laag, hoog = 0.0, 1.0
+    for _ in range(24):
+        t = (laag + hoog) / 2
+        p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+        if punt_in_polygoon(p[0], p[1], bron.contour_relatief):
+            laag = t
+        else:
+            hoog = t
+    t = max(0.0, laag - 0.01)
+    return [round(a[0] + (b[0] - a[0]) * t, 4), round(a[1] + (b[1] - a[1]) * t, 4)]
+
+
+def auto_markers(ruimtes, res_rows, topologie=None):
     """Startset markers voor één verdieping.
 
     Toevoer voor elke ruimte die in de rekenlaag (taak 019) echt toevoer heeft gekregen, afvoer voor
@@ -92,9 +110,10 @@ def auto_markers(ruimtes, res_rows):
     gemeten wandpositie: het dossier kent geen wandcoördinaten per ruimte, dus 'in de buitengevel
     plaatsen' kan alleen bij benadering. De adviseur sleept ze naar de echte plek.
 
-    Voor iedere toevoerruimte wordt ook een overstroommarker bij de BRONRUIMTE geplaatst. De marker
-    zegt alleen waar lucht die ruimte verlaat; zonder expliciete topologie wordt geen doelruimte of
-    deurverbinding verzonnen. De adviseur legt hem op de gemeten deuropening.
+    Overstroommarkers worden uitsluitend gemaakt voor expliciet bevestigde bron->doel-verbindingen.
+    Zonder topologie geen groene pijl. Met twee ruimtepolygonen ligt de marker controleerbaar op de
+    bronrand richting het natte doel; zonder beide polygonen blijft de verbinding opgeslagen maar nog
+    niet tekenbaar.
     """
     by_naam = {r["naam"]: r for r in res_rows}
     toevoer_namen = [r.naam for r in ruimtes if (by_naam.get(r.naam) or {}).get("toevoer")]
@@ -111,9 +130,6 @@ def auto_markers(ruimtes, res_rows):
             id="t%d" % (i + 1), type="toevoer", ruimte_id=naam,
             waarde_ls=rij.get("toevoer", 0.0), x=x_t, y=y_t,
             rotatie=90, bron="auto"))
-        markers.append(VentilatieMarker(
-            id="o%d" % (i + 1), type="overstroom", ruimte_id=naam,
-            waarde_ls=rij.get("toevoer", 0.0), x=x_t, y=y_t, rotatie=90, bron="auto"))
     n_a = len(afvoer_namen)
     for i, naam in enumerate(afvoer_namen):
         rij = by_naam[naam]
@@ -126,6 +142,17 @@ def auto_markers(ruimtes, res_rows):
         markers.append(VentilatieMarker(
             id="a%d" % (i + 1), type="afvoer", ruimte_id=naam, waarde_ls=waarde,
             x=x_a, y=y_a, rotatie=0, bron="auto"))
+    ruimte_by_naam = {r.naam: r for r in ruimtes}
+    for i, pad in enumerate(topologie or []):
+        if len(pad) != 2 or pad[0] not in ruimte_by_naam or pad[1] not in ruimte_by_naam:
+            continue
+        bron, doel = ruimte_by_naam[pad[0]], ruimte_by_naam[pad[1]]
+        positie = _randpunt_van_naar(bron, doel)
+        rij = by_naam.get(bron.naam) or {}
+        if positie and rij.get("toevoer"):
+            markers.append(VentilatieMarker(
+                id="o%d" % (i + 1), type="overstroom", ruimte_id=bron.naam,
+                waarde_ls=rij["toevoer"], x=positie[0], y=positie[1], rotatie=90, bron="auto"))
     return markers
 
 
@@ -144,7 +171,12 @@ def zorg_voor_verdiepingen(dos, res_rows):
             bestaand[naam] = v
             gewijzigd = True
         if not v.markers:
-            v.markers = auto_markers(ruimtes, res_rows)
+            v.markers = auto_markers(ruimtes, res_rows, dos.ventilatieplan.topologie)
+            gewijzigd = True
+        elif not dos.ventilatieplan.topologie and any(m.type == "overstroom" for m in v.markers):
+            # Migreer de eerdere taak-020-proefversie: een groene pijl zonder bevestigde verbinding
+            # is een fantoom en mag niet zichtbaar/persistent blijven.
+            v.markers = [m for m in v.markers if m.type != "overstroom"]
             gewijzigd = True
     return gewijzigd
 
@@ -159,7 +191,7 @@ def herstel_verdieping(dos, verdieping_naam, res_rows):
         return None
     for v in dos.ventilatieplan.verdiepingen:
         if v.naam == verdieping_naam:
-            v.markers = auto_markers(ruimtes, res_rows)
+            v.markers = auto_markers(ruimtes, res_rows, dos.ventilatieplan.topologie)
             return v
     return None
 
@@ -192,6 +224,30 @@ def punt_in_polygoon(x, y, punten):
             binnen = not binnen
         j = i
     return binnen
+
+
+def valideer_ruimtepolygonen(polygonen, geldige_namen):
+    if not isinstance(polygonen, dict):
+        return None, "Ruimtepolygonen moeten per ruimtenaam worden aangeleverd."
+    if not polygonen:
+        return None, "Teken minimaal één ruimtecontour voordat je opslaat."
+    resultaat = {}
+    for naam, punten in polygonen.items():
+        if naam not in geldige_namen:
+            return None, "Onbekende ruimte '%s' op deze verdieping." % naam
+        if not isinstance(punten, list) or len(punten) < 3:
+            return None, "Ruimte '%s' heeft minimaal 3 punten nodig." % naam
+        schoon = []
+        for punt in punten:
+            try:
+                x, y = float(punt[0]), float(punt[1])
+            except (TypeError, ValueError, IndexError):
+                return None, "Ruimte '%s' bevat een ongeldig punt." % naam
+            if not (0 <= x <= 1 and 0 <= y <= 1):
+                return None, "Ruimte '%s' valt buiten het tekenvlak." % naam
+            schoon.append([round(x, 4), round(y, 4)])
+        resultaat[naam] = schoon
+    return resultaat, None
 
 
 def valideer_markers(markers_data, geldige_namen, ruimtecontouren=None):

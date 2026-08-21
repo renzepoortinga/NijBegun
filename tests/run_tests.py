@@ -4894,8 +4894,8 @@ try:
           {m.ruimte_id for m in _autoAE if m.type == "toevoer"} == {"Woonkamer", "Slaapkamer 1"})
     check("auto_markers: afvoer voor elke natte ruimte (afvoerpunt)",
           {m.ruimte_id for m in _autoAE if m.type == "afvoer"} == {"Keuken", "Badkamer", "Toilet"})
-    check("auto_markers: overstroom bij iedere toevoer-BRON zonder verzonnen doelruimte",
-          {m.ruimte_id for m in _autoAE if m.type == "overstroom"} == {"Woonkamer", "Slaapkamer 1"})
+    check("auto_markers: zonder bevestigde topologie GEEN fantoom-overstroom",
+          not any(m.type == "overstroom" for m in _autoAE))
     check("auto_markers: coördinaten relatief (0..1)",
           all(0.0 <= m.x <= 1.0 and 0.0 <= m.y <= 1.0 for m in _autoAE))
     check("auto_markers: bron='auto' op elke gegenereerde marker", all(m.bron == "auto" for m in _autoAE))
@@ -4904,6 +4904,19 @@ try:
     _auto_geoAE = _vp.auto_markers(_ruimtes_geoAE, _vbalAE(_vbAE(_ruimtes_geoAE))["rows"])
     check("auto_markers: met echte ruimtegeometrie starten alle markers binnen de gekoppelde ruimte",
           all(_vp.punt_in_polygoon(m.x, m.y, _ruimtes_geoAE[0].contour_relatief) for m in _auto_geoAE))
+    _top_ruimtesAE = [
+        _RAE(naam="Bron", functie="slaapkamer", oppervlakte_m2=10,
+             contour_relatief=[[.1,.1],[.45,.1],[.45,.7],[.1,.7]]),
+        _RAE(naam="Doel", functie="badkamer", oppervlakte_m2=6,
+             contour_relatief=[[.55,.1],[.9,.1],[.9,.7],[.55,.7]])]
+    _top_resAE = _vbalAE(_vbAE(_top_ruimtesAE))["rows"]
+    _top_autoAE = _vp.auto_markers(_top_ruimtesAE, _top_resAE, [["Bron", "Doel"]])
+    _overAE = [m for m in _top_autoAE if m.type == "overstroom"]
+    check("auto_markers: bevestigde bron->nat-doel-topologie maakt precies één overstroommarker",
+          len(_overAE) == 1 and _overAE[0].ruimte_id == "Bron")
+    check("auto_markers: overstroom ligt controleerbaar op bronrand richting doel",
+          _vp.punt_in_polygoon(_overAE[0].x, _overAE[0].y, _top_ruimtesAE[0].contour_relatief)
+          and _overAE[0].x > .4)
     _bk_marker = next(m for m in _autoAE if m.ruimte_id == "Badkamer")
     check("auto_markers: afvoerwaarde komt uit afvoer_advies_ls (na balansverdeling), niet het kale minimum",
           _bk_marker.waarde_ls == next(r for r in _resAE["rows"] if r["naam"] == "Badkamer")["afvoer_advies_ls"]
@@ -4918,6 +4931,11 @@ try:
     check("zorg_voor_verdiepingen: 2e keer raakt bestaande (niet-lege) markers niet aan",
           _vp.zorg_voor_verdiepingen(_d3, _res3["rows"]) is False
           and _d3.ventilatieplan.verdiepingen[0].markers[0].waarde_ls == 999.0)
+    _d3.ventilatieplan.verdiepingen[0].markers.append(
+        _VMAE(id="oud-fantoom", type="overstroom", ruimte_id="Woonkamer", waarde_ls=7, x=.5, y=.5))
+    check("zorg_voor_verdiepingen: legacy overstroom zonder topologie wordt verwijderd",
+          _vp.zorg_voor_verdiepingen(_d3, _res3["rows"]) is True
+          and not any(m.type == "overstroom" for m in _d3.ventilatieplan.verdiepingen[0].markers))
 
     # --- herstel_verdieping: raakt alleen de opgegeven verdieping ---
     _d4 = _DAE()
@@ -4967,6 +4985,12 @@ try:
     _, _buitenAE = _vp.valideer_markers(
         [{"type": "toevoer", "ruimte_id": "Woonkamer", "x": .8, "y": .8}], {"Woonkamer"}, _polyAE)
     check("valideer_markers: positie buiten gekoppelde ruimte -> geweigerd", "buiten ruimte" in _buitenAE)
+    _pg_okAE, _pg_foutAE = _vp.valideer_ruimtepolygonen(
+        {"Woonkamer": [[0,0],[1,0],[1,1]]}, {"Woonkamer"})
+    check("ruimtepolygonen: minimaal 3 punten binnen canvas geaccepteerd", _pg_foutAE is None and len(_pg_okAE["Woonkamer"]) == 3)
+    _, _pg_kortAE = _vp.valideer_ruimtepolygonen({"Woonkamer": [[0,0],[1,0]]}, {"Woonkamer"})
+    _, _pg_buitenAE = _vp.valideer_ruimtepolygonen({"Woonkamer": [[0,0],[1.1,0],[1,1]]}, {"Woonkamer"})
+    check("ruimtepolygonen: minder dan 3 punten en buiten canvas geweigerd", _pg_kortAE and _pg_buitenAE)
 
     # --- marker_balans ---
     _d5 = _DAE()
@@ -5040,6 +5064,8 @@ try:
           "vp-balans" in _htmlAF1 and "Begane grond" in _htmlAF1 and "1e verdieping" in _htmlAF1
           and "Toevoer per verblijfsruimte" in _htmlAF1 and "Afvoer per natte ruimte" in _htmlAF1)
     check("ventilatieplan-route: laadt ventilatieplan.js", "ventilatieplan.js" in _htmlAF1)
+    check("ventilatieplan-route: productiekalibratie en topologie-CTA zichtbaar",
+          "Ruimtecontouren kalibreren" in _htmlAF1 and "Overstroomverbinding vastleggen" in _htmlAF1)
     check("ventilatieplan-route: rendert echte ruimtepolygonen en labels voor hit-testing",
           _htmlAF1.count("class=vp-ruimte ") == 5 and "vp-koppellijn" in _htmlAF1)
     check("ventilatieplan-route: alle 7 vuistregels staan er (ook 'niet te bepalen', geen stille voldoet)",
@@ -5092,6 +5118,30 @@ try:
           all(term in _jsbronAF for term in ("puntInPolygoon", "sleepIndicatie", "Object.assign(m, vorige)")))
     check("ventilatieplan-JS: dubbelklik ondersteunt expliciet splitsen",
           'antwoord.split("+")' in _jsbronAF and 'verdieping.markers.push' in _jsbronAF)
+    check("ventilatieplan-JS: markers zijn toetsenbordbedienbaar en hebben toegankelijke naam",
+          all(term in _jsbronAF for term in ('tabindex: "0"', 'role: "button"', '"aria-label"',
+                                             'ev.key === "Enter"', 'ev.key === "Delete"', '"ArrowLeft"')))
+
+    # Productieroute: kalibratie schrijft echte polygonen naar het dossier en activeert daarna slepen.
+    _poly_postAF = {"polygonen": {"Woonkamer": [[.05,.05],[.55,.05],[.55,.7],[.05,.7]],
+                                    "Keuken": [[.55,.05],[.95,.05],[.95,.5],[.55,.5]],
+                                    "Toilet": [[.55,.5],[.75,.5],[.75,.7],[.55,.7]]}}
+    _rpolyAF = _cAF.post("/project/%s/ventilatieplan/%s/ruimtepolygonen" % (_tagAF, _bg_naam),
+                         data=_jsAF.dumps(_poly_postAF), content_type="application/json")
+    _na_polyAF = _cAF.get("/project/%s/ventilatieplan" % _tagAF).get_data(as_text=True)
+    check("ruimtepolygonen-route: opgeslagen dossierroute activeert slepen voor verdieping",
+          _rpolyAF.status_code == 200 and '"heeft_ruimtegeometrie": true' in _na_polyAF.lower())
+
+    # Zonder topologie geen pijl; na expliciete bron+natte doelruimte wel, en vuistregeldata krijgt pad.
+    _dtop0AF = _WAF._dossier(_tagAF)
+    check("topologie-route: vooraf geen fantoom-overstroom",
+          not any(m.type == "overstroom" for v in _dtop0AF.ventilatieplan.verdiepingen for m in v.markers))
+    _rtopAF = _cAF.post("/project/%s/ventilatieplan/%s/topologie" % (_tagAF, _bg_naam),
+                        data=_jsAF.dumps({"bron":"Woonkamer", "doel":"Keuken"}), content_type="application/json")
+    _dtop1AF = _WAF._dossier(_tagAF)
+    check("topologie-route: expliciete bron+natte doelruimte opgeslagen en maakt pijl",
+          _rtopAF.status_code == 200 and ["Woonkamer","Keuken"] in _dtop1AF.ventilatieplan.topologie
+          and any(m.type == "overstroom" for m in next(v for v in _dtop1AF.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers))
 
     # onbekende verdieping -> 404, nette fout
     _rAF5 = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, "Kelder (bestaat niet)"),

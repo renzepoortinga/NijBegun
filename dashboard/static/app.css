@@ -616,7 +616,11 @@ details.acc .acc-body :is(h1,h2,h3){color:var(--ink)}
 .vp-ruimtelabel.vp-actief{fill:var(--err-fg);font-weight:700}
 .vp-koppellijn{display:none;stroke:var(--blue);stroke-width:4;pointer-events:none}
 .vp-koppellijn.vp-zichtbaar{display:block}
+.vp-instellen{margin-top:var(--s4)}
+.vp-instellen summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:650}
+.vp-kalibratie-preview{fill:var(--info-bg);stroke:var(--blue);stroke-width:4;stroke-dasharray:8 8;pointer-events:none}
 .vp-marker{cursor:grab}
+.vp-marker:focus-visible{outline:none;filter:drop-shadow(0 0 8px var(--focus))}
 .vp-marker.vp-dragging{cursor:grabbing;opacity:.85}
 .vp-marker text{font-size:var(--svg-fs-8);font-weight:650;fill:var(--on-accent);text-anchor:middle;paint-order:stroke;stroke:var(--ink);stroke-width:2px}
 @media (max-width:768px){
