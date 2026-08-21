@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-15 door Claude (taak 012 afgerond)
+Bijgewerkt: 2026-08-21 door Claude (taak 019 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -16,6 +16,18 @@ Technische schuld). Historie staat in `BUILD_LOG.md` en
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 019 (ventilatie-rekenlaag uitbreiden: balans, deurbelasting, vuistregeltoets) is afgerond en
+staat in `tasks/done/`: eerst de afrondingsbeslissing vastgelegd in `docs/decisions/0002-ventilatie-
+afronding.md` (blijft 0,1 l/s). Daarna `ventilatie/ventilatie.py` uitgebreid met `verdeel_balans()`
+(afvoer per natte ruimte proportioneel opgehoogd tot de som gelijk is aan de toevoer, grootste-
+restmethode zodat niemand door afronding onder zijn minimum zakt), een `afvoerpunt`-vlag,
+`toevoer_herkomst`/`afvoer_herkomst` per regel (oppervlakte/minimum/balansophoging — nooit meer zonder
+herkomst) en `deurbelasting()`/`toets_vuistregels()` voor alle 7 Nij Begun-vuistregels; ontbrekende
+geometrie/installatiekeuzes geven altijd 'niet te bepalen', nooit een stille 'voldoet'. AI-review vond
+3 echte punten (rondingsfout in de balansverdeling, stille fantoom-toevoer-onderdrukking, silent
+fallback in deurbelasting), alle drie gefixt. 825/825 tests groen; `verify.sh` PASS. Vervolgtaken 020
+(webapp-pagina) en 021 (export) staan in backlog, buiten scope van 019.
 
 Taak 003 (kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export)
 is afgerond en staat in `tasks/done/`: onafhankelijke herreview van commit
