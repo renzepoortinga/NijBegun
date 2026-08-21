@@ -571,6 +571,33 @@ check("csv: verwarming HR107", _cd.installaties.verwarming.type_opwekker == "HR1
 check("csv: qv10 gelezen maar niet-gemeten", _cd.opname.qv10_waarde == 1.25 and _cd.opname.qv10_gemeten is False)
 check("csv: woningtype-ontbreekt geflagd", any("Woningtype" in n for n in _cn))
 
+# Taak 018: MagicPlan vervangt de slash in alle twaalf aanvoertemperatuurcodes
+# door een punt. Controleer de volledige CSV -> dossier -> VABI-keten.
+from vabi import installatie_generate as _ig18
+_aanvoer18 = [("30.27", "0"), ("35.30", "1"), ("40.35", "2"), ("45.40", "3"),
+              ("50.42", "4"), ("55.47", "5"), ("60.50", "6"), ("65.55", "7"),
+              ("70.60", "8"), ("75.65", "9"), ("80.60", "10"), ("90.70", "11")]
+_ok18 = True
+for _temp18, _code18 in _aanvoer18:
+    _csv18 = ("PLAN ATTRIBUTES\n"
+              "Verwarming - type opwekker,HR107\n"
+              "Verwarming - aanvoertemperatuur,%s\n\n"
+              "FLOOR ATTRIBUTES,Ground surface without walls: m²,Ceiling Height\n"
+              "Ground Floor,40,2.50 m\n" % _temp18)
+    with _t71.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8") as _f18:
+        _f18.write(_csv18)
+        _p18 = _f18.name
+    try:
+        _d18, _n18 = _csvdos(_p18)
+        _r18, _flags18 = _ig18.build_tree(_d18)
+        _ok18 = (_ok18
+                 and _d18.installaties.verwarming.aanvoertemperatuur == _temp18
+                 and _ig18._find(_r18, "WaterAanvoertemperatuur").text == _code18
+                 and not any("aanvoertemp" in _flag18.lower() for _flag18 in _flags18))
+    finally:
+        os.unlink(_p18)
+check("csv->VABI: alle 12 dotted aanvoertemperaturen krijgen juiste enum zonder onbekend-flag", _ok18)
+
 print("25. Dak-per-vlak (hellingshoek uit nok + zadeldak-vlakken + parser-pad)")
 from core.geometry import hellingshoek_uit_nok as _huk, dak_vlakken_zadeldak as _dvz
 check("hellingshoek nok: breedte6 nok3 -> 45", _huk(6, 3, 0) == 45.0)

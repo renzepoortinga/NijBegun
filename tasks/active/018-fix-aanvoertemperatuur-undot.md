@@ -1,7 +1,7 @@
 ---
 id: 018
-assigned:
-branch:
+assigned: Codex Builder
+branch: feat/018-fix-aanvoertemperatuur-undot
 depends_on: []
 ---
 
@@ -35,13 +35,21 @@ vóórdat de bestaande dot→slash-fix in `installatie_generate.py` haar kan toe
 - De bredere mappingmanifest-taak (015) — dit is een gerichte, kleine bugfix.
 
 ## Acceptance criteria
-- [ ] CSV-waarde `90.70` (en de andere 11 aanvoertemperatuur-codes) wordt na de volledige keten
+- [x] CSV-waarde `90.70` (en de andere 11 aanvoertemperatuur-codes) wordt na de volledige keten
       correct als `WaterAanvoertemperatuur`-code geschreven, zonder "onbekende klasse"-flag.
-- [ ] Regressietest toegevoegd (unit of keten) die dit vastlegt.
-- [ ] `./scripts/verify.sh` slaagt (incl. volledige testrun).
+- [x] Regressietest toegevoegd (unit of keten) die dit vastlegt.
+- [x] `./scripts/verify.sh` slaagt (incl. volledige testrun).
 - [ ] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
+
+- 2026-08-21 — Codex Builder: `aanvoertemperatuur` leest nu als enige installatieveld de ruwe
+  Statistics-CSV-waarde, zodat de bestaande gerichte punt-naar-slashnormalisatie in de
+  Vabi-generator werkt. Ketenregressie voor alle 12 bevestigde codes toegevoegd. `python
+  tests/run_tests.py`: 784 PASS, 2 bekende taak-002-omgevingsfails (`config.json`/plan-json en
+  loginconfig); de nieuwe regressie is PASS. Git-Bash `./scripts/verify.sh`: PASS met hetzelfde
+  bekende Python-advisory. Het genoemde stresstestdocument was niet aanwezig in deze branch of
+  historie; het bewijs en de isolatiereproductie in dit taakbestand waren wel beschikbaar.
 
 ## Notes
 Gevonden tijdens een losse stresstest-sessie (15-8-2026, ander gesprek dan taak 013's
