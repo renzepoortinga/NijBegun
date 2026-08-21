@@ -37,6 +37,16 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
 
 ## Sessions
 
+- 2026-08-21 Codex onafhankelijke eindreviewer op `fdc133e`: **VERDICT FAIL**. De codepaden voor
+  volledige JPG/PNG-decode, begrensde upload, expliciet `ai.vision_model`, providerprovenance,
+  schaalbewijs, adviseursbevestiging en atomische dossiermutatie zijn inhoudelijk PASS. Blocking
+  `scripts/verify.sh` is PASS met 1041/1041 tests. De resterende acceptatieblocker is echter
+  expliciet en aantoonbaar: de drie werkelijk geparseerde voorbeeldbronnen leveren minder dan tien
+  vloeren en nul gekoppelde rastergrondwaarheden. Daarmee is de eis "minimaal tien echte
+  plattegronden met <5% afwijking, of per plan expliciet onbetrouwbare schaal" niet over tien echte
+  plattegronden beproefd en staat het criterium terecht nog open. Niet-blokkerende documentatiefout:
+  `docs/plattegrond-vision-contract.md` noemt nog een fallback naar `ai.model`, terwijl de code
+  uitsluitend `ai.vision_model` accepteert. Geen featurecode gewijzigd door reviewer.
 - 2026-08-21 Codex onafhankelijke reviewer op feature-HEAD `db6bf40`: **VERDICT FAIL**.
   Blocking verify zelf is PASS en `.verify-report.json` bevat geen advisories, maar twee
   acceptatieblockers blijven: (1) de benchmark laadt of ontleedt geen van de drie genoemde
