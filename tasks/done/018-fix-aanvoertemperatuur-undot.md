@@ -39,7 +39,7 @@ vóórdat de bestaande dot→slash-fix in `installatie_generate.py` haar kan toe
       correct als `WaterAanvoertemperatuur`-code geschreven, zonder "onbekende klasse"-flag.
 - [x] Regressietest toegevoegd (unit of keten) die dit vastlegt.
 - [x] `./scripts/verify.sh` slaagt (incl. volledige testrun).
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 
@@ -50,6 +50,10 @@ vóórdat de bestaande dot→slash-fix in `installatie_generate.py` haar kan toe
   loginconfig); de nieuwe regressie is PASS. Git-Bash `./scripts/verify.sh`: PASS met hetzelfde
   bekende Python-advisory. Het genoemde stresstestdocument was niet aanwezig in deze branch of
   historie; het bewijs en de isolatiereproductie in dit taakbestand waren wel beschikbaar.
+- 2026-08-21 — Codex Reviewer/Manager: onafhankelijke review van commit `9d519c8`:
+  PASS zonder bevindingen. Alle 12 codes zijn door de volledige CSV → dossier → Vabi-keten
+  gecontroleerd, inclusief afwezigheid van de onbekend-flag. `verify.sh` PASS; alleen de bekende
+  taak-002-advisory bleef over. Taak naar `done` verplaatst.
 
 ## Notes
 Gevonden tijdens een losse stresstest-sessie (15-8-2026, ander gesprek dan taak 013's
