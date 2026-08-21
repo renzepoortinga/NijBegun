@@ -16,6 +16,7 @@ from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, 
 from core.geometry import polygon_oppervlakte_m2
 from magicplan.extractor import _g, _functie, _map_ventilatie, _map_installaties, _maak_vloer, _maak_dak
 from magicplan import report_parser
+from magicplan.form_fingerprint import stamp_dossier_meta
 
 
 def _value(values, vid):
@@ -201,6 +202,7 @@ def build_dossier(p, kozijnen, plan):
         "LET OP: dossier via de API-route (benaderingen: gevel-m², footprint-proxy, Ag-heuristiek, "
         "geen dakgeometrie). Gebruik voor de VABI-export de Statistics-CSV-route en verifieer "
         "ALLE oppervlakken in Vabi.")
+    stamp_dossier_meta(dos)
     return dos
 
 

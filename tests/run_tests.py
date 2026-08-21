@@ -210,6 +210,21 @@ check("assemble geometrie uit plan (ruimte+functie)", any(r.functie == "keuken" 
 check("assemble schil gevel+vloer+dak+kozijn", {"gevel", "vloer", "dak", "kozijn"} <= {s.type for s in _ad.schil})
 check("assemble gevel-tag uit report", any(s.type == "gevel" and s.subtype == "Spouwmuur" for s in _ad.schil))
 check("assemble kozijn-glas uit report", any(s.type == "kozijn" and s.glastype == "HR++" for s in _ad.schil))
+# taak 014-review: de hybride API+report-PDF-route (_maak_dak, extractor.py) maakt net als de
+# Statistics-CSV-route altijd ÉÉN generiek dakvlak -> moet DEZELFDE fallback-tag krijgen, anders
+# ziet de dak-fallback-opschoning/-preflight 'm niet als een dossier via dit pad binnenkomt.
+check("assemble: dak krijgt dezelfde magicplan-dak-fallback-tag als de CSV-route",
+      any(s.type == "dak" and s.bron == "magicplan-dak-fallback" for s in _ad.schil))
+from vabi.preflight import assert_no_dubbel_dak_fallback as _adf15, VabiExportBlocked as _VEB15
+from core.dossier import SchilDeel as _SD15
+_ad2 = build_dossier(_p, _koz, _planv2)
+_ad2.schil.append(_SD15(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0,
+                        bron="webapp-wizard"))
+try:
+    _adf15(_ad2)
+    check("assemble: preflight blokkeert fallback+wizarddak ook op het hybride pad", False)
+except _VEB15:
+    check("assemble: preflight blokkeert fallback+wizarddak ook op het hybride pad", True)
 
 print("15b. MagicPlan-contourextractie (echte plattegrondomtrek i.p.v. rechthoek-gok)")
 from magicplan.assemble import _floor_contour_m, geometry_from_plan
@@ -733,7 +748,11 @@ check("obj-gen: onbekende begrenzing geflagd (niet gegokt)",
       any("sjabloon-GrenstAan" in i for i in _objbuild(_ad)[2]))
 
 # dak Hellingshoek-ENUM: plat=6 / hellend=3 (geverifieerd vabi_enums; GEEN rauwe graden)
+# Deze CSV had geen dakvelden -> _ad draagt nog de parser-placeholder ('magicplan-dak-fallback',
+# taak 014); die hoort net als in de webapp-wizard te verdwijnen zodra er echte dakvlakken bij
+# komen, anders blokkeert de Vabi-preflight terecht op dubbel dakoppervlak.
 from core.dossier import SchilDeel as _SD
+_ad.schil = [s for s in _ad.schil if not (s.type == "dak" and s.bron == "magicplan-dak-fallback")]
 _ad.schil.append(_SD(id="dakplat", type="dak", subtype="plat", begrenzing="Buitenlucht",
                      orientatie="", oppervlakte_m2=20.0, hellingshoek=0, rekenzone=1))
 _ad.schil.append(_SD(id="dakhel", type="dak", subtype="schuin", begrenzing="Buitenlucht",
@@ -787,7 +806,7 @@ check("csv: AVR-wand uitgesloten uit schil (geen O-gevel)", "O" not in _gev)
 check("csv: 'Qv10 gemeten?'=Ja -> qv10_gemeten True", _nd.opname.qv10_gemeten is True)
 _ram = [s for s in _nd.schil if s.subtype == "Raam"]
 check("csv: raam erft begrenzing van moederwand (ZW=Buitenlucht)", bool(_ram) and _ram[0].begrenzing == "Buitenlucht")
-check("csv: kozijn B -> Metaal thermisch onderbroken", bool(_ram) and _ram[0].kozijnmateriaal == "Metaal thermisch onderbroken")
+check("csv: kozijn B -> Metaal (thermisch onderbroken)", bool(_ram) and _ram[0].kozijnmateriaal == "Metaal (thermisch onderbroken)")
 
 # NL-ruimtenamen correct classificeren (anders ventilatiebalans fout) — gevonden in de ultieme check
 from magicplan.statistics_csv import _functie_uit_naam as _fun
@@ -4175,7 +4194,7 @@ try:
     from magicplan.statistics_csv import build_dossier as _bdZ, _norm_kozijn_mat as _nkm
     check("'?afwijkend' -> LEEG (niet stil op het gunstigste hout/kunststof)", _nkm("?afwijkend") == "")
     check("leeg -> hout/kunststof (80%-default)", _nkm("") == "Hout of kunststof")
-    check("metaal niet-TO herkend", _nkm("Metaal (niet thermisch onderbroken)") == "Metaal niet thermisch onderbroken")
+    check("metaal niet-TO herkend", _nkm("Metaal (niet thermisch onderbroken)") == "Metaal (niet thermisch onderbroken)")
     # DUBBELE kolomnaam (raam- en deurvariant) + kozijn 'afwijkend' op de raamkolom
     _z = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Tussenwoning\n"
           "Oriëntatie voorgevel,N\nGevelhoogte (m),3\nTotal living area,60\n\n"
@@ -4253,6 +4272,411 @@ try:
           not any("DUBBELE KAMER" in n and "Ground Floor" in n for n in _nB))
 except Exception as _e:
     check("dubbele-kamer-check: draait zonder fout", False); print("     " + repr(_e)[:220])
+
+print("AC. Dak-fallback bronprovenance: geen dubbel dakoppervlak (taak 014/015)")
+try:
+    import tempfile as _tfC, os as _osC, shutil as _shC
+    from magicplan.statistics_csv import build_dossier as _bdC
+
+    # AC1: zonder dak-velden in de CSV krijgt de footprint-fallback een aantoonbare herkomst-tag,
+    # en de rest van het geïmporteerde schil krijgt de generieke "magicplan-import"-tag.
+    _c1 = ("PLAN ATTRIBUTES\nExterior perimeter: m,20,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\n"
+           "Gevelhoogte (m),5.4\nGevel - invoer,Beslisschema\nGevel - isolatie aanwezig?,Ja\n"
+           "Gevel - isolatiedikte onbekend?,Nee\nGevel - isolatiedikte (mm),80\nGevel - begrenzing,Buitenlucht\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+           "Ground Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _f1 = _tfC.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _f1.write(_c1); _f1.close()
+    _d1, _n1 = _bdC(_f1.name); _osC.unlink(_f1.name)
+    _fb1 = next((s for s in _d1.schil if s.type == "dak"), None)
+    check("AC1: footprint-fallback dak getagd als magicplan-dak-fallback",
+          _fb1 is not None and _fb1.bron == "magicplan-dak-fallback", str(_fb1))
+    check("AC1: gevel/vloer krijgen de generieke import-tag",
+          all(s.bron == "magicplan-import" for s in _d1.schil if s.type != "dak"))
+
+    # AC2: MET expliciete dakvlakken in de CSV komt er geen fallback-dak, en die vlakken krijgen
+    # de generieke import-tag (ze zijn geen webapp-wizard-invoer, maar ook geen placeholder).
+    _c2 = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1992.t.m.2013\nWoningtype,Tussenwoning\n"
+           "Gevelhoogte (m),5.4\nDakvlak 1 - daktype,Zadeldak\nDak - vloerbreedte (m),8\n"
+           "Dakvlak 1 - hellingshoek (°),45\nDakvlak 1 - oriëntatie,ZW\nDakvlak 2 - oriëntatie,NO\n"
+           "Dak - kopgevel oriëntatie 1,NW\nDak - kopgevel oriëntatie 2,ZO\n\n"
+           "FLOOR ATTRIBUTES,Ground surface without walls,Ceiling Height,Begrenzing\n"
+           "Ground Floor,40,2.50 m,Kruipruimte\n\n"
+           "WALL ATTRIBUTES,Wall,Symbol,Surf,SurfNoOpen,Width,Height,Ann,Type,Isol,Rekenzone,Orientatie\n"
+           "Ground Floor,\nVoorgevel,Wall 0,Wall,10,9,4,2.5,1,Wall,,1,ZW\n")
+    _f2 = _tfC.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8"); _f2.write(_c2); _f2.close()
+    _d2, _n2 = _bdC(_f2.name); _osC.unlink(_f2.name)
+    _daks2 = [s for s in _d2.schil if s.type == "dak"]
+    check("AC2: expliciete dakvlakken -> GEEN fallback-tag",
+          len(_daks2) > 0 and all(s.bron != "magicplan-dak-fallback" for s in _daks2))
+
+    # AC3: dashboard-helper verwijdert de fallback zodra een echt dakvlak ernaast staat, en laat
+    # 'm met rust zolang hij alleen staat.
+    from dashboard.app import _dak_fallback_opschonen as _dfoC
+    from core.dossier import build_sample as _bsC, SchilDeel as _SDC
+    _d3 = _bsC()
+    for _s in _d3.schil:
+        _s.bron = "magicplan-import"
+    _dak_idx = next(i for i, s in enumerate(_d3.schil) if s.type == "dak")
+    _d3.schil[_dak_idx].bron = "magicplan-dak-fallback"
+    check("AC3: alleen-fallback -> niets verwijderd", _dfoC(_d3) is None and len(_d3.schil) == 5)
+    _d3.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0,
+                          bron="webapp-wizard"))
+    _verwijderd = _dfoC(_d3)
+    check("AC3: fallback + echt dakvlak -> fallback verwijderd, m² + id teruggegeven",
+          _verwijderd == (60.0, ["dak"]) and len(_d3.schil) == 5
+          and not any(s.bron == "magicplan-dak-fallback" for s in _d3.schil)
+          and any(s.id == "dak1-plat" for s in _d3.schil))
+
+    # AC4: de webapp-route voor "plat dak toevoegen" schoont de fallback zelf op (end-to-end via
+    # de Flask-testclient, niet alleen de losse helperfunctie).
+    import dashboard.app as _WAC
+    _WAC.app.config.update(TESTING=True, SECRET_KEY="test-dak-fallback")
+    _tdC = _tfC.mkdtemp(prefix="nb_dak_fallback_")
+    _d4 = _bsC()
+    for _s in _d4.schil:
+        _s.bron = "magicplan-import" if _s.type != "dak" else "magicplan-dak-fallback"
+    _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC = _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save
+    _stateC = {"dossier_file": "dossier.json"}
+    _WAC._load_state = lambda _t: _stateC
+    _WAC._dossier = lambda _t: _d4
+    _WAC._pdir = lambda _t: _tdC
+    _savedC = []
+    _WAC._dos_save = lambda _t, _st, _d: _savedC.append(_d)
+    try:
+        _cC = _WAC.app.test_client()
+        with _cC.session_transaction() as _sessC:
+            _sessC["ingelogd"] = True
+        _rC = _cC.post("/project/test-dak/opname/dak/plat", data={"breedte": "4", "diepte": "3", "rekenzone": "1"})
+        check("AC4: dak/plat-route redirect", _rC.status_code in (302, 303))
+        check("AC4: webapp-route verwijdert de fallback zelf",
+              len(_savedC) == 1 and not any(s.bron == "magicplan-dak-fallback" for s in _savedC[0].schil)
+              and any(s.subtype == "plat dak" and s.bron == "webapp-wizard" for s in _savedC[0].schil))
+        with _cC.session_transaction() as _sessC:
+            _flashesC = " ".join(m for _cat, m in _sessC.get("_flashes", []))
+        check("AC4: flash meldt de opschoning met het verwijderde id",
+              "Placeholder-dak" in _flashesC and "verwijderd" in _flashesC and "dak" in _flashesC)
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+
+    # AC5: VABI-preflight blokkeert fallback+echt-dak-naast-elkaar op ELK exportpad (niet alleen de
+    # webapp), en laat een dossier zonder die combinatie gewoon door.
+    from vabi.preflight import assert_no_dubbel_dak_fallback as _adfC, VabiExportBlocked as _VEBC
+    _d5 = _bsC()
+    for _s in _d5.schil:
+        _s.bron = "magicplan-import" if _s.type != "dak" else "magicplan-dak-fallback"
+    _d5.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0,
+                          bron="webapp-wizard"))
+    try:
+        _adfC(_d5)
+        check("AC5: preflight blokkeert fallback naast wizarddak", False)
+    except _VEBC as _eC5:
+        check("AC5: preflight blokkeert fallback naast wizarddak",
+              "dubbel" in str(_eC5).lower() and "dak" in str(_eC5).lower())
+    _d6 = _bsC()
+    for _s in _d6.schil:
+        _s.bron = "magicplan-import"
+    try:
+        _adfC(_d6)
+        check("AC5: preflight laat een dossier zonder fallback-tag door", True)
+    except _VEBC:
+        check("AC5: preflight laat een dossier zonder fallback-tag door", False)
+    from vabi import generate_all as _gaC
+    _tdC2 = _tfC.mkdtemp(prefix="nb_dak_fallback_export_")
+    try:
+        _gaC.generate_all(_d5, _tdC2, prefix="test")
+        check("AC5: generate_all blokkeert vóór schrijven bij fallback+wizarddak", False)
+    except _VEBC:
+        check("AC5: generate_all blokkeert vóór schrijven bij fallback+wizarddak",
+              not os.listdir(_tdC2))
+
+    # AC6: herimport van een verse CSV veegt eerder toegevoegde wizard-dakvlakken niet stil weg.
+    _d7 = _bsC()
+    for _s in _d7.schil:
+        _s.bron = "magicplan-import"
+    _d7.schil = [s for s in _d7.schil if s.type != "dak"]   # simuleer: dak al vervangen door de wizard
+    _d7.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=18.5,
+                          bron="webapp-wizard"))
+    _tdC3 = _tfC.mkdtemp(prefix="nb_dak_reimport_")
+    _osC.makedirs(_tdC3, exist_ok=True)
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d7
+    _WAC._pdir = lambda _t: _tdC3
+    from core.dossier import load_json as _ljC
+    try:
+        _cC2 = _WAC.app.test_client()
+        with _cC2.session_transaction() as _sessC2:
+            _sessC2["ingelogd"] = True
+        import io as _ioC
+        _r7 = _cC2.post("/project/test-dak-reimport/opname/magicplan",
+                        data={"bestand": (_ioC.BytesIO(_c1.encode("utf-8")), "opname.csv")},
+                        content_type="multipart/form-data")
+        check("AC6: herimport-route redirect", _r7.status_code in (302, 303))
+        _herimportC = _ljC(_osC.path.join(_tdC3, "dossier.json"))
+        check("AC6: eerder wizard-dakvlak overleeft de herimport",
+              any(s.bron == "webapp-wizard" and s.id == "dak1-plat" for s in _herimportC.schil))
+        check("AC6: geen dubbele/fallback dak naast het behouden wizardvlak",
+              not any(s.bron == "magicplan-dak-fallback" for s in _herimportC.schil))
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+        _uplC = _osC.path.join(_WAC.UPLOAD_DIR, "opname_test-dak-reimport.csv")
+        if _osC.path.exists(_uplC):
+            _osC.unlink(_uplC)
+    # AC7 (review-fix): een dossier van VÓÓR het bron-veld bestond heeft bron=="" op zijn
+    # placeholder-dak — de gedeelde herkenning (vabi.preflight.dak_fallback_schildelen) moet die via
+    # het legacy-signaal id=="dak" alsnog vinden, anders is het bestaande, live Essenhage-dossier
+    # (de aanleiding voor deze hele taak) NIET beschermd door deze fix.
+    from vabi.preflight import dak_fallback_schildelen as _dfsC
+    _d8 = _bsC()
+    for _s in _d8.schil:
+        _s.bron = ""   # simuleer een dossier van vóór dit veld bestond
+    _d8.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=12.0, bron=""))
+    check("AC7: legacy dossier (bron altijd '') -> id=='dak' herkend als placeholder",
+          [s.id for s in _dfsC(_d8.schil)] == ["dak"])
+    try:
+        _adfC(_d8)
+        check("AC7: preflight blokkeert ook het legacy (ongetagde) Essenhage-patroon", False)
+    except _VEBC:
+        check("AC7: preflight blokkeert ook het legacy (ongetagde) Essenhage-patroon", True)
+    check("AC7: webapp-helper ruimt het legacy-patroon ook op",
+          _dfoC(_d8) == (60.0, ["dak"]) and not any(s.id == "dak" for s in _d8.schil))
+
+    # AC8 (review-fix): een dossier-.JSON-herimport (niet alleen CSV) mag wizard-dakvlakken ook
+    # niet stil wegvegen.
+    _d9 = _bsC()
+    for _s in _d9.schil:
+        _s.bron = "magicplan-import"
+    _d9.schil = [s for s in _d9.schil if s.type != "dak"]
+    _d9.schil.append(_SDC(id="dak1-plat", type="dak", subtype="plat dak", oppervlakte_m2=22.0,
+                          bron="webapp-wizard"))
+    _tdC4 = _tfC.mkdtemp(prefix="nb_dak_reimport_json_")
+    _osC.makedirs(_tdC4, exist_ok=True)
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d9
+    _WAC._pdir = lambda _t: _tdC4
+    try:
+        _cC3 = _WAC.app.test_client()
+        with _cC3.session_transaction() as _sessC3:
+            _sessC3["ingelogd"] = True
+        _nieuw_json = _bsC()
+        for _s in _nieuw_json.schil:
+            _s.bron = "magicplan-import"
+        _nieuw_json.schil = [s for s in _nieuw_json.schil if s.type != "dak"]
+        import json as _jsonC, io as _ioC2
+        _r8 = _cC3.post("/project/test-dak-reimport-json/opname/magicplan",
+                        data={"bestand": (_ioC2.BytesIO(_jsonC.dumps(_nieuw_json.to_dict()).encode("utf-8")),
+                                          "dossier.json")},
+                        content_type="multipart/form-data")
+        check("AC8: dossier-json-herimport-route redirect", _r8.status_code in (302, 303))
+        _herimportC2 = _ljC(_osC.path.join(_tdC4, "dossier.json"))
+        check("AC8: wizard-dakvlak overleeft ook een dossier-.json-herimport",
+              any(s.bron == "webapp-wizard" and s.id == "dak1-plat" for s in _herimportC2.schil))
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+        _uplC2 = _osC.path.join(_WAC.UPLOAD_DIR, "opname_test-dak-reimport-json.json")
+        if _osC.path.exists(_uplC2):
+            _osC.unlink(_uplC2)
+    _shC.rmtree(_tdC4, ignore_errors=True)
+
+    # AC9 (review-fix ronde 3): een dakkapel op een fallback-getagd (bv. hybride-route) hellend
+    # dakvlak mag dat vlak NIET laten opruimen als "ongebruikte placeholder" — de moeder is na de
+    # dakkapel-correctie nog altijd echt (verkleind) dakoppervlak, geen dubbeling.
+    _d10 = _bsC()
+    _d10.schil = [s for s in _d10.schil if s.type != "dak"]
+    _d10.schil.append(_SDC(id="dak", type="dak", subtype="Hellend dak", begrenzing="Buitenlucht",
+                           orientatie="Z", oppervlakte_m2=60.0, hellingshoek=45.0,
+                           bron="magicplan-dak-fallback"))
+    _moeder_i9 = len(_d10.schil) - 1
+    _tdC5 = _tfC.mkdtemp(prefix="nb_dakkapel_fallback_")
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d10
+    _WAC._pdir = lambda _t: _tdC5
+    try:
+        _cC4 = _WAC.app.test_client()
+        with _cC4.session_transaction() as _sessC4:
+            _sessC4["ingelogd"] = True
+        _r9 = _cC4.post("/project/test-dakkapel-fallback/opname/dakkapel",
+                        data={"moederdak_i": str(_moeder_i9), "breedte": "2", "hoogte": "1.5",
+                              "diepte": "1", "rekenzone": "1"})
+        check("AC9: dakkapel-op-fallback-route redirect", _r9.status_code in (302, 303))
+        _moeder9 = _d10.schil[_moeder_i9]
+        check("AC9: moederdak (voorheen fallback) is niet meer weggooibaar getagd",
+              _moeder9.id == "dak" and _moeder9.bron == "magicplan-import"
+              and _moeder9.oppervlakte_m2 < 60.0)
+        check("AC9: dakje van de dakkapel is normaal webapp-wizard-getagd",
+              any(s.id == "dakkapel1-dakje" and s.bron == "webapp-wizard" for s in _d10.schil))
+        try:
+            _adfC(_d10)
+            check("AC9: preflight blokkeert NIET (geen echte dubbeling, alleen een gat + dakje)", True)
+        except _VEBC as _e9:
+            check("AC9: preflight blokkeert NIET (geen echte dubbeling, alleen een gat + dakje)",
+                  False)
+            print("     " + str(_e9)[:160])
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+    _shC.rmtree(_tdC5, ignore_errors=True)
+
+    _shC.rmtree(_tdC, ignore_errors=True)
+    _shC.rmtree(_tdC2, ignore_errors=True)
+    _shC.rmtree(_tdC3, ignore_errors=True)
+except Exception as _e:
+    check("dak-fallback-opschoning: draait zonder fout", False); print("     " + repr(_e)[:220])
+
+print("\nAD. Mappingmanifest (taak 015): drift-detectie parser <-> webapp <-> VABI + form-fingerprint")
+try:
+    from core.mapping_manifest import (MANIFEST, VERWACHTE_SNAPSHOT_FINGERPRINT,
+                                       resolve, get as _mm_get)
+    from scripts.check_mapping_manifest import (run_checks as _mm_run_checks, render_doc as _mm_render_doc,
+                                                 check_doc as _mm_check_doc, DOC_PATH as _mm_doc_path)
+    from magicplan.form_fingerprint import (compute_fingerprint, snapshot_fingerprint, load_snapshot,
+                                            stamp_dossier_meta, refresh_snapshot_live,
+                                            DEFAULT_SNAPSHOT_PATH)
+
+    check("manifest: minstens de bekende dropdowns zijn opgenomen",
+          {"begrenzing", "glastype", "kozijnmateriaal"} <= {m.id for m in MANIFEST})
+    _mm_errors = _mm_run_checks()
+    check("manifest: GEEN drift tussen parser/webapp/VABI-codebook", not _mm_errors, "; ".join(_mm_errors))
+
+    # Elke manifest-entry: alle referenties moeten daadwerkelijk resolven (bewijst dat de check zelf
+    # geen stille no-op is bij een kapotte referentie -- 1 entry expres verbouwen en weer herstellen).
+    _begr = _mm_get("begrenzing")
+    _orig_ref = _begr.parser_canon
+    _begr.parser_canon = "magicplan.statistics_csv:DEZE_BESTAAT_NIET"
+    try:
+        resolve(_begr.parser_canon)
+        check("manifest: kapotte referentie faalt luid (AttributeError)", False)
+    except AttributeError:
+        check("manifest: kapotte referentie faalt luid (AttributeError)", True)
+    finally:
+        _begr.parser_canon = _orig_ref
+    check("manifest: referentie hersteld", _begr.parser_canon == _orig_ref)
+
+    # doc-generatie: --write-doc en --check-doc zijn consistent (round-trip), en het gecommitte
+    # docs/mapping-overview.md is NIET verouderd t.o.v. het manifest zoals het nu in de repo staat.
+    check("manifest-doc: render is deterministisch", _mm_render_doc() == _mm_render_doc())
+    check("manifest-doc: gecommitte docs/mapping-overview.md is actueel (--write-doc gedraaid?)",
+          _mm_check_doc(), "draai: python scripts/check_mapping_manifest.py --write-doc")
+
+    # kozijnmateriaal-regressie (de concrete bug die dit manifest heeft blootgelegd, 21-8): de parser
+    # mag NOOIT meer een kozijnwaarde produceren die de webapp-<select> niet als optie heeft staan.
+    from dashboard.app import KOZ_OPTS
+    from magicplan.statistics_csv import _norm_kozijn_mat as _nkm_ad
+    check("kozijnmateriaal: parserwaarden zitten allemaal in de webapp-optielijst",
+          all(_nkm_ad(v) in KOZ_OPTS for v in ("a", "b", "c", "")),
+          str([(v, _nkm_ad(v)) for v in ("a", "b", "c", "")]))
+
+    # form-fingerprint: gedateerde snapshot, geen live call nodig; stabiel/reproduceerbaar en
+    # gevoelig voor een echte inhoudswijziging (drift-detectie).
+    _snap = load_snapshot(DEFAULT_SNAPSHOT_PATH)
+    check("form-fingerprint: snapshot heeft een datum", bool(_snap.get("_meta", {}).get("snapshot_datum")))
+    _fp1 = snapshot_fingerprint()
+    _fp2 = snapshot_fingerprint()
+    check("form-fingerprint: reproduceerbaar (zelfde snapshot -> zelfde fingerprint)", _fp1 == _fp2)
+    check("form-fingerprint: gecommitte snapshot matcht onafhankelijke contractpin",
+          _fp1 == VERWACHTE_SNAPSHOT_FINGERPRINT)
+    _forms_gewijzigd = dict(_snap["forms"])
+    _forms_gewijzigd["Object"] = _forms_gewijzigd["Object"] + [{"name": "Nieuw testveld", "options": None}]
+    check("form-fingerprint: verandert bij een echte veldwijziging",
+          compute_fingerprint(_forms_gewijzigd) != _fp1)
+    _forms_zelfde_volgorde_anders = {k: list(reversed(v)) for k, v in _snap["forms"].items()}
+    check("form-fingerprint: ongevoelig voor volgorde (alleen inhoud telt)",
+          compute_fingerprint(_forms_zelfde_volgorde_anders) == _fp1)
+
+    # De drift-check moet de snapshot daadwerkelijk lezen. Drie mutaties bewijzen dat optie-,
+    # label- én overige formulierdrift rood worden; dit is geen zinloze snapshot-self-compare.
+    import copy as _copy_ad
+    def _snapshot_errors_ad(mutator):
+        gewijzigd = _copy_ad.deepcopy(_snap)
+        mutator(gewijzigd)
+        pad = tempfile.mktemp(suffix=".json")
+        try:
+            with open(pad, "w", encoding="utf-8") as fh:
+                json.dump(gewijzigd, fh, ensure_ascii=False)
+            return _mm_run_checks(pad)
+        finally:
+            if os.path.exists(pad):
+                os.unlink(pad)
+
+    _optiedrift_ad = _snapshot_errors_ad(
+        lambda s: s["forms"]["Raam/paneel"][6]["options"].append("Nieuw glastype"))
+    check("manifest-snapshot: gewijzigde dropdownoptie faalt luid",
+          any("snapshotopties" in e and "glastype" in e for e in _optiedrift_ad),
+          str(_optiedrift_ad))
+
+    def _labeldrift_ad(s):
+        next(v for v in s["forms"]["Object"] if v["name"] == "Woningtype")["name"] = "Woningsoort"
+    _label_errors_ad = _snapshot_errors_ad(_labeldrift_ad)
+    check("manifest-snapshot: gewijzigd bronlabel faalt luid",
+          any("labeldrift" in e and "woningtype_subtype" in e for e in _label_errors_ad),
+          str(_label_errors_ad))
+
+    def _overige_drift_ad(s):
+        s["forms"]["Object"].append({"name": "Nieuw los veld", "options": None})
+    _fp_errors_ad = _snapshot_errors_ad(_overige_drift_ad)
+    check("manifest-snapshot: overige fingerprintdrift faalt tegen vaste contractpin",
+          any("fingerprint" in e and "wijkt af" in e for e in _fp_errors_ad),
+          str(_fp_errors_ad))
+
+    # Live-refresh blijft offline testbaar: bij een gelijknamige groep/veld uit beide API-routes
+    # moeten unieke velden én alle opties behouden blijven, zonder dubbele veldrecords.
+    import magicplan.form_push as _mfp_push
+    _orig_env_ad = _mfp_push._load_env
+    _orig_forms_ad = _mfp_push.fetch_forms
+    _orig_fields_ad = _mfp_push.fetch_fields
+    _tmp_snapshot_ad = tempfile.mktemp(suffix=".json")
+    try:
+        _mfp_push._load_env = lambda: {"offline": "test"}
+        _mfp_push.fetch_forms = lambda _env: [
+            {"name": "Object", "fields": [
+                {"name": "Gedeeld", "options": ["A"]},
+                {"name": "Alleen form", "options": None},
+            ]}
+        ]
+        _mfp_push.fetch_fields = lambda _env: [
+            {"name": "Object", "fields": [
+                {"name": "Gedeeld", "options": ["A", "B"]},
+                {"name": "Alleen fields", "options": ["X"]},
+            ]}
+        ]
+        _live_snap_ad = refresh_snapshot_live(_tmp_snapshot_ad)
+        _live_obj_ad = _live_snap_ad["forms"]["Object"]
+        check("form-fingerprint live-refresh: gelijknamige groepen worden samengevoegd",
+              {v["name"] for v in _live_obj_ad} == {"Gedeeld", "Alleen form", "Alleen fields"})
+        check("form-fingerprint live-refresh: opties uit beide routes blijven behouden",
+              next(v for v in _live_obj_ad if v["name"] == "Gedeeld")["options"] == ["A", "B"])
+        check("form-fingerprint live-refresh: gelijknamig veld staat maar één keer in snapshot",
+              sum(v["name"] == "Gedeeld" for v in _live_obj_ad) == 1)
+    finally:
+        _mfp_push._load_env = _orig_env_ad
+        _mfp_push.fetch_forms = _orig_forms_ad
+        _mfp_push.fetch_fields = _orig_fields_ad
+        if os.path.exists(_tmp_snapshot_ad):
+            os.unlink(_tmp_snapshot_ad)
+
+    # dossier-meta: elke MagicPlan-importroute stempelt fingerprint + snapshotdatum.
+    from core.dossier import Dossier
+    _dstamp = Dossier()
+    check("dossier-meta: leeg vóór het stempelen", _dstamp.meta.magicplan_form_fingerprint == "")
+    stamp_dossier_meta(_dstamp)
+    check("dossier-meta: fingerprint gezet na stamp_dossier_meta", _dstamp.meta.magicplan_form_fingerprint == _fp1)
+    check("dossier-meta: snapshotdatum gezet na stamp_dossier_meta",
+          _dstamp.meta.magicplan_form_snapshot_datum == _snap["_meta"]["snapshot_datum"])
+    check("dossier-meta: importtijd (magicplan_import_op) gezet na stamp_dossier_meta",
+          bool(_dstamp.meta.magicplan_import_op))
+
+    # de 3 echte MagicPlan-importroutes (CSV/hybride-API+report/API-only) stempelen allemaal mee --
+    # geen route mag stilletjes een dossier zonder fingerprint opleveren.
+    import inspect as _insp_ad
+    from magicplan import statistics_csv as _mscv_ad, assemble as _masm_ad, extractor as _mext_ad
+    check("statistics_csv.build_dossier stempelt de fingerprint",
+          "stamp_dossier_meta" in _insp_ad.getsource(_mscv_ad.build_dossier))
+    check("assemble.build_dossier stempelt de fingerprint",
+          "stamp_dossier_meta" in _insp_ad.getsource(_masm_ad.build_dossier))
+    check("extractor.map_plan_to_dossier stempelt de fingerprint",
+          "stamp_dossier_meta" in _insp_ad.getsource(_mext_ad.map_plan_to_dossier))
+except Exception as _e:
+    check("mappingmanifest/form-fingerprint: draait zonder fout", False); print("     " + repr(_e)[:300])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

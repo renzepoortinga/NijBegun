@@ -12,7 +12,10 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json  # noqa: E402
 from vabi import constructie_generate, objecten_generate, installatie_generate  # noqa: E402
-from vabi.preflight import assert_no_schil_kwaliteitsverklaring  # noqa: E402
+from vabi.preflight import (  # noqa: E402
+    assert_no_dubbel_dak_fallback,
+    assert_no_schil_kwaliteitsverklaring,
+)
 
 MANIFEST = "CURRENT.json"
 SETS_DIR = "sets"
@@ -73,6 +76,7 @@ def generate_all(dos, outdir, prefix=""):
     if prefix and (not isinstance(prefix, str) or not _PREFIX_RE.fullmatch(prefix)):
         raise ValueError("Ongeldige VABI-bestandsprefix")
     assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
     os.makedirs(outdir, exist_ok=True)
     sets_root = os.path.join(outdir, SETS_DIR)
     os.makedirs(sets_root, exist_ok=True)

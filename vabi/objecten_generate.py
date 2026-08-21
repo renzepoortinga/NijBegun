@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json                                  # noqa: E402
 from vabi.constructie_generate import resolve_constructies, _classify, TemplatePool  # noqa: E402
 from vabi.codebook import Codebook                                  # noqa: E402
-from vabi.preflight import assert_no_schil_kwaliteitsverklaring      # noqa: E402
+from vabi.preflight import assert_no_schil_kwaliteitsverklaring, assert_no_dubbel_dak_fallback      # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # sjabloon: een echte volledige Objecten-export (compleet geldig project)
@@ -86,6 +86,12 @@ def _subtype_code(woningtype):
     maar 'twee onder een kap' is een EIGEN code (3), niet gelijk aan hoek (1)."""
     w = (woningtype or "").strip().lower()
     if not w:
+        return None
+    # Meergezins ('Appartement (tussen)'/'Appartement (hoek)' etc.) buiten Nij Begun-scope
+    # (grondgebonden eengezinswoningen) -> ALTIJD flaggen, ook al bevat de tekst 'tussen'/'hoek'
+    # (mappingmanifest-audit 21-8: die substring-match matchte deze appartementtypes eerder
+    # per ongeluk op de grondgebonden woningposities 1/2 -> nooit gegokt, golden rule).
+    if "appartement" in w:
         return None
     if "vrijstaand" in w:
         return "0"
@@ -579,6 +585,7 @@ def build_tree(dos):
 
 def write(dos, path):
     assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
     if not os.path.exists(TEMPLATE):
         raise FileNotFoundError(
             "Objecten-sjabloon ontbreekt: %s\n  Maak het eenmalig: exporteer in EPA de "

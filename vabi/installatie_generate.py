@@ -20,7 +20,7 @@ import os, sys, copy, argparse
 import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json                       # noqa: E402
-from vabi.preflight import assert_no_schil_kwaliteitsverklaring  # noqa: E402
+from vabi.preflight import assert_no_schil_kwaliteitsverklaring, assert_no_dubbel_dak_fallback  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "refs", "installatie_template.xml")
@@ -333,6 +333,7 @@ def build_tree(dos):
 
 def write(dos, path):
     assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
     if not os.path.exists(TEMPLATE):
         raise FileNotFoundError("Installatie-sjabloon ontbreekt: %s" % TEMPLATE)
     root, flags = build_tree(dos)

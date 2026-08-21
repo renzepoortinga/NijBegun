@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json            # noqa: E402
 from vabi.codebook import Codebook            # noqa: E402
-from vabi.preflight import assert_no_schil_kwaliteitsverklaring  # noqa: E402
+from vabi.preflight import assert_no_schil_kwaliteitsverklaring, assert_no_dubbel_dak_fallback  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "refs", "standaard_constructies_v120001001.xml")
@@ -265,6 +265,7 @@ def resolve_constructies(dos, pool=None, cb=None):
     <Constructie>-elementen (guid gezet). Gedeeld door constructie- EN objecten-generator,
     zodat de NaamConstructie/GUID-verwijzingen in beide bibliotheken identiek zijn."""
     assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
     pool = pool or TemplatePool(TEMPLATE)
     cb = cb or Codebook.from_export(TEMPLATE)
     chosen, mapping, issues = match_constructies(dos, pool, cb)

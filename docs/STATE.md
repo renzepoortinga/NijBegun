@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 017 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 015 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,11 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 015 (mappingmanifest en MagicPlan-formulierfingerprint) is afgerond: zes kritieke
+dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gereviewd
+formulier-snapshotcontract. Optie-, label- en overige snapshotdrift maken CI luid rood.
+Alle importpaden bewaren fingerprint/importmetadata; onafhankelijke herreview PASS, 845/845 groen.
 
 Taak 017 (atomische Vabi-exportset) is afgerond: writers publiceren eerst een gevalideerde,
 immutable set en maken die zichtbaar via één atomische `CURRENT.json`-wissel. Fouten behouden
@@ -32,6 +37,13 @@ voor admins; force-push en branch deletion zijn uitgeschakeld. Onafhankelijke AI
 Taak 002 (draagbare tests) is afgerond: de plan-JSON- en loginchecks gebruiken eigen fixtures,
 de suite is 786/786 groen en `verify.sh` blokkeert weer op Python-testfalen. Onafhankelijke
 AI-review: PASS.
+
+Taak 013 (ketenaudit MagicPlan → tool → Vabi) en taak 014 (dakmigratie zonder dubbele
+legacyvlakken — het Essenhage-dakdubbelingspatroon uit taak 013) zijn afgerond en staan in
+`tasks/done/`. Taak 015 blijft `active/`: mappingmanifest, formulierfingerprint en de eerdere
+dakprovenance zijn gebouwd en na rebase op `main` met 845/845 tests geverifieerd; alleen de
+onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 (dakkapel/
+preflight) en 025 (MagicPlan-SSL) in `backlog/`.
 
 Taak 003 (kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export)
 is afgerond en staat in `tasks/done/`: onafhankelijke herreview van commit

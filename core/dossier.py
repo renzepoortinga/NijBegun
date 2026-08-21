@@ -136,6 +136,10 @@ class SchilDeel:
     zonwering: str = ""                            # luik/rolluik/zonwering (NTA 8800 §8.2.2.3.4: bij een
                                                    # woonfunctie tellen bedienbare luiken/rolluiken mee in Uw)
     opmerkingen: str = ""
+    bron: str = ""                                 # herkomst-tag (bronprovenance, taak 015): "magicplan-import" |
+                                                   # "magicplan-dak-fallback" (parser-placeholder, GEEN meting —
+                                                   # zie build_dossier) | "webapp-wizard" (dak-/dakkapelwizard) |
+                                                   # "" = onbekend/legacy dossier van vóór dit veld
 
 @dataclass
 class Ventilatie:
@@ -299,6 +303,15 @@ class Meta:
     catalogus_versie: str = ""
     gegenereerd_op: str = ""
     tool_versie: str = "0.1"
+    # Taak 015: fingerprint van de MagicPlan-formulierdefinities (velden/opties) die bij dit
+    # import-moment hoorden, + de datum van de gebruikte snapshot (zie magicplan/form_fingerprint.py).
+    # Leeg voor dossiers die niet uit een MagicPlan-import komen (demo/JSON-upload/legacy).
+    magicplan_form_fingerprint: str = ""
+    magicplan_form_snapshot_datum: str = ""
+    # Wanneer DIT dossier uit een MagicPlan-bron is opgebouwd (ISO-datetime) — los van
+    # `gegenereerd_op` (dat door andere onderdelen voor andere momenten wordt gebruikt, bv. het
+    # export-isolatieplan-JSON in dashboard/app.py).
+    magicplan_import_op: str = ""
 
 # ---------- hoofdobject ----------
 @dataclass

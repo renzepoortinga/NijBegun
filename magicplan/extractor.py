@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
                           SchilDeel, Ventilatie, Installaties, Verwarming, Tapwater, Koeling,
                           ZonneEnergieSysteem, Foto, save_json)
+from magicplan.form_fingerprint import stamp_dossier_meta
 
 # Containers die we 1x live verifieren (eerste alternatief dat bestaat wint).
 EXPECTED_CONTAINERS = {
@@ -179,6 +180,7 @@ def map_plan_to_dossier(plan):
     _map_fotos(plan, dos)
 
     dos.meta.tool_versie = "extractor-0.2 (container 1x live verifieren)"
+    stamp_dossier_meta(dos)
     return dos
 
 
@@ -287,7 +289,13 @@ def _maak_dak(p, footprint):
         rc_bron=_g(p, "dak_rc_bron", default="") or "",
         isolatiedikte_mm=_g(p, "dak_isolatie_mm", float),
         rc_huidig=_g(p, "dak_rc", float),
-        hellingshoek=helling, oppervlak_handmatig=handmatig)
+        hellingshoek=helling, oppervlak_handmatig=handmatig,
+        # bronprovenance (taak 014/015, bijgesteld na review): alleen een SCHATTING (footprint- of
+        # hellingfactor-benadering, geen 'dak_oppervlak_m2' ingevuld) is de placeholder-rol — een
+        # handmatig ingevoerde m² is een echte meting, ook al is het nog altijd één generiek
+        # dakvlak. Zelfde onderscheid als de Statistics-CSV-route's 'direct ingevoerde m²'-pad
+        # (statistics_csv.py, dakvlakken met een expliciet oppervlak krijgen ook GEEN fallback-tag).
+        bron=("magicplan-import" if handmatig else "magicplan-dak-fallback"))
 
 
 def _map_ventilatie(p, dos):
