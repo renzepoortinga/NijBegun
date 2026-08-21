@@ -48,6 +48,14 @@ hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak
 
 - 2026-08-21 Codex Manager: hernummerde reviewvervolgtaak geclaimd op een eigen worktree vanaf
   actuele `main`; scope blijft beperkt tot legacy-dakkapelclassificatie en preflightdeduplicatie.
+- 2026-08-21 Codex Builder: `opname_dakkapel` legt via de gedeelde
+  `dak_fallback_schildelen`-herkenner vóór mutatie vast of het moederdak een expliciete of
+  ongetagde legacy-placeholder was en herclassificeert beide daarna als `magicplan-import`.
+  `generate_all` voert de dubbel-dakpreflight eenmaal uit en geeft dit expliciet door aan de drie
+  writers en hun gedeelde constructieresolver; rechtstreeks aangeroepen writers blijven zelf
+  fail-closed controleren. Regressies bewijzen het legacy-dakkapelpad, exact één preflight per
+  samengestelde export en behoud van de drie directe-writerpoorten. `python tests/run_tests.py`:
+  849/849 groen; blocking `scripts/verify.sh`: PASS. Geen dependencies of dakformules gewijzigd.
 
 ## Notes
 Gevonden tijdens `/code-review high` op taak 015 (21-8-2026, mappingmanifest-sessie). Zie die

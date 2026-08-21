@@ -1788,6 +1788,10 @@ def opname_dakkapel(tag):
         flash("Kies een geldig moederdakvlak voor de dakkapel.")
         return redirect(url_for("opname", tag=tag) + "#dak-toevoegen")
     moeder = dos.schil[moeder_i]
+    # Leg de classificatie vast vóór de dakkapelcorrectie. De gedeelde herkenner omvat
+    # zowel de expliciete tag als legacy-dossiers met id="dak" en een lege bron.
+    from vabi.preflight import dak_fallback_schildelen
+    moeder_was_fallback = bool(dak_fallback_schildelen([moeder]))
     # ISSO 82.1 §8.2.1: een dakkapel breekt door een HELLEND vlak heen -> een plat dak of het
     # dakje van een andere dakkapel is server-side ook geen geldig moederdak (niet alleen de
     # dropdown-filter vertrouwen, dit endpoint is ook los aan te roepen).
@@ -1852,7 +1856,7 @@ def opname_dakkapel(tag):
     # onaangeroerde schatting meer maar bewust door de adviseur bevestigd/aangepast vlak: niet meer
     # weggooibaar (_dak_fallback_opschonen zou anders dit resterende, nog altijd echte dakoppervlak
     # verwijderen i.p.v. alleen een ongebruikte placeholder).
-    if moeder.bron == "magicplan-dak-fallback":
+    if moeder_was_fallback:
         moeder.bron = "magicplan-import"
     _dos_save(tag, st, dos)
     flash("Dakkapel %d toegevoegd: %s. Nog een dakkapel? Herhaal hieronder." % (nr, vlakken["flag"]))

@@ -91,13 +91,13 @@ def generate_all(dos, outdir, prefix=""):
     try:
         res = {}
         cpath = os.path.join(staging, names[0])
-        cmap, ciss = constructie_generate.write(dos, cpath)
+        cmap, ciss = constructie_generate.write(dos, cpath, dak_preflight_done=True)
         res["constructies"] = (cpath, len({m["naam"] for m in cmap.values()}), ciss)
         opath = os.path.join(staging, names[1])
-        _omap, oiss, ostats = objecten_generate.write(dos, opath)
+        _omap, oiss, ostats = objecten_generate.write(dos, opath, dak_preflight_done=True)
         res["objecten"] = (opath, ostats, oiss)
         ipath = os.path.join(staging, names[2])
-        iflags = installatie_generate.write(dos, ipath)
+        iflags = installatie_generate.write(dos, ipath, dak_preflight_done=True)
         res["installaties"] = (ipath, None, iflags)
         _write_instructions(os.path.join(staging, names[3]), prefix, res)
         _validate_set(staging, names)

@@ -268,10 +268,11 @@ def _add_deelvlak(gt, hoofdvlak, area, naam_constructie, constructie_guid, naam_
     return True
 
 
-def build_tree(dos):
+def build_tree(dos, dak_preflight_done=False):
     root = ET.parse(TEMPLATE).getroot()
     # 1) gedeelde constructies (zelfde guid/naam als de constructie-bibliotheek)
-    clones, mapping, issues = resolve_constructies(dos)
+    clones, mapping, issues = resolve_constructies(
+        dos, dak_preflight_done=dak_preflight_done)
     # embed ze in de Constructies-node (self-contained)
     cons = next((c for c in root.iter() if _local(c.tag) == "Constructies"), None)
     if cons is not None:
@@ -583,14 +584,15 @@ def build_tree(dos):
     return root, mapping, issues, {"hoofdvlakken": len(gevels), "deelvlakken_geplaatst": placed}
 
 
-def write(dos, path):
+def write(dos, path, dak_preflight_done=False):
     assert_no_schil_kwaliteitsverklaring(dos)
-    assert_no_dubbel_dak_fallback(dos)
+    if not dak_preflight_done:
+        assert_no_dubbel_dak_fallback(dos)
     if not os.path.exists(TEMPLATE):
         raise FileNotFoundError(
             "Objecten-sjabloon ontbreekt: %s\n  Maak het eenmalig: exporteer in EPA de "
             "Objectenbibliotheek van een echt project en kopieer naar dit pad." % TEMPLATE)
-    root, mapping, issues, stats = build_tree(dos)
+    root, mapping, issues, stats = build_tree(dos, dak_preflight_done=True)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     body = ET.tostring(root, encoding="utf-8")
     with open(path, "wb") as fh:

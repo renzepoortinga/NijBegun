@@ -260,12 +260,13 @@ def assert_importable(chosen, cb):
         raise ValueError("NIET klaar voor import:\n  - " + "\n  - ".join(problems))
 
 
-def resolve_constructies(dos, pool=None, cb=None):
+def resolve_constructies(dos, pool=None, cb=None, dak_preflight_done=False):
     """Publiek: per schildeel de gekozen constructie (naam+guid) + de unieke gekloonde
     <Constructie>-elementen (guid gezet). Gedeeld door constructie- EN objecten-generator,
     zodat de NaamConstructie/GUID-verwijzingen in beide bibliotheken identiek zijn."""
     assert_no_schil_kwaliteitsverklaring(dos)
-    assert_no_dubbel_dak_fallback(dos)
+    if not dak_preflight_done:
+        assert_no_dubbel_dak_fallback(dos)
     pool = pool or TemplatePool(TEMPLATE)
     cb = cb or Codebook.from_export(TEMPLATE)
     chosen, mapping, issues = match_constructies(dos, pool, cb)
@@ -280,8 +281,9 @@ def resolve_constructies(dos, pool=None, cb=None):
     return clones, mapping, issues
 
 
-def build_tree(dos, pool, cb):
-    clones, mapping, issues = resolve_constructies(dos, pool, cb)
+def build_tree(dos, pool, cb, dak_preflight_done=False):
+    clones, mapping, issues = resolve_constructies(
+        dos, pool, cb, dak_preflight_done=dak_preflight_done)
     if not clones:
         raise ValueError("Geen constructies om te exporteren (issues: %s)" % issues)
     out_root = copy.deepcopy(pool.root)
@@ -296,10 +298,11 @@ def build_tree(dos, pool, cb):
     return out_root, mapping, issues
 
 
-def write(dos, path, template=TEMPLATE):
+def write(dos, path, template=TEMPLATE, dak_preflight_done=False):
     pool = TemplatePool(template)
     cb = Codebook.from_export(template)
-    root, mapping, issues = build_tree(dos, pool, cb)
+    root, mapping, issues = build_tree(
+        dos, pool, cb, dak_preflight_done=dak_preflight_done)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     body = ET.tostring(root, encoding="utf-8")
     with open(path, "wb") as fh:
