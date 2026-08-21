@@ -61,7 +61,8 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
   replace rolt het dossier terug en behoudt de vorige byte-identieke consistente pair. De strikte
   polygonkern uit taak 020 is naar `core/polygon.py` gecentraliseerd en wordt nu ook voor intake-
   geometrie gebruikt (unieke punten, niet zelfsnijdend/degeneratief, eindig en relatief `0..1`).
-  Volledige lokale ketensuite: 989/989 groen; blocking verify volgt na de laatste rebase.
+  Volledige lokale ketensuite: 989/989 groen vóór de laatste rebase; daarna opnieuw blocking
+  `verify.sh`: PASS op de uiteindelijke branch tegen actuele `origin/main`.
 
 ## Notes
 Afhankelijk van dakmigratie en een stabiel mappingmanifest.
