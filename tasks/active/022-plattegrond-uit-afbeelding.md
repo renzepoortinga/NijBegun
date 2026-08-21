@@ -143,6 +143,10 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   `scripts/verify.sh` PASS met 1041/1041 tests. De eerste nauwkeurigheids-AC blijft bewust open:
   de drie aanwezige bronfixtures leveren geen tien onafhankelijke rastervloeren met grondwaarheid.
   Wijzigingen zijn gereed voor onafhankelijke herreview; taak blijft `active`.
+- 2026-08-21 Codex integratiebeheer: branch zonder conflicten gerebased op actuele `origin/main`
+  na merge van taak 024. De open nauwkeurigheids-AC, datasetbeperking en vereiste review door een
+  andere leverancier zijn ongewijzigd behouden. Blocking `scripts/verify.sh` PASS met 1055/1055
+  tests; PR blijft bewust draft en de taak blijft `active`.
 
 ## Notes
 De repository bevat geen aantoonbare set van tien gelabelde echte rasterplattegronden. De drie echte
