@@ -5330,7 +5330,7 @@ try:
         check("intake referentie: expliciete dakcontrole blijft open",
               _exp16["dakcontrole"] in _p16["acties"]["dak"])
         check("intake: geometriepakket levert grondvlakcontour",
-              _p16["nieuw"].geometrie.vloeren[0].contour_m == [[0, 0], [8, 0], [8, 5], [0, 5]])
+              _p16["nieuw"].geometrie.vloeren[0].contour_m == [[0, 0], [1, 0], [1, 1], [0, 1]])
         _uit16 = _merge16(_oud16, _p16["nieuw"])
         check("intake merge: handmatige wizarddaken behouden",
               any(s.id == "wizard-dak" for s in _uit16.schil))
@@ -5398,13 +5398,15 @@ try:
             dict(_basegeo16, floor_contours={"Onbekend": [[0,0],[1,0],[0,1]]}),
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1,1],[2,2]]}),
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[float("nan"),1],[0,1]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1,1],[0,1],[1,0]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[2,0],[0,1]]}),
         ]
         _geoblok16 = True
         for _ix16, _geo16 in enumerate(_geo_cases16):
             _gz16 = os.path.join(_td16, "geo%d.zip" % _ix16); _pakket16(_gz16, _geo16)
             try: _bp16(_gz16, _oud16, os.path.join(_td16, "gs%d" % _ix16)); _geoblok16 = False
             except _IE16: pass
-        check("intake geometrie: schema, verdieping, vorm en eindigheid zijn strict", _geoblok16)
+        check("intake geometrie: schema, verdieping, self-intersectie, degeneratie, eindigheid en 0..1 strict", _geoblok16)
         _dup16 = os.path.join(_td16, "dup.zip"); _pakket16(_dup16, extra=[("geometry.json", b"{}")])
         try: _bp16(_dup16, _oud16, os.path.join(_td16, "dupstage")); _dupblok16 = False
         except _IE16: _dupblok16 = True
@@ -5474,7 +5476,7 @@ try:
             _save16(_dos16, os.path.join(_app16._pdir(_tag16), _st16["dossier_file"]))
             _toc16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16, data={"token": _tok3_16}, follow_redirects=True)
             check("intake TOCTOU: gewijzigde basisrevisie blokkeert en ruimt staging op",
-                  b"sinds de controle gewijzigd" in _toc16.data and not os.path.exists(_stage3_16))
+                  b"sinds de preview gewijzigd" in _toc16.data and not os.path.exists(_stage3_16))
 
             _pr4_16 = _preview_route16(); _tok4_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr4_16.get_data(as_text=True)).group(1)
             _stage4_16 = _app16._intake_stage_dir(_tag16, _tok4_16)
@@ -5487,8 +5489,8 @@ try:
             _tamperd16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16,
                                         data={"token": _tok5_16}, follow_redirects=True)
             check("intake hashes: pakket- en staged-dossiertamper blokkeren en ruimen op",
-                  b"sinds de controle gewijzigd" in _tamperp16.data and not os.path.exists(_stage4_16)
-                  and b"sinds de controle gewijzigd" in _tamperd16.data and not os.path.exists(_stage5_16))
+                  b"staging of opslag faalde" in _tamperp16.data and not os.path.exists(_stage4_16)
+                  and b"staging of opslag faalde" in _tamperd16.data and not os.path.exists(_stage5_16))
 
             _pr6_16 = _preview_route16(); _tok6_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr6_16.get_data(as_text=True)).group(1)
             _stage6_16 = _app16._intake_stage_dir(_tag16, _tok6_16)
@@ -5496,6 +5498,56 @@ try:
             _client16.post("/project/%s/opname/intake/bevestig" % _tag16, data={"token": _tok6_16})
             check("intake concurrency: verliezende confirm wist staging van winnaar niet", os.path.exists(_stage6_16))
             _app16._intake_cleanup(_stage6_16)
+
+            # Twee verschillende geldige tokens van exact dezelfde basis starten tegelijk. De
+            # barrier staat vóór de projectlock: alleen de winnaar commit, de tweede ziet CAS-drift.
+            _pr7_16, _pr8_16 = _preview_route16(), _preview_route16()
+            _tok7_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr7_16.get_data(as_text=True)).group(1)
+            _tok8_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr8_16.get_data(as_text=True)).group(1)
+            _hist_voor16 = len(_app16._load_state(_tag16).get("import_historie") or [])
+            import threading as _th16
+            _bar16, _res16 = _th16.Barrier(2), {}
+            _app16._INTAKE_BEFORE_LOCK_HOOK = lambda: _bar16.wait(timeout=5)
+            def _confirm_thread16(naam, token):
+                c = _app16.app.test_client()
+                with c.session_transaction() as s: s["ingelogd"] = True
+                _res16[naam] = c.post("/project/%s/opname/intake/bevestig" % _tag16,
+                                      data={"token": token}, follow_redirects=True).get_data(as_text=True)
+            _ta16 = _th16.Thread(target=_confirm_thread16, args=("a", _tok7_16))
+            _tb16 = _th16.Thread(target=_confirm_thread16, args=("b", _tok8_16))
+            try:
+                _ta16.start(); _tb16.start(); _ta16.join(10); _tb16.join(10)
+            finally:
+                _app16._INTAKE_BEFORE_LOCK_HOOK = None
+            _teksten16 = list(_res16.values())
+            _hist_na16 = len(_app16._load_state(_tag16).get("import_historie") or [])
+            check("intake CAS: twee gelijktijdige tokens geven exact één commit en één revisiemismatch",
+                  len(_teksten16) == 2
+                  and sum("MagicPlan-import bevestigd" in x for x in _teksten16) == 1
+                  and sum("sinds de preview gewijzigd" in x for x in _teksten16) == 1
+                  and _hist_na16 == _hist_voor16 + 1)
+
+            # Fout op de tweede replace (projectstate) moet de eerste replace (dossier) terugrollen.
+            _pr9_16 = _preview_route16(); _tok9_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr9_16.get_data(as_text=True)).group(1)
+            _st9_16 = _app16._load_state(_tag16)
+            _dpad9_16 = os.path.join(_app16._pdir(_tag16), _st9_16["dossier_file"])
+            _spad9_16 = os.path.join(_app16._pdir(_tag16), "project.json")
+            _dbefore16, _sbefore16 = open(_dpad9_16, "rb").read(), open(_spad9_16, "rb").read()
+            _replace_orig16, _replace_n16 = _app16._INTAKE_REPLACE, [0]
+            def _replace_fail16(src, dst):
+                _replace_n16[0] += 1
+                if _replace_n16[0] == 2: raise OSError("geïnjecteerde tweede publicatiefout")
+                return os.replace(src, dst)
+            _app16._INTAKE_REPLACE = _replace_fail16
+            try:
+                _pairfail16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16,
+                                              data={"token": _tok9_16}, follow_redirects=True)
+            finally:
+                _app16._INTAKE_REPLACE = _replace_orig16
+            check("intake transactie: tweede-write-fout behoudt vorige consistente dossier/state-pair",
+                  b"vorige projectversie is behouden" in _pairfail16.data
+                  and open(_dpad9_16, "rb").read() == _dbefore16
+                  and open(_spad9_16, "rb").read() == _sbefore16)
 
             _anon16 = _app16.app.test_client().post("/project/%s/opname/intake/preview" % _tag16)
             _csrf16 = _client16.post("/project/%s/opname/intake/preview" % _tag16,

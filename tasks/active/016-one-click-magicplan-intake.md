@@ -52,6 +52,16 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
   voor BAG, adres, traversal, duplicaten, ziplimiet, polygonen, tamper/TOCTOU, concurrency, cleanup,
   authenticatie en CSRF. Blocking `verify.sh`: PASS met 875/875 checks. Geen live calls of
   dependencies; wacht op herreview.
+- 2026-08-21 Codex Builder: tweede herreview-FAIL verwerkt na rebase op `origin/main` met taak 020.
+  Confirm is nu per project geserialiseerd met een thread- én interprocess-filelock; binnen de lock
+  worden dossier/state opnieuw geladen en wordt de preview als compare-and-swap tegen hash plus
+  identiteit uitgevoerd. Twee gelijktijdige geldige tokens vanaf dezelfde basis leveren via een
+  deterministische barrier-test exact één commit en één expliciete revisiemismatch. Dossier en
+  projectstate worden als voorbereid paar atomisch vervangen; een geïnjecteerde fout op de tweede
+  replace rolt het dossier terug en behoudt de vorige byte-identieke consistente pair. De strikte
+  polygonkern uit taak 020 is naar `core/polygon.py` gecentraliseerd en wordt nu ook voor intake-
+  geometrie gebruikt (unieke punten, niet zelfsnijdend/degeneratief, eindig en relatief `0..1`).
+  Volledige lokale ketensuite: 989/989 groen; blocking verify volgt na de laatste rebase.
 
 ## Notes
 Afhankelijk van dakmigratie en een stabiel mappingmanifest.

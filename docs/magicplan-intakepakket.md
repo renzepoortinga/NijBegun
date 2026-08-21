@@ -12,8 +12,10 @@ live API-call tijdens preview of import.
 - `report.txt` of `report.pdf`: MagicPlan-projectrapport met formulierwaarden.
 - `geometry.json`: schema `nijbegun-magicplan-geometry/1`, hetzelfde
   `project_id` en `floor_contours`, gemapt op de exacte verdiepingsnamen uit
-  Statistics. Een contour heeft minimaal drie punten, uitsluitend eindige
-  getallenparen en een oppervlakte groter dan nul.
+  Statistics. Een contour heeft minimaal drie unieke punten, uitsluitend
+  eindige relatieve getallenparen binnen `0..1`, kruist zichzelf niet en heeft
+  een oppervlakte groter dan nul. Deze validatie deelt de polygonkern met het
+  interactieve ventilatieplan.
 - Optioneel `sha256` in het manifest: mapping van bestandsnaam naar volledige
   SHA-256. Als een hash is opgegeven, is die verplicht correct.
 

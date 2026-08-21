@@ -13,7 +13,7 @@ Draaien:
 Gouden regel: de tool rekent NTA 8800 nooit zelf — Vabi EPA-W bevestigt de Standaard. De webapp blijft
 lokaal (AVG) en is de handmatige adviseur-route.
 """
-import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading, shutil
+import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading, shutil, contextlib
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, TOOL_DIR)
 from flask import (Flask, request, session, redirect, url_for, send_from_directory,  # noqa: E402
@@ -1401,6 +1401,66 @@ def _intake_cleanup(stage):
         shutil.rmtree(stage, ignore_errors=True)
 
 
+_INTAKE_LOCKS = {}
+_INTAKE_LOCKS_GUARD = threading.Lock()
+_INTAKE_BEFORE_LOCK_HOOK = None                 # uitsluitend injectiepunt voor deterministische tests
+_INTAKE_REPLACE = os.replace                    # idem: fout op tweede atomische publicatie injecteren
+
+
+@contextlib.contextmanager
+def _intake_project_lock(tag):
+    """Serializeer confirm binnen dit proces én tussen dashboardprocessen per project."""
+    lockpad = os.path.join(_pdir(tag), ".intake-confirm.lock")
+    sleutel = os.path.abspath(lockpad)
+    with _INTAKE_LOCKS_GUARD:
+        thread_lock = _INTAKE_LOCKS.setdefault(sleutel, threading.Lock())
+    with thread_lock:
+        os.makedirs(os.path.dirname(lockpad), exist_ok=True)
+        with open(lockpad, "a+b") as fh:
+            if os.path.getsize(lockpad) == 0:
+                fh.write(b"0"); fh.flush()
+            fh.seek(0)
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+                try: yield
+                finally:
+                    fh.seek(0); msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+                try: yield
+                finally: fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+
+
+class _IntakeRevisionError(RuntimeError):
+    pass
+
+
+def _schrijf_json_fsync(pad, data):
+    with open(pad, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2)
+        fh.flush(); os.fsync(fh.fileno())
+
+
+def _intake_atomic_pair(dossier_pad, dossier, state_pad, state, stage):
+    """Publiceer dossier+state als paar; herstel het dossier als state-publicatie faalt."""
+    dossier_next, state_next = os.path.join(stage, "dossier.next"), os.path.join(stage, "state.next")
+    dossier_backup = os.path.join(stage, "dossier.before")
+    with open(dossier_pad, "rb") as bron, open(dossier_backup, "wb") as doel:
+        doel.write(bron.read()); doel.flush(); os.fsync(doel.fileno())
+    _schrijf_json_fsync(dossier_next, dossier.to_dict())
+    _schrijf_json_fsync(state_next, state)
+    dossier_gepubliceerd = False
+    try:
+        _INTAKE_REPLACE(dossier_next, dossier_pad); dossier_gepubliceerd = True
+        _INTAKE_REPLACE(state_next, state_pad)
+    except Exception:
+        if dossier_gepubliceerd:
+            os.replace(dossier_backup, dossier_pad)
+        raise
+
+
 @app.route("/project/<tag>/opname/intake/preview", methods=["POST"])
 @login_required
 def opname_intake_preview(tag):
@@ -1470,26 +1530,38 @@ def opname_intake_bevestig(tag):
     try:
         with open(claim, encoding="utf-8") as fh: meta = json.load(fh)
         pakket, dp = os.path.join(stage, "pakket.zip"), os.path.join(stage, "dossier.json")
-        basis = os.path.join(_pdir(tag), st["dossier_file"])
-        basis_i = {"bag_vboid": dos.identificatie.bag_vboid,
-                   "postcode": dos.identificatie.postcode, "huisnummer": dos.identificatie.huisnummer}
-        if (meta.get("token") != token or meta.get("pakket_sha256") != _bestand_sha256(pakket)
-                or meta.get("dossier_sha256") != _bestand_sha256(dp)
-                or meta.get("basis_sha256") != _bestand_sha256(basis)
-                or meta.get("basis_identiteit") != basis_i):
-            raise ValueError("staging of basis gewijzigd")
-        from magicplan.intake import merge
-        nieuw = merge(dos, load_json(dp)); p = meta["preview"]
-        save_json(nieuw, basis)
-        st["magicplan_project_id"] = p["manifest"]["project_id"]
-        st["intake_acties"] = p["acties"]
-        st.setdefault("import_historie", []).append({"tijd": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "bestand": "MagicPlan-pakket %s" % p["manifest"]["project_id"], "vlakken": len(nieuw.schil)})
-        st["import_historie"] = st["import_historie"][-12:]
-        _save_state(tag, st)
+        if meta.get("token") != token or meta.get("pakket_sha256") != _bestand_sha256(pakket) \
+                or meta.get("dossier_sha256") != _bestand_sha256(dp):
+            raise ValueError("staging gewijzigd")
+        if _INTAKE_BEFORE_LOCK_HOOK:
+            _INTAKE_BEFORE_LOCK_HOOK()
+        with _intake_project_lock(tag):
+            # CAS: pas NADAT de projectlock vaststaat de actuele pair opnieuw laden en vergelijken.
+            st_nu, dos_nu = _load_state(tag), _dossier(tag)
+            if not st_nu or not dos_nu:
+                raise _IntakeRevisionError("project verdwenen")
+            basis = os.path.join(_pdir(tag), st_nu["dossier_file"])
+            state_pad = os.path.join(_pdir(tag), "project.json")
+            basis_i = {"bag_vboid": dos_nu.identificatie.bag_vboid,
+                       "postcode": dos_nu.identificatie.postcode, "huisnummer": dos_nu.identificatie.huisnummer}
+            if meta.get("basis_sha256") != _bestand_sha256(basis) or meta.get("basis_identiteit") != basis_i:
+                raise _IntakeRevisionError("basisrevisie gewijzigd")
+            from magicplan.intake import merge
+            nieuw = merge(dos_nu, load_json(dp)); p = meta["preview"]
+            st_nieuw = copy.deepcopy(st_nu)
+            st_nieuw["magicplan_project_id"] = p["manifest"]["project_id"]
+            st_nieuw["intake_acties"] = p["acties"]
+            st_nieuw.setdefault("import_historie", []).append({
+                "tijd": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "bestand": "MagicPlan-pakket %s" % p["manifest"]["project_id"], "vlakken": len(nieuw.schil)})
+            st_nieuw["import_historie"] = st_nieuw["import_historie"][-12:]
+            _intake_atomic_pair(basis, nieuw, state_pad, st_nieuw, stage)
+    except _IntakeRevisionError:
+        flash("Import gestopt: dit project is sinds de preview gewijzigd. Maak een nieuwe preview.")
+        return redirect(url_for("opname", tag=tag))
     except Exception:
         app.logger.warning("MagicPlan-intakebevestiging gestopt", exc_info=True)
-        flash("Import gestopt: de preview of het dossier is sinds de controle gewijzigd.")
+        flash("Import gestopt: staging of opslag faalde; de vorige projectversie is behouden.")
         return redirect(url_for("opname", tag=tag))
     finally:
         _intake_cleanup(stage)

@@ -17,6 +17,7 @@ import dataclasses
 from magicplan.form_fingerprint import snapshot_fingerprint
 from magicplan.report_parser import parse as parse_report_pdf, parse_text
 from magicplan.statistics_csv import build_dossier
+from core.polygon import oppervlakte as polygon_oppervlakte, zelfsnijdend
 
 VERPLICHT = {"manifest.json", "statistics.csv", "geometry.json"}
 MANIFEST_SCHEMA = "nijbegun-magicplan-intake/1"
@@ -136,10 +137,13 @@ def _valideer_geometry(geo, verdiepingen, project_id):
                            for x in punt)):
                 raise IntakeError("Grondvlakcoördinaten moeten eindige getallenparen zijn")
             schoon.append([float(punt[0]), float(punt[1])])
-        area2 = abs(sum(schoon[i][0] * schoon[(i + 1) % len(schoon)][1]
-                        - schoon[(i + 1) % len(schoon)][0] * schoon[i][1]
-                        for i in range(len(schoon))))
-        if area2 <= 1e-9:
+        if any(not (0.0 <= x <= 1.0) for punt in schoon for x in punt):
+            raise IntakeError("Grondvlakcoördinaten moeten relatieve waarden tussen 0 en 1 zijn")
+        if len({tuple(p) for p in schoon}) != len(schoon):
+            raise IntakeError("Grondvlakcontour bevat dubbele punten")
+        if zelfsnijdend(schoon):
+            raise IntakeError("Grondvlakcontour kruist zichzelf")
+        if polygon_oppervlakte(schoon) < 1e-6:
             raise IntakeError("Grondvlakcontour heeft geen oppervlakte")
         contouren[naam] = schoon
     return contouren
