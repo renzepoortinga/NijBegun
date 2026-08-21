@@ -258,7 +258,7 @@ def toets_vuistregels(res, plan=None):
             aanwezig = set(plan.get("deurroosters") or [])
             ontbrekend = [d for d in deuren if d["boven_norm"] and "%s-%s" % (d["van"], d["naar"]) not in aanwezig]
             if ontbrekend:
-                uitkomsten.append(("voldoet niet", "Deurrooster ontbreekt bij: %s." % ", ".join(
+                uitkomsten.append(("voldoet niet", "Deurrooster ontbreekt; deurrooster geadviseerd bij: %s." % ", ".join(
                     "%s-%s (%.1f l/s)" % (d["van"], d["naar"], d["ls"]) for d in ontbrekend)))
             else:
                 uitkomsten.append(("voldoet", "Geen deur boven 15 l/s zonder rooster."))

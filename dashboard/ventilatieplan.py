@@ -84,22 +84,77 @@ def _nieuw_marker_id(bestaande_ids):
             return kandidaat
 
 
+def _polygoon_oppervlakte(punten):
+    return abs(sum(punten[i][0] * punten[(i + 1) % len(punten)][1]
+                   - punten[(i + 1) % len(punten)][0] * punten[i][1]
+                   for i in range(len(punten))) / 2.0)
+
+
+def _orientatie(a, b, c):
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+
+def _segmenten_kruisen(a, b, c, d):
+    return (_orientatie(a, b, c) * _orientatie(a, b, d) < 0
+            and _orientatie(c, d, a) * _orientatie(c, d, b) < 0)
+
+
+def _zelfsnijdend(punten):
+    n = len(punten)
+    for i in range(n):
+        a, b = punten[i], punten[(i + 1) % n]
+        for j in range(i + 1, n):
+            if j in (i, (i + 1) % n) or (j + 1) % n in (i, (i + 1) % n):
+                continue
+            if _segmenten_kruisen(a, b, punten[j], punten[(j + 1) % n]):
+                return True
+    return False
+
+
+def _intern_punt(punten):
+    """Vind deterministisch een aantoonbaar intern punt, ook voor C/U-vormen."""
+    min_x, max_x = min(p[0] for p in punten), max(p[0] for p in punten)
+    min_y, max_y = min(p[1] for p in punten), max(p[1] for p in punten)
+    for resolutie in (9, 21, 41):
+        for yi in range(1, resolutie):
+            y = min_y + (max_y - min_y) * yi / resolutie
+            for xi in range(1, resolutie):
+                x = min_x + (max_x - min_x) * xi / resolutie
+                if punt_in_polygoon(x, y, punten):
+                    return [x, y]
+    return None
+
+
+def _segment_intersectie_t(a, b, c, d):
+    """Parameter t op a+t(b-a) bij echte intersectie met segment c-d."""
+    rx, ry, sx, sy = b[0] - a[0], b[1] - a[1], d[0] - c[0], d[1] - c[1]
+    den = rx * sy - ry * sx
+    if abs(den) < 1e-12:
+        return None
+    qx, qy = c[0] - a[0], c[1] - a[1]
+    t, u = (qx * sy - qy * sx) / den, (qx * ry - qy * rx) / den
+    return t if 0 <= t <= 1 and 0 <= u <= 1 else None
+
+
 def _randpunt_van_naar(bron, doel):
-    """Punt net binnen de rand van bron, op de lijn bronmidden -> doelmidden."""
+    """Echte eerste bronrand-intersectie richting doel, met eindpunt epsilon binnen bron."""
     if not bron.contour_relatief or not doel.contour_relatief:
         return None
-    a = polygoon_middelpunt(bron.contour_relatief)
-    b = polygoon_middelpunt(doel.contour_relatief)
-    laag, hoog = 0.0, 1.0
-    for _ in range(24):
-        t = (laag + hoog) / 2
-        p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
-        if punt_in_polygoon(p[0], p[1], bron.contour_relatief):
-            laag = t
-        else:
-            hoog = t
-    t = max(0.0, laag - 0.01)
-    return [round(a[0] + (b[0] - a[0]) * t, 4), round(a[1] + (b[1] - a[1]) * t, 4)]
+    a = _intern_punt(bron.contour_relatief)
+    b = _intern_punt(doel.contour_relatief)
+    if not a or not b:
+        return None
+    ts = []
+    punten = bron.contour_relatief
+    for i in range(len(punten)):
+        t = _segment_intersectie_t(a, b, punten[i], punten[(i + 1) % len(punten)])
+        if t is not None and t > 1e-9:
+            ts.append(t)
+    if not ts:
+        return None
+    t = max(0.0, min(ts) - 1e-4)
+    p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+    return [round(p[0], 6), round(p[1], 6)] if punt_in_polygoon(p[0], p[1], punten) else None
 
 
 def auto_markers(ruimtes, res_rows, topologie=None):
@@ -246,6 +301,10 @@ def valideer_ruimtepolygonen(polygonen, geldige_namen):
             if not (0 <= x <= 1 and 0 <= y <= 1):
                 return None, "Ruimte '%s' valt buiten het tekenvlak." % naam
             schoon.append([round(x, 4), round(y, 4)])
+        if _zelfsnijdend(schoon):
+            return None, "Ruimte '%s' heeft een zelfsnijdende contour." % naam
+        if _polygoon_oppervlakte(schoon) < 1e-6:
+            return None, "Ruimte '%s' heeft een degeneratieve contour zonder oppervlak." % naam
         resultaat[naam] = schoon
     return resultaat, None
 

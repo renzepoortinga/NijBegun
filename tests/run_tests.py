@@ -4917,6 +4917,19 @@ try:
     check("auto_markers: overstroom ligt controleerbaar op bronrand richting doel",
           _vp.punt_in_polygoon(_overAE[0].x, _overAE[0].y, _top_ruimtesAE[0].contour_relatief)
           and _overAE[0].x > .4)
+    _c_bronAE = _RAE(naam="C-bron", contour_relatief=[
+        [.1,.1],[.8,.1],[.8,.25],[.3,.25],[.3,.75],[.8,.75],[.8,.9],[.1,.9]])
+    _c_doelAE = _RAE(naam="C-doel", contour_relatief=[[.85,.35],[.98,.35],[.98,.65],[.85,.65]])
+    _c_randAE = _vp._randpunt_van_naar(_c_bronAE, _c_doelAE)
+    check("randpunt: concave C-vorm gebruikt intern startpunt en echte eerste rand",
+          _c_randAE is not None and _vp.punt_in_polygoon(*_c_randAE, _c_bronAE.contour_relatief)
+          and abs(_c_randAE[1] - .25) < .001)
+    _u_bronAE = _RAE(naam="U-bron", contour_relatief=[
+        [.1,.1],[.3,.1],[.3,.7],[.7,.7],[.7,.1],[.9,.1],[.9,.9],[.1,.9]])
+    _u_doelAE = _RAE(naam="U-doel", contour_relatief=[[.4,.01],[.6,.01],[.6,.08],[.4,.08]])
+    _u_randAE = _vp._randpunt_van_naar(_u_bronAE, _u_doelAE)
+    check("randpunt: concave U-vorm eindigt epsilon binnen bron",
+          _u_randAE is not None and _vp.punt_in_polygoon(*_u_randAE, _u_bronAE.contour_relatief))
     _bk_marker = next(m for m in _autoAE if m.ruimte_id == "Badkamer")
     check("auto_markers: afvoerwaarde komt uit afvoer_advies_ls (na balansverdeling), niet het kale minimum",
           _bk_marker.waarde_ls == next(r for r in _resAE["rows"] if r["naam"] == "Badkamer")["afvoer_advies_ls"]
@@ -4991,6 +5004,12 @@ try:
     _, _pg_kortAE = _vp.valideer_ruimtepolygonen({"Woonkamer": [[0,0],[1,0]]}, {"Woonkamer"})
     _, _pg_buitenAE = _vp.valideer_ruimtepolygonen({"Woonkamer": [[0,0],[1.1,0],[1,1]]}, {"Woonkamer"})
     check("ruimtepolygonen: minder dan 3 punten en buiten canvas geweigerd", _pg_kortAE and _pg_buitenAE)
+    _, _pg_degenAE = _vp.valideer_ruimtepolygonen(
+        {"Woonkamer": [[0,0],[.5,.5],[1,1]]}, {"Woonkamer"})
+    _, _pg_kruisAE = _vp.valideer_ruimtepolygonen(
+        {"Woonkamer": [[0,0],[1,1],[0,1],[1,0]]}, {"Woonkamer"})
+    check("ruimtepolygonen: degeneratieve en zelfsnijdende contour geweigerd",
+          "degeneratieve" in _pg_degenAE and "zelfsnijdende" in _pg_kruisAE)
 
     # --- marker_balans ---
     _d5 = _DAE()
@@ -5134,6 +5153,12 @@ try:
 
     # Zonder topologie geen pijl; na expliciete bron+natte doelruimte wel, en vuistregeldata krijgt pad.
     _dtop0AF = _WAF._dossier(_tagAF)
+    # Maak dit specifieke rekenpad exact: toevoer Woonkamer 21 + Keuken 7 = 28, en Keuken is de
+    # enige natte ruimte. Dan moet deurbelasting via de getransformeerde [Keuken,Woonkamer]-route
+    # aantoonbaar 28 l/s zijn (niet 0 door omgekeerde bron/doel-semantiek).
+    _dtop0AF.geometrie.ruimtes = [r for r in _dtop0AF.geometrie.ruimtes
+                                  if r.naam in {"Woonkamer", "Keuken"}]
+    _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dtop0AF)
     check("topologie-route: vooraf geen fantoom-overstroom",
           not any(m.type == "overstroom" for v in _dtop0AF.ventilatieplan.verdiepingen for m in v.markers))
     _rtopAF = _cAF.post("/project/%s/ventilatieplan/%s/topologie" % (_tagAF, _bg_naam),
@@ -5142,6 +5167,13 @@ try:
     check("topologie-route: expliciete bron+natte doelruimte opgeslagen en maakt pijl",
           _rtopAF.status_code == 200 and ["Woonkamer","Keuken"] in _dtop1AF.ventilatieplan.topologie
           and any(m.type == "overstroom" for m in next(v for v in _dtop1AF.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers))
+    _top_getAF = _cAF.get("/project/%s/ventilatieplan" % _tagAF).get_data(as_text=True)
+    _top_calcAF = _WAF.vent_verdeel_balans(_WAF.vent_bereken(_dtop1AF.geometrie.ruimtes))
+    _top_keukenAF = next(r for r in _top_calcAF["rows"] if r["naam"] == "Keuken")["afvoer_advies_ls"]
+    check("topologie POST->GET: bron Woonkamer -> natte Keuken rekent Keuken-belasting >15",
+          "deurrooster geadviseerd" in _top_getAF and "voldoet niet" in _top_getAF and "28.0 l/s" in _top_getAF,
+          "advies=%s voldoet_niet=%s waarde28=%s" % ("deurrooster geadviseerd" in _top_getAF,
+          "voldoet niet" in _top_getAF, "28.0 l/s" in _top_getAF) + " calc=" + str(_top_keukenAF))
 
     # onbekende verdieping -> 404, nette fout
     _rAF5 = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, "Kelder (bestaat niet)"),

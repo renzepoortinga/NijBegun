@@ -2053,7 +2053,10 @@ def ventilatieplan_pagina(tag):
     if gewijzigd:
         _dos_save(tag, st, dos)
     balans = vp_mod.marker_balans(dos)
-    toets = vent_toets_vuistregels(res, {"topologie": dos.ventilatieplan.topologie})
+    # UI/dossier bewaart begrijpelijk bron(toevoer)->doel(nat). Het rekencontract van
+    # deurbelasting() begint juist bij de natte afvoer; transformeer expliciet op deze grens.
+    rekentopologie = [[pad[1], pad[0]] for pad in dos.ventilatieplan.topologie if len(pad) == 2]
+    toets = vent_toets_vuistregels(res, {"topologie": rekentopologie})
     return page(VENTILATIEPLAN_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 res=res, balans=balans, toets=toets, verdiepingen_json=verdiepingen_json,
                 marker_types=vp_mod.MARKER_TYPES)

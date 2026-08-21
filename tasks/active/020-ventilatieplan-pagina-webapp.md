@@ -134,6 +134,18 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   de plugin was tussentijds geüpdatet; met de nieuwe geldige pluginbron stopte de verbinding op
   `Browser use requires a trusted Node REPL browser service`, dus screenshots bleven onmogelijk.
   Taak blijft `active` tot onafhankelijke herreview PASS.
+- 2026-08-21: Derde herreview FAIL verwerkt. De UI/dossier-topologie blijft begrijpelijk
+  `[toevoerbron, nat doel]`; precies op de grens naar `toets_vuistregels()` wordt deze nu expliciet
+  getransformeerd naar het bestaande `deurbelasting()`-contract `[natte afvoer, bron]`. Een volledige
+  POST→GET-regressie met Woonkamer→Keuken bewijst daardoor 28,0 l/s deurbelasting, status `voldoet
+  niet` en expliciet deurroosteradvies (niet langer een stille 0). `_randpunt_van_naar()` gebruikt
+  geen vertexgemiddelde meer: een deterministische interne-puntzoeker levert aantoonbaar een punt
+  binnen de bron, daarna wordt de eerste echte segment/rand-intersectie richting een intern doelpunt
+  berekend en een epsilon naar binnen geplaatst; het eindpunt wordt opnieuw met
+  `punt_in_polygoon()` gevalideerd. Regressies dekken concave C- en U-vormen. De polygonen-POST
+  weigert nu ook degeneratieve contouren zonder oppervlak en zelfsnijdende contouren. De generieke
+  vuistregelreden noemt bij >15 l/s nu expliciet dat een deurrooster geadviseerd is. Blocking
+  `scripts/verify.sh`: PASS, 953/953 tests groen. Taak blijft `active` tot onafhankelijke herreview.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.
