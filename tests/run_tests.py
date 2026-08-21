@@ -5242,18 +5242,41 @@ try:
     _travAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF, follow_redirects=True)
     check("ventilatieplan-export: achtergrond-traversal wordt geweigerd",
           _travAF.status_code == 200 and "binnen dit project" in _travAF.get_data(as_text=True))
-    _unsupportedAF = bytearray(_WAF.vp_export._png(_bgRasterAF)); _unsupportedAF[25] = 0
-    _unsupportedNaamAF = "grayscale-niet-ondersteund.png"
-    with open(os.path.join(_WAF._pdir(_tagAF), _unsupportedNaamAF), "wb") as _fhUnsupAF:
-        _fhUnsupAF.write(_unsupportedAF)
-    _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = _unsupportedNaamAF
+    from PIL import Image as _ImageAF
+    import zlib as _zlibAF
+    _variantenAF = []
+    for _modeAF, _kleurAF, _naamAF in (("P", 1, "palette.png"), ("L", 90, "grayscale.png")):
+        _bioAF = _ioAF.BytesIO(); _imAF = _ImageAF.new(_modeAF, (4,4), _kleurAF)
+        if _modeAF == "P": _imAF.putpalette([0,0,0, 210,20,30] + [0,0,0]*254)
+        _imAF.save(_bioAF, format="PNG"); _variantenAF.append((_naamAF, _bioAF.getvalue()))
+    _bioJpgAF = _ioAF.BytesIO(); _ImageAF.new("RGB", (4,4), (210,20,30)).save(
+        _bioJpgAF, format="JPEG", quality=95); _variantenAF.append(("achtergrond.jpg", _bioJpgAF.getvalue()))
+    # Geldige Adam7-PNG van 1x1: voor één pixel is pass 1 dezelfde scanline; alleen IHDR-vlag+CRC wijzigen.
+    _adamAF = bytearray(_WAF.vp_export._png(_WAF.vp_export._Raster(1,1))); _adamAF[28] = 1
+    _adamAF[29:33] = _structAF.pack(">I", _zlibAF.crc32(bytes(_adamAF[12:29])) & 0xffffffff)
+    _variantenAF.append(("interlaced.png", bytes(_adamAF)))
+    _variantenOkAF = True
+    for _naamAF, _dataAF in _variantenAF:
+        with open(os.path.join(_WAF._pdir(_tagAF), _naamAF), "wb") as _fhVariantAF:
+            _fhVariantAF.write(_dataAF)
+        _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = _naamAF
+        _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
+        _respVariantAF = _cAF.get("/project/%s/ventilatieplan/%s/export.png" % (_tagAF, "Begane grond"))
+        _variantenOkAF = _variantenOkAF and _respVariantAF.status_code == 200
+    check("ventilatieplan-export: JPEG + palette/grayscale/interlaced PNG renderen zonder 500",
+          _variantenOkAF)
+    _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = "achtergrond.jpg"
     _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
-    _unsupPdfAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF, follow_redirects=True)
-    _unsupPngAF = _cAF.get("/project/%s/ventilatieplan/%s/export.png" % (_tagAF, "Begane grond"))
-    check("ventilatieplan-export: unsupported PNG-variant geeft PDF-melding, geen 500",
-          _unsupPdfAF.status_code == 200 and "8-bit RGB/RGBA" in _unsupPdfAF.get_data(as_text=True))
-    check("ventilatieplan-export: unsupported PNG-variant geeft nette PNG-422, geen 500",
-          _unsupPngAF.status_code == 422 and "8-bit RGB/RGBA" in _unsupPngAF.get_data(as_text=True))
+    _jpgPngAF = _cAF.get("/project/%s/ventilatieplan/%s/export.png" % (_tagAF, "Begane grond"))
+    _jwAF, _jhAF, _jcAF, _jrowsAF = _WAF.vp_export._decode_image(_jpgPngAF.data)
+    _jpAF = tuple(_jrowsAF[800][900*_jcAF:900*_jcAF+3])
+    _jpgPdfAF = _PdfReaderAF(_ioAF.BytesIO(_cAF.get(
+        "/project/%s/ventilatieplan/export.pdf" % _tagAF).data))
+    _jpgRawPdfAF = _jpgPdfAF.pages[1]["/Resources"]["/XObject"]["/Im1"].get_object().get_data()
+    _jpgPdfPixAF = tuple(_jpgRawPdfAF[_pdfPixAF:_pdfPixAF+3])
+    check("ventilatieplan-export: JPEG-bronpixels zitten in losse PNG én ingebed PDF-beeld",
+          all(abs(_jpAF[i]-(210,20,30)[i]) < 12 for i in range(3))
+          and all(abs(_jpgPdfPixAF[i]-(210,20,30)[i]) < 12 for i in range(3)))
     _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = None
     _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
 

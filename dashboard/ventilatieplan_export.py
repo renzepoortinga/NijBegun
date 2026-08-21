@@ -7,11 +7,14 @@ er is dus geen tweede plaatsings- of rekenpad voor de export.
 from __future__ import annotations
 
 import datetime
+import io
 import re
 import struct
 import textwrap
 import unicodedata
 import zlib
+
+from PIL import Image, UnidentifiedImageError
 
 
 WIDTH, HEIGHT = 1200, 900
@@ -41,42 +44,24 @@ def scene(verdiepingen, res, balans, toets, adres, systeem, opnamedatum):
             "exportdatum": datetime.date.today().isoformat()}
 
 
+def _decode_image(data):
+    """Veilige Pillow-grens voor JPEG en alle gangbare PNG-kleur-/interlacevarianten."""
+    try:
+        with Image.open(io.BytesIO(data)) as bron:
+            width, height = bron.size
+            if not width or not height or width * height > 30_000_000:
+                raise ValueError("Plattegrondachtergrond heeft ongeldige of te grote afmetingen.")
+            rgba = bron.convert("RGBA")
+            rgba.load()
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise ValueError("Plattegrondachtergrond is geen veilig leesbare JPEG of PNG.") from exc
+    raw = rgba.tobytes()
+    return width, height, 4, [raw[y*width*4:(y+1)*width*4] for y in range(height)]
+
+
 def _decode_png(data):
-    """Decodeert gangbare 8-bit RGB/RGBA-PNG's, inclusief alle vijf PNG-rowfilters."""
-    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
-        raise ValueError("Achtergrond is geen geldig PNG-bestand.")
-    pos, width, height, kleurtype, idat = 8, None, None, None, bytearray()
-    while pos + 12 <= len(data):
-        lengte = struct.unpack(">I", data[pos:pos+4])[0]
-        typ, inhoud = data[pos+4:pos+8], data[pos+8:pos+8+lengte]
-        pos += 12 + lengte
-        if typ == b"IHDR":
-            width, height, depth, kleurtype, comp, filt, interlace = struct.unpack(">IIBBBBB", inhoud)
-            if depth != 8 or kleurtype not in (2, 6) or comp or filt or interlace:
-                raise ValueError("PNG-achtergrond moet 8-bit RGB/RGBA en niet-geïnterlinieerd zijn.")
-        elif typ == b"IDAT": idat.extend(inhoud)
-        elif typ == b"IEND": break
-    if not width or not height or width*height > 30_000_000:
-        raise ValueError("PNG-achtergrond heeft ongeldige of te grote afmetingen.")
-    kanalen = 3 if kleurtype == 2 else 4
-    raw, stride = zlib.decompress(bytes(idat)), width*kanalen
-    if len(raw) != height*(stride+1): raise ValueError("PNG-achtergrond heeft ongeldige beelddata.")
-    rows, prev, off = [], bytearray(stride), 0
-    for _ in range(height):
-        ft, scan = raw[off], bytearray(raw[off+1:off+1+stride]); off += stride+1
-        for i in range(stride):
-            a = scan[i-kanalen] if i >= kanalen else 0
-            b = prev[i]
-            c = prev[i-kanalen] if i >= kanalen else 0
-            if ft == 1: scan[i] = (scan[i]+a) & 255
-            elif ft == 2: scan[i] = (scan[i]+b) & 255
-            elif ft == 3: scan[i] = (scan[i]+((a+b)//2)) & 255
-            elif ft == 4:
-                p, pa, pb, pc = a+b-c, abs(b-c), abs(a-c), abs(a+b-2*c)
-                scan[i] = (scan[i]+(a if pa <= pb and pa <= pc else (b if pb <= pc else c))) & 255
-            elif ft != 0: raise ValueError("PNG-achtergrond gebruikt een onbekend rijfilter.")
-        rows.append(bytes(scan)); prev = scan
-    return width, height, kanalen, rows
+    """Compatibiliteitsnaam voor bestaande tests; decodeert inmiddels ook JPEG via Pillow."""
+    return _decode_image(data)
 
 
 _FONT = {
@@ -173,7 +158,7 @@ def _vloer_raster(v):
     r.tekst(35, 25, v.get("naam", "Verdieping"), schaal=4)
     achtergrond = v.get("achtergrond_data")
     if achtergrond:
-        bw, bh, kanalen, rows = _decode_png(achtergrond)
+        bw, bh, kanalen, rows = _decode_image(achtergrond)
         schaal = min(1080/bw, 760/bh)
         dw, dh = max(1, int(bw*schaal)), max(1, int(bh*schaal))
         ox, oy = 60+(1080-dw)//2, 90+(760-dh)//2

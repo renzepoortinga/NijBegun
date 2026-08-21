@@ -27,12 +27,12 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
 - De tekening inhoudelijk veranderen: scherm en export gebruiken dezelfde brondata/rendering.
 
 ## Acceptance criteria
-- [ ] PDF bevat elke verdieping met markers en waarden, leesbaar op A4.
-- [ ] Tabellen zijn identiek aan het scherm, inclusief afvoerpunt en vuistregelstatus.
-- [ ] Export draait offline op de VPS zonder handmatige stap.
-- [ ] PNG per verdieping heeft transparante of witte achtergrond en is bruikbaar in Word.
-- [ ] Dossier zonder plattegrond geeft een nette melding, geen lege pagina.
-- [ ] `./scripts/verify.sh` slaagt.
+- [x] PDF bevat elke verdieping met markers en waarden, leesbaar op A4.
+- [x] Tabellen zijn identiek aan het scherm, inclusief afvoerpunt en vuistregelstatus.
+- [x] Export draait offline op de VPS zonder handmatige stap.
+- [x] PNG per verdieping heeft transparante of witte achtergrond en is bruikbaar in Word.
+- [x] Dossier zonder plattegrond geeft een nette melding, geen lege pagina.
+- [x] `./scripts/verify.sh` slaagt.
 - [ ] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
@@ -72,6 +72,14 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
   + redirect en op PNG als HTTP 422 afgehandeld, nooit als 500; beide routes hebben regressietests.
   Blocking verify na rebase: PASS, 1020/1020 tests. Taak blijft daarom `active/` en de
   JPEG-acceptatiecheckbox blijft open tot de dependencykeuze.
+- 2026-08-21 Codex Builder: manager heeft `Pillow>=10` expliciet toegestaan en gemotiveerd: een
+  onderhouden decoder is nodig voor veilige scherm/exportpariteit en upstream PNG-normalisatie is
+  nog niet beschikbaar. Dependency toegevoegd aan `requirements.txt` en `pyproject.toml`; de eigen
+  beperkte PNG-decoder vervangen door een begrensde Pillow-decode (maximaal 30 miljoen pixels,
+  maximaal 25 MB bronbestand). JPEG en palette-, grayscale- en geldige Adam7-interlaced PNG zijn
+  via de echte routes getest; JPEG-bronpixels zijn in zowel losse PNG als ingebed PDF-beeld bewezen.
+  Blocking verify PASS, 1020/1020. Alle inhoudelijke acceptatiecriteria zijn afgevinkt; alleen de
+  onafhankelijke herreview staat nog open.
 
 ## Notes
 Het aantal pagina's is variabel: voorblad + één pagina per verdieping + berekeningspagina.

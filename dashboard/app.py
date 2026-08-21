@@ -2322,12 +2322,9 @@ def _vp_export_scene(tag, st, dos):
             raise ValueError("Plattegrondachtergrond is groter dan 25 MB.")
         with open(pad, "rb") as fh:
             data = fh.read()
-        if data.startswith(b"\x89PNG\r\n\x1a\n"):
-            verdieping["achtergrond_data"] = data
-        elif data.startswith(b"\xff\xd8\xff"):
-            raise ValueError("JPEG-plattegronden vereisen beeldconversie; gebruik voorlopig PNG.")
-        else:
+        if not (data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8\xff")):
             raise ValueError("Plattegrondachtergrond is geen geldige PNG of JPEG.")
+        verdieping["achtergrond_data"] = data
     return vp_export.scene(verdiepingen, res, balans, toets, st.get("adres", ""),
                            dos.ventilatie.systeem, vp_export.opname_datum(dos))
 
