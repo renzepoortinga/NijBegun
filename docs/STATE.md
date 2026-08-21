@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 018 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 017 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,11 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 017 (atomische Vabi-exportset) is afgerond: writers publiceren eerst een gevalideerde,
+immutable set en maken die zichtbaar via één atomische `CURRENT.json`-wissel. Fouten behouden
+de vorige geldige set; dashboarddownloads en projectexport volgen CURRENT met legacyfallback.
+Traversal, writer-/manifestfouten en concurrency hebben regressiedekking. AI-herreview: PASS.
 
 Taak 018 (aanvoertemperatuur-normalisatie) is afgerond: dotted MagicPlan-waarden zoals
 `90.70` blijven intact tot de gerichte Vabi-normalisatie en worden voor alle 12 ondersteunde
