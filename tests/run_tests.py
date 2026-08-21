@@ -5874,6 +5874,195 @@ try:
             _app16.PROJECTS_DIR = _orig_projects16
 except Exception as _e:
     check("one-click intake: draait zonder fout", False); print("     " + repr(_e)[:300])
+print("\n69. Plattegrond-visioncontract: schaalgate, bevestiging en herkomst (taak 022)")
+try:
+    import copy as _copy67
+    import json as _json67
+    import tempfile as _tempfile67
+    from pathlib import Path as _Path67
+    from dashboard.plattegrond_import import (
+        PlattegrondImportFout as _PIF67, bevestig_in_dossier as _bevestig67,
+        valideer_vision_resultaat as _valideer67)
+    with open(os.path.join(ROOT, "tests", "fixtures", "plattegrond_vision_mock.json"),
+              encoding="utf-8") as _fh67:
+        _raw67 = _json67.load(_fh67)
+    _upload67 = _tempfile67.TemporaryDirectory()
+    _uploadroot67 = _Path67(_upload67.name)
+    (_uploadroot67 / "uploads").mkdir()
+    (_uploadroot67 / "uploads" / "plattegrond-bg.png").write_bytes(
+        b"\x89PNG\r\n\x1a\n" + b"offline-fixture")
+    _concept67 = _valideer67(_raw67, _uploadroot67)
+    check("visioncontract: expliciete maatlijn laat afgelezen oppervlakte door",
+          _concept67["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"] == 20.0)
+    check("visioncontract: onzekerheid wordt zichtbaar aandachtspunt",
+          any("onscherp" in x for x in _concept67["aandachtspunten"]))
+
+    _geen_schaal67 = _copy67.deepcopy(_raw67)
+    _geen_schaal67["verdiepingen"][0]["schaal"] = {"betrouwbaar": False}
+    _geen_schaal67["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"] = 999
+    _concept_zonder67 = _valideer67(_geen_schaal67, _uploadroot67)
+    check("visioncontract: onbetrouwbare schaal verwerpt modeloppervlakten fail-closed",
+          all(r["oppervlakte_m2"] is None for r in _concept_zonder67["verdiepingen"][0]["ruimtes"]))
+    _bewijsloos67 = _copy67.deepcopy(_raw67)
+    _bewijsloos67["verdiepingen"][0]["schaal"]["maatlijn_bewijzen"] = []
+    try:
+        _bewijsloos_concept67 = _valideer67(_bewijsloos67, _uploadroot67)
+        _bewijs_fout67 = all(r["oppervlakte_m2"] is None
+                             for r in _bewijsloos_concept67["verdiepingen"][0]["ruimtes"])
+    except _PIF67:
+        _bewijs_fout67 = False
+    check("visioncontract: betrouwbaar=true zonder bewijs wordt fail-closed onbetrouwbaar", _bewijs_fout67)
+    _inconsistent67 = _copy67.deepcopy(_raw67)
+    _inconsistent67["verdiepingen"][0]["schaal"]["maatlijn_bewijzen"][0]["lengte_m"] = 5.0
+    _inconsistent_concept67 = _valideer67(_inconsistent67, _uploadroot67)
+    check("visioncontract: inconsistente bewijsratio verwerpt alle modeloppervlakten",
+          all(r["oppervlakte_m2"] is None
+              for r in _inconsistent_concept67["verdiepingen"][0]["ruimtes"]))
+    _asym67 = _copy67.deepcopy(_raw67)
+    _asym67["verdiepingen"][0]["ruimtes"][1]["aangrenzend"] = []
+    _asym_concept67 = _valideer67(_asym67, _uploadroot67)
+    check("visioncontract: vermoedelijke aangrenzendheid wordt symmetrisch genormaliseerd",
+          _asym_concept67["verdiepingen"][0]["ruimtes"][1]["aangrenzend"] == ["Woonkamer"])
+    _dubbel_vloer67 = _copy67.deepcopy(_raw67)
+    _dubbel_vloer67["verdiepingen"].append(_copy67.deepcopy(_dubbel_vloer67["verdiepingen"][0]))
+    try:
+        _valideer67(_dubbel_vloer67, _uploadroot67); _dubbel_ok67 = False
+    except _PIF67:
+        _dubbel_ok67 = True
+    check("visioncontract: dubbele verdiepingsnamen worden geweigerd", _dubbel_ok67)
+
+    _pad_cases67 = ["../plattegrond-bg.png", "C:/plattegrond-bg.png",
+                    r"\\server\share\plattegrond-bg.png", "uploads/plattegrond:bg.png"]
+    _pad_ok67 = True
+    for _pad67 in _pad_cases67:
+        _kwaad67 = _copy67.deepcopy(_raw67)
+        _kwaad67["verdiepingen"][0]["afbeelding"] = _pad67
+        try:
+            _valideer67(_kwaad67, _uploadroot67); _pad_ok67 = False
+        except _PIF67:
+            pass
+    check("visioncontract: traversal, Windows-drive, UNC en colon worden geweigerd", _pad_ok67)
+    (_uploadroot67 / "uploads" / "spoof.png").write_bytes(b"dit is geen png")
+    _spoof67 = _copy67.deepcopy(_raw67)
+    _spoof67["verdiepingen"][0]["afbeelding"] = "uploads/spoof.png"
+    try:
+        _valideer67(_spoof67, _uploadroot67); _spoof_ok67 = False
+    except _PIF67:
+        _spoof_ok67 = True
+    check("visioncontract: PNG-suffix met andere inhoud wordt geweigerd", _spoof_ok67)
+
+    _bev67 = {"expliciet_bevestigd": True, "verdiepingen": [{
+        "bron_volgorde": 0, "naam": "Begane grond", "ruimtes": [{
+            "naam": r["naam"], "functie": r["functie"],
+            "oppervlakte_m2": (21.0 if r["naam"] == "Woonkamer" else r["oppervlakte_m2"]),
+            "contour_relatief": r["contour_relatief"], "aangrenzend": r["aangrenzend"]}
+            for r in _concept67["verdiepingen"][0]["ruimtes"]]}]}
+    _dos67 = Dossier()
+    _bevestig67(_dos67, _concept67, _bev67)
+    _woon67 = next(r for r in _dos67.geometrie.ruimtes if r.naam == "Woonkamer")
+    check("visioncontract: bevestigde correctie krijgt herkomst per waarde",
+          _woon67.oppervlakte_m2 == 21.0
+          and _woon67.bron_per_waarde["oppervlakte_m2"] == "handmatig_gecorrigeerd"
+          and _woon67.bron_per_waarde["functie"] == "afgelezen")
+    check("visioncontract: volgorde, afbeelding en aangrenzendheid landen in dossier",
+          _dos67.geometrie.vloeren[0].plattegrond_afbeelding == "uploads/plattegrond-bg.png"
+          and _woon67.aangrenzende_ruimtes == ["Keuken"])
+    check("visioncontract: nieuwe herkomstvelden overleven dossier-roundtrip",
+          Dossier.from_dict(_dos67.to_dict()).to_dict() == _dos67.to_dict())
+    try:
+        _bevestig67(Dossier(), _concept67, {"expliciet_bevestigd": False}); _stil67 = False
+    except _PIF67:
+        _stil67 = True
+    check("visioncontract: zonder expliciete bevestiging geen dossiermutatie", _stil67)
+    try:
+        _bevestig67(_dos67, _concept67, _bev67); _overschrijf67 = False
+    except _PIF67:
+        _overschrijf67 = True
+    check("visioncontract: bestaande geometrie wordt niet overschreven", _overschrijf67)
+except Exception as _e:
+    check("plattegrond-visioncontract (taak 022): draait zonder fout", False)
+    print("     " + repr(_e)[:300])
+
+print("\n70. Plattegrond-vision: providerroute, controle-UI en gecontroleerde benchmark")
+try:
+    import io as _io70, tempfile as _tmp70, shutil as _sh70
+    from PIL import Image as _Image70
+    from dashboard import plattegrond_import as _pi70
+    from dashboard.plattegrond_dataset import inventariseer as _invent70
+    _inv70 = _invent70(ROOT)
+    check("visiondataset: alle 3 genoemde echte fixtures zijn werkelijk geparsed",
+          len(_inv70["bronnen"]) == 3 and {b["type"] for b in _inv70["bronnen"]} == {
+              "magicplan_json", "magicplan_statistics_csv", "vabi_monitor"})
+    check("visiondataset: inventarisatie fabriceert geen 10 rastervloeren/<5%-claim",
+          _inv70["aantal_vloeren"] < 10 and _inv70["aantal_rastervloeren"] == 0)
+
+    _provider_raw70 = {"contractversie":"1", "model":{"provider":"Anthropic","naam":"claude-test-v1","versie":"claude-test-v1"},
+        "verdiepingen":[{"naam":"modelnaam",
+        "afbeelding":"01-begane-grond.png", "schaal":{"betrouwbaar":False}, "ruimtes":[{
+        "naam":"Woonkamer", "functie":"verblijfsruimte", "oppervlakte_m2":None,
+        "contour_relatief":[[.1,.1],[.9,.1],[.9,.9],[.1,.9]], "aangrenzend":[],
+        "onzekerheden":["Geen leesbare maatlijn"]}]}]}
+    class _Resp70:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def read(self): return _json67.dumps({"content":[{"type":"text","text":_json67.dumps(_provider_raw70)}]}).encode()
+    _req70 = []
+    def _open70(req, timeout=0): _req70.append((req,timeout)); return _Resp70()
+    _geldigBio70 = _io70.BytesIO(); _Image70.new("RGB",(20,20),"white").save(_geldigBio70,format="PNG")
+    _geldigPng70 = _geldigBio70.getvalue()
+    _rawuit70 = _pi70.analyseer_met_anthropic([("01-bg.png", _geldigPng70)],
+        {"ai":{"api_key":"test-geheim", "vision_model":"claude-test-v1"}}, opener=_open70)
+    _body70 = _json67.loads(_req70[0][0].data.decode())
+    check("visionprovider: injecteerbare expliciete Anthropic-call met beeldblok en exact model",
+          _rawuit70["model"]["naam"] == "claude-test-v1" and _body70["model"] == "claude-test-v1"
+          and any(x.get("type") == "image" for x in _body70["messages"][0]["content"]))
+    _slecht70 = []
+    for _naamBad70, _badData70 in (("prefix.png", b"\x89PNG\r\n\x1a\nX"),
+                                   ("truncated.png", _geldigPng70[:-8]),
+                                   ("polyglot.png", _geldigPng70+b"<script>x</script>")):
+        try: _pi70.valideer_afbeeldingsbytes(_naamBad70,_badData70); _slecht70.append(False)
+        except _pi70.PlattegrondImportFout: _slecht70.append(True)
+    import struct as _struct70, zlib as _zlib70
+    _bom70=bytearray(_geldigPng70); _bom70[16:24]=_struct70.pack(">II",10000,4000)
+    _bom70[29:33]=_struct70.pack(">I",_zlib70.crc32(bytes(_bom70[12:29]))&0xffffffff)
+    try: _pi70.valideer_afbeeldingsbytes("bom.png",bytes(_bom70)); _bomOk70=False
+    except _pi70.PlattegrondImportFout: _bomOk70=True
+    check("visionupload: corrupt/truncated/polyglot en >30M-pixelbom geweigerd vóór provider",
+          all(_slecht70) and _bomOk70)
+    check("visionupload: echte volledig decodeerbare PNG-fixture geaccepteerd",
+          _pi70.valideer_afbeeldingsbytes("geldig.png",_geldigPng70)=="image/png")
+
+    import dashboard.app as _app70
+    _orig_projects70, _orig_analyse70 = _app70.PROJECTS_DIR, _app70.pi_mod.analyseer_met_anthropic
+    _td70 = _tmp70.mkdtemp(); _app70.PROJECTS_DIR = _td70
+    try:
+        _app70.app.config.update(TESTING=True); _c70 = _app70.app.test_client()
+        with _c70.session_transaction() as _s70: _s70["ingelogd"] = True
+        _nieuw70 = _c70.post("/nieuw", data={"straat":"Vision 1","postcode":"9999VI","plaats":"X","woningtype":"Tussenwoning"})
+        _tag70 = _nieuw70.headers["Location"].rstrip("/").split("/")[-2]
+        _app70.pi_mod.analyseer_met_anthropic = lambda beelden,cfg: _json67.loads(_json67.dumps(_provider_raw70))
+        _analyse70 = _c70.post("/project/%s/plattegrond-import/analyse" % _tag70,
+            data={"verdiepingsnamen":"Begane grond", "afbeeldingen":(_io70.BytesIO(_geldigPng70),"plan.png")},
+            content_type="multipart/form-data", follow_redirects=True)
+        _html70 = _analyse70.get_data(as_text=True)
+        check("vision-UI: upload/analyse toont onzekerheid en volledige corrigeerbare controlestap",
+              _analyse70.status_code == 200 and "Geen leesbare maatlijn" in _html70
+              and "bevestiging_json" in _html70 and "expliciet_bevestigd" in _html70)
+        with open(_app70._pi_concept_pad(_tag70),encoding="utf-8") as _f70: _concept70=_json67.load(_f70)
+        _bev70=_app70._pi_bevestiging(_concept70); _bev70["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"]=24.0
+        _conf70=_c70.post("/project/%s/plattegrond-import/bevestig"%_tag70,
+            data={"bevestiging_json":_json67.dumps(_bev70),"expliciet_bevestigd":"ja"},follow_redirects=True)
+        _dos70=_app70._dossier(_tag70)
+        check("vision-UI: pas expliciete volledige correctie muteert dossier met herkomst",
+              _conf70.status_code==200 and _dos70.geometrie.ruimtes[0].oppervlakte_m2==24.0
+              and _dos70.geometrie.ruimtes[0].bron_per_waarde["oppervlakte_m2"]=="handmatig_gecorrigeerd"
+              and _dos70.geometrie.vloeren[0].plattegrond_afbeelding.startswith("plattegrond_import/"))
+    finally:
+        _app70.PROJECTS_DIR, _app70.pi_mod.analyseer_met_anthropic = _orig_projects70, _orig_analyse70
+        _sh70.rmtree(_td70, ignore_errors=True)
+except Exception as _e:
+    check("plattegrond-vision provider/UI/benchmark (taak 022): draait zonder fout", False)
+    print("     " + repr(_e)[:300])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

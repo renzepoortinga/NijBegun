@@ -1,0 +1,17 @@
+{
+  "versie": "1",
+  "type": "echte_broninventarisatie_zonder_rastergrondwaarheid",
+  "aantal_plannen": 3,
+  "aantal_vloerbeelden": null,
+  "bronnen": [
+    "tests/fixtures/magicplan_plan_voorbeeld.json",
+    "tests/fixtures/statistics_voorbeeld.csv",
+    "tests/fixtures/monitor_voorbeeld.xml"
+  ],
+  "doel": "De drie bronnen werkelijk parsen en aantonen hoeveel onafhankelijke vloeren/rasterlabels beschikbaar zijn.",
+  "real_world_smoke": {
+    "bron": "Bouwtekening.jpg (bestaand lokaal websitebeeld, niet herverdeeld)",
+    "resultaat": "Eén grondplan zichtbaar, maar geen betrouwbare maatlijn of onafhankelijke ruimtelabels; schaal moet onbekend blijven."
+  },
+  "beperking": "De bronnen bevatten dossiergeometrie maar geen gekoppelde rastervloergrondwaarheid. De <5%-AC blijft daarom open."
+}
