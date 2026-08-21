@@ -89,6 +89,14 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
   de live-import-acceptatiecriteria blijven daarom bewust ongecheckt. Blocking Git-Bash
   `verify.sh` na rebase: PASS, 974/974.
 
+- 2026-08-21 Codex integratieonderhoud: branch opnieuw gerebased op actuele `origin/main`
+  (`1867e96`, inclusief afgeronde taken 016 en 021). De conflictblokkade voor `V1-2-X3` bleef
+  ongewijzigd en `catalog/catalog.json` bleef byte-identiek aan de geldige XLSX-productiesnapshot
+  (Git-blob `c396767c652b33974e39e1ebfe9d531f2664347b`). Geen live refresh of publicatie uitgevoerd;
+  taak blijft actief/draft in afwachting van correctie door de API-eigenaar. Twee eerste runs
+  raakten opnieuw de al gedocumenteerde incidentele atomische-VABI-test; zonder bronwijziging was
+  de daaropvolgende volledige suite groen en de definitieve blocking `verify.sh` PASS (1029/1029).
+
 ## Notes
 De API-response bevat geen inhoudelijke catalogusversie of `updatedAt`; noem de live stand dus
 niet bijvoorbeeld “Q4” zonder bronbewijs. Gebruik ophaaltijd + fingerprint voor herleidbaarheid.
