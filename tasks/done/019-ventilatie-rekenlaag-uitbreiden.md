@@ -73,6 +73,11 @@ Alleen `ventilatie/ventilatie.py` plus tests. Geen webapp, geen tekening, geen P
   een onbekende ruimtenaam in de topologie — geeft nu een harde `ValueError` (vergelijkbaar met de
   bestaande validatie-poorten elders in de tool). 4 nieuwe regressietests. 825/825 groen, verify.sh
   PASS. Taak gereed voor tasks/done/.
+- 2026-08-21 (nagekomen, tijdens de review van taak 020): de taak-020-review vond nog 2 kleine gaten
+  in dit bestand die de vorige ronde miste — de '0 m2'-waarschuwing toonde altijd '0 m2' ook bij een
+  negatief oppervlak, en `deurbelasting()` valideerde alleen de EERSTE ruimtenaam van een pad tegen
+  `res['rows']`, niet de rest. Beide gefixt + 2 regressietests op de taak-020-branch (commit na
+  `Verwerk code-review taak 020`), niet hier apart heropend.
 
 ## Notes
 **Beslissing die eerst vastgelegd moet worden in `docs/decisions/`:** Aira rondt af op hele

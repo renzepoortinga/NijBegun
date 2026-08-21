@@ -45,6 +45,21 @@ dakprovenance zijn gebouwd en na rebase op `main` met 845/845 tests geverifieerd
 onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 (dakkapel/
 preflight) en 025 (MagicPlan-SSL) in `backlog/`.
 
+Taak 020 (ventilatieplan-pagina in de webapp: sleepbare pijlen op de plattegrond) is afgerond en
+staat in `tasks/done/`: nieuwe route `/project/<tag>/ventilatieplan` (GET pagina + POST markers +
+POST herstel) bovenop de taak-019-rekenlaag. Dossier minimaal uitgebreid (`core/dossier.py`):
+`Ruimte.verdieping`, `VloerInfo.plattegrond_afbeelding` (forward-compat taak 022) en de nieuwe
+`Ventilatieplan`/`VentilatieplanVerdieping`/`VentilatieMarker`-dataclasses. Nieuwe pure datalaag
+`dashboard/ventilatieplan.py` (groeperen per verdieping, autoplaatsing uit de rekenlaag — GEEN
+automatische overstroom-marker want geen adjacency-data, validatie weigert de hele batch bij de
+eerste fout) + `dashboard/static/ventilatieplan.js` (vanilla JS: slepen/klikken=draaien/dubbelklik=
+waarde-wijzigen-of-verwijderen, geen framework). AI-review vond, na een eerste poging die per
+ongeluk de verkeerde diff beoordeelde, 2 restbevindingen in `ventilatie/ventilatie.py` (taak 019:
+misleidende '0 m2'-waarschuwing bij een negatief oppervlak, `deurbelasting()` valideerde niet het
+hele overstroompad) — beide gefixt op deze branch. 876/876 tests groen; verify.sh PASS. Geen
+browser-visuele-QA (Claude-in-Chrome verbindt niet, zelfde blokkade als taak 010). Vervolgtaken 021
+(PDF/PNG-export) en 022 (plattegrond uit foto) staan in backlog, buiten scope van 020.
+
 Taak 019 (ventilatie-rekenlaag uitbreiden: balans, deurbelasting, vuistregeltoets) is afgerond en
 staat in `tasks/done/`: eerst de afrondingsbeslissing vastgelegd in `docs/decisions/0002-ventilatie-
 afronding.md` (blijft 0,1 l/s). Daarna `ventilatie/ventilatie.py` uitgebreid met `verdeel_balans()`
