@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 015 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 020 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,11 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 020 (interactief ventilatieplan) is afgerond: ruimtepolygonen worden expliciet gekalibreerd,
+markers blijven ruimte- en verdiepingsgebonden, overstroom volgt pas na expliciete topologie en
+deurbelasting wordt correct getoetst. Pointer- en toetsenbordbediening, concave geometrie en strikte
+polygonvalidatie zijn gedekt. Vijf reviewrondes; eindverdict PASS, 957/957 groen.
 
 Taak 015 (mappingmanifest en MagicPlan-formulierfingerprint) is afgerond: zes kritieke
 dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gereviewd
@@ -40,10 +45,37 @@ AI-review: PASS.
 
 Taak 013 (ketenaudit MagicPlan → tool → Vabi) en taak 014 (dakmigratie zonder dubbele
 legacyvlakken — het Essenhage-dakdubbelingspatroon uit taak 013) zijn afgerond en staan in
-`tasks/done/`. Taak 015 blijft `active/`: mappingmanifest, formulierfingerprint en de eerdere
-dakprovenance zijn gebouwd en na rebase op `main` met 845/845 tests geverifieerd; alleen de
-onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 (dakkapel/
-preflight) en 025 (MagicPlan-SSL) in `backlog/`.
+`tasks/done/`. Vervolgbevindingen staan als taak 023 (dakkapel/preflight) en 025
+(MagicPlan-SSL) in `backlog/`.
+
+Taak 020 (ventilatieplan-pagina in de webapp) is na review-FAIL heropend en staat in `tasks/active/`.
+De blockers zijn gerepareerd en na integratie met taak 015 zijn 957/957 tests groen;
+onafhankelijke herreview staat nog open.
+De taak levert route `/project/<tag>/ventilatieplan` (GET pagina + POST markers +
+POST herstel) bovenop de taak-019-rekenlaag. Dossier minimaal uitgebreid (`core/dossier.py`):
+`Ruimte.verdieping`, `VloerInfo.plattegrond_afbeelding` (forward-compat taak 022) en de nieuwe
+`Ventilatieplan`/`VentilatieplanVerdieping`/`VentilatieMarker`-dataclasses. Nieuwe pure datalaag
+`dashboard/ventilatieplan.py` (groeperen per verdieping, autoplaatsing inclusief overstroom bij de
+bronruimte zonder een onbekende deurverbinding te verzinnen, batch- en verdiepingvalidatie) +
+`dashboard/static/ventilatieplan.js` (vanilla JS: ruimtepolygon-hit-test, highlight/koppellijn,
+rollback buiten een ruimte en dubbelklik=wijzigen/verwijderen/splitsen). Een eerdere AI-review vond
+2 restbevindingen in `ventilatie/ventilatie.py` (taak 019:
+misleidende '0 m2'-waarschuwing bij een negatief oppervlak, `deurbelasting()` valideerde niet het
+hele overstroompad) — beide gefixt op deze branch. Blocking verify PASS. Geen browser-visuele-QA:
+de browserruntime meldde nul beschikbare browsers. Vervolgtaken 021
+(PDF/PNG-export) en 022 (plattegrond uit foto) staan in backlog, buiten scope van 020.
+
+Taak 019 (ventilatie-rekenlaag uitbreiden: balans, deurbelasting, vuistregeltoets) is afgerond en
+staat in `tasks/done/`: eerst de afrondingsbeslissing vastgelegd in `docs/decisions/0002-ventilatie-
+afronding.md` (blijft 0,1 l/s). Daarna `ventilatie/ventilatie.py` uitgebreid met `verdeel_balans()`
+(afvoer per natte ruimte proportioneel opgehoogd tot de som gelijk is aan de toevoer, grootste-
+restmethode zodat niemand door afronding onder zijn minimum zakt), een `afvoerpunt`-vlag,
+`toevoer_herkomst`/`afvoer_herkomst` per regel (oppervlakte/minimum/balansophoging — nooit meer zonder
+herkomst) en `deurbelasting()`/`toets_vuistregels()` voor alle 7 Nij Begun-vuistregels; ontbrekende
+geometrie/installatiekeuzes geven altijd 'niet te bepalen', nooit een stille 'voldoet'. AI-review vond
+3 echte punten (rondingsfout in de balansverdeling, stille fantoom-toevoer-onderdrukking, silent
+fallback in deurbelasting), alle drie gefixt. 825/825 tests groen; `verify.sh` PASS. Vervolgtaken 020
+(webapp-pagina) en 021 (export) staan in backlog, buiten scope van 019.
 
 Taak 003 (kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export)
 is afgerond en staat in `tasks/done/`: onafhankelijke herreview van commit
