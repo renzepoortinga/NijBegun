@@ -63,6 +63,13 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
   geometrie gebruikt (unieke punten, niet zelfsnijdend/degeneratief, eindig en relatief `0..1`).
   Volledige lokale ketensuite: 989/989 groen vóór de laatste rebase; daarna opnieuw blocking
   `verify.sh`: PASS op de uiteindelijke branch tegen actuele `origin/main`.
+- 2026-08-21 Codex Builder: derde herreview-FAIL (geometrysemantiek) verwerkt. De onjuiste relatieve
+  `0..1`-eis is verwijderd: packagegeometrie vereist nu expliciet `unit: "m"` en area-basis
+  `VloerInfo.oppervlakte_m2`; `contour_m` blijft conform het canonieke model en assemble-pad metrisch,
+  op oorsprong genormaliseerd en de shoelace-oppervlakte moet op twee decimalen overeenkomen met de
+  al gemeten vloeroppervlakte. Alleen simple-polygonvalidatie wordt met taak 020 gedeeld. De referentie
+  is hersteld naar 8×5 m en ketentests bewijzen 40 m² plus de echte `gebouw_svg`-contourroute zonder
+  fallback. Concurrency/CAS/rollback ongewijzigd behouden. Blocking `verify.sh`: PASS, 997/997 groen.
 
 ## Notes
 Afhankelijk van dakmigratie en een stabiel mappingmanifest.

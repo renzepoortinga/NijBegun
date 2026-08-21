@@ -5330,7 +5330,16 @@ try:
         check("intake referentie: expliciete dakcontrole blijft open",
               _exp16["dakcontrole"] in _p16["acties"]["dak"])
         check("intake: geometriepakket levert grondvlakcontour",
-              _p16["nieuw"].geometrie.vloeren[0].contour_m == [[0, 0], [1, 0], [1, 1], [0, 1]])
+              _p16["nieuw"].geometrie.vloeren[0].contour_m == [[0, 0], [8, 0], [8, 5], [0, 5]])
+        from core.geometry import polygon_oppervlakte_m2 as _polyopp16
+        from dashboard.gebouw_svg import _polygon_footprint as _polyfoot16, gebouw_svg as _gsvg16
+        _p16["nieuw"].opname.gevelhoogte_m = 2.5
+        check("intake geometrie: contour_m blijft metrisch 8x5 = 40 m²",
+              _polyopp16(_p16["nieuw"].geometrie.vloeren[0].contour_m) == 40.0)
+        check("intake geometrie: gebouw_svg kiest echte contourroute, niet rechthoekfallback",
+              _polyfoot16(_p16["nieuw"])[0] == [[0, 0], [8, 0], [8, 5], [0, 5]]
+              and 'data-contour="true"' in _gsvg16(_p16["nieuw"])
+              and "échte plattegrondcontour" in _gsvg16(_p16["nieuw"]))
         _uit16 = _merge16(_oud16, _p16["nieuw"])
         check("intake merge: handmatige wizarddaken behouden",
               any(s.id == "wizard-dak" for s in _uit16.schil))
@@ -5395,18 +5404,19 @@ try:
         _basegeo16 = json.load(open(os.path.join(_ref16, "geometry.json"), encoding="utf-8"))
         _geo_cases16 = [
             dict(_basegeo16, schema="fout/1"),
+            dict(_basegeo16, unit="px"),
             dict(_basegeo16, floor_contours={"Onbekend": [[0,0],[1,0],[0,1]]}),
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1,1],[2,2]]}),
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[float("nan"),1],[0,1]]}),
-            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1,1],[0,1],[1,0]]}),
-            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[2,0],[0,1]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[8,5],[0,5],[8,0]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1000000000,0],[0,0.000001]]}),
         ]
         _geoblok16 = True
         for _ix16, _geo16 in enumerate(_geo_cases16):
             _gz16 = os.path.join(_td16, "geo%d.zip" % _ix16); _pakket16(_gz16, _geo16)
             try: _bp16(_gz16, _oud16, os.path.join(_td16, "gs%d" % _ix16)); _geoblok16 = False
             except _IE16: pass
-        check("intake geometrie: schema, verdieping, self-intersectie, degeneratie, eindigheid en 0..1 strict", _geoblok16)
+        check("intake geometrie: unit m, verdieping, self-intersectie, degeneratie, eindigheid en metrische area strict", _geoblok16)
         _dup16 = os.path.join(_td16, "dup.zip"); _pakket16(_dup16, extra=[("geometry.json", b"{}")])
         try: _bp16(_dup16, _oud16, os.path.join(_td16, "dupstage")); _dupblok16 = False
         except _IE16: _dupblok16 = True

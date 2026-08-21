@@ -11,11 +11,15 @@ live API-call tijdens preview of import.
 - `statistics.csv`: ongewijzigde MagicPlan Statistics-export.
 - `report.txt` of `report.pdf`: MagicPlan-projectrapport met formulierwaarden.
 - `geometry.json`: schema `nijbegun-magicplan-geometry/1`, hetzelfde
-  `project_id` en `floor_contours`, gemapt op de exacte verdiepingsnamen uit
-  Statistics. Een contour heeft minimaal drie unieke punten, uitsluitend
-  eindige relatieve getallenparen binnen `0..1`, kruist zichzelf niet en heeft
-  een oppervlakte groter dan nul. Deze validatie deelt de polygonkern met het
-  interactieve ventilatieplan.
+  `project_id`, verplichte `unit: "m"`, `area_basis:
+  "VloerInfo.oppervlakte_m2"` en `floor_contours`, gemapt op de exacte
+  verdiepingsnamen uit Statistics. `contour_m` blijft metrisch en is op `(0,0)`
+  genormaliseerd, zoals het bestaande API-assemblepad. Een contour heeft
+  minimaal drie unieke eindige punten, kruist zichzelf niet en de m²-oppervlakte
+  komt op twee decimalen overeen met de gemeten vloeroppervlakte. Alleen de
+  eenvoudige-polygonkern wordt gedeeld met het interactieve ventilatieplan;
+  diens relatieve `0..1`-coördinatencontract geldt nadrukkelijk niet voor
+  `VloerInfo.contour_m`.
 - Optioneel `sha256` in het manifest: mapping van bestandsnaam naar volledige
   SHA-256. Als een hash is opgegeven, is die verplicht correct.
 

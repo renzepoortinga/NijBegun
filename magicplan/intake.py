@@ -121,10 +121,14 @@ def _valideer_geometry(geo, verdiepingen, project_id):
         raise IntakeError("geometry.json heeft een onbekend schema")
     if not isinstance(geo.get("project_id"), str) or geo["project_id"] != project_id:
         raise IntakeError("Geometrie en manifest hebben een verschillend project-id")
+    if geo.get("unit") != "m":
+        raise IntakeError("geometry.json moet unit 'm' voor metrische contour_m-coördinaten bevatten")
+    if geo.get("area_basis") != "VloerInfo.oppervlakte_m2":
+        raise IntakeError("geometry.json mist de ondersteunde metrische area_basis")
     contouren = geo.get("floor_contours")
     if not isinstance(contouren, dict):
         raise IntakeError("geometry.floor_contours moet een object zijn")
-    bekend = {v.naam for v in verdiepingen}
+    bekend = {v.naam: v for v in verdiepingen}
     for naam, poly in contouren.items():
         if not isinstance(naam, str) or naam not in bekend:
             raise IntakeError("Geometrie verwijst naar een onbekende verdieping")
@@ -137,14 +141,20 @@ def _valideer_geometry(geo, verdiepingen, project_id):
                            for x in punt)):
                 raise IntakeError("Grondvlakcoördinaten moeten eindige getallenparen zijn")
             schoon.append([float(punt[0]), float(punt[1])])
-        if any(not (0.0 <= x <= 1.0) for punt in schoon for x in punt):
-            raise IntakeError("Grondvlakcoördinaten moeten relatieve waarden tussen 0 en 1 zijn")
         if len({tuple(p) for p in schoon}) != len(schoon):
             raise IntakeError("Grondvlakcontour bevat dubbele punten")
         if zelfsnijdend(schoon):
             raise IntakeError("Grondvlakcontour kruist zichzelf")
-        if polygon_oppervlakte(schoon) < 1e-6:
+        area = polygon_oppervlakte(schoon)
+        if area < 1e-6:
             raise IntakeError("Grondvlakcontour heeft geen oppervlakte")
+        # Het bestaande assemble-pad normaliseert contour_m naar oorsprong (0,0). De package-route
+        # volgt exact dat metrische contract; zo lekken pixel-/wereldcoördinaten niet stil door.
+        if min(p[0] for p in schoon) != 0.0 or min(p[1] for p in schoon) != 0.0:
+            raise IntakeError("Metrische grondvlakcontour moet op oorsprong (0,0) zijn genormaliseerd")
+        vloer_area = float(bekend[naam].oppervlakte_m2 or 0)
+        if vloer_area <= 0 or round(area, 2) != round(vloer_area, 2):
+            raise IntakeError("Contour-oppervlakte komt niet overeen met VloerInfo.oppervlakte_m2")
         contouren[naam] = schoon
     return contouren
 

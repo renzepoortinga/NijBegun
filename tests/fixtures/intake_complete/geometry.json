@@ -1,7 +1,9 @@
 {
   "schema": "nijbegun-magicplan-geometry/1",
   "project_id": "mp-reference-016",
+  "unit": "m",
+  "area_basis": "VloerInfo.oppervlakte_m2",
   "floor_contours": {
-    "Ground Floor": [[0, 0], [1, 0], [1, 1], [0, 1]]
+    "Ground Floor": [[0, 0], [8, 0], [8, 5], [0, 5]]
   }
 }
