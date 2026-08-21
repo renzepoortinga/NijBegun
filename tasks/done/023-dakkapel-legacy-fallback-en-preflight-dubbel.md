@@ -37,12 +37,12 @@ hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak
 - Nieuwe dakrekenformules of preflight-regels.
 
 ## Acceptance criteria
-- [ ] Dakkapel op een ongetagd legacy-dossier (bron=="" , id=="dak") herclassificeert het
+- [x] Dakkapel op een ongetagd legacy-dossier (bron=="" , id=="dak") herclassificeert het
       moederdak net als het expliciet-getagde geval; regressietest toegevoegd.
-- [ ] `assert_no_dubbel_dak_fallback` wordt maximaal 1x per `generate_all()`-run uitgevoerd (of de
+- [x] `assert_no_dubbel_dak_fallback` wordt maximaal 1x per `generate_all()`-run uitgevoerd (of de
       herhaalde aanroepen zijn aantoonbaar goedkoop/no-op gemaakt); bestaande AC-tests blijven groen.
-- [ ] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] `./scripts/verify.sh` slaagt.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 
@@ -64,6 +64,9 @@ hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak
   dat de publieke signatures geen bypass meer aanbieden, de oude keyword-aanroep `TypeError` geeft,
   directe writers blijven blokkeren en `generate_all` nog steeds exact eenmaal scant. 851/851 groen;
   blocking `scripts/verify.sh`: PASS.
+- 2026-08-21 Codex Reviewer/Manager: herreview op `6ae0da6` technisch PASS. Publieke signatures
+  bieden geen bypass, oude bypasskeyword faalt, directe writers blijven fail-closed en
+  `generate_all` scant exact eenmaal. 851/851 groen; taak naar `done` verplaatst.
 
 ## Notes
 Gevonden tijdens `/code-review high` op taak 015 (21-8-2026, mappingmanifest-sessie). Zie die
