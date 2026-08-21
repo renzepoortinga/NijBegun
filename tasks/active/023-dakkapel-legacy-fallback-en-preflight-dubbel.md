@@ -1,7 +1,7 @@
 ---
 id: 023
-assigned:
-branch:
+assigned: Codex Builder
+branch: fix/023-dakkapel-preflight
 depends_on: []
 ---
 
@@ -45,6 +45,9 @@ hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak
 - [ ] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
+
+- 2026-08-21 Codex Manager: hernummerde reviewvervolgtaak geclaimd op een eigen worktree vanaf
+  actuele `main`; scope blijft beperkt tot legacy-dakkapelclassificatie en preflightdeduplicatie.
 
 ## Notes
 Gevonden tijdens `/code-review high` op taak 015 (21-8-2026, mappingmanifest-sessie). Zie die
