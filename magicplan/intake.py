@@ -8,15 +8,19 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import os
 import re
 import zipfile
+import dataclasses
 
 from magicplan.form_fingerprint import snapshot_fingerprint
 from magicplan.report_parser import parse as parse_report_pdf, parse_text
 from magicplan.statistics_csv import build_dossier
 
 VERPLICHT = {"manifest.json", "statistics.csv", "geometry.json"}
+MANIFEST_SCHEMA = "nijbegun-magicplan-intake/1"
+GEOMETRY_SCHEMA = "nijbegun-magicplan-geometry/1"
 BEHOUD_BELEID = {
     "handmatige_daken": "behouden",
     "fotos": "behouden",
@@ -45,6 +49,8 @@ def _veilig_leden(zf):
         if naam.startswith("/") or ".." in naam.split("/") or ":" in naam:
             raise IntakeError("Onveilig pad in importpakket: %s" % info.filename)
         if not info.is_dir():
+            if naam in namen:
+                raise IntakeError("Dubbele bestandsnaam in importpakket")
             totaal += info.file_size
             if totaal > 100 * 1024 * 1024:
                 raise IntakeError("Importpakket is uitgepakt groter dan 100 MB")
@@ -68,24 +74,122 @@ def identiteit_sleutel(obj):
     return "adres:%s:%s" % (pc, nr) if pc and nr else ""
 
 
+def _identity_dict(obj):
+    if hasattr(obj, "identificatie"):
+        obj = obj.identificatie
+    if isinstance(obj, dict):
+        return {k: str(obj.get(k) or "").strip() for k in
+                ("bag_vboid", "postcode", "huisnummer", "straat", "plaats")}
+    return {k: str(getattr(obj, k, "") or "").strip() for k in
+            ("bag_vboid", "postcode", "huisnummer", "straat", "plaats")}
+
+
+def _adres_sleutel(i):
+    pc, nr = _norm(i.get("postcode")), _norm(i.get("huisnummer"))
+    return (pc, nr) if pc and nr else None
+
+
+def valideer_identiteiten(bronnen):
+    """Alle aanwezige BAG-id's én complete adressen moeten onderling coherent zijn.
+
+    BAG wint dus niet stil van een tegensprekend adres. Een bron mag een van beide missen;
+    ontbrekende waarden worden pas na deze controle aangevuld.
+    """
+    items = [(naam, _identity_dict(obj)) for naam, obj in bronnen if obj is not None]
+    bags = {(_norm(i["bag_vboid"])) for _, i in items if _norm(i["bag_vboid"])}
+    adressen = {_adres_sleutel(i) for _, i in items if _adres_sleutel(i)}
+    if len(bags) > 1:
+        raise IntakeError("BAG-identiteit komt niet overeen tussen de pakketonderdelen")
+    if len(adressen) > 1:
+        raise IntakeError("Adresidentiteit komt niet overeen tussen de pakketonderdelen")
+    if not bags and not adressen:
+        raise IntakeError("Pakketidentiteit mist BAG-id of postcode + huisnummer")
+    # Het manifest is de koppelpin. Een bron met alleen een BAG-id kan niet veilig aan een
+    # manifest met alleen een adres worden gekoppeld (of andersom), ook als er geen conflict is.
+    manifest = items[0][1]
+    m_bag, m_adres = _norm(manifest["bag_vboid"]), _adres_sleutel(manifest)
+    for naam, ident in items[1:]:
+        bag, adres = _norm(ident["bag_vboid"]), _adres_sleutel(ident)
+        if (bag or adres) and not ((bag and m_bag) or (adres and m_adres)):
+            raise IntakeError("Identiteit van %s is niet verifieerbaar tegen het manifest" % naam)
+    return items
+
+
+def _valideer_geometry(geo, verdiepingen, project_id):
+    if not isinstance(geo, dict) or geo.get("schema") != GEOMETRY_SCHEMA:
+        raise IntakeError("geometry.json heeft een onbekend schema")
+    if not isinstance(geo.get("project_id"), str) or geo["project_id"] != project_id:
+        raise IntakeError("Geometrie en manifest hebben een verschillend project-id")
+    contouren = geo.get("floor_contours")
+    if not isinstance(contouren, dict):
+        raise IntakeError("geometry.floor_contours moet een object zijn")
+    bekend = {v.naam for v in verdiepingen}
+    for naam, poly in contouren.items():
+        if not isinstance(naam, str) or naam not in bekend:
+            raise IntakeError("Geometrie verwijst naar een onbekende verdieping")
+        if not isinstance(poly, list) or len(poly) < 3:
+            raise IntakeError("Een grondvlakcontour moet minimaal drie punten hebben")
+        schoon = []
+        for punt in poly:
+            if (not isinstance(punt, list) or len(punt) != 2
+                    or any(isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x)
+                           for x in punt)):
+                raise IntakeError("Grondvlakcoördinaten moeten eindige getallenparen zijn")
+            schoon.append([float(punt[0]), float(punt[1])])
+        area2 = abs(sum(schoon[i][0] * schoon[(i + 1) % len(schoon)][1]
+                        - schoon[(i + 1) % len(schoon)][0] * schoon[i][1]
+                        for i in range(len(schoon))))
+        if area2 <= 1e-9:
+            raise IntakeError("Grondvlakcontour heeft geen oppervlakte")
+        contouren[naam] = schoon
+    return contouren
+
+
 def _lees_pakket(pad, werkmap):
+    with open(pad, "rb") as f:
+        if f.read(4)[:2] != b"PK":
+            raise IntakeError("Bestand is geen ZIP-importpakket")
     with zipfile.ZipFile(pad) as zf:
         namen = _veilig_leden(zf)
         ontbreekt = VERPLICHT - namen
-        if ontbreekt or not ({"report.txt", "report.pdf"} & namen):
+        reports = {"report.txt", "report.pdf"} & namen
+        if ontbreekt or len(reports) != 1:
             raise IntakeError("Importpakket mist: %s" % ", ".join(sorted(ontbreekt or {"report.txt of report.pdf"})))
-        manifest = json.loads(zf.read("manifest.json").decode("utf-8"))
+        try:
+            manifest = json.loads(zf.read("manifest.json").decode("utf-8"))
+        except (UnicodeError, json.JSONDecodeError):
+            raise IntakeError("manifest.json is geen geldige UTF-8 JSON")
+        if not isinstance(manifest, dict) or manifest.get("schema") != MANIFEST_SCHEMA:
+            raise IntakeError("manifest.json heeft een onbekend schema")
+        if not isinstance(manifest.get("identity"), dict):
+            raise IntakeError("manifest.identity moet een object zijn")
         for naam, verwacht in (manifest.get("sha256") or {}).items():
-            if naam not in namen or _sha256(zf.read(naam)) != verwacht:
+            if (not isinstance(naam, str) or not isinstance(verwacht, str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", verwacht)
+                    or naam not in namen or _sha256(zf.read(naam)) != verwacht):
                 raise IntakeError("Bestandscontrole mislukt voor %s" % naam)
         os.makedirs(werkmap, exist_ok=True)
         csv_pad = os.path.join(werkmap, "statistics.csv")
         geo_pad = os.path.join(werkmap, "geometry.json")
-        with open(csv_pad, "wb") as f: f.write(zf.read("statistics.csv"))
-        with open(geo_pad, "wb") as f: f.write(zf.read("geometry.json"))
+        csv_data = zf.read("statistics.csv")
+        geo_data = zf.read("geometry.json")
+        try:
+            csv_text = csv_data.decode("utf-8-sig")
+            json.loads(geo_data.decode("utf-8"))
+        except (UnicodeError, json.JSONDecodeError):
+            raise IntakeError("Statistics of geometrie heeft niet het verwachte bestandstype")
+        if "PLAN ATTRIBUTES" not in csv_text or "FLOOR ATTRIBUTES" not in csv_text:
+            raise IntakeError("statistics.csv is geen MagicPlan Statistics-export")
+        with open(csv_pad, "wb") as f: f.write(csv_data)
+        with open(geo_pad, "wb") as f: f.write(geo_data)
         if "report.txt" in namen:
-            antwoorden, _ = parse_text(zf.read("report.txt").decode("utf-8"))
+            try:
+                antwoorden, _ = parse_text(zf.read("report.txt").decode("utf-8"))
+            except UnicodeError:
+                raise IntakeError("report.txt is geen UTF-8 tekstbestand")
         else:
+            if not zf.read("report.pdf").startswith(b"%PDF-"):
+                raise IntakeError("report.pdf is geen PDF-bestand")
             rp = os.path.join(werkmap, "report.pdf")
             with open(rp, "wb") as f: f.write(zf.read("report.pdf"))
             antwoorden, _ = parse_report_pdf(rp)
@@ -94,7 +198,8 @@ def _lees_pakket(pad, werkmap):
 
 def bouw_preview(pakket_pad, huidig, werkmap, verwacht_project_id=""):
     manifest, csv_pad, geo_pad, rapport = _lees_pakket(pakket_pad, werkmap)
-    if not str(manifest.get("project_id") or "").strip():
+    if (not isinstance(manifest.get("project_id"), str)
+            or not re.fullmatch(r"[A-Za-z0-9._-]{1,200}", manifest["project_id"])):
         raise IntakeError("manifest.json mist project_id")
     if verwacht_project_id and str(manifest["project_id"]) != str(verwacht_project_id):
         raise IntakeError("MagicPlan-project-id wijkt af: pakket %s, dossier %s" %
@@ -103,41 +208,27 @@ def bouw_preview(pakket_pad, huidig, werkmap, verwacht_project_id=""):
     if fp != snapshot_fingerprint():
         raise IntakeError("Formulierfingerprint wijkt af: pakket %s, verwacht %s" % (fp or "leeg", snapshot_fingerprint()))
     mi = manifest.get("identity") or {}
-    sleutel = identiteit_sleutel(mi)
-    if not sleutel:
-        raise IntakeError("Pakketidentiteit mist BAG-id of postcode + huisnummer")
+    stats_dos, _ = build_dossier(csv_pad)
+    rapport_i = {"bag_vboid": rapport.get("bag_vboid", ""), "postcode": rapport.get("postcode", ""),
+                 "huisnummer": rapport.get("huisnummer", ""), "straat": "", "plaats": ""}
+    valideer_identiteiten((("manifest", mi), ("Statistics", stats_dos), ("rapport", rapport_i),
+                           ("huidig dossier", huidig)))
     nieuw, notes = build_dossier(csv_pad, straat=mi.get("straat", ""), huisnummer=mi.get("huisnummer", ""),
                                  postcode=mi.get("postcode", ""), plaats=mi.get("plaats", ""),
                                  woningtype=mi.get("woningtype", ""))
-    if identiteit_sleutel(nieuw) != sleutel:
-        raise IntakeError("Statistics en manifest horen niet bij dezelfde woning")
-    rapp_sleutel = identiteit_sleutel({"bag_vboid": rapport.get("bag_vboid", ""),
-                                      "postcode": rapport.get("postcode", ""),
-                                      "huisnummer": rapport.get("huisnummer", "")})
-    if rapp_sleutel and rapp_sleutel != sleutel:
-        raise IntakeError("Rapport en manifest horen niet bij dezelfde woning")
-    bestaand = identiteit_sleutel(huidig)
-    if bestaand and bestaand != sleutel:
-        raise IntakeError("Dit pakket hoort bij %s, het dossier bij %s" % (sleutel, bestaand))
+    # Statistics is inhoudelijk leidend; alleen ontbrekende identiteit komt uit het gecontroleerde manifest.
+    for attr in ("bag_vboid", "postcode", "huisnummer", "straat", "plaats", "woningtype"):
+        if not getattr(nieuw.identificatie, attr, "") and mi.get(attr):
+            setattr(nieuw.identificatie, attr, mi[attr])
     with open(geo_pad, encoding="utf-8") as f:
         geo = json.load(f)
-    if str(geo.get("project_id") or "") != str(manifest["project_id"]):
-        raise IntakeError("Geometrie en manifest hebben een verschillend project-id")
-    contouren = geo.get("floor_contours") or {}
+    contouren = _valideer_geometry(geo, nieuw.geometrie.vloeren, manifest["project_id"])
     for vloer in nieuw.geometrie.vloeren:
         if vloer.naam in contouren:
             vloer.contour_m = contouren[vloer.naam]
     nieuw.meta.magicplan_form_fingerprint = fp
     acties = groepeer_acties(nieuw, notes)
-    oud_ids = {s.id for s in huidig.schil}
-    nieuw_ids = {s.id for s in nieuw.schil}
-    diff = {
-        "identiteit": {"voor": _identiteit(huidig), "na": _identiteit(nieuw)},
-        "schil": {"voor": len(huidig.schil), "na": len(nieuw.schil),
-                  "toegevoegd": sorted(nieuw_ids - oud_ids), "verwijderd": sorted(oud_ids - nieuw_ids)},
-        "installaties": "vervangen uit Statistics",
-        "behoud": dict(BEHOUD_BELEID),
-    }
+    diff = maak_diff(huidig, nieuw)
     with open(pakket_pad, "rb") as f:
         pakket_hash = _sha256(f.read())
     return {"manifest": manifest, "nieuw": nieuw, "notes": notes, "acties": acties,
@@ -181,3 +272,33 @@ def merge(huidig, nieuw):
     uit.berekening = copy.deepcopy(huidig.berekening)
     uit.adviseur = copy.deepcopy(huidig.adviseur)
     return uit
+
+
+def _installatie_count(dos):
+    i = dos.installaties
+    return (int(bool(i.verwarming.type_opwekker or i.verwarming.systeem))
+            + len(i.verwarming_extra) + int(bool(i.tapwater.type_toestel or i.tapwater.type_installatie))
+            + len(i.tapwater_extra) + int(bool(i.koeling.aanwezig)) + len(i.koeling_extra)
+            + len(i.zonne_energie) + int(bool(dos.ventilatie.systeem)))
+
+
+def maak_diff(huidig, nieuw):
+    """Diff van de daadwerkelijke merge-uitkomst, niet van de ruwe import."""
+    na = merge(huidig, nieuw)
+    oud_ids, nieuw_ids = {s.id for s in huidig.schil}, {s.id for s in na.schil}
+    wizard_voor = sum(s.bron == "webapp-wizard" for s in huidig.schil)
+    wizard_na = sum(s.bron == "webapp-wizard" for s in na.schil)
+    return {
+        "identiteit": {"beleid": "vervangen na identiteitscontrole",
+                       "voor": _identiteit(huidig), "na": _identiteit(na)},
+        "schil": {"beleid": "vervangen; handmatige daken/dakkapellen behouden",
+                  "voor": len(huidig.schil), "import": len(nieuw.schil), "na": len(na.schil),
+                  "wizard_voor": wizard_voor, "wizard_na": wizard_na,
+                  "toegevoegd": sorted(nieuw_ids - oud_ids), "verwijderd": sorted(oud_ids - nieuw_ids)},
+        "installaties": {"beleid": "vervangen uit Statistics", "voor": _installatie_count(huidig),
+                         "na": _installatie_count(na)},
+        "fotos": {"beleid": "behouden", "voor": len(huidig.fotos), "na": len(na.fotos)},
+        "maatregelen": {"beleid": "behouden", "voor": len(huidig.maatregelen), "na": len(na.maatregelen)},
+        "vabi_resultaten": {"beleid": "behouden", "voor": dataclasses.asdict(huidig.berekening),
+                            "na": dataclasses.asdict(na.berekening)},
+    }

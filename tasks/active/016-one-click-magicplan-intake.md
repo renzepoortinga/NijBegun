@@ -42,6 +42,16 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
   gedocumenteerd; geen live API-call en geen dependency toegevoegd. Ketensuite 854/854 groen.
   Eerste blocking verify-run raakte één niet-reproduceerbare bestaande webapptest; directe losse
   herhaling en de volledige blocking herhaling waren groen (`VERIFY PASS`). Wacht op onafhankelijke review.
+- 2026-08-21 Codex Builder: review-FAIL volledig verwerkt. Identiteit controleert BAG én adres
+  coherent over manifest/Statistics/rapport/huidig dossier en weigert onbewezen BAG-only ↔ adres-only
+  koppelingen. Fixed staging vervangen door unieke cryptografische previewtokens, eigen directories,
+  atomisch gepubliceerde metadata en one-time confirm met hashes van pakket/staged dossier/basisrevisie
+  plus basisidentiteit. Alle paden ruimen op zonder raw fouttekst; parallelle confirms wissen elkaars
+  staging niet. Diff komt nu uit de daadwerkelijke merge en toont echte behoud-/vervangaantallen.
+  ZIP-, MIME-, schema- en geometrievalidatie aangescherpt. Adversariële offline regressies toegevoegd
+  voor BAG, adres, traversal, duplicaten, ziplimiet, polygonen, tamper/TOCTOU, concurrency, cleanup,
+  authenticatie en CSRF. Blocking `verify.sh`: PASS met 875/875 checks. Geen live calls of
+  dependencies; wacht op herreview.
 
 ## Notes
 Afhankelijk van dakmigratie en een stabiel mappingmanifest.

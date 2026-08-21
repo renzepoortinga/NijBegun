@@ -5300,8 +5300,9 @@ except Exception as _e:
 
 print("\n68. Veilige one-click MagicPlan-intake (taak 016)")
 try:
-    import copy as _copy16, hashlib as _hash16, tempfile as _temp16, zipfile as _zip16
-    from magicplan.intake import bouw_preview as _bp16, merge as _merge16, IntakeError as _IE16
+    import copy as _copy16, hashlib as _hash16, tempfile as _temp16, zipfile as _zip16, io as _io16
+    from magicplan.intake import (bouw_preview as _bp16, merge as _merge16, IntakeError as _IE16,
+                                 _veilig_leden as _vl16)
     from magicplan.form_fingerprint import snapshot_fingerprint as _sfp16
     from core.dossier import Dossier as _D16, SchilDeel as _S16, Foto as _F16, Maatregel as _M16
     _root16 = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -5349,6 +5350,171 @@ try:
         except _IE16:
             _pidblok16 = True
         check("intake identiteit: project-id kan bij herimport niet stil wisselen", _pidblok16)
+
+        # BAG en adres zijn twee gelijktijdige coherentiechecks; BAG mag een fout adres niet maskeren.
+        _bagman16 = _copy16.deepcopy(_man16); _bagman16["identity"]["bag_vboid"] = "0037010000000007"
+        _bagzip16 = os.path.join(_td16, "bag.zip")
+        with _zip16.ZipFile(_bagzip16, "w") as _z16:
+            _z16.writestr("manifest.json", json.dumps(_bagman16)); _z16.write(os.path.join(_root16, "statistics_voorbeeld.csv"), "statistics.csv")
+            _z16.write(os.path.join(_ref16, "report.txt"), "report.txt"); _z16.write(os.path.join(_ref16, "geometry.json"), "geometry.json")
+        _bagoud16 = _copy16.deepcopy(_oud16); _bagoud16.identificatie.bag_vboid = "0037010000000007"
+        _bagp16 = _bp16(_bagzip16, _bagoud16, os.path.join(_td16, "bagstage"))
+        check("intake BAG: coherent BAG-id wordt in importdossier bewaard",
+              _bagp16["nieuw"].identificatie.bag_vboid == "0037010000000007")
+        _bagfout16 = _copy16.deepcopy(_bagoud16); _bagfout16.identificatie.bag_vboid = "0037010000000099"
+        try: _bp16(_bagzip16, _bagfout16, os.path.join(_td16, "bagstage2")); _bagblok16 = False
+        except _IE16: _bagblok16 = True
+        check("intake BAG: afwijkend BAG-id wordt geblokkeerd", _bagblok16)
+        _adresfout16 = _copy16.deepcopy(_bagoud16); _adresfout16.identificatie.huisnummer = "8"
+        try: _bp16(_bagzip16, _adresfout16, os.path.join(_td16, "bagstage3")); _adresblok16 = False
+        except _IE16: _adresblok16 = True
+        check("intake BAG: gelijk BAG-id maskeert geen afwijkend adres", _adresblok16)
+        _onbewijs16 = _copy16.deepcopy(_bagman16); _onbewijs16["identity"]["postcode"] = ""; _onbewijs16["identity"]["huisnummer"] = ""
+        _onbzip16 = os.path.join(_td16, "onbewijsbaar.zip")
+        with _zip16.ZipFile(_onbzip16, "w") as _z16:
+            _z16.writestr("manifest.json", json.dumps(_onbewijs16)); _z16.write(os.path.join(_root16, "statistics_voorbeeld.csv"), "statistics.csv")
+            _z16.write(os.path.join(_ref16, "report.txt"), "report.txt"); _z16.write(os.path.join(_ref16, "geometry.json"), "geometry.json")
+        try: _bp16(_onbzip16, _D16(), os.path.join(_td16, "onbstage")); _onbblok16 = False
+        except _IE16: _onbblok16 = True
+        check("intake identiteit: BAG-only manifest koppelt niet onbewezen aan adres-only rapport", _onbblok16)
+
+        check("intake diff: schildelen-na is de daadwerkelijke merge-uitkomst",
+              _p16["diff"]["schil"]["na"] == len(_uit16.schil)
+              and _p16["diff"]["schil"]["wizard_na"] == 1)
+        check("intake diff: behoudgroepen tonen echte voor/na-aantallen",
+              _p16["diff"]["fotos"] == {"beleid": "behouden", "voor": 1, "na": 1}
+              and _p16["diff"]["maatregelen"]["na"] == 1
+              and _p16["diff"]["vabi_resultaten"]["na"]["label_huidig"] == "C")
+
+        def _pakket16(pad, geo=None, csv_data=None, extra=None):
+            with _zip16.ZipFile(pad, "w") as z:
+                z.writestr("manifest.json", json.dumps(_man16)); z.writestr("statistics.csv", csv_data if csv_data is not None else open(os.path.join(_root16, "statistics_voorbeeld.csv"), "rb").read())
+                z.writestr("report.txt", open(os.path.join(_ref16, "report.txt"), "rb").read())
+                z.writestr("geometry.json", json.dumps(geo if geo is not None else json.load(open(os.path.join(_ref16, "geometry.json"), encoding="utf-8"))))
+                for naam, data in extra or (): z.writestr(naam, data)
+        _basegeo16 = json.load(open(os.path.join(_ref16, "geometry.json"), encoding="utf-8"))
+        _geo_cases16 = [
+            dict(_basegeo16, schema="fout/1"),
+            dict(_basegeo16, floor_contours={"Onbekend": [[0,0],[1,0],[0,1]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1,1],[2,2]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[float("nan"),1],[0,1]]}),
+        ]
+        _geoblok16 = True
+        for _ix16, _geo16 in enumerate(_geo_cases16):
+            _gz16 = os.path.join(_td16, "geo%d.zip" % _ix16); _pakket16(_gz16, _geo16)
+            try: _bp16(_gz16, _oud16, os.path.join(_td16, "gs%d" % _ix16)); _geoblok16 = False
+            except _IE16: pass
+        check("intake geometrie: schema, verdieping, vorm en eindigheid zijn strict", _geoblok16)
+        _dup16 = os.path.join(_td16, "dup.zip"); _pakket16(_dup16, extra=[("geometry.json", b"{}")])
+        try: _bp16(_dup16, _oud16, os.path.join(_td16, "dupstage")); _dupblok16 = False
+        except _IE16: _dupblok16 = True
+        check("intake ZIP: dubbele namen worden geweigerd", _dupblok16)
+        _trav16 = os.path.join(_td16, "trav.zip"); _pakket16(_trav16, extra=[("../uitbraak", b"x")])
+        try: _bp16(_trav16, _oud16, os.path.join(_td16, "travstage")); _travblok16 = False
+        except _IE16: _travblok16 = True
+        check("intake ZIP: traversal wordt geweigerd", _travblok16)
+        class _Info16:
+            is_dir = lambda self: False
+            def __init__(self, n, s): self.filename, self.file_size = n, s
+        class _FakeZip16:
+            def infolist(self): return [_Info16("a", 60*1024*1024), _Info16("b", 41*1024*1024)]
+        try: _vl16(_FakeZip16()); _sizeblok16 = False
+        except _IE16: _sizeblok16 = True
+        check("intake ZIP: gedecomprimeerde limiet is blocking", _sizeblok16)
+        _mime16 = os.path.join(_td16, "mime.zip"); _pakket16(_mime16, csv_data=b"geen csv")
+        try: _bp16(_mime16, _oud16, os.path.join(_td16, "mimestage")); _mimeblok16 = False
+        except _IE16: _mimeblok16 = True
+        check("intake bestandstype: fout Statistics-type wordt geweigerd", _mimeblok16)
+        _schemaman16 = _copy16.deepcopy(_man16); _schemaman16["schema"] = "onbekend/9"
+        _schemazip16 = os.path.join(_td16, "schema.zip")
+        with _zip16.ZipFile(_schemazip16, "w") as _z16:
+            _z16.writestr("manifest.json", json.dumps(_schemaman16)); _z16.write(os.path.join(_root16, "statistics_voorbeeld.csv"), "statistics.csv")
+            _z16.write(os.path.join(_ref16, "report.txt"), "report.txt"); _z16.write(os.path.join(_ref16, "geometry.json"), "geometry.json")
+        try: _bp16(_schemazip16, _oud16, os.path.join(_td16, "schemastage")); _schemablok16 = False
+        except _IE16: _schemablok16 = True
+        check("intake schema: onbekend manifestschema wordt geweigerd", _schemablok16)
+
+        # Dashboardstaging: twee previews naast elkaar, opaque tokens, one-time confirm en TOCTOU-cleanup.
+        import dashboard.app as _app16, re as _re16
+        _orig_projects16 = _app16.PROJECTS_DIR
+        _app16.PROJECTS_DIR = os.path.join(_td16, "projects")
+        try:
+            _client16 = _app16.app.test_client()
+            with _client16.session_transaction() as _sess16: _sess16["ingelogd"] = True
+            _nieuwr16 = _client16.post("/nieuw", data={"straat": "Referentiestraat 7", "postcode": "9503HN",
+                                                       "plaats": "Stadskanaal", "woningtype": "Vrijstaand"})
+            _tag16 = _nieuwr16.headers["Location"].rstrip("/").split("/")[-2]
+            _zipbytes16 = open(_zip_pad16, "rb").read()
+            def _preview_route16():
+                return _client16.post("/project/%s/opname/intake/preview" % _tag16,
+                    data={"pakket": (_io16.BytesIO(_zipbytes16), "intake.zip")}, content_type="multipart/form-data")
+            _pr116, _pr216 = _preview_route16(), _preview_route16()
+            _tok1m16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr116.get_data(as_text=True))
+            _tok2m16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr216.get_data(as_text=True))
+            _tok116, _tok216 = _tok1m16.group(1), _tok2m16.group(1)
+            _stage1_16 = _app16._intake_stage_dir(_tag16, _tok116); _stage2_16 = _app16._intake_stage_dir(_tag16, _tok216)
+            check("intake staging: parallelle previews hebben opaque unieke directories",
+                  _tok116 != _tok216 and len(_tok116) >= 20 and os.path.isfile(os.path.join(_stage1_16, "metadata.json"))
+                  and os.path.isfile(os.path.join(_stage2_16, "metadata.json")))
+            _client16.post("/project/%s/opname/intake/annuleer" % _tag16, data={"token": _tok116})
+            check("intake cleanup: annuleren wist alleen de eigen staging",
+                  not os.path.exists(_stage1_16) and os.path.exists(_stage2_16))
+            _conf16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16, data={"token": _tok216})
+            _replay16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16,
+                                       data={"token": _tok216}, follow_redirects=True)
+            check("intake confirm: token is one-time en succes ruimt staging op",
+                  _conf16.status_code in (302, 303) and not os.path.exists(_stage2_16)
+                  and b"verlopen" in _replay16.get_data())
+
+            _pr3_16 = _preview_route16(); _tok3_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr3_16.get_data(as_text=True)).group(1)
+            _stage3_16 = _app16._intake_stage_dir(_tag16, _tok3_16)
+            _st16 = _app16._load_state(_tag16); _dos16 = _app16._dossier(_tag16)
+            _dos16.identificatie.straat = "Gewijzigd na preview"
+            from core.dossier import save_json as _save16
+            _save16(_dos16, os.path.join(_app16._pdir(_tag16), _st16["dossier_file"]))
+            _toc16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16, data={"token": _tok3_16}, follow_redirects=True)
+            check("intake TOCTOU: gewijzigde basisrevisie blokkeert en ruimt staging op",
+                  b"sinds de controle gewijzigd" in _toc16.data and not os.path.exists(_stage3_16))
+
+            _pr4_16 = _preview_route16(); _tok4_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr4_16.get_data(as_text=True)).group(1)
+            _stage4_16 = _app16._intake_stage_dir(_tag16, _tok4_16)
+            with open(os.path.join(_stage4_16, "pakket.zip"), "ab") as _tf16: _tf16.write(b"tamper")
+            _tamperp16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16,
+                                        data={"token": _tok4_16}, follow_redirects=True)
+            _pr5_16 = _preview_route16(); _tok5_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr5_16.get_data(as_text=True)).group(1)
+            _stage5_16 = _app16._intake_stage_dir(_tag16, _tok5_16)
+            with open(os.path.join(_stage5_16, "dossier.json"), "ab") as _tf16: _tf16.write(b" ")
+            _tamperd16 = _client16.post("/project/%s/opname/intake/bevestig" % _tag16,
+                                        data={"token": _tok5_16}, follow_redirects=True)
+            check("intake hashes: pakket- en staged-dossiertamper blokkeren en ruimen op",
+                  b"sinds de controle gewijzigd" in _tamperp16.data and not os.path.exists(_stage4_16)
+                  and b"sinds de controle gewijzigd" in _tamperd16.data and not os.path.exists(_stage5_16))
+
+            _pr6_16 = _preview_route16(); _tok6_16 = _re16.search(r'name=token value="([A-Za-z0-9_-]+)"', _pr6_16.get_data(as_text=True)).group(1)
+            _stage6_16 = _app16._intake_stage_dir(_tag16, _tok6_16)
+            os.replace(os.path.join(_stage6_16, "metadata.json"), os.path.join(_stage6_16, "metadata.consuming"))
+            _client16.post("/project/%s/opname/intake/bevestig" % _tag16, data={"token": _tok6_16})
+            check("intake concurrency: verliezende confirm wist staging van winnaar niet", os.path.exists(_stage6_16))
+            _app16._intake_cleanup(_stage6_16)
+
+            _anon16 = _app16.app.test_client().post("/project/%s/opname/intake/preview" % _tag16)
+            _csrf16 = _client16.post("/project/%s/opname/intake/preview" % _tag16,
+                                     headers={"Origin": "https://aanvaller.invalid"})
+            check("intake routes: authenticatie en origin-CSRF blijven verplicht",
+                  _anon16.status_code in (302, 303) and _csrf16.status_code == 403)
+            _bad16 = _client16.post("/project/%s/opname/intake/preview" % _tag16,
+                data={"pakket": (_io16.BytesIO(b"PK kapot"), "intake.zip")}, content_type="multipart/form-data",
+                follow_redirects=True)
+            check("intake fouten: gebruiker ziet geen raw exceptiontekst en staging lekt niet",
+                  b"BadZipFile" not in _bad16.data and b"Importpakket geweigerd." in _bad16.data
+                  and not [x for x in os.listdir(os.path.join(_app16._pdir(_tag16), ".intake"))
+                           if os.path.isdir(os.path.join(_app16._pdir(_tag16), ".intake", x))])
+            _ext16 = _client16.post("/project/%s/opname/intake/preview" % _tag16,
+                data={"pakket": (_io16.BytesIO(_zipbytes16), "intake.txt")}, content_type="multipart/form-data",
+                follow_redirects=True)
+            check("intake route: verkeerde extensie wordt geweigerd", b"MagicPlan-importpakket (.zip)" in _ext16.data)
+        finally:
+            _app16.PROJECTS_DIR = _orig_projects16
 except Exception as _e:
     check("one-click intake: draait zonder fout", False); print("     " + repr(_e)[:300])
 
