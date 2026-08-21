@@ -1,0 +1,38 @@
+{
+  "data": [
+    {
+      "id": "V5-1-A1",
+      "type": "measure",
+      "attributes": {
+        "name": "Schouw op locatie",
+        "unit": "pst",
+        "category": {
+          "id": "V5",
+          "type": "category",
+          "attributes": {"name": "Ventilatie"}
+        },
+        "subcategory": {
+          "id": "V5-1",
+          "type": "subcategory",
+          "attributes": {
+            "name": "Mechanische ventilatie",
+            "categoryCode": "V5"
+          }
+        },
+        "regularCosts": [
+          {
+            "id": "B5-1-A1",
+            "type": "cost",
+            "attributes": {
+              "contractorValuePerUnit": 0.0,
+              "minUnits": 0,
+              "maxUnits": null,
+              "unit": "pst"
+            }
+          }
+        ],
+        "additionalCosts": []
+      }
+    }
+  ]
+}

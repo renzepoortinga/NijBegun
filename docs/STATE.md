@@ -46,6 +46,14 @@ dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gerev
 formulier-snapshotcontract. Optie-, label- en overige snapshotdrift maken CI luid rood.
 Alle importpaden bewaren fingerprint/importmetadata; onafhankelijke herreview PASS, 845/845 groen.
 
+Taak 024 (maatregelencatalogus uit de publieke Nij Begun API) is afgerond. De actuele live import
+bevat 291 regels en is herleidbaar via fingerprint
+`sha256:696d5894e3f8491c33892c16094e4fc5b847c23105b414b2a372942015e44951`. Voor het dubbele
+API-codegebruik van `V1-2-X3` is na expliciet eigenaarsbesluit uitsluitend de rolsteiger
+(EUR 250,43/st) behouden; vier exact bekende hoogwerkervoorkomens (EUR 569,25/wk) zijn zichtbaar
+als gecontroleerde bronoverride genegeerd. Overige conflicten blijven fail-closed. Verschilrapport,
+blocking verify en onafhankelijke review: PASS; taak staat in `tasks/done/`.
+
 Taak 017 (atomische Vabi-exportset) is afgerond: writers publiceren eerst een gevalideerde,
 immutable set en maken die zichtbaar via één atomische `CURRENT.json`-wissel. Fouten behouden
 de vorige geldige set; dashboarddownloads en projectexport volgen CURRENT met legacyfallback.
