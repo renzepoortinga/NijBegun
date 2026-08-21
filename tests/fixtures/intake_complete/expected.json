@@ -1,0 +1,25 @@
+{
+  "resttaken": {
+    "identiteit": ["BAG-verblijfsobject-id controleren en invullen."],
+    "schil": [
+      "GEBOUWHOOGTE ONTBREEKT: vul het veld 'Gebouwhoogte tot de nok (m)' in het MagicPlan-Object-form in (handmatige invoer). In Vabi komt nu 0 te staan.",
+      "Ag = 40.00 m² (som gemeten verdiepingen). MagicPlans eigen 'woonoppervlak' was 80.00 m² (kamertype-heuristiek, niet gebruikt) — check bij groot verschil of alle ruimtes in de rekenzone horen.",
+      "Gevel mogelijk ONVOLLEDIG: 2 buitenmuren getagd = 20 m² bruto, maar verwacht ≈ 50 m² (omtrek×hoogte×1.00 voor Vrijstaand). Controleer of álle buitenmuren een oriëntatie hebben (woningscheidende wand: géén oriëntatie).",
+      "Vloer-perimeter: som van de getikte begane-grond gevelbreedtes (8.0 m) lijkt ONVOLLEDIG (verwacht ~25 m) -> MagicPlan-buitenomtrek 20.0 m gebruikt. Tik álle buitengevels op de begane grond voor een automatische perimeter.",
+      "Gevel NO (?): Ground Floor 4.00x2.50 = 10.00 m² BRUTO (breedte x verdiepingshoogte; ramen/deuren = deelvlak in Vabi).",
+      "Gevel ZW (?): Ground Floor 4.00x2.50 = 10.00 m² BRUTO (breedte x verdiepingshoogte; ramen/deuren = deelvlak in Vabi).",
+      "GEVEL-m² = 20.0 m² BRUTO (breedte x verdiepingshoogte per bouwlaag; ramen/deuren = deelvlakken in Vabi). Loop de opbouw-note per gevel na op te brede verdiepingen (= dubbel getikt).",
+      "qv10 1.25 staat ingevuld maar 'Qv10 gemeten?'=Nee (ISSO 7.1.5: alleen meenemen als GEMETEN met blowerdoor; anders rekent VABI forfaitair op bouwjaar/renovatiejaar)."
+    ],
+    "dak": [
+      "Dakgeometrie in de webapp-wizard vastleggen en controleren.",
+      "Dak-ISOLATIE uit de Constructies-form gelezen (isolatie Ja) — elk dakvlak dat je in de webapp toevoegt erft dit; de AFMETINGEN voer je in de webapp-dakwizard in.",
+      "Dak 1 (zadel): hellingshoek (of nok/breedte) en/of oriëntatie ontbreekt -> vul aan; dak overgeslagen.",
+      "Dak: geen hellingshoek/dakvlakken in de opname -> footprint-fallback. Voeg dak-velden toe (Dak vloerbreedte/nokhoogte/knieschothoogte of Hellingshoek dak + oriëntaties schuine zijden).",
+      "DAK-m² = 40.0 m² (afgeleid: footprint / cos(helling)). Hangt volledig aan de ingevoerde hellingshoek en footprint — controleer beide en het dak-m² in Vabi."
+    ],
+    "installaties": [],
+    "bewijs": ["Bewijsfoto's en eventuele kwaliteitsverklaringen toevoegen."]
+  },
+  "dakcontrole": "Dakgeometrie in de webapp-wizard vastleggen en controleren."
+}

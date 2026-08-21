@@ -13,7 +13,7 @@ Draaien:
 Gouden regel: de tool rekent NTA 8800 nooit zelf — Vabi EPA-W bevestigt de Standaard. De webapp blijft
 lokaal (AVG) en is de handmatige adviseur-route.
 """
-import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading, shutil
+import os, sys, json, glob, io, zipfile, datetime, functools, secrets, copy, re, math, threading, shutil, contextlib
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, TOOL_DIR)
 from flask import (Flask, request, session, redirect, url_for, send_from_directory,  # noqa: E402
@@ -397,12 +397,17 @@ TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟", "pa
 
 OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <p class=lead>Alle opnamegegevens, bewerkbaar. Laad je MagicPlan-opname in of vul handmatig aan — <b>Vabi blijft de rekenkern</b>.</p>
-<div class=card><h2>① MagicPlan-opname inladen</h2>
-<p class=muted>Upload de MagicPlan <b>Statistics-CSV</b> (of een eerder dossier .json). De gebouwboom, installaties en gegevens hieronder worden gevuld; je kunt daarna alles nalopen.</p>
+<div class=card><h2>① MagicPlan-opname inladen — pakket controleren</h2>
+<p class=muted>Upload één pakket met projectidentiteit, Statistics, rapport en geometrie. Er verandert niets voordat je de preview bevestigt.</p>
+<form method=post action="{{url_for('opname_intake_preview', tag=tag)}}" enctype=multipart/form-data>
+<div class=file-drop>MagicPlan-importpakket (.zip)<br><input type=file name=pakket accept=".zip" required></div>
+<div class=btn-row><button class=btn>Preview en verschillen tonen</button></div></form>
+<details class=acc><summary>Losse legacy-import</summary><div class=acc-body>
+<p class=muted>Alleen voor bestaande exports zonder importpakket. Deze route heeft geen pakketbrede identiteitscontrole.</p>
 <form method=post action="{{url_for('opname_magicplan', tag=tag)}}" enctype=multipart/form-data>
 <div class=file-drop>Sleep hier de MagicPlan-CSV of dossier (.csv / .json)<br><input type=file name=bestand accept=".csv,.json"></div>
 <div class=btn-row><button class=btn>Inladen in de opname</button>
-<span class="muted small">Al ingeladen? Loop de gegevens hieronder na en pas aan waar nodig.</span></div></form></div>
+<span class="muted small">Loop de gegevens daarna volledig na.</span></div></form></div></details></div>
 {% if st.import_historie %}<div class=card><h2>🕓 Import-historie</h2>
 <p class="muted small">Elke MagicPlan-import met datum/tijd — zo zie je (ook vanaf een ander device) of dit de meest recente opname is.</p>
 <div class=table-wrap><table><thead><tr><th>Wanneer</th><th>Bestand</th><th>Vlakken</th></tr></thead><tbody>
@@ -1354,6 +1359,225 @@ def opname(tag):
                 begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
                 koz_opts=KOZ_OPTS, bouwjaarklasse_opts=BOUWJAARKLASSE_OPTS, rc_bron_opts=RC_BRON_OPTS,
                 ico=TYPE_ICO, gebouw_svg=gebouw_overzicht_svg)
+
+
+INTAKE_PREVIEW = """{{stepper|safe}}<h1>MagicPlan-intake controleren</h1>
+<p class=lead>Controleer de projectkoppeling en de gevolgen. Het dossier is nog niet gewijzigd.</p>
+<div class=card><h2>Projectidentiteit</h2>
+<dl class=kv><dt>MagicPlan-project</dt><dd>{{p.manifest.project_id}}</dd>
+<dt>Woning</dt><dd>{{p.manifest.identity.postcode}} {{p.manifest.identity.huisnummer}} · {{p.manifest.identity.straat}}</dd>
+<dt>Formulierfingerprint</dt><dd><code>{{p.manifest.form_fingerprint}}</code></dd></dl></div>
+<div class=card><h2>Verschillen</h2>
+<dl class=kv><dt>Schildelen</dt><dd>{{p.diff.schil.voor}} → {{p.diff.schil.na}} (import: {{p.diff.schil.import}}, wizard: {{p.diff.schil.wizard_voor}} → {{p.diff.schil.wizard_na}})</dd>
+<dt>Toegevoegd</dt><dd>{{p.diff.schil.toegevoegd|join(', ') or 'geen'}}</dd>
+<dt>Vervallen uit import</dt><dd>{{p.diff.schil.verwijderd|join(', ') or 'geen'}}</dd>
+<dt>Installaties</dt><dd>{{p.diff.installaties.voor}} → {{p.diff.installaties.na}} · {{p.diff.installaties.beleid}}</dd>
+<dt>Foto's</dt><dd>{{p.diff.fotos.voor}} → {{p.diff.fotos.na}} · {{p.diff.fotos.beleid}}</dd>
+<dt>Maatregelen</dt><dd>{{p.diff.maatregelen.voor}} → {{p.diff.maatregelen.na}} · {{p.diff.maatregelen.beleid}}</dd>
+<dt>Vabi-resultaten</dt><dd>{{p.diff.vabi_resultaten.beleid}}</dd></dl></div>
+<div class=card><h2>Actiepunten na import</h2>
+{% for groep, items in p.acties.items() %}<h3>{{groep|capitalize}} <span class="pill gray">{{items|length}}</span></h3>
+{% if items %}<ul class=check>{% for item in items %}<li>{{item}}</li>{% endfor %}</ul>{% else %}<p class=muted>Geen open punten.</p>{% endif %}{% endfor %}</div>
+<div class=btn-row><form method=post action="{{url_for('opname_intake_bevestig', tag=tag)}}">
+<input type=hidden name=token value="{{token}}"><button class="btn lg">Import expliciet bevestigen</button></form>
+<form method=post action="{{url_for('opname_intake_annuleer', tag=tag)}}"><input type=hidden name=token value="{{token}}">
+<button class="btn sec">Annuleren en preview verwijderen</button></form></div>"""
+
+
+def _intake_stage_dir(tag, token):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,100}", token or ""):
+        return None
+    return os.path.join(_pdir(tag), ".intake", token)
+
+
+def _bestand_sha256(pad):
+    import hashlib
+    with open(pad, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def _intake_cleanup(stage):
+    if stage:
+        shutil.rmtree(stage, ignore_errors=True)
+
+
+_INTAKE_LOCKS = {}
+_INTAKE_LOCKS_GUARD = threading.Lock()
+_INTAKE_BEFORE_LOCK_HOOK = None                 # uitsluitend injectiepunt voor deterministische tests
+_INTAKE_REPLACE = os.replace                    # idem: fout op tweede atomische publicatie injecteren
+
+
+@contextlib.contextmanager
+def _intake_project_lock(tag):
+    """Serializeer confirm binnen dit proces én tussen dashboardprocessen per project."""
+    lockpad = os.path.join(_pdir(tag), ".intake-confirm.lock")
+    sleutel = os.path.abspath(lockpad)
+    with _INTAKE_LOCKS_GUARD:
+        thread_lock = _INTAKE_LOCKS.setdefault(sleutel, threading.Lock())
+    with thread_lock:
+        os.makedirs(os.path.dirname(lockpad), exist_ok=True)
+        with open(lockpad, "a+b") as fh:
+            if os.path.getsize(lockpad) == 0:
+                fh.write(b"0"); fh.flush()
+            fh.seek(0)
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+                try: yield
+                finally:
+                    fh.seek(0); msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+                try: yield
+                finally: fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+
+
+class _IntakeRevisionError(RuntimeError):
+    pass
+
+
+def _schrijf_json_fsync(pad, data):
+    with open(pad, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2)
+        fh.flush(); os.fsync(fh.fileno())
+
+
+def _intake_atomic_pair(dossier_pad, dossier, state_pad, state, stage):
+    """Publiceer dossier+state als paar; herstel het dossier als state-publicatie faalt."""
+    dossier_next, state_next = os.path.join(stage, "dossier.next"), os.path.join(stage, "state.next")
+    dossier_backup = os.path.join(stage, "dossier.before")
+    with open(dossier_pad, "rb") as bron, open(dossier_backup, "wb") as doel:
+        doel.write(bron.read()); doel.flush(); os.fsync(doel.fileno())
+    _schrijf_json_fsync(dossier_next, dossier.to_dict())
+    _schrijf_json_fsync(state_next, state)
+    dossier_gepubliceerd = False
+    try:
+        _INTAKE_REPLACE(dossier_next, dossier_pad); dossier_gepubliceerd = True
+        _INTAKE_REPLACE(state_next, state_pad)
+    except Exception:
+        if dossier_gepubliceerd:
+            os.replace(dossier_backup, dossier_pad)
+        raise
+
+
+@app.route("/project/<tag>/opname/intake/preview", methods=["POST"])
+@login_required
+def opname_intake_preview(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    f = request.files.get("pakket")
+    if not f or not f.filename or os.path.splitext(f.filename)[1].lower() != ".zip":
+        flash("Kies één MagicPlan-importpakket (.zip).")
+        return redirect(url_for("opname", tag=tag))
+    token = secrets.token_urlsafe(24)
+    stage = _intake_stage_dir(tag, token)
+    pakket = os.path.join(stage, "pakket.zip")
+    os.makedirs(stage, exist_ok=False)
+    try:
+        f.save(pakket)
+        from magicplan.intake import bouw_preview
+        p = bouw_preview(pakket, dos, stage, st.get("magicplan_project_id", ""))
+        # Dashboardfoto's en Vabi-uploads leven deels in projectstate/bestanden, buiten Dossier.
+        # Ze blijven onaangeraakt; neem ze mee in de getoonde werkelijke behoudtelling.
+        foto_count = len(dos.fotos) + sum(bool(st.get(k)) for k in ("foto_voorkant", "foto_huisnummer"))
+        p["diff"]["fotos"].update(voor=foto_count, na=foto_count)
+        p["diff"]["vabi_resultaten"]["project_state"] = {
+            "huidig": bool(st.get("huidig")), "na": bool(st.get("na")), "beleid": "behouden"}
+        staged_dossier = os.path.join(stage, "dossier.json")
+        save_json(p["nieuw"], staged_dossier)
+        basis_dossier = os.path.join(_pdir(tag), st["dossier_file"])
+        publiek = {k: v for k, v in p.items() if k not in ("nieuw", "notes")}
+        meta = {"token": token, "pakket_sha256": _bestand_sha256(pakket),
+                "dossier_sha256": _bestand_sha256(staged_dossier),
+                "basis_sha256": _bestand_sha256(basis_dossier),
+                "basis_identiteit": {"bag_vboid": dos.identificatie.bag_vboid,
+                    "postcode": dos.identificatie.postcode, "huisnummer": dos.identificatie.huisnummer},
+                "preview": publiek}
+        tijdelijk = os.path.join(stage, "metadata.tmp")
+        with open(tijdelijk, "w", encoding="utf-8") as fh:
+            json.dump(meta, fh, ensure_ascii=False, indent=2)
+            fh.flush(); os.fsync(fh.fileno())
+        os.replace(tijdelijk, os.path.join(stage, "metadata.json"))
+    except Exception:
+        app.logger.warning("MagicPlan-importpakket geweigerd", exc_info=True)
+        _intake_cleanup(stage)
+        flash("Importpakket geweigerd. Controleer identiteit, fingerprint en pakketinhoud.")
+        return redirect(url_for("opname", tag=tag))
+    return page(INTAKE_PREVIEW, stepper=stepper("opname", st), tag=tag, p=publiek, token=token)
+
+
+@app.route("/project/<tag>/opname/intake/bevestig", methods=["POST"])
+@login_required
+def opname_intake_bevestig(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    token = request.form.get("token", "")
+    stage = _intake_stage_dir(tag, token)
+    if not st or not dos or not stage:
+        abort(404)
+    metadata = os.path.join(stage, "metadata.json")
+    claim = os.path.join(stage, "metadata.consuming")
+    try:
+        os.replace(metadata, claim)  # atomische one-time claim; een tweede bevestiging verliest.
+    except OSError:
+        # Bij een gelijktijdige bevestiging gebruikt de winnaar metadata.consuming nog; diens
+        # staging mag de verliezer niet opruimen. Een anderszins verweesde stage ruimen we wel op.
+        if not os.path.isfile(claim):
+            _intake_cleanup(stage)
+        flash("De intake-preview is verlopen; upload het pakket opnieuw.")
+        return redirect(url_for("opname", tag=tag))
+    try:
+        with open(claim, encoding="utf-8") as fh: meta = json.load(fh)
+        pakket, dp = os.path.join(stage, "pakket.zip"), os.path.join(stage, "dossier.json")
+        if meta.get("token") != token or meta.get("pakket_sha256") != _bestand_sha256(pakket) \
+                or meta.get("dossier_sha256") != _bestand_sha256(dp):
+            raise ValueError("staging gewijzigd")
+        if _INTAKE_BEFORE_LOCK_HOOK:
+            _INTAKE_BEFORE_LOCK_HOOK()
+        with _intake_project_lock(tag):
+            # CAS: pas NADAT de projectlock vaststaat de actuele pair opnieuw laden en vergelijken.
+            st_nu, dos_nu = _load_state(tag), _dossier(tag)
+            if not st_nu or not dos_nu:
+                raise _IntakeRevisionError("project verdwenen")
+            basis = os.path.join(_pdir(tag), st_nu["dossier_file"])
+            state_pad = os.path.join(_pdir(tag), "project.json")
+            basis_i = {"bag_vboid": dos_nu.identificatie.bag_vboid,
+                       "postcode": dos_nu.identificatie.postcode, "huisnummer": dos_nu.identificatie.huisnummer}
+            if meta.get("basis_sha256") != _bestand_sha256(basis) or meta.get("basis_identiteit") != basis_i:
+                raise _IntakeRevisionError("basisrevisie gewijzigd")
+            from magicplan.intake import merge
+            nieuw = merge(dos_nu, load_json(dp)); p = meta["preview"]
+            st_nieuw = copy.deepcopy(st_nu)
+            st_nieuw["magicplan_project_id"] = p["manifest"]["project_id"]
+            st_nieuw["intake_acties"] = p["acties"]
+            st_nieuw.setdefault("import_historie", []).append({
+                "tijd": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "bestand": "MagicPlan-pakket %s" % p["manifest"]["project_id"], "vlakken": len(nieuw.schil)})
+            st_nieuw["import_historie"] = st_nieuw["import_historie"][-12:]
+            _intake_atomic_pair(basis, nieuw, state_pad, st_nieuw, stage)
+    except _IntakeRevisionError:
+        flash("Import gestopt: dit project is sinds de preview gewijzigd. Maak een nieuwe preview.")
+        return redirect(url_for("opname", tag=tag))
+    except Exception:
+        app.logger.warning("MagicPlan-intakebevestiging gestopt", exc_info=True)
+        flash("Import gestopt: staging of opslag faalde; de vorige projectversie is behouden.")
+        return redirect(url_for("opname", tag=tag))
+    finally:
+        _intake_cleanup(stage)
+    flash("MagicPlan-import bevestigd; adviseurswerk en Vabi-resultaten zijn behouden.")
+    return redirect(url_for("opname", tag=tag))
+
+
+@app.route("/project/<tag>/opname/intake/annuleer", methods=["POST"])
+@login_required
+def opname_intake_annuleer(tag):
+    if not _load_state(tag): abort(404)
+    stage = _intake_stage_dir(tag, request.form.get("token", ""))
+    if not stage: abort(404)
+    _intake_cleanup(stage)
+    flash("Intake-preview verwijderd; het dossier is niet gewijzigd.")
+    return redirect(url_for("opname", tag=tag))
 
 
 @app.route("/project/<tag>/opname/magicplan", methods=["POST"])

@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 023 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 016 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -16,6 +16,11 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 
+Taak 016 (veilige one-click MagicPlan-intake) is afgerond: pakketten krijgen identiteit- en
+fingerprintgates, een hashgebonden merged preview en een per-project CAS-bevestiging. Herimport
+behoudt expliciet handmatig werk/resultaten; ZIP, schema en metrische geometrie zijn fail-closed.
+Vijf reviewrondes; eindverdict PASS, 998/998 groen.
+
 Taak 020 (interactief ventilatieplan) is afgerond: ruimtepolygonen worden expliciet gekalibreerd,
 markers blijven ruimte- en verdiepingsgebonden, overstroom volgt pas na expliciete topologie en
 deurbelasting wordt correct getoetst. Pointer- en toetsenbordbediening, concave geometrie en strikte
@@ -25,6 +30,11 @@ Taak 023 (legacy-dakkapel en dakpreflight) is afgerond: een ongetagd legacy-moed
 dakkapelbewerking correct herclassificeerd. Samengestelde Vabi-export scant de dubbele-dakpoort
 exact eenmaal via private kernen; publieke writers blijven altijd fail-closed. Herreview PASS,
 851/851 groen.
+
+Taak 016 (veilige one-click MagicPlan-intake) is gebouwd op de featurebranch: offline
+ZIP-pakket met project-/woningidentiteitsgate, formfingerprint, preview/diff, expliciet
+behoudbeleid en gegroepeerde resttaken. De vooraf vastgelegde referentiecase en volledige
+dry-run zijn groen; onafhankelijke AI-review staat nog open.
 
 Taak 015 (mappingmanifest en MagicPlan-formulierfingerprint) is afgerond: zes kritieke
 dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gereviewd
