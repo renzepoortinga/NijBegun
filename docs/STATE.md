@@ -21,6 +21,11 @@ fingerprintgates, een hashgebonden merged preview en een per-project CAS-bevesti
 behoudt expliciet handmatig werk/resultaten; ZIP, schema en metrische geometrie zijn fail-closed.
 Vijf reviewrondes; eindverdict PASS, 998/998 groen.
 
+Taak 021 (ventilatieplan PDF/PNG-export) is afgerond: scherm en export delen één scene, de PDF bevat
+voorblad, vloerpagina's, een dynamisch gepagineerde berekening en vaste paginavoeten; per vloer is een
+1200x900-PNG beschikbaar. JPEG en gangbare PNG-varianten worden veilig via Pillow gerenderd.
+Blocking verify en onafhankelijke herreview: PASS (1020/1020).
+
 Taak 020 (interactief ventilatieplan) is afgerond: ruimtepolygonen worden expliciet gekalibreerd,
 markers blijven ruimte- en verdiepingsgebonden, overstroom volgt pas na expliciete topologie en
 deurbelasting wordt correct getoetst. Pointer- en toetsenbordbediening, concave geometrie en strikte
