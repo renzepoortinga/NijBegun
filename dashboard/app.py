@@ -41,6 +41,7 @@ from ventilatie.ventilatie import (bereken as vent_bereken, rapport as vent_rapp
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from dashboard.gebouw_svg import gebouw_svg                                            # noqa: E402
 from dashboard import ventilatieplan as vp_mod                                         # noqa: E402
+from dashboard import ventilatieplan_export as vp_export                              # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
 from foto import checklist as foto_checklist                                          # noqa: E402
 from validator import validate as validator_mod                                       # noqa: E402
@@ -2140,6 +2141,7 @@ VENTILATIEPLAN_TMPL = """{{stepper|safe}}
 <span id=vp-balans class="pill {{'green' if balans.sluitend else 'amber'}}">
 Balans: toevoer {{'%.1f'|format(balans.toevoer)}} l/s {{'=' if balans.sluitend else '≠'}} afvoer {{'%.1f'|format(balans.afvoer)}} l/s</span>
 <button type=button class="btn sec" id=vp-herbereken>Herbereken balans</button>
+<a class="btn" href="{{url_for('ventilatieplan_pdf', tag=tag)}}">Download ventilatieplan (PDF)</a>
 </div>
 <p class="muted small">De tekening is leidend voor de balans hierboven — je kunt een marker bijstellen naar een
 échte roostercapaciteit. De tabellen rechts komen rechtstreeks uit de rekenlaag (Nij Begun-vuistregels) en
@@ -2175,6 +2177,7 @@ veranderen niet mee; ze zijn het uitgangspunt waarmee de tekening is voorgevuld.
 <button type=button class="btn sec vp-add" data-type=toevoer data-verdieping="{{v.naam}}">+ Toevoer</button>
 <button type=button class="btn sec vp-add" data-type=afvoer data-verdieping="{{v.naam}}">+ Afvoer</button>
 <span class=spacer></span>
+<a class="btn sec" href="{{url_for('ventilatieplan_png', tag=tag, verdieping=v.naam)}}">Download plan (PNG)</a>
 <button type=button class="btn sec vp-herstel" data-verdieping="{{v.naam}}">Herstel</button>
 </div>
 <details class=vp-instellen><summary>Ruimtecontouren kalibreren</summary>
@@ -2288,6 +2291,49 @@ def ventilatieplan_pagina(tag):
     return page(VENTILATIEPLAN_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 res=res, balans=balans, toets=toets, verdiepingen_json=verdiepingen_json,
                 marker_types=vp_mod.MARKER_TYPES)
+
+
+def _vp_export_scene(tag, st, dos):
+    """Exact dezelfde scene en rekentabellen als de schermroute, gereed voor beide exports."""
+    res, gewijzigd, verdiepingen = _vp_context(tag, dos)
+    if gewijzigd:
+        _dos_save(tag, st, dos)
+    balans = vp_mod.marker_balans(dos)
+    rekentopologie = [[pad[1], pad[0]] for pad in dos.ventilatieplan.topologie if len(pad) == 2]
+    toets = vent_toets_vuistregels(res, {"topologie": rekentopologie})
+    return vp_export.scene(verdiepingen, res, balans, toets, st.get("adres", ""),
+                           dos.ventilatie.systeem, vp_export.opname_datum(dos))
+
+
+@app.route("/project/<tag>/ventilatieplan/export.pdf")
+@login_required
+def ventilatieplan_pdf(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    data = _vp_export_scene(tag, st, dos)
+    if not data["verdiepingen"]:
+        flash("Geen plattegrond beschikbaar — voeg eerst een vloercontour of ruimtecontouren toe.")
+        return redirect(url_for("ventilatieplan_pagina", tag=tag))
+    naam = "ventilatieplan-%s.pdf" % vp_export.bestands_slug(st.get("adres"))
+    return Response(vp_export.pdf(data), mimetype="application/pdf",
+                    headers={"Content-Disposition": "attachment; filename=%s" % naam})
+
+
+@app.route("/project/<tag>/ventilatieplan/<verdieping>/export.png")
+@login_required
+def ventilatieplan_png(tag, verdieping):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    data = _vp_export_scene(tag, st, dos)
+    vloer = next((v for v in data["verdiepingen"] if v["naam"] == verdieping), None)
+    if vloer is None:
+        abort(404, description="Geen plattegrond beschikbaar voor deze verdieping.")
+    naam = "ventilatieplan-%s-%s.png" % (vp_export.bestands_slug(st.get("adres")),
+                                         vp_export.bestands_slug(verdieping))
+    return Response(vp_export.verdieping_png(vloer), mimetype="image/png",
+                    headers={"Content-Disposition": "attachment; filename=%s" % naam})
 
 
 @app.route("/project/<tag>/ventilatieplan/<verdieping>/markers", methods=["POST"])

@@ -39,6 +39,14 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
 
 - 2026-08-21 Codex Manager: bestaand lokaal taakontwerp geclaimd nadat taak 020 via PR 21 op
   `main` is gemerged; eigen schone worktree vanaf actuele main aangemaakt.
+- 2026-08-21 Codex Builder: dependencyvrije exportlaag gebouwd op de gedeelde `_vp_context`-scene:
+  login-beveiligde PDF- en per-verdieping-PNG-routes, veilige adres-/verdiepingsslugs, A4-voorblad,
+  vloerpagina's, berekenpagina, herkomst en paginavoeten. PDF is met pypdf structureel en inhoudelijk
+  gecontroleerd (variabel paginatal/tekst); PNG's zijn op signature, 1200x900-IHDR en visueel
+  gecontroleerd. Poppler (`pdfinfo`/`pdftoppm`) was niet geïnstalleerd op deze Windows-runner, dus
+  PDF-rasterinspectie daarmee kon niet worden uitgevoerd; de in de PDF ingebedde, identieke
+  vloer-rastering is rechtstreeks geïnspecteerd. Leegte-, auth-, route-, offline- en inhoudstests
+  toegevoegd. `scripts/verify.sh` via Git Bash: PASS, 967/967 tests. Review staat nog open.
 
 ## Notes
 Het aantal pagina's is variabel: voorblad + één pagina per verdieping + berekeningspagina.

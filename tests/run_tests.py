@@ -5192,6 +5192,56 @@ try:
     check("ventilatieplan-route: alle 7 vuistregels staan er (ook 'niet te bepalen', geen stille voldoet)",
           _htmlAF1.count("niet te bepalen") >= 5)
 
+    # Taak 021: beide downloads gebruiken dezelfde _vp_context-scene als dit scherm.
+    check("ventilatieplan-export: PDF- en PNG-knoppen zichtbaar",
+          "Download ventilatieplan (PDF)" in _htmlAF1 and _htmlAF1.count("Download plan (PNG)") == 2)
+    _pdfAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF)
+    from pypdf import PdfReader as _PdfReaderAF
+    import io as _ioAF, struct as _structAF
+    _readerAF = _PdfReaderAF(_ioAF.BytesIO(_pdfAF.data))
+    _pdftekstAF = "\n".join((p.extract_text() or "") for p in _readerAF.pages)
+    check("ventilatieplan-export: geldige PDF met voorblad + 2 vloeren + berekening",
+          _pdfAF.status_code == 200 and _pdfAF.data.startswith(b"%PDF-") and len(_readerAF.pages) == 4)
+    check("ventilatieplan-export: PDF bevat schermtabellen, balans, vuistregels, herkomst en alle footers",
+          all(x in _pdftekstAF for x in ("Toevoer per verblijfsruimte", "Afvoer per natte ruimte",
+                 "Afvoerpunt", "Vuistregels / aandachtspunten", "Woonkamer", "Keuken",
+                 "Herkomst plattegrond: MagicPlan-opname", "Balans: toevoer"))
+          and _pdftekstAF.count("Indicatief ventilatieplan") == 4
+          and all("Pagina %d / 4" % i in _pdftekstAF for i in range(1, 5)))
+    check("ventilatieplan-export: adres-slug in veilige attachmentnaam",
+          "ventilatieplan-ventilatiestraat-1" in (_pdfAF.headers.get("Content-Disposition") or "")
+          and (_pdfAF.headers.get("Content-Disposition") or "").endswith(".pdf"))
+    _pngAF = _cAF.get("/project/%s/ventilatieplan/%s/export.png" % (_tagAF, "Begane grond"))
+    _wAF, _hAF = _structAF.unpack(">II", _pngAF.data[16:24]) if len(_pngAF.data) >= 24 else (0, 0)
+    check("ventilatieplan-export: PNG-signature + Word-bruikbare 1200x900-afmeting",
+          _pngAF.status_code == 200 and _pngAF.data.startswith(b"\x89PNG\r\n\x1a\n")
+          and (_wAF, _hAF) == (1200, 900))
+    check("ventilatieplan-export: onbekende vloer geeft nette 404", _cAF.get(
+          "/project/%s/ventilatieplan/Bestaat%%20niet/export.png" % _tagAF).status_code == 404)
+    _cAF_uit = _WAF.app.test_client()
+    check("ventilatieplan-export: routes blijven achter login",
+          _cAF_uit.get("/project/%s/ventilatieplan/export.pdf" % _tagAF).status_code in (302, 303)
+          and _cAF_uit.get("/project/%s/ventilatieplan/Begane%%20grond/export.png" % _tagAF).status_code in (302, 303))
+
+    # Geen externe converter/browser/netwerk: modulebron en route werken volledig in-process.
+    import inspect as _inspectAF
+    _src_exportAF = _inspectAF.getsource(_WAF.vp_export)
+    check("ventilatieplan-export: offline en zonder zware converterdependency",
+          not any(x in _src_exportAF for x in ("requests.", "urlopen", "subprocess", "libreoffice", "chromium")))
+    _leeg_sceneAF = _WAF.vp_export.scene([], {"rows": []}, {"toevoer":0,"afvoer":0,"sluitend":True},
+                                         [], "Leeg 1", "C", "2026-08-21")
+    check("ventilatieplan-export: dossier zonder plattegrond wordt expliciet als leeg herkend",
+          _leeg_sceneAF["verdiepingen"] == [])
+    _rAF_nieuwleeg = _cAF.post("/nieuw", data={"straat":"Leegplan 2", "postcode":"9999LP",
+                         "plaats":"X", "woningtype":"Tussenwoning"})
+    _tagAF_leeg = _rAF_nieuwleeg.headers["Location"].rstrip("/").split("/")[-2]
+    _rAF_pdfleeg = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF_leeg,
+                            follow_redirects=True)
+    check("ventilatieplan-export: PDF-route zonder plattegrond meldt fout en maakt geen lege PDF",
+          _rAF_pdfleeg.status_code == 200 and _rAF_pdfleeg.mimetype == "text/html"
+          and "Geen plattegrond beschikbaar" in _rAF_pdfleeg.get_data(as_text=True))
+    _shAF.rmtree(_WAF._pdir(_tagAF_leeg), ignore_errors=True)
+
     # eerste GET moet de autoplaatsing al hebben OPGESLAGEN (overleeft een 'herlaad')
     _dAF2 = _WAF._dossier(_tagAF)
     check("ventilatieplan-route: autoplaatsing is bij het eerste bezoek al in het dossier opgeslagen",
