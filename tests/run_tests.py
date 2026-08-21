@@ -1357,7 +1357,8 @@ except Exception as _e:
 print("\n36. Catalogus-API live-mapping (JSON:API -> catalog.json)")
 try:
     from catalog.api_client import (_stage_bytes, compare_catalogs, main as catalog_api_main,
-                                    map_measures_to_catalog, publish_outputs, validate_catalog)
+                                    map_measures_to_catalog, publish_outputs, render_diff_report,
+                                    validate_catalog)
     _raw = {"data": [
         {"id": "V1-1-A1", "type": "measure", "attributes": {
             "name": "Spouwmuurisolatie 60", "unit": "m²", "rcValue": 1.7, "thicknessInMm": 60,
@@ -1406,6 +1407,37 @@ try:
         except ValueError as _ce:
             _conflict_blocked.append("Conflicterende dubbele cataloguscode V1-1-X7" in str(_ce))
     check("api-map: conflicterende duplicate blokkeert in beide API-volgordes", all(_conflict_blocked))
+    def _x3_node(_mid, _catid, _catnaam, _notes, _unit, _price):
+        return {"id": _mid, "type": "measure", "attributes": {
+            "name": "bronoverride-test", "category": {"id": _catid, "type": "category",
+                "attributes": {"name": _catnaam}}, "regularCosts": [], "additionalCosts": [{
+                    "id": "V1-2-X3", "type": "cost", "attributes": {
+                        "contractorValuePerUnit": _price, "unit": _unit, "notes": _notes}}]}}
+    _x3_role = _x3_node("V1-2", "V1", "Gevel", "Rolsteiger op-/afbouw/huur in dagen", "st", 250.43)
+    _x3_hoog = _x3_node("V2-3", "V2", "Glas en kozijnen",
+                        "Hoogwerker op-/afbouw/huur in weken", "wk", 569.25)
+    _x3_results = [map_measures_to_catalog({"data": order}, opgehaald_op="2026-08-21T12:00:00+00:00")
+                   for order in ([_x3_role, _x3_hoog], [_x3_hoog, _x3_role])]
+    check("api-map: gecontroleerde V1-2-X3-override kiest rolsteiger onafhankelijk van API-volgorde",
+          all(len(x["maatregelen"]) == 1
+              and x["maatregelen"][0]["omschrijving"] == "Rolsteiger op-/afbouw/huur in dagen"
+              and x["maatregelen"][0]["prijs_per_eenheid_incl_btw"] == 250.43
+              and x.get("bronoverrides", [{}])[0].get("genegeerde_api_voorkomens") == 1
+              for x in _x3_results)
+          and _x3_results[0]["contentfingerprint"] == _x3_results[1]["contentfingerprint"])
+    check("api-map: verschilrapport maakt gecontroleerde bronoverride zichtbaar",
+          "Gecontroleerde bronoverrides" in render_diff_report(
+              {"toegevoegd": [], "verwijderd": [], "gewijzigd": []}, _cat, _x3_results[0])
+          and "hoogwerkervariant genegeerd" in render_diff_report(
+              {"toegevoegd": [], "verwijderd": [], "gewijzigd": []}, _cat, _x3_results[0]))
+    _x3_afwijkend = json.loads(json.dumps(_x3_hoog))
+    _x3_afwijkend["attributes"]["additionalCosts"][0]["attributes"]["contractorValuePerUnit"] = 569.26
+    try:
+        map_measures_to_catalog({"data": [_x3_role, _x3_afwijkend]})
+        _x3_strict = False
+    except ValueError as _ce:
+        _x3_strict = "Conflicterende dubbele cataloguscode V1-2-X3" in str(_ce)
+    check("api-map: afwijkende V1-2-X3-variant blijft fail-closed", _x3_strict)
     _diff = compare_catalogs({"maatregelen": [_ms["V1-1-A1"], {"code": "VERVALLEN"}]}, _cat)
     check("api-map: verschilvalidatie toegevoegd/verwijderd/gewijzigd",
           "VERVALLEN" in _diff["verwijderd"] and "V1-1-X7" in _diff["toegevoegd"]

@@ -35,11 +35,13 @@ een conflicterende dubbele code en een niet-eindige/niet-numerieke prijs blokker
 Volledig identieke dubbele codes worden expliciet gededupliceerd. Negatieve bedragen zijn toegestaan
 omdat de API daarmee minderprijzen representeert.
 
-Let op: de live response van 21 augustus 2026 bevat een bronconflict voor `V1-2-X3`: eenmaal als
-rolsteiger (€ 250,43/st) onder V1-2 en eenmaal als hoogwerker (€ 569,25/wk) onder V2-3. Een refresh
-blokkeert daarom bewust totdat de API-eigenaar de code corrigeert; lokaal een van beide kiezen zou
-een niet-herleidbare prijs-/codecorrectie zijn.
+De live response van 21 augustus 2026 bevat een bronconflict voor `V1-2-X3`: rolsteiger
+(€ 250,43/st) onder V1-2 en hoogwerker (€ 569,25/wk) onder V2-3. De projecteigenaar heeft op
+21 augustus 2026 expliciet besloten de rolsteiger te behouden en de hoogwerkervariant te negeren.
+Dit is een gecontroleerde bronoverride: alleen de exact bekende hoogwerkeromschrijving, eenheid,
+prijs en categorie worden genegeerd, de gekozen rolsteiger moet exact aanwezig zijn en
+`catalog.json` vermeldt het besluit in `bronoverrides`. Elke afwijkende variant en ieder ander
+duplicateconflict blokkeert de refresh nog steeds.
 
-Het inventarisatierapport staat in `docs/catalogus-api-verschil-2026-08-21.md`; het is niet geldig
-als productiesnapshot zolang bovengenoemd bronconflict bestaat. Prijs- en codeafwijkingen worden
-gerapporteerd en niet lokaal gerepareerd: de API blijft de bron.
+Het actuele verschilrapport staat in `docs/catalogus-api-verschil-2026-08-21.md`. Overige prijs-
+en codeafwijkingen worden uitsluitend gerapporteerd; daarvoor bestaat geen lokale override.

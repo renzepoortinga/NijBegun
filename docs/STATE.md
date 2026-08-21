@@ -48,9 +48,11 @@ Alle importpaden bewaren fingerprint/importmetadata; onafhankelijke herreview PA
 
 Taak 024 onderzoekt en importeert de actuele maatregelencatalogus uit de publieke Nij Begun API.
 De API heeft specversie 1.0 maar geen inhoudelijk versielabel; de import wordt daarom vastgelegd
-met ophaaltijd en contentfingerprint. De eerste live vergelijking vond 291 API-regels tegenover
-338 XLSX-regels. Publicatie is geblokkeerd doordat de API code `V1-2-X3` zowel als rolsteiger
-(EUR 250,43/st) als hoogwerker (EUR 569,25/wk) levert; de geldige XLSX-snapshot blijft actief.
+met ophaaltijd en contentfingerprint. De live import bevat 291 regels tegenover 338 XLSX-regels.
+Voor het dubbele API-codegebruik van `V1-2-X3` is na expliciet eigenaarsbesluit uitsluitend de
+rolsteiger (EUR 250,43/st) behouden en de exact bekende hoogwerkervariant (EUR 569,25/wk)
+genegeerd; catalogus en verschilrapport vermelden deze gecontroleerde bronoverride. Overige
+conflicten blijven fail-closed. Blocking verify en onafhankelijke review staan nog open.
 
 Taak 017 (atomische Vabi-exportset) is afgerond: writers publiceren eerst een gevalideerde,
 immutable set en maken die zichtbaar via één atomische `CURRENT.json`-wissel. Fouten behouden

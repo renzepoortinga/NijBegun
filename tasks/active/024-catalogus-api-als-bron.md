@@ -47,6 +47,24 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
 
 ## Sessions
 
+- 2026-08-21 Codex integrator (plan na expliciet gebruikersbesluit): (1) leg een benoemde,
+  exact gematchte bronoverride vast die uitsluitend bij code `V1-2-X3` de rolsteiger
+  EUR 250,43/st behoudt en de hoogwerker EUR 569,25/wk negeert; (2) bewijs offline dat de uitkomst
+  API-volgorde-onafhankelijk is en ieder ander duplicateconflict blijft blokkeren; (3) voer de
+  expliciet toegestane publieke live refresh uit naar `catalog/catalog.json` plus verschilrapport,
+  scan alle verwijderde codes tegen productiereferenties; (4) draai blocking verify, commit/push en
+  vraag onafhankelijke review door een andere agent. Geen `.env` lezen en geen deployment.
+
+- 2026-08-21 Codex integrator (uitvoering): gecontroleerde bronoverride geïmplementeerd; alleen de
+  exact bekende `V1-2-X3`-hoogwerker (EUR 569,25/wk, V2-3) wordt genegeerd wanneer de exact gekozen
+  rolsteiger (EUR 250,43/st, V1-2) aanwezig is. Afwijkende prijzen/velden en alle andere conflicten
+  blijven blokkeren; API-volgorde-onafhankelijkheid en zichtbaarheid in catalogus/rapport zijn
+  offline getest. Publieke live refresh zonder `.env` uitgevoerd: 291 regels, fingerprint
+  `sha256:696d5894e3f8491c33892c16094e4fc5b847c23105b414b2a372942015e44951`, vier genegeerde
+  hoogwerkervoorkomens expliciet vastgelegd. Verschil versus XLSX: 6 toegevoegd, 52 verwijderd,
+  285 gewijzigd; exacte scan vond nul productiereferenties naar verwijderde codes. Blocking
+  `verify.sh`: PASS (1034/1034). Geen deployment uitgevoerd; onafhankelijke review volgt.
+
 - 2026-08-21 Codex Manager (live hercontrole): de publieke endpoint opnieuw read-only opgehaald,
   zonder `.env` of API-key. De API levert nog steeds 192 measures en de gevalideerde mapper stopt
   nog steeds luid op `V1-2-X3`: vijfmaal rolsteiger EUR 250,43/st onder V1-2 tegenover viermaal

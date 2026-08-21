@@ -1,34 +1,10 @@
 # Verschilrapport maatregelencatalogus
 
-> **Inventarisatie, niet gepubliceerd.** Na onafhankelijke review bleek de live API dezelfde code
-> `V1-2-X3` met twee conflicterende betekenissen/prijzen te leveren. De 291-regelsnapshot hieronder
-> was daardoor orderafhankelijk en is teruggedraaid; `catalog/catalog.json` blijft op de geldige
-> XLSX-snapshot totdat de API-eigenaar dit bronconflict corrigeert.
-
-Vergelijking van `Q3_2026_21072026` met API-fingerprint `sha256:558ce9ae2c871223bf62fb12f5a3c44315647fbf372d33b3ff8ea6199144797b`.
+Vergelijking van `Q3_2026_21072026` met API-fingerprint `sha256:696d5894e3f8491c33892c16094e4fc5b847c23105b414b2a372942015e44951`.
 
 - Toegevoegd: 6
 - Verwijderd: 52
 - Inhoudelijk gewijzigd: 285
-
-## Beoordeling
-
-De API is voor deze migratie de leidende bron. De zes toevoegingen komen rechtstreeks uit de
-API; `B5-1-A1` en `B5-1-A2` zijn kostcodes bij API-categorie V5 (Ventilatie) en worden daarom
-niet op hun afwijkende codeprefix geclassificeerd. De 52 verwijderingen zijn codes die wel in de
-XLSX-snapshot maar niet in de API-response voorkomen; ze zijn niet handmatig teruggezet.
-
-Een exacte zoekactie in `engine/`, `validator/`, `catalog/` en `tests/` vond geen
-productiereferentie naar een verwijderde code. Alleen `V5-1-A1` staat in een geïsoleerde mapperfixture
-in `tests/run_tests.py`; die fixture test legacy-input en selecteert deze code nergens. Historische
-kennisbanktekst noemt `V1-1-X12` expliciet als vervallen en blijft daarom terecht staan. De
-productiereferentie `V6-1-X1` blijft bestaan in de API en is niet dezelfde code als het verwijderde
-generieke `V6-1-X`.
-
-De 285 gemeenschappelijke regels verschillen doordat de API actuele omschrijvingen, prijzen en
-vaak Rc/U/dikte-eigenschappen levert. Prijzen hieronder zijn ongewijzigd uit
-`contractorValuePerUnit` (inclusief btw) overgenomen; exclusief btw is reproduceerbaar gedeeld door
-1,21. Negatieve API-bedragen zijn geldige minderprijzen. Geen prijs of code is lokaal gecorrigeerd.
 
 ## Toegevoegde codes
 
@@ -325,3 +301,7 @@ V1-1-D1, V1-1-X12, V1-3-G1, V1-3-H1, V1-3-H2, V1-3-H3, V1-3-I1, V1-3-I2, V1-3-I3
 - **V6-1-C1** — onderdeel: `` -> `E Ventilatie`; eenheid: `m1` -> `m¹`; prijs_per_eenheid_excl: `11.9723` -> `11.1901`; prijs_per_eenheid_incl_btw: `13.5412` -> `13.54`
 - **V6-1-D1** — onderdeel: `` -> `E Ventilatie`; eenheid: `m1` -> `m¹`; prijs_per_eenheid_excl: `10.4575` -> `9.7107`; prijs_per_eenheid_incl_btw: `11.7534` -> `11.75`
 - **V6-1-X1** — onderdeel: `` -> `E Ventilatie`; eenheid: `pst` -> `st`; prijs_per_eenheid_excl: `439.875` -> `428.9669`; prijs_per_eenheid_incl_btw: `519.0525` -> `519.05`
+
+## Gecontroleerde bronoverrides
+
+- **V1-2-X3** — rolsteiger behouden; hoogwerkervariant genegeerd. Behouden: Rolsteiger op-/afbouw/huur in dagen; EUR 250,43/st. Genegeerd: Hoogwerker op-/afbouw/huur in weken; EUR 569,25/wk. API-voorkomens genegeerd: 4.

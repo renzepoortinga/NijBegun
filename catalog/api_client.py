@@ -41,6 +41,25 @@ BTW = 1.21
 API_SPEC_VERSION = "1.0"
 API_SOURCE = "https://api.nij-begun.project.abl.nu/api/v1/measures"
 
+# Gecontroleerde bronoverride, expliciet besloten door de projecteigenaar op 2026-08-21.
+# De API gebruikt V1-2-X3 dubbel. Alleen deze exact bekende hoogwerkervariant wordt genegeerd;
+# elke inhoudelijke afwijking en ieder ander codeconflict blijft via add() fail-closed.
+V1_2_X3_ROLSTEIGER = {
+    "code": "V1-2-X3", "onderdeel": "A Gevel", "level": "Level 1 - GEVEL",
+    "omschrijving": "Rolsteiger op-/afbouw/huur in dagen", "eenheid": "st",
+    "prijs_per_eenheid_incl_btw": 250.43,
+}
+V1_2_X3_HOOGWERKER = {
+    "code": "V1-2-X3", "onderdeel": "B Glas en kozijnen",
+    "level": "Level 2 - BEGLAZING EN  KOZIJNEN",
+    "omschrijving": "Hoogwerker op-/afbouw/huur in weken", "eenheid": "wk",
+    "prijs_per_eenheid_incl_btw": 569.25,
+}
+
+
+def _match_bronvariant(row, expected):
+    return all(row.get(field) == value for field, value in expected.items())
+
 
 def load_env(path):
     env = {}
@@ -178,8 +197,10 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
     if not isinstance(data, list):
         data = []
     by_code = {}                     # X-codes zijn soms identiek gedeeld binnen een subcategorie
+    genegeerde_hoogwerker = 0
 
     def add(code, onderdeel, level, oms, eenheid, incl, extra=None):
+        nonlocal genegeerde_hoogwerker
         if not code:
             return
         incl = _to_float(incl)
@@ -195,6 +216,9 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
         }
         if extra:
             row.update({k: v for k, v in extra.items() if v not in (None, "")})
+        if _match_bronvariant(row, V1_2_X3_HOOGWERKER):
+            genegeerde_hoogwerker += 1
+            return
         existing = by_code.get(code)
         if existing is not None and existing != row:
             raise ValueError("Conflicterende dubbele cataloguscode %s" % code)
@@ -227,6 +251,10 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
                 _schoon_notitie(ca.get("notes")) or naam, ca.get("unit"),
                 ca.get("contractorValuePerUnit"))
 
+    if genegeerde_hoogwerker:
+        gekozen = by_code.get("V1-2-X3")
+        if not gekozen or not _match_bronvariant(gekozen, V1_2_X3_ROLSTEIGER):
+            raise ValueError("Bronoverride V1-2-X3 wijkt af van het gecontroleerde conflict")
     rows = [by_code[code] for code in sorted(by_code)]
     fingerprint = content_fingerprint(rows)
     fetched = opgehaald_op or datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
@@ -240,6 +268,15 @@ def map_measures_to_catalog(raw, versie=None, opgehaald_op=None):
         "aantal_maatregelen": len(rows),
         "maatregelen": rows,
     }
+    if genegeerde_hoogwerker:
+        catalog["bronoverrides"] = [{
+            "code": "V1-2-X3",
+            "besluit": "rolsteiger behouden; hoogwerkervariant genegeerd",
+            "behouden": "Rolsteiger op-/afbouw/huur in dagen; EUR 250,43/st",
+            "genegeerd": "Hoogwerker op-/afbouw/huur in weken; EUR 569,25/wk",
+            "genegeerde_api_voorkomens": genegeerde_hoogwerker,
+            "besloten_op": "2026-08-21",
+        }]
     validate_catalog(catalog)
     return catalog
 
@@ -274,6 +311,13 @@ def render_diff_report(diff, previous, current):
         for field, values in item["verschillen"].items():
             details.append("%s: `%s` -> `%s`" % (field, values["was"], values["wordt"]))
         lines.append("- **%s** — %s" % (item["code"], "; ".join(details)))
+    lines += ["", "## Gecontroleerde bronoverrides", ""]
+    for override in current.get("bronoverrides") or []:
+        lines.append("- **%s** — %s. Behouden: %s. Genegeerd: %s. API-voorkomens genegeerd: %s."
+                     % (override["code"], override["besluit"], override["behouden"],
+                        override["genegeerd"], override["genegeerde_api_voorkomens"]))
+    if not current.get("bronoverrides"):
+        lines.append("Geen.")
     return "\n".join(lines) + "\n"
 
 
