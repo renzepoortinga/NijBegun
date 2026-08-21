@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -15,6 +16,7 @@ from vabi.preflight import assert_no_schil_kwaliteitsverklaring  # noqa: E402
 
 MANIFEST = "CURRENT.json"
 SETS_DIR = "sets"
+_PREFIX_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
 
 def _write_instructions(path, prefix, res):
@@ -68,6 +70,8 @@ def current_set_dir(outdir):
 
 
 def generate_all(dos, outdir, prefix=""):
+    if prefix and (not isinstance(prefix, str) or not _PREFIX_RE.fullmatch(prefix)):
+        raise ValueError("Ongeldige VABI-bestandsprefix")
     assert_no_schil_kwaliteitsverklaring(dos)
     os.makedirs(outdir, exist_ok=True)
     sets_root = os.path.join(outdir, SETS_DIR)
