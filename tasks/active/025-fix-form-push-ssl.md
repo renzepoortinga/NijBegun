@@ -1,7 +1,7 @@
 ---
 id: 025
-assigned:
-branch:
+assigned: Codex Builder
+branch: fix/025-magicplan-ssl
 depends_on: []
 ---
 
@@ -38,6 +38,9 @@ dezelfde `SSLCertVerificationError` tegenkomen.
 - [ ] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
+
+- 2026-08-21 Codex Manager: taak na hernummering geclaimd op een eigen worktree vanaf actuele
+  `main`; live calls alleen als het taakbestand en de expliciete gebruikersautorisatie dit toelaten.
 
 ## Notes
 Gevonden door twee onafhankelijke reviewrondes van taak 014/015 (15-8-2026, `/code-review high`)
