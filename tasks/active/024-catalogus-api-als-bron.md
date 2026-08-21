@@ -47,6 +47,16 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
 
 ## Sessions
 
+- 2026-08-21 Codex onafhankelijke reviewer op exact HEAD `431001a`: **VERDICT PASS**. De
+  `V1-2-X3`-override matcht uitsluitend de exact vastgelegde hoogwerker en vereist daarna exact de
+  gekozen rolsteiger; afwijkende X3-varianten en alle overige conflicterende duplicates blijven
+  fail-closed en API-volgorde-onafhankelijk. De gecommitte 291 regels valideren, bevatten exact één
+  rolsteiger-X3, en hun fingerprint is reproduceerbaar. Een nieuwe read-only live hercontrole gaf
+  192 measures, opnieuw 291 gemapte regels en exact dezelfde fingerprint/override als de commit.
+  Het verschilrapport bevat 6 toegevoegde, 52 verwijderde en 285 gewijzigde codes; een exacte
+  tokenscan vond geen productiereferenties naar verwijderde codes (alleen de bewuste B5-testfixture
+  bevat `V5-1-A1`). Blocking `scripts/verify.sh`: PASS; `.verify-report.json`: geen advisories.
+  Geen blockers, geen featurewijzigingen door reviewer.
 - 2026-08-21 Codex integrator (plan na expliciet gebruikersbesluit): (1) leg een benoemde,
   exact gematchte bronoverride vast die uitsluitend bij code `V1-2-X3` de rolsteiger
   EUR 250,43/st behoudt en de hoogwerker EUR 569,25/wk negeert; (2) bewijs offline dat de uitkomst
