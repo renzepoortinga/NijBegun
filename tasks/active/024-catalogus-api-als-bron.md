@@ -73,6 +73,15 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
   reproduceerbaar en geen relatie met cataloguscode gevonden. Definitieve Git-Bash `verify.sh` na
   extra gedeeltelijke-stagingregressie: PASS met 806/806; herreview blijft aan de Manager.
 
+- 2026-08-21 Codex Builder (draft na rebase): gerebased op `origin/main` na afronding van taken
+  020 en 023; inhoudelijke code en geldige XLSX-productiecatalogus behouden. Onafhankelijke
+  herreview: **CODE PASS** voor duplicatevalidatie, mapped-outputfingerprint en transactionele
+  publicatie. Taak blijft extern geblokkeerd en actief: de live API levert code `V1-2-X3`
+  gelijktijdig als rolsteiger EUR 250,43/st onder V1-2 en als hoogwerker EUR 569,25/wk onder V2-3.
+  Zonder correctie door de API-eigenaar kan de actuele API-catalogus niet veilig worden gepubliceerd;
+  de live-import-acceptatiecriteria blijven daarom bewust ongecheckt. Blocking Git-Bash
+  `verify.sh` na rebase: PASS, 974/974.
+
 ## Notes
 De API-response bevat geen inhoudelijke catalogusversie of `updatedAt`; noem de live stand dus
 niet bijvoorbeeld “Q4” zonder bronbewijs. Gebruik ophaaltijd + fingerprint voor herleidbaarheid.
