@@ -37,13 +37,12 @@ def parse(path):
     dos.geometrie = Geometrie(
         gebruiksoppervlakte_ag_m2=(txt(summary, "Gebruiksoppervlakte", float)
                                    or txt(main, "SurfaceArea", float) or 0.0))
+    # Standaard-toets = netto warmtebehoefte van de schil, niet de bredere energiebehoefte-indicator
+    # (die installaties meeweegt); val terug op die laatste bij oudere exports zonder
+    # NettoWarmtebehoefte. Zie vabi/result_reader.py voor dezelfde afweging.
+    _nwb = txt(summary, "NettoWarmtebehoefte", float)
     dos.berekening = Berekening(
-        # Standaard-toets = netto warmtebehoefte van de schil, niet de bredere energiebehoefte-
-        # indicator (die installaties meeweegt); val terug op die laatste bij oudere exports zonder
-        # NettoWarmtebehoefte. Zie vabi/result_reader.py voor dezelfde afweging.
-        kwh_m2_huidig=(txt(summary, "NettoWarmtebehoefte", float)
-                       if txt(summary, "NettoWarmtebehoefte", float) is not None
-                       else txt(summary, "IndicatorEnergiebehoefte", float)),
+        kwh_m2_huidig=_nwb if _nwb is not None else txt(summary, "IndicatorEnergiebehoefte", float),
         standaard_eis_kwh_m2=txt(summary, "Standaard", float),
         label_huidig=txt(summary, "Labelklasse") or "",
         bron="Vabi EPA-W (NTA8800) monitoringbestand")
@@ -90,7 +89,7 @@ def main():
     os.makedirs(os.path.dirname(a.out), exist_ok=True); save_json(dos, a.out)
     n1, n2, ok = roundtrip_ok(root)
     print("OK: " + a.out)
-    print("  %s %s, bouwjaar %s | label %s | energiebehoefte %s | Standaard %s | Ag %s m2" % (
+    print("  %s %s, bouwjaar %s | label %s | warmtebehoefte(schil) %s | Standaard %s | Ag %s m2" % (
         dos.identificatie.postcode, dos.identificatie.huisnummer, dos.identificatie.bouwjaar,
         dos.berekening.label_huidig, dos.berekening.kwh_m2_huidig,
         dos.berekening.standaard_eis_kwh_m2, dos.geometrie.gebruiksoppervlakte_ag_m2))

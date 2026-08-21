@@ -48,7 +48,16 @@ teruggeeft.
 - 2026-08-21 Claude Code: bug gevonden tijdens live vergelijking van project 9502CS_26 in de webapp
   vs SOBOLT (browser-automatisering), bevestigd met de ruwe VABI-XML van de gebruiker. Fix
   doorgevoerd in result_reader/monitor_xml/dashboard/advies_text/nijbegun_engine + regressietest.
-  Nog niet geverifieerd/gereviewd/gedeployed.
+  `./scripts/verify.sh` PASS (1067/1067). PR #28 geopend.
+- 2026-08-21 Claude Code, zelf-review (`/code-review high`, zelfde leverancier — geen vervanging
+  voor de vereiste onafhankelijke review): 4 bevindingen verwerkt — (1) advies-tekst claimde altijd
+  "netto warmtebehoefte" ook bij de IndicatorEnergiebehoefte-fallback, nu conditioneel op
+  `_toetswaarde_bron`; (2) CLI-prints in `monitor_xml.py`/`run.py` hernoemd naar neutraal
+  "warmtebehoefte (schil)"; (3) `nijbegun_engine` hergebruikt nu `_toetswaarde` i.p.v. de
+  fallback-regel te dupliceren; (4) dubbele XML-lookup in `monitor_xml.py` opgelost. Dashboard-
+  labels (Huidige staat + VABI-toets) tonen nu ook conditioneel "netto warmtebehoefte" vs
+  "energiebehoefte" via nieuwe `behoefte_label`-sleutel in `_verdict()`. `verify.sh` opnieuw PASS.
+  Nog open: onafhankelijke review (andere leverancier) + live her-upload op de webapp.
 
 ## Notes
 De publieke `nijbegun_engine`-package documenteert zich als "stable contract the SaaS builds
