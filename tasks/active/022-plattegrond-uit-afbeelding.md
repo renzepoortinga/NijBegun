@@ -49,6 +49,16 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   `afgelezen` of `handmatig_gecorrigeerd`. Offline fixture en regressietests toegevoegd. Geen UI,
   provider of live call. `scripts/verify.sh` via Git Bash PASS, 972/972 tests. Taak blijft actief:
   <5%-AC en provider-/gegevensbeleid ontbreken nog, dus geen accuracyclaim en nog geen review gevraagd.
+- 2026-08-21 Codex (OpenAI), Builder: review-FAIL op de contractincrement verwerkt. Afbeeldingen
+  worden nu alleen via een expliciete project-uploadroot resolved en inhoudelijk als PNG/JPEG
+  gesnifft; POSIX-absolute paden, Windows-drivepaden, UNC, colon, traversal en gespoofte suffixen
+  falen. Maatlijnbewijs is gestructureerd (`bron`, `tekst`, `lengte_m`, `pixel_lengte`) en iedere
+  lengte/pixelratio moet binnen de gedocumenteerde 2% OCR-/pixelafrondingstolerantie bij
+  `meter_per_pixel` liggen; ontbrekend of inconsistent bewijs degradeert fail-closed naar onbekende
+  schaal, `null`-oppervlakten en een aandachtspunt. Dubbele verdiepingsnamen falen; vermoedelijke
+  aangrenzendheid wordt symmetrisch genormaliseerd en self-/onbekende links falen, zonder
+  geometrische nabijheid te gokken. Regressietests uitgebreid; 977/977 groen. Externe blockers en
+  actieve taakstatus blijven ongewijzigd.
 
 ## Notes
 De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan

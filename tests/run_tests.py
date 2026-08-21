@@ -5878,13 +5878,20 @@ print("\n69. Plattegrond-visioncontract: schaalgate, bevestiging en herkomst (ta
 try:
     import copy as _copy67
     import json as _json67
+    import tempfile as _tempfile67
+    from pathlib import Path as _Path67
     from dashboard.plattegrond_import import (
         PlattegrondImportFout as _PIF67, bevestig_in_dossier as _bevestig67,
         valideer_vision_resultaat as _valideer67)
     with open(os.path.join(ROOT, "tests", "fixtures", "plattegrond_vision_mock.json"),
               encoding="utf-8") as _fh67:
         _raw67 = _json67.load(_fh67)
-    _concept67 = _valideer67(_raw67)
+    _upload67 = _tempfile67.TemporaryDirectory()
+    _uploadroot67 = _Path67(_upload67.name)
+    (_uploadroot67 / "uploads").mkdir()
+    (_uploadroot67 / "uploads" / "plattegrond-bg.png").write_bytes(
+        b"\x89PNG\r\n\x1a\n" + b"offline-fixture")
+    _concept67 = _valideer67(_raw67, _uploadroot67)
     check("visioncontract: expliciete maatlijn laat afgelezen oppervlakte door",
           _concept67["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"] == 20.0)
     check("visioncontract: onzekerheid wordt zichtbaar aandachtspunt",
@@ -5893,16 +5900,56 @@ try:
     _geen_schaal67 = _copy67.deepcopy(_raw67)
     _geen_schaal67["verdiepingen"][0]["schaal"] = {"betrouwbaar": False}
     _geen_schaal67["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"] = 999
-    _concept_zonder67 = _valideer67(_geen_schaal67)
+    _concept_zonder67 = _valideer67(_geen_schaal67, _uploadroot67)
     check("visioncontract: onbetrouwbare schaal verwerpt modeloppervlakten fail-closed",
           all(r["oppervlakte_m2"] is None for r in _concept_zonder67["verdiepingen"][0]["ruimtes"]))
     _bewijsloos67 = _copy67.deepcopy(_raw67)
     _bewijsloos67["verdiepingen"][0]["schaal"]["maatlijn_bewijzen"] = []
     try:
-        _valideer67(_bewijsloos67); _bewijs_fout67 = False
+        _bewijsloos_concept67 = _valideer67(_bewijsloos67, _uploadroot67)
+        _bewijs_fout67 = all(r["oppervlakte_m2"] is None
+                             for r in _bewijsloos_concept67["verdiepingen"][0]["ruimtes"])
     except _PIF67:
-        _bewijs_fout67 = True
-    check("visioncontract: betrouwbaar=true zonder maatlijnbewijs wordt geweigerd", _bewijs_fout67)
+        _bewijs_fout67 = False
+    check("visioncontract: betrouwbaar=true zonder bewijs wordt fail-closed onbetrouwbaar", _bewijs_fout67)
+    _inconsistent67 = _copy67.deepcopy(_raw67)
+    _inconsistent67["verdiepingen"][0]["schaal"]["maatlijn_bewijzen"][0]["lengte_m"] = 5.0
+    _inconsistent_concept67 = _valideer67(_inconsistent67, _uploadroot67)
+    check("visioncontract: inconsistente bewijsratio verwerpt alle modeloppervlakten",
+          all(r["oppervlakte_m2"] is None
+              for r in _inconsistent_concept67["verdiepingen"][0]["ruimtes"]))
+    _asym67 = _copy67.deepcopy(_raw67)
+    _asym67["verdiepingen"][0]["ruimtes"][1]["aangrenzend"] = []
+    _asym_concept67 = _valideer67(_asym67, _uploadroot67)
+    check("visioncontract: vermoedelijke aangrenzendheid wordt symmetrisch genormaliseerd",
+          _asym_concept67["verdiepingen"][0]["ruimtes"][1]["aangrenzend"] == ["Woonkamer"])
+    _dubbel_vloer67 = _copy67.deepcopy(_raw67)
+    _dubbel_vloer67["verdiepingen"].append(_copy67.deepcopy(_dubbel_vloer67["verdiepingen"][0]))
+    try:
+        _valideer67(_dubbel_vloer67, _uploadroot67); _dubbel_ok67 = False
+    except _PIF67:
+        _dubbel_ok67 = True
+    check("visioncontract: dubbele verdiepingsnamen worden geweigerd", _dubbel_ok67)
+
+    _pad_cases67 = ["../plattegrond-bg.png", "C:/plattegrond-bg.png",
+                    r"\\server\share\plattegrond-bg.png", "uploads/plattegrond:bg.png"]
+    _pad_ok67 = True
+    for _pad67 in _pad_cases67:
+        _kwaad67 = _copy67.deepcopy(_raw67)
+        _kwaad67["verdiepingen"][0]["afbeelding"] = _pad67
+        try:
+            _valideer67(_kwaad67, _uploadroot67); _pad_ok67 = False
+        except _PIF67:
+            pass
+    check("visioncontract: traversal, Windows-drive, UNC en colon worden geweigerd", _pad_ok67)
+    (_uploadroot67 / "uploads" / "spoof.png").write_bytes(b"dit is geen png")
+    _spoof67 = _copy67.deepcopy(_raw67)
+    _spoof67["verdiepingen"][0]["afbeelding"] = "uploads/spoof.png"
+    try:
+        _valideer67(_spoof67, _uploadroot67); _spoof_ok67 = False
+    except _PIF67:
+        _spoof_ok67 = True
+    check("visioncontract: PNG-suffix met andere inhoud wordt geweigerd", _spoof_ok67)
 
     _bev67 = {"expliciet_bevestigd": True, "verdiepingen": [{
         "bron_volgorde": 0, "naam": "Begane grond", "ruimtes": [{

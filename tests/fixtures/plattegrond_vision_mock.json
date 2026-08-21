@@ -7,7 +7,10 @@
     "schaal": {
       "betrouwbaar": true,
       "meter_per_pixel": 0.02,
-      "maatlijn_bewijzen": [{"tekst": "4,00 m", "pixel_lengte": 200}]
+      "maatlijn_bewijzen": [{
+        "tekst": "4,00 m", "bron": "maatlijn onder woonkamer",
+        "lengte_m": 4.0, "pixel_lengte": 200
+      }]
     },
     "ruimtes": [
       {"naam": "Woonkamer", "functie": "verblijfsruimte", "oppervlakte_m2": 20.0,

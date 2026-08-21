@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import os
+from pathlib import Path, PureWindowsPath
 
 from core.dossier import Ruimte, VloerInfo
 from dashboard.ventilatieplan import valideer_ruimtepolygonen
@@ -19,6 +20,7 @@ FUNCTIES = {
 }
 BRON_AFGELEZEN = "afgelezen"
 BRON_HANDMATIG = "handmatig_gecorrigeerd"
+MAATLIJN_TOLERANTIE = 0.02  # 2%: ruimte voor OCR-/pixelafronding, niet voor een andere schaal.
 
 
 class PlattegrondImportFout(ValueError):
@@ -37,16 +39,41 @@ def _getal(waarde, label, *, nul_toegestaan=False):
     return getal
 
 
-def _veilige_afbeelding(pad):
-    pad = str(pad or "").strip().replace("\\", "/")
-    if not pad or pad.startswith("/") or ".." in pad.split("/"):
+def _veilige_afbeelding(uploadroot, pad):
+    """Resolve en sniff een upload onder de expliciete project-uploadroot."""
+    raw = str(pad or "").strip()
+    winpad = PureWindowsPath(raw)
+    genormaliseerd = raw.replace("\\", "/")
+    if (not genormaliseerd or genormaliseerd.startswith("/") or winpad.is_absolute()
+            or winpad.drive or ":" in genormaliseerd or ".." in genormaliseerd.split("/")):
         raise PlattegrondImportFout("Afbeeldingspad moet relatief en projectgebonden zijn.")
-    if os.path.splitext(pad)[1].lower() not in {".jpg", ".jpeg", ".png"}:
+    suffix = os.path.splitext(genormaliseerd)[1].lower()
+    if suffix not in {".jpg", ".jpeg", ".png"}:
         raise PlattegrondImportFout("Alleen JPG- en PNG-plattegronden zijn toegestaan.")
-    return pad
+    if uploadroot is None:
+        raise PlattegrondImportFout("Een expliciete project-uploadroot is verplicht.")
+    try:
+        root = Path(uploadroot).resolve(strict=True)
+        bestand = (root / Path(*genormaliseerd.split("/"))).resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise PlattegrondImportFout("Project-uploadroot of plattegrondafbeelding bestaat niet.") from None
+    try:
+        bestand.relative_to(root)
+    except ValueError:
+        raise PlattegrondImportFout("Afbeelding valt buiten de project-uploadroot.") from None
+    if not bestand.is_file():
+        raise PlattegrondImportFout("Plattegrondafbeelding bestaat niet.")
+    with bestand.open("rb") as fh:
+        kop = fh.read(16)
+    werkelijk = "png" if kop.startswith(b"\x89PNG\r\n\x1a\n") else \
+        "jpeg" if kop.startswith(b"\xff\xd8\xff") else None
+    verwacht = "png" if suffix == ".png" else "jpeg"
+    if werkelijk != verwacht:
+        raise PlattegrondImportFout("Bestandsinhoud komt niet overeen met JPG/PNG-extensie.")
+    return genormaliseerd
 
 
-def valideer_vision_resultaat(data):
+def valideer_vision_resultaat(data, uploadroot):
     """Normaliseer onbetrouwbare provideruitvoer tot een corrigeerbaar concept.
 
     De returnwaarde is gewone JSON-data. Er wordt nooit een dossier gemuteerd.
@@ -72,20 +99,35 @@ def valideer_vision_resultaat(data):
             raise PlattegrondImportFout("Elke verdieping moet een unieke naam hebben.")
         namen.add(naam)
         schaal = vloer.get("schaal") or {}
-        betrouwbaar = schaal.get("betrouwbaar") is True
+        betrouwbaar_gevraagd = schaal.get("betrouwbaar") is True
+        betrouwbaar = betrouwbaar_gevraagd
         bewijzen = schaal.get("maatlijn_bewijzen") or []
         meter_per_pixel = schaal.get("meter_per_pixel")
         if betrouwbaar:
-            if not isinstance(bewijzen, list) or not bewijzen:
-                raise PlattegrondImportFout(
-                    f"{naam}: betrouwbare schaal vereist minimaal een maatlijnbewijs.")
-            meter_per_pixel = _getal(meter_per_pixel, f"{naam}: meter_per_pixel")
-            for bewijs in bewijzen:
-                if not isinstance(bewijs, dict) or not str(bewijs.get("tekst") or "").strip():
-                    raise PlattegrondImportFout(f"{naam}: ongeldig maatlijnbewijs.")
-                _getal(bewijs.get("pixel_lengte"), f"{naam}: maatlijn pixel_lengte")
+            try:
+                meter_per_pixel = _getal(meter_per_pixel, f"{naam}: meter_per_pixel")
+                if not isinstance(bewijzen, list) or not bewijzen:
+                    raise PlattegrondImportFout("geen gestructureerd maatlijnbewijs")
+                for bewijs in bewijzen:
+                    if not isinstance(bewijs, dict):
+                        raise PlattegrondImportFout("maatlijnbewijs is geen object")
+                    if not str(bewijs.get("tekst") or "").strip() \
+                            or not str(bewijs.get("bron") or "").strip():
+                        raise PlattegrondImportFout("maatlijnbewijs mist concrete tekst of bron")
+                    px = _getal(bewijs.get("pixel_lengte"), f"{naam}: maatlijn pixel_lengte")
+                    lengte = _getal(bewijs.get("lengte_m"), f"{naam}: maatlijn lengte_m")
+                    verhouding = lengte / px
+                    if abs(verhouding - meter_per_pixel) / meter_per_pixel > MAATLIJN_TOLERANTIE:
+                        raise PlattegrondImportFout("maatlijnbewijs is inconsistent met meter_per_pixel")
+            except PlattegrondImportFout as fout:
+                betrouwbaar = False
+                meter_per_pixel = None
+                bewijzen = []
+                resultaat["aandachtspunten"].append(
+                    f"{naam}: schaalbewijs ongeldig ({fout}); oppervlakten moeten handmatig worden ingevuld.")
         else:
             meter_per_pixel = None
+        if not betrouwbaar and not betrouwbaar_gevraagd:
             resultaat["aandachtspunten"].append(
                 f"{naam}: schaal niet betrouwbaar; oppervlakten moeten handmatig worden ingevuld.")
 
@@ -97,6 +139,14 @@ def valideer_vision_resultaat(data):
                 or len(set(ruimte_namen)) != len(ruimte_namen):
             raise PlattegrondImportFout(f"{naam}: ruimtenamen moeten gevuld en uniek zijn.")
         ruimtes = []
+        adjacency = {ruimte_naam: set() for ruimte_naam in ruimte_namen}
+        for r, ruimte_naam in zip(ruimtes_in, ruimte_namen):
+            buren = r.get("aangrenzend") or []
+            if not isinstance(buren, list) or any(b not in ruimte_namen or b == ruimte_naam for b in buren):
+                raise PlattegrondImportFout(f"{naam}/{ruimte_naam}: ongeldige aangrenzendheid.")
+            for buur in buren:
+                adjacency[ruimte_naam].add(buur)
+                adjacency[buur].add(ruimte_naam)
         for r, ruimte_naam in zip(ruimtes_in, ruimte_namen):
             functie = str(r.get("functie") or "").strip()
             if functie not in FUNCTIES:
@@ -105,10 +155,7 @@ def valideer_vision_resultaat(data):
                 {ruimte_naam: r.get("contour_relatief")}, {ruimte_naam})
             if fout:
                 raise PlattegrondImportFout(f"{naam}: {fout}")
-            aangrenzend = r.get("aangrenzend") or []
-            if not isinstance(aangrenzend, list) or any(a not in ruimte_namen or a == ruimte_naam
-                                                       for a in aangrenzend):
-                raise PlattegrondImportFout(f"{naam}/{ruimte_naam}: ongeldige aangrenzendheid.")
+            aangrenzend = sorted(adjacency[ruimte_naam])
             opp = _getal(r.get("oppervlakte_m2"), f"{naam}/{ruimte_naam}: oppervlakte_m2") \
                 if betrouwbaar else None
             onzeker = r.get("onzekerheden") or []
@@ -124,7 +171,8 @@ def valideer_vision_resultaat(data):
             resultaat["aandachtspunten"].extend(
                 f"{naam}/{ruimte_naam}: {x}" for x in onzeker)
         resultaat["verdiepingen"].append({
-            "volgorde": index, "naam": naam, "afbeelding": _veilige_afbeelding(vloer.get("afbeelding")),
+            "volgorde": index, "naam": naam,
+            "afbeelding": _veilige_afbeelding(uploadroot, vloer.get("afbeelding")),
             "schaal": {"betrouwbaar": betrouwbaar, "meter_per_pixel": meter_per_pixel,
                        "maatlijn_bewijzen": bewijzen if betrouwbaar else []}, "ruimtes": ruimtes})
     return resultaat
@@ -145,6 +193,10 @@ def bevestig_in_dossier(dossier, concept, bevestiging):
         raise PlattegrondImportFout("Bevestiging moet alle verdiepingen bevatten.")
 
     nieuwe_vloeren, nieuwe_ruimtes = [], []
+    bevestigde_vloernamen = [str(v.get("naam") or "").strip() for v in vloeren_in]
+    if any(not n for n in bevestigde_vloernamen) \
+            or len(set(bevestigde_vloernamen)) != len(bevestigde_vloernamen):
+        raise PlattegrondImportFout("Bevestigde verdiepingsnamen moeten gevuld en uniek zijn.")
     for bronvloer, bevestigd in zip(concept["verdiepingen"], vloeren_in):
         if bevestigd.get("bron_volgorde") != bronvloer["volgorde"]:
             raise PlattegrondImportFout("Verdiepingsvolgorde wijkt af van het concept.")
@@ -157,6 +209,15 @@ def bevestig_in_dossier(dossier, concept, bevestiging):
         bevestigd_namen = [str(r.get("naam") or "").strip() for r in ruimten]
         if any(not n for n in bevestigd_namen) or len(set(bevestigd_namen)) != len(bevestigd_namen):
             raise PlattegrondImportFout(f"{vloer_naam}: bevestigde ruimtenamen moeten uniek zijn.")
+        adjacency = {naam: set() for naam in bevestigd_namen}
+        for r, ruimte_naam in zip(ruimten, bevestigd_namen):
+            buren = r.get("aangrenzend") or []
+            if not isinstance(buren, list) or any(b not in bevestigd_namen or b == ruimte_naam
+                                                  for b in buren):
+                raise PlattegrondImportFout(f"{vloer_naam}/{ruimte_naam}: ongeldige aangrenzendheid.")
+            for buur in buren:
+                adjacency[ruimte_naam].add(buur)
+                adjacency[buur].add(ruimte_naam)
         vloer_bron = BRON_AFGELEZEN if vloer_naam == bronvloer["naam"] else BRON_HANDMATIG
         nieuwe_vloeren.append(VloerInfo(
             naam=vloer_naam, plattegrond_afbeelding=bronvloer["afbeelding"],
@@ -170,10 +231,7 @@ def bevestig_in_dossier(dossier, concept, bevestiging):
                 {ruimte_naam: r.get("contour_relatief")}, {ruimte_naam})
             if fout:
                 raise PlattegrondImportFout(f"{vloer_naam}: {fout}")
-            aangrenzend = r.get("aangrenzend") or []
-            if not isinstance(aangrenzend, list) or any(a not in bevestigd_namen or a == ruimte_naam
-                                                       for a in aangrenzend):
-                raise PlattegrondImportFout(f"{vloer_naam}/{ruimte_naam}: ongeldige aangrenzendheid.")
+            aangrenzend = sorted(adjacency[ruimte_naam])
             waarden = {"naam": ruimte_naam, "functie": functie, "oppervlakte_m2": opp,
                        "contour_relatief": contouren[ruimte_naam], "aangrenzend": aangrenzend}
             bronwaarden = {}
