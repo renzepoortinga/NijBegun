@@ -338,9 +338,10 @@ def _headers(env):
 
 def _http(method, url, headers, body=None):
     import urllib.request
+    from magicplan.ssl_context import magicplan_ssl_context
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=60) as r:
+    with urllib.request.urlopen(req, timeout=60, context=magicplan_ssl_context()) as r:
         raw = r.read().decode("utf-8", "replace")
     try:
         return json.loads(raw or "{}")

@@ -28,6 +28,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import Foto  # noqa: E402
+from magicplan.ssl_context import magicplan_ssl_context  # noqa: E402
 
 TOOL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXT_OK = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".gif"}
@@ -115,7 +116,7 @@ def _client_fetch(client):
             raise RuntimeError("ongeldige foto-URL: %s" % url[:60])
         req.add_header("key", client.key)
         req.add_header("customer", client.customer)
-        with urllib.request.urlopen(req, timeout=60) as r:
+        with urllib.request.urlopen(req, timeout=60, context=magicplan_ssl_context()) as r:
             return r.read()
     return fetch
 
@@ -149,7 +150,7 @@ def main():
         if args.out or args.tag:
             def fetch(e):
                 req = urllib.request.Request(e["url"])
-                with urllib.request.urlopen(req, timeout=60) as r:
+                with urllib.request.urlopen(req, timeout=60, context=magicplan_ssl_context()) as r:
                     return r.read()
             fotos, fouten = download_photos(entries, outdir, fetch)
             print("Gedownload: %d -> %s" % (len(fotos), outdir))

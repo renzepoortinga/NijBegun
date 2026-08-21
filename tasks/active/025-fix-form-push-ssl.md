@@ -39,6 +39,12 @@ dezelfde `SSLCertVerificationError` tegenkomen.
 
 ## Sessions
 
+- 2026-08-21 Codex Builder: bestaande TLS-context naar `magicplan/ssl_context.py` gedeeld en alle
+  `urlopen`-paden in extractor, form-push en photos aangesloten. Offline regressies bewijzen dat
+  certificaat- en hostnaamverificatie actief blijven, alleen `VERIFY_X509_STRICT` uitstaat, en dat
+  form-push en foto-download de context werkelijk doorgeven; bronchecks bewaken ook het CLI-pad.
+  `scripts/verify.sh`: PASS, 852/852 tests. Geen live MagicPlan-call of `.env`-toegang uitgevoerd,
+  conform gebruikersautorisatie; de operationele live check op Python 3.13+ blijft daarom open.
 - 2026-08-21 Codex Manager: taak na hernummering geclaimd op een eigen worktree vanaf actuele
   `main`; live calls alleen als het taakbestand en de expliciete gebruikersautorisatie dit toelaten.
 

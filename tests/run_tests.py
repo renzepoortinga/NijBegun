@@ -2,7 +2,8 @@
 Regressie-testsuite voor de Nij Begun & EPA-tool. Draai: python tests/run_tests.py
 Test de hele keten offline tegen de echte voorbeeldbestanden. Exit 0 = alles groen.
 """
-import os, sys, json, subprocess, tempfile
+import os, sys, json, ssl, subprocess, tempfile
+from unittest.mock import patch
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
@@ -156,6 +157,44 @@ check("extractor: elke urlopen() gebruikt de VERIFY_X509_STRICT-fix",
       _extractor_bron.count("urllib.request.urlopen(") == _extractor_bron.count("context=_ssl_context()"),
       "urlopen=%d context=%d" % (_extractor_bron.count("urllib.request.urlopen("),
                                  _extractor_bron.count("context=_ssl_context()")))
+
+# Taak 025: contextgedrag en de nieuwe callpaden offline verifiëren. De broncheck dekt ook de
+# CLI-fallback in photos.py, die zonder bestands-/argumentmanipulatie niet geïsoleerd aanroepbaar is.
+from magicplan.ssl_context import magicplan_ssl_context
+_mp_ctx = magicplan_ssl_context()
+check("MagicPlan SSL: certificaatverificatie blijft aan", _mp_ctx.verify_mode == ssl.CERT_REQUIRED)
+check("MagicPlan SSL: hostnaamverificatie blijft aan", _mp_ctx.check_hostname is True)
+check("MagicPlan SSL: X509_STRICT-profielcheck uit",
+      not (_mp_ctx.verify_flags & ssl.VERIFY_X509_STRICT))
+for _module in ("form_push.py", "photos.py"):
+    _bron = open(os.path.join(ROOT, "magicplan", _module), encoding="utf-8").read()
+    check("MagicPlan SSL: elke urlopen gedekt (%s)" % _module,
+          _bron.count("urllib.request.urlopen(") == _bron.count("context=magicplan_ssl_context()"),
+          "urlopen=%d context=%d" % (_bron.count("urllib.request.urlopen("),
+                                      _bron.count("context=magicplan_ssl_context()")))
+
+class _FakeResponse:
+    def __init__(self, data): self.data = data
+    def __enter__(self): return self
+    def __exit__(self, *_): return False
+    def read(self): return self.data
+
+from magicplan.form_push import _http as _form_http
+with patch("urllib.request.urlopen", return_value=_FakeResponse(b'{}')) as _open:
+    _form_http("GET", "https://cloud.magicplan.app/test", {})
+    _form_call = _open.call_args
+check("form_push: urlopen krijgt SSL-context",
+      isinstance(_form_call.kwargs.get("context"), ssl.SSLContext))
+
+from magicplan.photos import _client_fetch as _photo_fetch
+class _FakeClient:
+    key = "offline-key"
+    customer = "offline-customer"
+with patch("urllib.request.urlopen", return_value=_FakeResponse(b'foto')) as _open:
+    _photo_data = _photo_fetch(_FakeClient())({"url": "https://cloud.magicplan.app/foto"})
+    _photo_call = _open.call_args
+check("photos: urlopen krijgt SSL-context",
+      _photo_data == b"foto" and isinstance(_photo_call.kwargs.get("context"), ssl.SSLContext))
 
 print("12. Prijsopbouw T7-T9 (cat 1/2/3 + clonen)")
 from core.dossier import Maatregel as _M, Subpost as _Sub
