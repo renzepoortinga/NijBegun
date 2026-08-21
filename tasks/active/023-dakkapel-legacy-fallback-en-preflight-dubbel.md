@@ -56,6 +56,14 @@ hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak
   fail-closed controleren. Regressies bewijzen het legacy-dakkapelpad, exact één preflight per
   samengestelde export en behoud van de drie directe-writerpoorten. `python tests/run_tests.py`:
   849/849 groen; blocking `scripts/verify.sh`: PASS. Geen dependencies of dakformules gewijzigd.
+- 2026-08-21 Codex Builder (reviewfix): review-FAIL was terecht: de eerste implementatie bood
+  externe callers een forgeable publieke `dak_preflight_done=True`-bypass. Die parameter is uit
+  alle publieke writer/resolver/build-tree-signatures verwijderd. Publieke paden voeren de poort
+  altijd uit; alleen private underscore-helpers delen binnen `generate_all` het al gevalideerde
+  dossier. Taak-017-foutinjectie wijst nu naar die interne writerfasen. Nieuwe regressies bewijzen
+  dat de publieke signatures geen bypass meer aanbieden, de oude keyword-aanroep `TypeError` geeft,
+  directe writers blijven blokkeren en `generate_all` nog steeds exact eenmaal scant. 851/851 groen;
+  blocking `scripts/verify.sh`: PASS.
 
 ## Notes
 Gevonden tijdens `/code-review high` op taak 015 (21-8-2026, mappingmanifest-sessie). Zie die

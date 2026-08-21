@@ -331,10 +331,7 @@ def build_tree(dos):
     return root, flags
 
 
-def write(dos, path, dak_preflight_done=False):
-    assert_no_schil_kwaliteitsverklaring(dos)
-    if not dak_preflight_done:
-        assert_no_dubbel_dak_fallback(dos)
+def _write_preflighted(dos, path):
     if not os.path.exists(TEMPLATE):
         raise FileNotFoundError("Installatie-sjabloon ontbreekt: %s" % TEMPLATE)
     root, flags = build_tree(dos)
@@ -343,6 +340,12 @@ def write(dos, path, dak_preflight_done=False):
     with open(path, "wb") as fh:
         fh.write(b'<?xml version="1.0" encoding="UTF-8"?>\n' + body)
     return flags
+
+
+def write(dos, path):
+    assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
+    return _write_preflighted(dos, path)
 
 
 def main():

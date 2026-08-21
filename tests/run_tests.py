@@ -4056,6 +4056,24 @@ try:
             _direct_blockedX3.append(True)
     check("taak023: alle directe writers behouden hun dubbel-dakpreflight",
           all(_direct_blockedX3))
+    import inspect as _inspectX3
+    _public_apisX3 = (_gaX3.constructie_generate.write,
+                      _gaX3.constructie_generate.resolve_constructies,
+                      _gaX3.constructie_generate.build_tree,
+                      _gaX3.objecten_generate.write,
+                      _gaX3.objecten_generate.build_tree,
+                      _gaX3.installatie_generate.write)
+    check("taak023: publieke writer/resolver-signatures bieden geen preflight-bypass",
+          all("dak_preflight_done" not in _inspectX3.signature(fn).parameters
+              for fn in _public_apisX3))
+    try:
+        _gaX3.installatie_generate.write(
+            _unsafeX3, os.path.join(_tdX3, "bypass.xml"), dak_preflight_done=True)
+        _bypass_rejectedX3 = False
+    except TypeError:
+        _bypass_rejectedX3 = True
+    check("taak023: oude forgeable boolean-bypass wordt door publieke writer geweigerd",
+          _bypass_rejectedX3)
 
     _firstX3 = _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
     _manifest_pathX3 = os.path.join(_tdX3, _gaX3.MANIFEST)
@@ -4065,9 +4083,9 @@ try:
     _files_beforeX3 = sorted(os.listdir(_set_beforeX3))
 
     _targetsX3 = [
-        (_gaX3.constructie_generate, "write"),
-        (_gaX3.objecten_generate, "write"),
-        (_gaX3.installatie_generate, "write"),
+        (_gaX3.constructie_generate, "_write_preflighted"),
+        (_gaX3.objecten_generate, "_write_preflighted"),
+        (_gaX3.installatie_generate, "_write_preflighted"),
         (_gaX3, "_write_instructions"),
     ]
     _fault_resultsX3 = []
