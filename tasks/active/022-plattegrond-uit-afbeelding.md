@@ -96,6 +96,12 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   labels en leidt daarom niet tot een praktijkclaim. Providerbeleid en beperking voor willekeurige
   scans staan in `docs/plattegrond-vision-contract.md`. Blocking verify PASS, 1039/1039.
   Onafhankelijke herreview staat open.
+- 2026-08-21 reviewcoördinatie: OpenAI-reviewer heeft conform `agents/reviewer.md` geen verdict
+  gegeven omdat Builder en Reviewer dan dezelfde leverancier zijn. Vervolgens de lokaal aanwezige
+  Claude CLI (Anthropic) read-only gestart met de volledige reviewscope; die stopte direct op de
+  bestaande sessielimiet (reset 17:40 Europe/Amsterdam), zonder inhoudelijk verdict of wijzigingen.
+  Code/verify blijven groen; taak blijft `active` tot een reviewer van een andere leverancier PASS
+  geeft. Dit is de enige resterende DoD-blokkade.
 
 ## Notes
 De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan
