@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 020 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 023 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -20,6 +20,11 @@ Taak 020 (interactief ventilatieplan) is afgerond: ruimtepolygonen worden explic
 markers blijven ruimte- en verdiepingsgebonden, overstroom volgt pas na expliciete topologie en
 deurbelasting wordt correct getoetst. Pointer- en toetsenbordbediening, concave geometrie en strikte
 polygonvalidatie zijn gedekt. Vijf reviewrondes; eindverdict PASS, 957/957 groen.
+
+Taak 023 (legacy-dakkapel en dakpreflight) is afgerond: een ongetagd legacy-moederdak wordt na
+dakkapelbewerking correct herclassificeerd. Samengestelde Vabi-export scant de dubbele-dakpoort
+exact eenmaal via private kernen; publieke writers blijven altijd fail-closed. Herreview PASS,
+851/851 groen.
 
 Taak 015 (mappingmanifest en MagicPlan-formulierfingerprint) is afgerond: zes kritieke
 dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gereviewd

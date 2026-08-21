@@ -260,12 +260,8 @@ def assert_importable(chosen, cb):
         raise ValueError("NIET klaar voor import:\n  - " + "\n  - ".join(problems))
 
 
-def resolve_constructies(dos, pool=None, cb=None):
-    """Publiek: per schildeel de gekozen constructie (naam+guid) + de unieke gekloonde
-    <Constructie>-elementen (guid gezet). Gedeeld door constructie- EN objecten-generator,
-    zodat de NaamConstructie/GUID-verwijzingen in beide bibliotheken identiek zijn."""
-    assert_no_schil_kwaliteitsverklaring(dos)
-    assert_no_dubbel_dak_fallback(dos)
+def _resolve_constructies_preflighted(dos, pool=None, cb=None):
+    """Interne kern voor een caller die beide dossierpoorten al heeft uitgevoerd."""
     pool = pool or TemplatePool(TEMPLATE)
     cb = cb or Codebook.from_export(TEMPLATE)
     chosen, mapping, issues = match_constructies(dos, pool, cb)
@@ -280,8 +276,17 @@ def resolve_constructies(dos, pool=None, cb=None):
     return clones, mapping, issues
 
 
-def build_tree(dos, pool, cb):
-    clones, mapping, issues = resolve_constructies(dos, pool, cb)
+def resolve_constructies(dos, pool=None, cb=None):
+    """Publiek: per schildeel de gekozen constructie (naam+guid) + de unieke gekloonde
+    <Constructie>-elementen (guid gezet). Gedeeld door constructie- EN objecten-generator,
+    zodat de NaamConstructie/GUID-verwijzingen in beide bibliotheken identiek zijn."""
+    assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
+    return _resolve_constructies_preflighted(dos, pool, cb)
+
+
+def _build_tree(dos, pool, cb, resolver):
+    clones, mapping, issues = resolver(dos, pool, cb)
     if not clones:
         raise ValueError("Geen constructies om te exporteren (issues: %s)" % issues)
     out_root = copy.deepcopy(pool.root)
@@ -296,15 +301,25 @@ def build_tree(dos, pool, cb):
     return out_root, mapping, issues
 
 
-def write(dos, path, template=TEMPLATE):
+def build_tree(dos, pool, cb):
+    return _build_tree(dos, pool, cb, resolve_constructies)
+
+
+def _write_preflighted(dos, path, template=TEMPLATE):
     pool = TemplatePool(template)
     cb = Codebook.from_export(template)
-    root, mapping, issues = build_tree(dos, pool, cb)
+    root, mapping, issues = _build_tree(dos, pool, cb, _resolve_constructies_preflighted)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     body = ET.tostring(root, encoding="utf-8")
     with open(path, "wb") as fh:
         fh.write(b'<?xml version="1.0" encoding="UTF-8"?>\n' + body)
     return mapping, issues
+
+
+def write(dos, path, template=TEMPLATE):
+    assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
+    return _write_preflighted(dos, path, template)
 
 
 def main():

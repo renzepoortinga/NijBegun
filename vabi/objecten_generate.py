@@ -24,7 +24,8 @@ import os, sys, copy, uuid, argparse
 import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import load_json                                  # noqa: E402
-from vabi.constructie_generate import resolve_constructies, _classify, TemplatePool  # noqa: E402
+from vabi.constructie_generate import (resolve_constructies, _resolve_constructies_preflighted,
+                                        _classify, TemplatePool)  # noqa: E402
 from vabi.codebook import Codebook                                  # noqa: E402
 from vabi.preflight import assert_no_schil_kwaliteitsverklaring, assert_no_dubbel_dak_fallback      # noqa: E402
 
@@ -268,10 +269,10 @@ def _add_deelvlak(gt, hoofdvlak, area, naam_constructie, constructie_guid, naam_
     return True
 
 
-def build_tree(dos):
+def _build_tree(dos, resolver):
     root = ET.parse(TEMPLATE).getroot()
     # 1) gedeelde constructies (zelfde guid/naam als de constructie-bibliotheek)
-    clones, mapping, issues = resolve_constructies(dos)
+    clones, mapping, issues = resolver(dos)
     # embed ze in de Constructies-node (self-contained)
     cons = next((c for c in root.iter() if _local(c.tag) == "Constructies"), None)
     if cons is not None:
@@ -583,19 +584,27 @@ def build_tree(dos):
     return root, mapping, issues, {"hoofdvlakken": len(gevels), "deelvlakken_geplaatst": placed}
 
 
-def write(dos, path):
-    assert_no_schil_kwaliteitsverklaring(dos)
-    assert_no_dubbel_dak_fallback(dos)
+def build_tree(dos):
+    return _build_tree(dos, resolve_constructies)
+
+
+def _write_preflighted(dos, path):
     if not os.path.exists(TEMPLATE):
         raise FileNotFoundError(
             "Objecten-sjabloon ontbreekt: %s\n  Maak het eenmalig: exporteer in EPA de "
             "Objectenbibliotheek van een echt project en kopieer naar dit pad." % TEMPLATE)
-    root, mapping, issues, stats = build_tree(dos)
+    root, mapping, issues, stats = _build_tree(dos, _resolve_constructies_preflighted)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     body = ET.tostring(root, encoding="utf-8")
     with open(path, "wb") as fh:
         fh.write(b'<?xml version="1.0" encoding="UTF-8"?>\n' + body)
     return mapping, issues, stats
+
+
+def write(dos, path):
+    assert_no_schil_kwaliteitsverklaring(dos)
+    assert_no_dubbel_dak_fallback(dos)
+    return _write_preflighted(dos, path)
 
 
 def main():

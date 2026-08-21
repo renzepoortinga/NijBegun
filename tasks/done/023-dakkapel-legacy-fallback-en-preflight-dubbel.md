@@ -1,7 +1,7 @@
 ---
 id: 023
-assigned:
-branch:
+assigned: Codex Builder
+branch: fix/023-dakkapel-preflight
 depends_on: []
 ---
 
@@ -37,14 +37,36 @@ hier apart vastgelegd worden i.p.v. in 015 meegefixt — zelfde patroon als taak
 - Nieuwe dakrekenformules of preflight-regels.
 
 ## Acceptance criteria
-- [ ] Dakkapel op een ongetagd legacy-dossier (bron=="" , id=="dak") herclassificeert het
+- [x] Dakkapel op een ongetagd legacy-dossier (bron=="" , id=="dak") herclassificeert het
       moederdak net als het expliciet-getagde geval; regressietest toegevoegd.
-- [ ] `assert_no_dubbel_dak_fallback` wordt maximaal 1x per `generate_all()`-run uitgevoerd (of de
+- [x] `assert_no_dubbel_dak_fallback` wordt maximaal 1x per `generate_all()`-run uitgevoerd (of de
       herhaalde aanroepen zijn aantoonbaar goedkoop/no-op gemaakt); bestaande AC-tests blijven groen.
-- [ ] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] `./scripts/verify.sh` slaagt.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
+
+- 2026-08-21 Codex Manager: hernummerde reviewvervolgtaak geclaimd op een eigen worktree vanaf
+  actuele `main`; scope blijft beperkt tot legacy-dakkapelclassificatie en preflightdeduplicatie.
+- 2026-08-21 Codex Builder: `opname_dakkapel` legt via de gedeelde
+  `dak_fallback_schildelen`-herkenner vóór mutatie vast of het moederdak een expliciete of
+  ongetagde legacy-placeholder was en herclassificeert beide daarna als `magicplan-import`.
+  `generate_all` voert de dubbel-dakpreflight eenmaal uit en geeft dit expliciet door aan de drie
+  writers en hun gedeelde constructieresolver; rechtstreeks aangeroepen writers blijven zelf
+  fail-closed controleren. Regressies bewijzen het legacy-dakkapelpad, exact één preflight per
+  samengestelde export en behoud van de drie directe-writerpoorten. `python tests/run_tests.py`:
+  849/849 groen; blocking `scripts/verify.sh`: PASS. Geen dependencies of dakformules gewijzigd.
+- 2026-08-21 Codex Builder (reviewfix): review-FAIL was terecht: de eerste implementatie bood
+  externe callers een forgeable publieke `dak_preflight_done=True`-bypass. Die parameter is uit
+  alle publieke writer/resolver/build-tree-signatures verwijderd. Publieke paden voeren de poort
+  altijd uit; alleen private underscore-helpers delen binnen `generate_all` het al gevalideerde
+  dossier. Taak-017-foutinjectie wijst nu naar die interne writerfasen. Nieuwe regressies bewijzen
+  dat de publieke signatures geen bypass meer aanbieden, de oude keyword-aanroep `TypeError` geeft,
+  directe writers blijven blokkeren en `generate_all` nog steeds exact eenmaal scant. 851/851 groen;
+  blocking `scripts/verify.sh`: PASS.
+- 2026-08-21 Codex Reviewer/Manager: herreview op `6ae0da6` technisch PASS. Publieke signatures
+  bieden geen bypass, oude bypasskeyword faalt, directe writers blijven fail-closed en
+  `generate_all` scant exact eenmaal. 851/851 groen; taak naar `done` verplaatst.
 
 ## Notes
 Gevonden tijdens `/code-review high` op taak 015 (21-8-2026, mappingmanifest-sessie). Zie die

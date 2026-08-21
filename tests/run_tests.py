@@ -4023,6 +4023,58 @@ try:
     from vabi import generate_all as _gaX3
     _tdX3 = tempfile.mkdtemp(prefix="nb_atomic_vabi_")
     _dosX3 = build_sample()
+    _preflight_callsX3 = [0]
+    _original_preflightX3 = _gaX3.assert_no_dubbel_dak_fallback
+    def _count_preflightX3(dos):
+        _preflight_callsX3[0] += 1
+        return _original_preflightX3(dos)
+    _gaX3.assert_no_dubbel_dak_fallback = _count_preflightX3
+    try:
+        _gaX3.generate_all(_dosX3, os.path.join(_tdX3, "preflight-count"), prefix="huidig")
+    finally:
+        _gaX3.assert_no_dubbel_dak_fallback = _original_preflightX3
+    check("taak023: generate_all voert dubbel-dakpreflight exact eenmaal uit",
+          _preflight_callsX3[0] == 1)
+
+    # De optimalisatie geldt alleen voor de orkestrator: rechtstreeks aangeroepen writers
+    # moeten een onveilig dossier zelf blijven blokkeren.
+    from core.dossier import SchilDeel as _SchilX3
+    from vabi.preflight import VabiExportBlocked as _BlockedX3
+    _unsafeX3 = build_sample()
+    _unsafeX3.schil.append(_SchilX3(id="dak", type="dak", oppervlakte_m2=40.0,
+                                    bron="magicplan-dak-fallback"))
+    _unsafeX3.schil.append(_SchilX3(id="dak1-plat", type="dak", oppervlakte_m2=20.0,
+                                    bron="webapp-wizard"))
+    _direct_blockedX3 = []
+    for _writerX3, _nameX3 in ((_gaX3.constructie_generate.write, "c.xml"),
+                                (_gaX3.objecten_generate.write, "o.xml"),
+                                (_gaX3.installatie_generate.write, "i.xml")):
+        try:
+            _writerX3(_unsafeX3, os.path.join(_tdX3, _nameX3))
+            _direct_blockedX3.append(False)
+        except _BlockedX3:
+            _direct_blockedX3.append(True)
+    check("taak023: alle directe writers behouden hun dubbel-dakpreflight",
+          all(_direct_blockedX3))
+    import inspect as _inspectX3
+    _public_apisX3 = (_gaX3.constructie_generate.write,
+                      _gaX3.constructie_generate.resolve_constructies,
+                      _gaX3.constructie_generate.build_tree,
+                      _gaX3.objecten_generate.write,
+                      _gaX3.objecten_generate.build_tree,
+                      _gaX3.installatie_generate.write)
+    check("taak023: publieke writer/resolver-signatures bieden geen preflight-bypass",
+          all("dak_preflight_done" not in _inspectX3.signature(fn).parameters
+              for fn in _public_apisX3))
+    try:
+        _gaX3.installatie_generate.write(
+            _unsafeX3, os.path.join(_tdX3, "bypass.xml"), dak_preflight_done=True)
+        _bypass_rejectedX3 = False
+    except TypeError:
+        _bypass_rejectedX3 = True
+    check("taak023: oude forgeable boolean-bypass wordt door publieke writer geweigerd",
+          _bypass_rejectedX3)
+
     _firstX3 = _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
     _manifest_pathX3 = os.path.join(_tdX3, _gaX3.MANIFEST)
     with open(_manifest_pathX3, "rb") as _fhX3:
@@ -4031,9 +4083,9 @@ try:
     _files_beforeX3 = sorted(os.listdir(_set_beforeX3))
 
     _targetsX3 = [
-        (_gaX3.constructie_generate, "write"),
-        (_gaX3.objecten_generate, "write"),
-        (_gaX3.installatie_generate, "write"),
+        (_gaX3.constructie_generate, "_write_preflighted"),
+        (_gaX3.objecten_generate, "_write_preflighted"),
+        (_gaX3.installatie_generate, "_write_preflighted"),
         (_gaX3, "_write_instructions"),
     ]
     _fault_resultsX3 = []
@@ -4516,6 +4568,37 @@ try:
     finally:
         _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
     _shC.rmtree(_tdC5, ignore_errors=True)
+
+    # Taak 023: een oud dossier heeft op dezelfde placeholder nog bron="". Het legacy-signaal
+    # id="dak" moet vóór de dakkapelmutatie worden vastgelegd en daarna worden herclassificeerd.
+    _d11 = _bsC()
+    _d11.schil = [s for s in _d11.schil if s.type != "dak"]
+    _d11.schil.append(_SDC(id="dak", type="dak", subtype="Hellend dak", begrenzing="Buitenlucht",
+                           orientatie="Z", oppervlakte_m2=60.0, hellingshoek=45.0, bron=""))
+    _moeder_i10 = len(_d11.schil) - 1
+    _tdC6 = _tfC.mkdtemp(prefix="nb_dakkapel_legacy_fallback_")
+    _WAC._load_state = lambda _t: dict(_stateC)
+    _WAC._dossier = lambda _t: _d11
+    _WAC._pdir = lambda _t: _tdC6
+    try:
+        _cC5 = _WAC.app.test_client()
+        with _cC5.session_transaction() as _sessC5:
+            _sessC5["ingelogd"] = True
+        _r10 = _cC5.post("/project/test-dakkapel-legacy/opname/dakkapel",
+                         data={"moederdak_i": str(_moeder_i10), "breedte": "2", "hoogte": "1.5",
+                               "diepte": "1", "rekenzone": "1"})
+        _moeder10 = _d11.schil[_moeder_i10]
+        check("taak023: dakkapel op ongetagd legacy-moederdak herclassificeert het vlak",
+              _r10.status_code in (302, 303) and _moeder10.id == "dak"
+              and _moeder10.bron == "magicplan-import" and _moeder10.oppervlakte_m2 < 60.0)
+        try:
+            _adfC(_d11)
+            check("taak023: herclassificatie voorkomt onterechte dubbel-dakblokkade", True)
+        except _VEBC:
+            check("taak023: herclassificatie voorkomt onterechte dubbel-dakblokkade", False)
+    finally:
+        _WAC._load_state, _WAC._dossier, _WAC._pdir, _WAC._dos_save = _orig_lsC, _orig_dosC, _orig_pdC, _orig_saveC
+    _shC.rmtree(_tdC6, ignore_errors=True)
 
     _shC.rmtree(_tdC, ignore_errors=True)
     _shC.rmtree(_tdC2, ignore_errors=True)
