@@ -4822,5 +4822,244 @@ try:
 except Exception as _e:
     check("deurbelasting-validatie: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("\nAE. Ventilatieplan-pagina (taak 020): datalaag (groeperen, autoplaatsing, validatie, balans)")
+try:
+    from dashboard import ventilatieplan as _vp
+    from core.dossier import (Dossier as _DAE, Ruimte as _RAE, VloerInfo as _VIAE,
+                               VentilatieMarker as _VMAE)
+    from ventilatie.ventilatie import bereken as _vbAE, verdeel_balans as _vbalAE
+
+    # --- groepeer_per_verdieping ---
+    _d0 = _DAE()
+    check("groepeer: geen vloeren -> 1 groep 'Begane grond'",
+          _vp.groepeer_per_verdieping(_d0) == [("Begane grond", None, [])])
+
+    _d1 = _DAE()
+    _d1.geometrie.vloeren = [_VIAE(naam="Verdieping X", oppervlakte_m2=50)]
+    _d1.geometrie.ruimtes = [_RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30)]
+    _g1 = _vp.groepeer_per_verdieping(_d1)
+    check("groepeer: 1 vloer -> alle ruimtes in die ene groep, ongeacht Ruimte.verdieping",
+          len(_g1) == 1 and _g1[0][0] == "Verdieping X" and len(_g1[0][2]) == 1)
+
+    _d2 = _DAE()
+    _d2.geometrie.vloeren = [_VIAE(naam="Begane grond"), _VIAE(naam="1e verdieping")]
+    _d2.geometrie.ruimtes = [
+        _RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30, verdieping="Begane grond"),
+        _RAE(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12, verdieping="1e verdieping"),
+        _RAE(naam="Verweesde kamer", functie="overig", oppervlakte_m2=5, verdieping="Zolder (bestaat niet)")]
+    _g2 = _vp.groepeer_per_verdieping(_d2)
+    check("groepeer: 2 vloeren -> 3 groepen (BG, 1e, + niet-gekoppeld)", len(_g2) == 3)
+    _bg2 = next(g for g in _g2 if g[0] == "Begane grond")
+    _ng2 = next(g for g in _g2 if g[0] == "Niet gekoppeld aan een verdieping")
+    check("groepeer: begane grond bevat alleen de woonkamer", [r.naam for r in _bg2[2]] == ["Woonkamer"])
+    check("groepeer: onbekende verdieping komt in een expliciete 'niet gekoppeld'-groep, niet stil weg",
+          [r.naam for r in _ng2[2]] == ["Verweesde kamer"])
+
+    # --- achtergrond_van ---
+    check("achtergrond: geen VloerInfo -> (None, 'geen')", _vp.achtergrond_van(None) == (None, "geen"))
+    check("achtergrond: lege VloerInfo -> (None, 'geen')", _vp.achtergrond_van(_VIAE()) == (None, "geen"))
+    check("achtergrond: contour_m zonder afbeelding -> (None, 'contour')",
+          _vp.achtergrond_van(_VIAE(contour_m=[[0, 0], [1, 0], [1, 1]])) == (None, "contour"))
+    check("achtergrond: plattegrond_afbeelding wint van contour_m",
+          _vp.achtergrond_van(_VIAE(contour_m=[[0, 0]], plattegrond_afbeelding="bg.png"))
+          == ("bg.png", "afbeelding"))
+
+    # --- auto_markers (op de demo-woning-achtige mix) ---
+    _ruimtesAE = [_RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30),
+                  _RAE(naam="Keuken", functie="keuken", oppervlakte_m2=0.0),
+                  _RAE(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12),
+                  _RAE(naam="Badkamer", functie="badkamer", oppervlakte_m2=5),
+                  _RAE(naam="Toilet", functie="toilet", oppervlakte_m2=1.2),
+                  _RAE(naam="Hal", functie="verkeer", oppervlakte_m2=4)]
+    _resAE = _vbalAE(_vbAE(_ruimtesAE))
+    _autoAE = _vp.auto_markers(_ruimtesAE, _resAE["rows"])
+    check("auto_markers: toevoer alleen voor ruimtes met echte toevoer (Keuken 0 m2 dus niet)",
+          {m.ruimte_id for m in _autoAE if m.type == "toevoer"} == {"Woonkamer", "Slaapkamer 1"})
+    check("auto_markers: afvoer voor elke natte ruimte (afvoerpunt)",
+          {m.ruimte_id for m in _autoAE if m.type == "afvoer"} == {"Keuken", "Badkamer", "Toilet"})
+    check("auto_markers: nooit automatisch een overstroom-marker (geen adjacency-data)",
+          not any(m.type == "overstroom" for m in _autoAE))
+    check("auto_markers: coördinaten relatief (0..1)",
+          all(0.0 <= m.x <= 1.0 and 0.0 <= m.y <= 1.0 for m in _autoAE))
+    check("auto_markers: bron='auto' op elke gegenereerde marker", all(m.bron == "auto" for m in _autoAE))
+    _bk_marker = next(m for m in _autoAE if m.ruimte_id == "Badkamer")
+    check("auto_markers: afvoerwaarde komt uit afvoer_advies_ls (na balansverdeling), niet het kale minimum",
+          _bk_marker.waarde_ls == next(r for r in _resAE["rows"] if r["naam"] == "Badkamer")["afvoer_advies_ls"]
+          and _bk_marker.waarde_ls > 5.0)
+
+    # --- zorg_voor_verdiepingen: idempotent, vult alleen lege verdiepingen ---
+    _d3 = _DAE(); _d3.geometrie.ruimtes = _ruimtesAE
+    _res3 = _vbalAE(_vbAE(_d3.geometrie.ruimtes))
+    check("zorg_voor_verdiepingen: 1e keer vult en meldt gewijzigd", _vp.zorg_voor_verdiepingen(_d3, _res3["rows"]) is True)
+    check("zorg_voor_verdiepingen: markers staan er nu echt", len(_d3.ventilatieplan.verdiepingen[0].markers) > 0)
+    _d3.ventilatieplan.verdiepingen[0].markers[0].waarde_ls = 999.0   # simuleer een handmatige wijziging
+    check("zorg_voor_verdiepingen: 2e keer raakt bestaande (niet-lege) markers niet aan",
+          _vp.zorg_voor_verdiepingen(_d3, _res3["rows"]) is False
+          and _d3.ventilatieplan.verdiepingen[0].markers[0].waarde_ls == 999.0)
+
+    # --- herstel_verdieping: raakt alleen de opgegeven verdieping ---
+    _d4 = _DAE()
+    _d4.geometrie.vloeren = [_VIAE(naam="Begane grond"), _VIAE(naam="1e verdieping")]
+    _d4.geometrie.ruimtes = [
+        _RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30, verdieping="Begane grond"),
+        _RAE(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12, verdieping="1e verdieping")]
+    _res4 = _vbalAE(_vbAE(_d4.geometrie.ruimtes))
+    _vp.zorg_voor_verdiepingen(_d4, _res4["rows"])
+    _v1e = next(v for v in _d4.ventilatieplan.verdiepingen if v.naam == "1e verdieping")
+    _v1e.markers[0].waarde_ls = 12345.0  # handmatige wijziging op de 1e verdieping
+    _vbg = next(v for v in _d4.ventilatieplan.verdiepingen if v.naam == "Begane grond")
+    _vbg.markers[0].x = 0.77             # handmatige wijziging op de begane grond
+    _vp.herstel_verdieping(_d4, "Begane grond", _res4["rows"])
+    check("herstel_verdieping: de opgegeven verdieping is teruggezet",
+          next(v for v in _d4.ventilatieplan.verdiepingen if v.naam == "Begane grond").markers[0].x != 0.77)
+    check("herstel_verdieping: de ANDERE verdieping blijft ongemoeid (handmatige waarde staat nog)",
+          next(v for v in _d4.ventilatieplan.verdiepingen if v.naam == "1e verdieping").markers[0].waarde_ls == 12345.0)
+    check("herstel_verdieping: onbekende verdiepingnaam -> None, geen crash",
+          _vp.herstel_verdieping(_d4, "Kelder (bestaat niet)", _res4["rows"]) is None)
+
+    # --- valideer_markers ---
+    _geldigAE = {"Woonkamer", "Badkamer"}
+    _goedAE, _foutAE = _vp.valideer_markers(
+        [{"type": "toevoer", "ruimte_id": "Woonkamer", "x": 0.1, "y": 0.5, "waarde_ls": "21.05", "rotatie": "450"}],
+        _geldigAE)
+    check("valideer_markers: geldige marker geeft geen fout", _foutAE is None and len(_goedAE) == 1)
+    check("valideer_markers: waarde afgerond op 0,1", _goedAE[0].waarde_ls == 21.1)
+    check("valideer_markers: rotatie modulo 360 (450 -> 90)", _goedAE[0].rotatie == 90)
+    check("valideer_markers: marker zonder id krijgt er automatisch een", bool(_goedAE[0].id))
+
+    _, _fout1 = _vp.valideer_markers([{"type": "zijwaarts", "ruimte_id": "Woonkamer", "x": 0, "y": 0}], _geldigAE)
+    check("valideer_markers: onbekend type -> leesbare fout, niets opgeslagen", "type" in (_fout1 or "").lower())
+    _, _fout2 = _vp.valideer_markers([{"type": "afvoer", "ruimte_id": "Kelderkast", "x": 0, "y": 0}], _geldigAE)
+    check("valideer_markers: onbekende ruimte_id -> geweigerd met leesbare melding",
+          _fout2 is not None and "Kelderkast" in _fout2)
+    _, _fout3 = _vp.valideer_markers([{"type": "toevoer", "ruimte_id": "Woonkamer", "x": 1.5, "y": 0.5}], _geldigAE)
+    check("valideer_markers: x buiten 0..1 -> geweigerd", _fout3 is not None)
+    _goed_mix, _fout_mix = _vp.valideer_markers(
+        [{"type": "toevoer", "ruimte_id": "Woonkamer", "x": 0.1, "y": 0.1, "waarde_ls": 10},
+         {"type": "afvoer", "ruimte_id": "Onbekend", "x": 0.1, "y": 0.1, "waarde_ls": 10}], _geldigAE)
+    check("valideer_markers: 1 foute regel weigert de HELE batch, niets half opgeslagen",
+          _goed_mix is None and _fout_mix is not None)
+
+    # --- marker_balans ---
+    _d5 = _DAE()
+    _d5.ventilatieplan.verdiepingen = list(_d4.ventilatieplan.verdiepingen)
+    _bal5 = _vp.marker_balans(_d5)
+    check("marker_balans: som toevoer over alle verdiepingen samen (_d4 heeft geen natte ruimte, dus afvoer 0)",
+          _bal5["toevoer"] > 0 and _bal5["afvoer"] == 0.0)
+    _d6 = _DAE()
+    from core.dossier import VentilatieplanVerdieping as _VPVAE
+    _d6.ventilatieplan.verdiepingen = [_VPVAE(naam="X", markers=[
+        _VMAE(type="toevoer", ruimte_id="A", waarde_ls=20.0),
+        _VMAE(type="afvoer", ruimte_id="B", waarde_ls=20.0)])]
+    check("marker_balans: gelijke som -> sluitend", _vp.marker_balans(_d6)["sluitend"] is True)
+    _d6.ventilatieplan.verdiepingen[0].markers[0].waarde_ls = 25.0
+    check("marker_balans: ongelijke som -> niet sluitend", _vp.marker_balans(_d6)["sluitend"] is False)
+
+    # --- round-trip door de dossier-(de)serialisatie (core/dossier.py-uitbreiding) ---
+    _d7 = _DAE()
+    _d7.ventilatieplan.systeem = "C"
+    _d7.ventilatieplan.verdiepingen = [_VPVAE(naam="Begane grond", achtergrond="bg.png", breedte_px=1600,
+        markers=[_VMAE(id="t1", type="toevoer", ruimte_id="Woonkamer", waarde_ls=21.0, x=0.1, y=0.2,
+                       rotatie=90, bron="auto")])]
+    _terug7 = Dossier.from_dict(_d7.to_dict())
+    check("ventilatieplan: round-trip door to_dict/from_dict identiek", _terug7.to_dict() == _d7.to_dict())
+    check("ventilatieplan: marker-veld blijft na round-trip een VentilatieMarker-object",
+          _terug7.ventilatieplan.verdiepingen[0].markers[0].ruimte_id == "Woonkamer")
+except Exception as _e:
+    check("ventilatieplan-datalaag (taak 020): draait zonder fout", False); print("     " + repr(_e)[:220])
+
+print("\nAF. Ventilatieplan-pagina (taak 020): de webapp-route zelf (GET/POST, persistentie, validatie)")
+try:
+    import shutil as _shAF, dashboard.app as _WAF
+    _WAF.app.config.update(TESTING=True)
+    _cAF = _WAF.app.test_client()
+    with _cAF.session_transaction() as _sAF:
+        _sAF["ingelogd"] = True
+
+    # leeg project (nog geen ruimtes) -> de pagina stuurt door naar de opname, geen crash/lege tekening
+    _rAF0 = _cAF.post("/nieuw", data={"straat": "Ventilatiestraat 1", "postcode": "9999VP",
+                       "plaats": "X", "woningtype": "Tussenwoning"})
+    _tagAF = _rAF0.headers["Location"].rstrip("/").split("/")[-2]
+    _rAF_leeg = _cAF.get("/project/%s/ventilatieplan" % _tagAF, follow_redirects=True)
+    check("ventilatieplan-route: leeg project (geen ruimtes) stuurt door naar de opname, geen 500",
+          _rAF_leeg.status_code == 200 and "Opname" in _rAF_leeg.get_data(as_text=True))
+
+    # vul de opname met een demo-woning-achtige geometrie (2 verdiepingen)
+    _dAF = _WAF._dossier(_tagAF)
+    _dAF.geometrie.vloeren = [_VIAE(naam="Begane grond"), _VIAE(naam="1e verdieping")]
+    _dAF.geometrie.ruimtes = [
+        _RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30, verdieping="Begane grond"),
+        _RAE(naam="Keuken", functie="keuken", oppervlakte_m2=10, verdieping="Begane grond"),
+        _RAE(naam="Toilet", functie="toilet", oppervlakte_m2=1.5, verdieping="Begane grond"),
+        _RAE(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12, verdieping="1e verdieping"),
+        _RAE(naam="Badkamer", functie="badkamer", oppervlakte_m2=6, verdieping="1e verdieping")]
+    _stAF = _WAF._load_state(_tagAF)
+    _WAF._dos_save(_tagAF, _stAF, _dAF)
+
+    _rAF1 = _cAF.get("/project/%s/ventilatieplan" % _tagAF)
+    check("ventilatieplan-route: laadt (200) met geometrie", _rAF1.status_code == 200)
+    _htmlAF1 = _rAF1.get_data(as_text=True)
+    check("ventilatieplan-route: toont de balans-pil + beide verdiepingen + de 2 rekenlaag-tabellen",
+          "vp-balans" in _htmlAF1 and "Begane grond" in _htmlAF1 and "1e verdieping" in _htmlAF1
+          and "Toevoer per verblijfsruimte" in _htmlAF1 and "Afvoer per natte ruimte" in _htmlAF1)
+    check("ventilatieplan-route: laadt ventilatieplan.js", "ventilatieplan.js" in _htmlAF1)
+    check("ventilatieplan-route: alle 7 vuistregels staan er (ook 'niet te bepalen', geen stille voldoet)",
+          _htmlAF1.count("niet te bepalen") >= 5)
+
+    # eerste GET moet de autoplaatsing al hebben OPGESLAGEN (overleeft een 'herlaad')
+    _dAF2 = _WAF._dossier(_tagAF)
+    check("ventilatieplan-route: autoplaatsing is bij het eerste bezoek al in het dossier opgeslagen",
+          all(v.markers for v in _dAF2.ventilatieplan.verdiepingen))
+    _bg_naam = _dAF2.ventilatieplan.verdiepingen[0].naam
+    _n_markers_voor = len(_dAF2.ventilatieplan.verdiepingen[0].markers)
+    _rAF2 = _cAF.get("/project/%s/ventilatieplan" % _tagAF)   # 'herlaad'
+    check("ventilatieplan-route: een herlaad genereert de autoplaatsing niet opnieuw (idempotent)",
+          _rAF2.status_code == 200
+          and len(_WAF._dossier(_tagAF).ventilatieplan.verdiepingen[0].markers) == _n_markers_voor)
+
+    # POST met een geldige marker -> opgeslagen, balans terug in de response
+    import json as _jsAF
+    _nieuwe_markers = [{"id": "x1", "type": "toevoer", "ruimte_id": "Woonkamer",
+                        "waarde_ls": 21.3, "x": 0.12, "y": 0.34, "rotatie": 180, "bron": "handmatig"}]
+    _rAF3 = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, _bg_naam),
+                      data=_jsAF.dumps({"markers": _nieuwe_markers}), content_type="application/json")
+    check("markers-route: geldige marker -> 200 + ok:true", _rAF3.status_code == 200 and _rAF3.get_json()["ok"] is True)
+    _dAF3 = _WAF._dossier(_tagAF)
+    _v_bg3 = next(v for v in _dAF3.ventilatieplan.verdiepingen if v.naam == _bg_naam)
+    check("markers-route: precies opgeslagen wat gepost is (rotatie/positie/waarde)",
+          len(_v_bg3.markers) == 1 and _v_bg3.markers[0].rotatie == 180 and _v_bg3.markers[0].waarde_ls == 21.3)
+
+    # POST met een ONGELDIGE ruimte_id -> geweigerd, dossier blijft bij de vorige (geldige) set
+    _slechte_markers = [{"type": "afvoer", "ruimte_id": "Bestaat niet", "x": 0.5, "y": 0.5, "waarde_ls": 10}]
+    _rAF4 = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, _bg_naam),
+                      data=_jsAF.dumps({"markers": _slechte_markers}), content_type="application/json")
+    _j4 = _rAF4.get_json()
+    check("markers-route: ongeldige ruimte_id -> 400 + leesbare melding",
+          _rAF4.status_code == 400 and _j4["ok"] is False and "Bestaat niet" in (_j4.get("fout") or ""))
+    _dAF4 = _WAF._dossier(_tagAF)
+    check("markers-route: geweigerd verzoek verandert het dossier niet (nog steeds de vorige, geldige marker)",
+          next(v for v in _dAF4.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers[0].id == "x1")
+
+    # onbekende verdieping -> 404, nette fout
+    _rAF5 = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, "Kelder (bestaat niet)"),
+                      data=_jsAF.dumps({"markers": []}), content_type="application/json")
+    check("markers-route: onbekende verdieping -> 404", _rAF5.status_code == 404)
+
+    # herstel: alleen de opgegeven verdieping gaat terug naar de autoplaatsing
+    _v_1e_voor = next(v for v in _dAF4.ventilatieplan.verdiepingen if v.naam != _bg_naam)
+    _rAF6 = _cAF.post("/project/%s/ventilatieplan/%s/herstel" % (_tagAF, _bg_naam))
+    _j6 = _rAF6.get_json()
+    check("herstel-route: 200 + ok:true + de nieuwe markerlijst terug", _rAF6.status_code == 200 and _j6["ok"] is True
+          and isinstance(_j6.get("markers"), list) and len(_j6["markers"]) > 0)
+    _dAF6 = _WAF._dossier(_tagAF)
+    check("herstel-route: de begane grond is niet meer de handmatige 'x1'-marker (teruggezet)",
+          next(v for v in _dAF6.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers[0].id != "x1")
+    check("herstel-route: de 1e verdieping is ongemoeid gebleven",
+          next(v for v in _dAF6.ventilatieplan.verdiepingen if v.naam != _bg_naam).markers == _v_1e_voor.markers)
+
+    _shAF.rmtree(_WAF._pdir(_tagAF), ignore_errors=True)
+except Exception as _e:
+    check("ventilatieplan-route (taak 020): draait zonder fout", False); print("     " + repr(_e)[:250])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

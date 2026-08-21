@@ -71,6 +71,10 @@ class VloerInfo:
     # Alleen gevuld als de MagicPlan-API-route een plattegrond-omtrek teruggaf (assemble.py);
     # de CSV-route kent 'm nooit -> None betekent "footprint afleiden uit gevel-m2" (bestaand gedrag).
     contour_m: Optional[List[List[float]]] = None
+    # Pad (relatief aan de projectmap) naar een echte plattegrondafbeelding van deze verdieping —
+    # nog door niets gevuld (komt met taak 022, "plattegrond uit een foto lezen"); ventilatieplan.py
+    # (taak 020) kijkt er al wel naar als eerste keus voor de tekenachtergrond.
+    plattegrond_afbeelding: Optional[str] = None
 
 @dataclass
 class Ruimte:
@@ -78,6 +82,10 @@ class Ruimte:
     functie: str = ""        # verblijfsruimte | keuken | badkamer | toilet | wasruimte | verkeer | overig
     oppervlakte_m2: float = 0.0
     rekenzone: int = 1       # per-kamer override ('Vloer - rekenzone' op het room-element); default 1
+    # naam van de verdieping (= VloerInfo.naam) waar deze ruimte op ligt; leeg = niet gekoppeld
+    # (oudere dossiers, of een parser-pad dat de verdieping nog niet doorgeeft). Gebruikt door
+    # dashboard/ventilatieplan.py (taak 020) om ruimtes per verdieping te groeperen.
+    verdieping: str = ""
 
 @dataclass
 class Geometrie:
@@ -157,6 +165,33 @@ class Ventilatie:
     subsysteem_code: str = ""     # optioneel: A1 | C2a | C4b ... (indien bekend)
     rekenzone: int = 1            # tot welke rekenzone deze installatie behoort (1..3)
     opmerkingen: str = ""
+
+# ---------- ventilatieplan-tekening (taak 020: sleepbare pijlen op de plattegrond) ----------
+@dataclass
+class VentilatieMarker:
+    id: str = ""
+    type: str = ""             # toevoer | afvoer | overstroom
+    # = Ruimte.naam (het dossier kent geen aparte ruimte-id's); een marker zonder geldige ruimte_id
+    # wordt door dashboard/ventilatieplan.py geweigerd, nooit stil opgeslagen.
+    ruimte_id: str = ""
+    waarde_ls: float = 0.0
+    x: float = 0.0              # relatief (0..1) t.o.v. de achtergrond, zodat de tekening meeschaalt
+    y: float = 0.0
+    rotatie: int = 0            # graden, veelvoud van 90 (klik = draaien)
+    bron: str = "auto"          # auto (automatisch geplaatst) | handmatig (adviseur heeft 'm aangeraakt)
+
+@dataclass
+class VentilatieplanVerdieping:
+    naam: str = ""
+    achtergrond: Optional[str] = None    # pad relatief aan de projectmap (plattegrondafbeelding of None)
+    breedte_px: Optional[int] = None
+    hoogte_px: Optional[int] = None
+    markers: List[VentilatieMarker] = field(default_factory=list)
+
+@dataclass
+class Ventilatieplan:
+    systeem: str = ""           # gespiegeld aan Ventilatie.systeem (A-E), voor de koptekst van het plan
+    verdiepingen: List[VentilatieplanVerdieping] = field(default_factory=list)
 
 # ---------- installaties (gespiegeld aan VABI EPA 12) ----------
 @dataclass
@@ -323,6 +358,7 @@ class Dossier:
     geometrie: Geometrie = field(default_factory=Geometrie)
     schil: List[SchilDeel] = field(default_factory=list)
     ventilatie: Ventilatie = field(default_factory=Ventilatie)
+    ventilatieplan: Ventilatieplan = field(default_factory=Ventilatieplan)
     installaties: Installaties = field(default_factory=Installaties)
     berekening: Berekening = field(default_factory=Berekening)
     maatregelen: List[Maatregel] = field(default_factory=list)
@@ -368,7 +404,7 @@ def _from_dict(cls, d):
 _DATACLASS_FIELDS = {
     "identificatie": Identificatie, "adviseur": Adviseur, "opname": Opname,
     "geometrie": Geometrie, "ventilatie": Ventilatie, "berekening": Berekening,
-    "validatie": Validatie, "meta": Meta,
+    "validatie": Validatie, "meta": Meta, "ventilatieplan": Ventilatieplan,
     "installaties": Installaties, "verwarming": Verwarming, "tapwater": Tapwater,
     "koeling": Koeling, "dak_standaard": BouwdeelStandaard,
 }
@@ -377,6 +413,7 @@ _LIST_FIELDS = {
     "fotos": Foto, "vloeren": VloerInfo, "ruimtes": Ruimte,
     "zonne_energie": ZonneEnergieSysteem, "subposten": Subpost,
     "verwarming_extra": Verwarming, "tapwater_extra": Tapwater, "koeling_extra": Koeling,
+    "verdiepingen": VentilatieplanVerdieping, "markers": VentilatieMarker,
 }
 def _field_dataclass_type(cls, name): return _DATACLASS_FIELDS.get(name)
 def _list_inner_type(cls, name): return _LIST_FIELDS.get(name)
