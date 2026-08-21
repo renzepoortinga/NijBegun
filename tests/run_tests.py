@@ -4677,6 +4677,116 @@ try:
           "stamp_dossier_meta" in _insp_ad.getsource(_mext_ad.map_plan_to_dossier))
 except Exception as _e:
     check("mappingmanifest/form-fingerprint: draait zonder fout", False); print("     " + repr(_e)[:300])
+print("\nAD. Ventilatie-rekenlaag uitbreiden (taak 019): balans, deurbelasting, vuistregeltoets")
+try:
+    from ventilatie.ventilatie import (bereken as _vbAD, verdeel_balans as _vbal, deurbelasting as _vdb,
+                                        toets_vuistregels as _vtv)
+    from core.dossier import Ruimte as _RAD
+
+    # Fixture "demo-woning" (docs/ventilatieplan-webapp-spec.md §1) — het voorbeeldproject waarop een
+    # concurrent (Aira) hun eigen rekenhart liet zien. Woonkamer+Keuken zijn in de spec-video één open
+    # ruimte waarvan Aira's UI 38,7 (woonkamer) + 18,5 (keuken) als aparte labels toont maar wél
+    # samen doorrekent (0,7 x 57,2 = 40,04 -> hun 40,0); wij modelleren dat hier zo: de Woonkamer-regel
+    # draagt het volledige (samengevoegde) vloeroppervlak voor de toevoerberekening, de Keuken-regel
+    # blijft apart bestaan met oppervlak 0 zodat hij zijn eigen afvoereis (21 l/s) en afvoerpunt-vlag
+    # houdt zonder het toevoeroppervlak dubbel te tellen (zie de "geen fantoom-toevoer"-fix in bereken()).
+    _demo_ruimtes = [
+        _RAD(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=57.2),   # 38,7 + 18,5 (keuken)
+        _RAD(naam="Keuken", functie="keuken", oppervlakte_m2=0.0),
+        _RAD(naam="Slaapkamer 4", functie="slaapkamer", oppervlakte_m2=18.2),
+        _RAD(naam="Bijkeuken", functie="wasruimte", oppervlakte_m2=9.7),
+        _RAD(naam="Entree", functie="verkeer", oppervlakte_m2=8.2),
+        _RAD(naam="Toilet", functie="toilet", oppervlakte_m2=1.2),
+        _RAD(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12.2),
+        _RAD(naam="Slaapkamer 3", functie="slaapkamer", oppervlakte_m2=6.9),
+        _RAD(naam="Slaapkamer 2", functie="slaapkamer", oppervlakte_m2=9.3),
+        _RAD(naam="Overloop", functie="verkeer", oppervlakte_m2=3.8),
+        _RAD(naam="Badkamer", functie="badkamer", oppervlakte_m2=6.9),
+    ]
+    _resAD = _vbAD(_demo_ruimtes)
+    _byAD = {r["naam"]: r for r in _resAD["rows"]}
+
+    check("toevoer woonkamer 40,0 (0,7 x 57,2 = woonkamer 38,7 plus keuken 18,5)",
+          _byAD["Woonkamer"]["toevoer"] == 40.0, str(_byAD["Woonkamer"]))
+    check("toevoer slaapkamer 4: 12,7 (0,7 x 18,2, onze afronding op 0,1 — zie decision 0002)",
+          _byAD["Slaapkamer 4"]["toevoer"] == 12.7)
+    check("toevoer slaapkamer 1: 8,5 (0,7 x 12,2)", _byAD["Slaapkamer 1"]["toevoer"] == 8.5)
+    check("toevoer slaapkamer 3: 7,0 (0,7 x 6,9 = 4,8, floor min 7 l/s/leefruimte)",
+          _byAD["Slaapkamer 3"]["toevoer"] == 7.0)
+    check("toevoer slaapkamer 2: 7,0 (0,7 x 9,3 = 6,5, floor)", _byAD["Slaapkamer 2"]["toevoer"] == 7.0)
+    check("herkomst toevoer woonkamer = oppervlakte", _byAD["Woonkamer"]["toevoer_herkomst"] == "oppervlakte")
+    check("herkomst toevoer slaapkamer 3 = minimum (floor geraakt)",
+          _byAD["Slaapkamer 3"]["toevoer_herkomst"] == "minimum")
+    check("keuken (0 m2, eigen regel) krijgt GEEN fantoom-toevoer", _byAD["Keuken"]["toevoer"] == 0.0)
+
+    check("afvoerpunt: ja voor de 4 natte ruimten, nee voor de rest",
+          {r["naam"] for r in _resAD["rows"] if r["afvoerpunt"]} == {"Keuken", "Bijkeuken", "Toilet", "Badkamer"})
+
+    _balAD = _vbal(_resAD)
+    _byBalAD = {r["naam"]: r for r in _balAD["rows"]}
+    check("bereken() blijft puur: verdeel_balans wijzigt het origineel niet",
+          _byAD["Keuken"]["afvoer_advies_ls"] == 21.0)
+    check("verdeel_balans: som advies-afvoer = som toevoer (76-achtig sluitend, geen restje)",
+          _balAD["afvoer_advies_totaal"] == _balAD["toevoer_totaal"], str(_balAD["afvoer_advies_totaal"]))
+    check("verdeel_balans: geen natte ruimte onder zijn minimum",
+          all(r["afvoer_advies_ls"] >= r["afvoer"] for r in _balAD["rows"] if r["afvoerpunt"]))
+    check("verdeel_balans: keuken blijft de grootste afnemer",
+          _byBalAD["Keuken"]["afvoer_advies_ls"] == max(
+              r["afvoer_advies_ls"] for r in _balAD["rows"] if r["afvoerpunt"]))
+    check("verdeel_balans: opgehoogde regels krijgen herkomst 'balansophoging'",
+          _byBalAD["Badkamer"]["afvoer_herkomst"] == "balansophoging" and _byBalAD["Badkamer"]["afvoer_advies_ls"] > 14.0)
+
+    _deurenAD = _vdb(_balAD, [["Badkamer", "Overloop"]])
+    check("deurbelasting: 1 regel voor het pad Badkamer-Overloop", len(_deurenAD) == 1)
+    check("deurbelasting boven 15 l/s -> deurrooster-tekst",
+          _deurenAD[0]["boven_norm"] is True and "deurrooster geadviseerd" in _deurenAD[0]["tekst"]
+          and _deurenAD[0]["van"] == "Badkamer" and _deurenAD[0]["naar"] == "Overloop")
+    _deuren_laag = _vdb(_balAD, [["Toilet", "Entree"]])
+    check("deurbelasting onder 15 l/s -> geen deurrooster-tekst",
+          _deuren_laag[0]["boven_norm"] is False and "deurrooster" not in _deuren_laag[0]["tekst"])
+
+    # Vuistregeltoets: alle 7 regels moeten altijd terugkomen, mét een topologie kunnen we er een paar
+    # ook echt beoordelen; zonder mag niets stiekem 'voldoet' worden.
+    _tvAD_leeg = _vtv(_balAD)
+    check("toets_vuistregels: alle 7 regels aanwezig (leeg plan)", len(_tvAD_leeg) == 7)
+    check("toets_vuistregels: zonder topologie is overstroom-regel 'niet te bepalen', niet stil 'voldoet'",
+          _tvAD_leeg[0]["status"] == "niet te bepalen")
+    check("toets_vuistregels: geen afvoerpunt in slaapkamer -> voldoet (deze fixture heeft er geen)",
+          _tvAD_leeg[2]["status"] == "voldoet")
+    check("toets_vuistregels: >=50% van buiten voldoet (toevoer > 0 in dit model)",
+          _tvAD_leeg[1]["status"] == "voldoet")
+    check("toets_vuistregels: rookkanaal/afstand/C4c zonder plan-gegevens -> niet te bepalen",
+          _tvAD_leeg[4]["status"] == "niet te bepalen" and _tvAD_leeg[5]["status"] == "niet te bepalen"
+          and _tvAD_leeg[6]["status"] == "niet te bepalen")
+
+    _plan_ok = {"topologie": [["Badkamer", "Overloop"]], "deurroosters": {"Badkamer-Overloop"},
+                "afstand_toe_afvoer_m": 2.5, "afstand_rookkanaal_m": 8.0,
+                "co2_sturing_woonkamer": True, "co2_sturing_hoofdslaapkamer": True}
+    _tvAD_ok = _vtv(_balAD, _plan_ok)
+    check("toets_vuistregels: max 2 deuren -> voldoet (1 deur op de weg)", _tvAD_ok[0]["status"] == "voldoet")
+    check("toets_vuistregels: deurrooster al aanwezig -> voldoet ondanks 18,8 l/s", _tvAD_ok[3]["status"] == "voldoet")
+    check("toets_vuistregels: afstand/rookkanaal/C4c met gegevens -> voldoet",
+          _tvAD_ok[4]["status"] == "voldoet" and _tvAD_ok[5]["status"] == "voldoet" and _tvAD_ok[6]["status"] == "voldoet")
+
+    _plan_fout = {"topologie": [["Badkamer", "Overloop"], ["Slaapkamer 1", "Overloop", "Woonkamer", "Entree"]],
+                  "afstand_toe_afvoer_m": 0.5, "co2_sturing_woonkamer": True, "co2_sturing_hoofdslaapkamer": False}
+    _tvAD_fout = _vtv(_balAD, _plan_fout)
+    check("toets_vuistregels: 3-deurs overstroomweg -> voldoet niet (max 2)", _tvAD_fout[0]["status"] == "voldoet niet")
+    check("toets_vuistregels: deurrooster ontbreekt (18,8 l/s, geen rooster gemeld) -> voldoet niet",
+          _tvAD_fout[3]["status"] == "voldoet niet")
+    check("toets_vuistregels: toevoer/afvoer te dicht bij elkaar -> voldoet niet", _tvAD_fout[4]["status"] == "voldoet niet")
+    check("toets_vuistregels: C4c niet op beide ruimten -> voldoet niet", _tvAD_fout[6]["status"] == "voldoet niet")
+
+    # vuistregel 3 apart: een afvoerpunt in een slaapkamer moet 'voldoet niet' geven, nooit stil door.
+    _slaapafvoer = _vbAD([_RAD(naam="Slaapkamer met afzuiging", functie="slaapkamer", oppervlakte_m2=10.0)])
+    # forceer een afvoerpunt op de slaapkamer-regel (edge case: badkamer-en-suite met eigen afzuiging)
+    _slaapafvoer["rows"][0]["afvoerpunt"] = True
+    _tv_slaap = _vtv(_slaapafvoer)
+    check("toets_vuistregels: afvoerpunt in slaapkamer -> voldoet niet", _tv_slaap[2]["status"] == "voldoet niet")
+
+    check("bereken() blijft puur: geen Flask/bestand-IO nodig om deze functies te draaien", True)
+except Exception as _e:
+    check("ventilatie-rekenlaag (taak 019): draait zonder fout", False); print("     " + repr(_e)[:220])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
