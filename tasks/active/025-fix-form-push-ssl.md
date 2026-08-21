@@ -30,15 +30,20 @@ dezelfde `SSLCertVerificationError` tegenkomen.
 - Wijzigingen aan de form-merge- of foto-downloadlogica zelf.
 
 ## Acceptance criteria
-- [ ] `form_push.py` én `photos.py` gebruiken dezelfde SSL-profielfix als `extractor.py` voor
+- [x] `form_push.py` én `photos.py` gebruiken dezelfde SSL-profielfix als `extractor.py` voor
       calls naar `cloud.magicplan.app`.
-- [ ] Bij voorkeur: één gedeelde `_ssl_context()`-functie i.p.v. drie losse kopieën (voorkomt dat
+- [x] Bij voorkeur: één gedeelde `_ssl_context()`-functie i.p.v. drie losse kopieën (voorkomt dat
       een vierde module het straks weer vergeet).
-- [ ] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] `./scripts/verify.sh` slaagt.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 
+- 2026-08-21 Codex Builder: na onafhankelijke review PASS gerebased op de nieuwste `origin/main`.
+  Blocking `scripts/verify.sh` slaagt na rebase met 970/970 tests. Alle acceptance criteria zijn
+  voldaan. De live MagicPlan-handshake, form-push en fotodownload
+  zijn niet uitgevoerd omdat daarvoor geen gebruikersautorisatie is gegeven. Daarom blijft de taak
+  conform de Notes in `tasks/active/` en wordt de branch uitsluitend als draft aangeboden.
 - 2026-08-21 Codex Builder: bestaande TLS-context naar `magicplan/ssl_context.py` gedeeld en alle
   `urlopen`-paden in extractor, form-push en photos aangesloten. Offline regressies bewijzen dat
   certificaat- en hostnaamverificatie actief blijven, alleen `VERIFY_X509_STRICT` uitstaat, en dat
