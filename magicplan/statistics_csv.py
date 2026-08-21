@@ -1779,6 +1779,16 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             if v:
                 return v
         return ""
+    # Aanvoertemperatuur is geen categorische tekstwaarde: MagicPlan exporteert
+    # de slash in bv. 90/70 als punt. Bewaar die punt voor de gerichte
+    # normalisatie in installatie_generate.py in plaats van hem via _undot()
+    # onherstelbaar in een spatie te veranderen.
+    def G2_raw(*namen):
+        for n in namen:
+            v = (G(n) or "").strip()
+            if v:
+                return v
+        return ""
     def _int2(s):
         try:
             return int(round(float(str(s).replace(",", ".")))) if str(s).strip() else None
@@ -1792,7 +1802,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
         inst.verwarming = Verwarming(
             type_opwekker=opwek, subtype=(hr or wpm or ""),
             afgifte=G2("Verwarming - afgifte", "Verwarming – afgifte"),
-            aanvoertemperatuur=G2("Verwarming - aanvoertemperatuur", "Verwarming – aanvoertemperatuur"),
+            aanvoertemperatuur=G2_raw("Verwarming - aanvoertemperatuur",
+                                     "Verwarming – aanvoertemperatuur"),
             installatiejaar=_int2(G2("Verwarming - installatiejaar", "Verwarming – installatiejaar")))
     # --- koeling ---
     if G2("Koeling aanwezig?").strip().lower() in ("ja", "yes", "true"):
