@@ -59,6 +59,10 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   aangrenzendheid wordt symmetrisch genormaliseerd en self-/onbekende links falen, zonder
   geometrische nabijheid te gokken. Regressietests uitgebreid; 977/977 groen. Externe blockers en
   actieve taakstatus blijven ongewijzigd.
+- 2026-08-21 Codex Reviewer/Manager: onafhankelijke codereview op `5eb7d52`: CODE PASS, geen
+  resterende codeblockers; `verify.sh` PASS met 977/977 en geen advisories. Taak blijft actief en
+  PR blijft draft: provider/model, gegevensbeleid, upload-UI en tien echte gelabelde
+  validatieplattegronden ontbreken, waardoor de <5%-acceptatie-eis niet aantoonbaar is.
 
 ## Notes
 De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan
