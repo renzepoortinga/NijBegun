@@ -1,0 +1,83 @@
+{
+ "_meta": {
+  "snapshot_datum": "2026-08-21",
+  "bron": "docs/magicplan-forms-live.md (live afgelezen 23-7-2026, workspace R.poortinga) + de 3 dropdown-optielijsten (Begrenzing/Glas/Kozijn) letterlijk overgenomen uit datzelfde document.",
+  "waarschuwing": "Dit is GEEN live API-fetch — handmatig samengesteld uit de gedocumenteerde live-stand. Ververs met: python magicplan/form_fingerprint.py --refresh-live (los, expliciet, vereist .env + internet; nooit vanuit build_dossier of de testsuite aangeroepen)."
+ },
+ "forms": {
+  "Object": [
+   {"name": "Oriëntatie voorgevel", "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]},
+   {"name": "Qv10-waarde (dm3/s.m2)", "options": null},
+   {"name": "Qv10 gemeten?", "options": null},
+   {"name": "Bouwjaar", "options": null},
+   {"name": "Renovatiejaar", "options": null},
+   {"name": "Woningtype", "options": null},
+   {"name": "Gevelhoogte (m)", "options": null},
+   {"name": "Gebouwhoogte tot de nok (m)", "options": null},
+   {"name": "Ag-aftrek zolder (m2)", "options": null},
+   {"name": "Foto: vooraanzicht woning (verplicht)", "options": null},
+   {"name": "Foto: huisnummer (verplicht)", "options": null}
+  ],
+  "Constructies": [
+   {"name": "Gevel - invoer", "options": ["Kwaliteitsverklaring", "Beslisschema"]},
+   {"name": "Gevel - thermische massa", "options": null},
+   {"name": "Gevel - begrenzing", "options": ["Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)", "AOS (serre)", "AVR (aangrenzend verwarmd)", "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder"]},
+   {"name": "Gevel - isolatie aan zijde", "options": null},
+   {"name": "Kierdichting", "options": null},
+   {"name": "Vloer - invoer", "options": null},
+   {"name": "Vloer - thermische massa", "options": null},
+   {"name": "Vloer - begrenzing", "options": ["Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)", "AOS (serre)", "AVR (aangrenzend verwarmd)", "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder"]},
+   {"name": "Bodemisolatie kruipruimte", "options": null}
+  ],
+  "Installaties": [
+   {"name": "Ventilatiesysteem (A-E)", "options": null},
+   {"name": "Verwarming - type opwekker", "options": null},
+   {"name": "Verwarming - afgifte", "options": null},
+   {"name": "Verwarming - aanvoertemperatuur", "options": null},
+   {"name": "Koeling aanwezig?", "options": null},
+   {"name": "Tapwater - toestel", "options": null},
+   {"name": "PV aanwezig?", "options": null},
+   {"name": "Meerdere PV-systemen?", "options": null}
+  ],
+  "Gevel per wand": [
+   {"name": "Gevelnaam", "options": null},
+   {"name": "Gevel - oriëntatie (override)", "options": null},
+   {"name": "Gevel - invoer (override)", "options": null},
+   {"name": "Gevel - foto kwaliteitsverklaring", "options": null},
+   {"name": "Gevel - isolatie aanwezig?", "options": null},
+   {"name": "Gevel - isolatiedikte onbekend?", "options": null},
+   {"name": "Gevel - bouwjaar", "options": null},
+   {"name": "Gevel - isolatiedikte (mm)", "options": null},
+   {"name": "Gevel - spouw aanwezig (indien <40mm)?", "options": null},
+   {"name": "Gevel - spouw aanwezig?", "options": null},
+   {"name": "Gevel - bouwjaar (onbekend)", "options": null},
+   {"name": "Gevel - thermische massa", "options": null},
+   {"name": "Gevel - begrenzing", "options": ["Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)", "AOS (serre)", "AVR (aangrenzend verwarmd)", "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder"]},
+   {"name": "Gevel - rekenzone", "options": null},
+   {"name": "Deels binnen/deels buiten? (narekenen)", "options": null},
+   {"name": "Grenst aan buiten (m)", "options": null}
+  ],
+  "Vloer per kamer": [
+   {"name": "Vloer - begrenzing", "options": ["Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)", "AOS (serre)", "AVR (aangrenzend verwarmd)", "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder"]}
+  ],
+  "Raam/paneel": [
+   {"name": "Toevoerrooster aanwezig?", "options": null},
+   {"name": "Toevoerrooster type", "options": null},
+   {"name": "Bovenlicht in het kozijn?", "options": null},
+   {"name": "Bovenlicht kozijn - toevoerrooster aanwezig?", "options": null},
+   {"name": "Onderlicht in het kozijn?", "options": null},
+   {"name": "Onderlicht kozijn - toevoerrooster aanwezig?", "options": null},
+   {"name": "Type glas", "options": ["Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++", "TripleHR", "Vacuümglas", "Onbekend"]},
+   {"name": "Kozijnmateriaal", "options": ["Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (niet thermisch onderbroken)"]},
+   {"name": "Begrenzing (anders dan buitenlucht)", "options": null}
+  ],
+  "Deur": [
+   {"name": "Bovenlicht boven de deur?", "options": null},
+   {"name": "Bovenlicht deur - type glas", "options": ["Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++", "TripleHR", "Vacuümglas", "Onbekend"]},
+   {"name": "Toevoerrooster deur aanwezig?", "options": null},
+   {"name": "Type glas (indien glas in deur)", "options": ["Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++", "TripleHR", "Vacuümglas", "Onbekend"]},
+   {"name": "Kozijnmateriaal", "options": ["Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (niet thermisch onderbroken)"]},
+   {"name": "Begrenzing (anders dan buitenlucht)", "options": ["Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)", "AOS (serre)", "AVR (aangrenzend verwarmd)", "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder"]}
+  ]
+ }
+}

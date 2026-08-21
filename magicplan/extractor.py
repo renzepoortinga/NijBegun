@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
                           SchilDeel, Ventilatie, Installaties, Verwarming, Tapwater, Koeling,
                           ZonneEnergieSysteem, Foto, save_json)
+from magicplan.form_fingerprint import stamp_dossier_meta
 
 # Containers die we 1x live verifieren (eerste alternatief dat bestaat wint).
 EXPECTED_CONTAINERS = {
@@ -179,6 +180,7 @@ def map_plan_to_dossier(plan):
     _map_fotos(plan, dos)
 
     dos.meta.tool_versie = "extractor-0.2 (container 1x live verifieren)"
+    stamp_dossier_meta(dos)
     return dos
 
 

@@ -19,6 +19,7 @@ from core.dossier import (Dossier, Identificatie, Opname, Geometrie, Ruimte, Vlo
 from core.geometry import (woningscheidende_wand_toeslag_m2, aantal_woningscheidende_wanden,
                            hellingshoek_uit_nok, dak_vlakken_zadeldak, dak_vlakken_lessenaar,
                            dak_vlakken_schilddak, dakkapel_vlakken)
+from magicplan.form_fingerprint import stamp_dossier_meta
 
 
 def _f(v):
@@ -179,8 +180,11 @@ def _rekenzone_uit_naam(naam):
     return int(m.group(1)) if m else 1
 
 
-_KOZIJN_MAT = {"a": "Hout of kunststof", "b": "Metaal thermisch onderbroken",
-               "c": "Metaal niet thermisch onderbroken"}
+# LET OP (mappingmanifest-audit 21-8): deze labels MOETEN letterlijk gelijk blijven aan
+# dashboard/app.py:KOZ_OPTS EN aan de live MagicPlan-optielabels (docs/magicplan-forms-live.md) —
+# incl. de haakjes. scripts/check_mapping_manifest.py bewaakt dit voortaan machinaal.
+_KOZIJN_MAT = {"a": "Hout of kunststof", "b": "Metaal (thermisch onderbroken)",
+               "c": "Metaal (niet thermisch onderbroken)"}
 
 
 # ÉÉN VOCABULAIRE (aannames-audit 30-7). MagicPlan, de parser en de webapp gebruikten elk hun eigen
@@ -238,9 +242,9 @@ def _norm_kozijn_mat(v):
     if s[0] in _KOZIJN_MAT and (len(s) == 1 or not s[1].isalpha()):
         return _KOZIJN_MAT[s[0]]
     if "thermisch onderbroken" in s and "niet" not in s:   # F5: 'niet thermisch onderbroken' uitsluiten
-        return "Metaal thermisch onderbroken"
+        return "Metaal (thermisch onderbroken)"
     if "metaal" in s or "aluminium" in s:
-        return "Metaal niet thermisch onderbroken"
+        return "Metaal (niet thermisch onderbroken)"
     return "Hout of kunststof"
 
 
@@ -1926,6 +1930,7 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
                      "geometrie nog niet geautomatiseerd — stuur één multi-zone VABI-export, dan wire ik het)."
                      % ", ".join("zone %d" % z for z in sorted(zones)))
     dos.validatie.issues = notes
+    stamp_dossier_meta(dos)
     return dos, notes
 
 

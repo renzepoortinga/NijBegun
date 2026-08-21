@@ -806,7 +806,7 @@ check("csv: AVR-wand uitgesloten uit schil (geen O-gevel)", "O" not in _gev)
 check("csv: 'Qv10 gemeten?'=Ja -> qv10_gemeten True", _nd.opname.qv10_gemeten is True)
 _ram = [s for s in _nd.schil if s.subtype == "Raam"]
 check("csv: raam erft begrenzing van moederwand (ZW=Buitenlucht)", bool(_ram) and _ram[0].begrenzing == "Buitenlucht")
-check("csv: kozijn B -> Metaal thermisch onderbroken", bool(_ram) and _ram[0].kozijnmateriaal == "Metaal thermisch onderbroken")
+check("csv: kozijn B -> Metaal (thermisch onderbroken)", bool(_ram) and _ram[0].kozijnmateriaal == "Metaal (thermisch onderbroken)")
 
 # NL-ruimtenamen correct classificeren (anders ventilatiebalans fout) — gevonden in de ultieme check
 from magicplan.statistics_csv import _functie_uit_naam as _fun
@@ -4194,7 +4194,7 @@ try:
     from magicplan.statistics_csv import build_dossier as _bdZ, _norm_kozijn_mat as _nkm
     check("'?afwijkend' -> LEEG (niet stil op het gunstigste hout/kunststof)", _nkm("?afwijkend") == "")
     check("leeg -> hout/kunststof (80%-default)", _nkm("") == "Hout of kunststof")
-    check("metaal niet-TO herkend", _nkm("Metaal (niet thermisch onderbroken)") == "Metaal niet thermisch onderbroken")
+    check("metaal niet-TO herkend", _nkm("Metaal (niet thermisch onderbroken)") == "Metaal (niet thermisch onderbroken)")
     # DUBBELE kolomnaam (raam- en deurvariant) + kozijn 'afwijkend' op de raamkolom
     _z = ("PLAN ATTRIBUTES\nExterior perimeter: m,24,\nBouwjaar,1975 t/m 1982\nWoningtype,Tussenwoning\n"
           "Oriëntatie voorgevel,N\nGevelhoogte (m),3\nTotal living area,60\n\n"
@@ -4522,6 +4522,86 @@ try:
     _shC.rmtree(_tdC3, ignore_errors=True)
 except Exception as _e:
     check("dak-fallback-opschoning: draait zonder fout", False); print("     " + repr(_e)[:220])
+
+print("\nAD. Mappingmanifest (taak 015): drift-detectie parser <-> webapp <-> VABI + form-fingerprint")
+try:
+    from core.mapping_manifest import MANIFEST, resolve, get as _mm_get
+    from scripts.check_mapping_manifest import (run_checks as _mm_run_checks, render_doc as _mm_render_doc,
+                                                 check_doc as _mm_check_doc, DOC_PATH as _mm_doc_path)
+    from magicplan.form_fingerprint import (compute_fingerprint, snapshot_fingerprint, load_snapshot,
+                                            stamp_dossier_meta, DEFAULT_SNAPSHOT_PATH)
+
+    check("manifest: minstens de bekende dropdowns zijn opgenomen",
+          {"begrenzing", "glastype", "kozijnmateriaal"} <= {m.id for m in MANIFEST})
+    _mm_errors = _mm_run_checks()
+    check("manifest: GEEN drift tussen parser/webapp/VABI-codebook", not _mm_errors, "; ".join(_mm_errors))
+
+    # Elke manifest-entry: alle referenties moeten daadwerkelijk resolven (bewijst dat de check zelf
+    # geen stille no-op is bij een kapotte referentie -- 1 entry expres verbouwen en weer herstellen).
+    _begr = _mm_get("begrenzing")
+    _orig_ref = _begr.parser_canon
+    _begr.parser_canon = "magicplan.statistics_csv:DEZE_BESTAAT_NIET"
+    try:
+        resolve(_begr.parser_canon)
+        check("manifest: kapotte referentie faalt luid (AttributeError)", False)
+    except AttributeError:
+        check("manifest: kapotte referentie faalt luid (AttributeError)", True)
+    finally:
+        _begr.parser_canon = _orig_ref
+    check("manifest: referentie hersteld", _begr.parser_canon == _orig_ref)
+
+    # doc-generatie: --write-doc en --check-doc zijn consistent (round-trip), en het gecommitte
+    # docs/mapping-overview.md is NIET verouderd t.o.v. het manifest zoals het nu in de repo staat.
+    check("manifest-doc: render is deterministisch", _mm_render_doc() == _mm_render_doc())
+    check("manifest-doc: gecommitte docs/mapping-overview.md is actueel (--write-doc gedraaid?)",
+          _mm_check_doc(), "draai: python scripts/check_mapping_manifest.py --write-doc")
+
+    # kozijnmateriaal-regressie (de concrete bug die dit manifest heeft blootgelegd, 21-8): de parser
+    # mag NOOIT meer een kozijnwaarde produceren die de webapp-<select> niet als optie heeft staan.
+    from dashboard.app import KOZ_OPTS
+    from magicplan.statistics_csv import _norm_kozijn_mat as _nkm_ad
+    check("kozijnmateriaal: parserwaarden zitten allemaal in de webapp-optielijst",
+          all(_nkm_ad(v) in KOZ_OPTS for v in ("a", "b", "c", "")),
+          str([(v, _nkm_ad(v)) for v in ("a", "b", "c", "")]))
+
+    # form-fingerprint: gedateerde snapshot, geen live call nodig; stabiel/reproduceerbaar en
+    # gevoelig voor een echte inhoudswijziging (drift-detectie).
+    _snap = load_snapshot(DEFAULT_SNAPSHOT_PATH)
+    check("form-fingerprint: snapshot heeft een datum", bool(_snap.get("_meta", {}).get("snapshot_datum")))
+    _fp1 = snapshot_fingerprint()
+    _fp2 = snapshot_fingerprint()
+    check("form-fingerprint: reproduceerbaar (zelfde snapshot -> zelfde fingerprint)", _fp1 == _fp2)
+    _forms_gewijzigd = dict(_snap["forms"])
+    _forms_gewijzigd["Object"] = _forms_gewijzigd["Object"] + [{"name": "Nieuw testveld", "options": None}]
+    check("form-fingerprint: verandert bij een echte veldwijziging",
+          compute_fingerprint(_forms_gewijzigd) != _fp1)
+    _forms_zelfde_volgorde_anders = {k: list(reversed(v)) for k, v in _snap["forms"].items()}
+    check("form-fingerprint: ongevoelig voor volgorde (alleen inhoud telt)",
+          compute_fingerprint(_forms_zelfde_volgorde_anders) == _fp1)
+
+    # dossier-meta: elke MagicPlan-importroute stempelt fingerprint + snapshotdatum.
+    from core.dossier import Dossier
+    _dstamp = Dossier()
+    check("dossier-meta: leeg vóór het stempelen", _dstamp.meta.magicplan_form_fingerprint == "")
+    stamp_dossier_meta(_dstamp)
+    check("dossier-meta: fingerprint gezet na stamp_dossier_meta", _dstamp.meta.magicplan_form_fingerprint == _fp1)
+    check("dossier-meta: snapshotdatum gezet na stamp_dossier_meta",
+          _dstamp.meta.magicplan_form_snapshot_datum == _snap["_meta"]["snapshot_datum"])
+    check("dossier-meta: importtijd (magicplan_import_op) gezet na stamp_dossier_meta",
+          bool(_dstamp.meta.magicplan_import_op))
+
+    # de 3 echte MagicPlan-importroutes (CSV/hybride-API+report/API-only) stempelen allemaal mee --
+    # geen route mag stilletjes een dossier zonder fingerprint opleveren.
+    import inspect as _insp_ad
+    from magicplan import statistics_csv as _mscv_ad, assemble as _masm_ad, extractor as _mext_ad
+    check("statistics_csv.build_dossier stempelt de fingerprint",
+          "stamp_dossier_meta" in _insp_ad.getsource(_mscv_ad.build_dossier))
+    check("assemble.build_dossier stempelt de fingerprint",
+          "stamp_dossier_meta" in _insp_ad.getsource(_masm_ad.build_dossier))
+    check("extractor.map_plan_to_dossier stempelt de fingerprint",
+          "stamp_dossier_meta" in _insp_ad.getsource(_mext_ad.map_plan_to_dossier))
+except Exception as _e:
+    check("mappingmanifest/form-fingerprint: draait zonder fout", False); print("     " + repr(_e)[:300])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
