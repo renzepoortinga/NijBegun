@@ -17,12 +17,13 @@ de container-namen in EXPECTED_CONTAINERS bij.
 
 Credentials uit .env (NIET in OneDrive bewaren): MAGICPLAN_API_KEY, MAGICPLAN_CUSTOMER_ID, MAGICPLAN_API_BASE
 """
-import os, sys, json, math, argparse, ssl, urllib.request, urllib.error
+import os, sys, json, math, argparse, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.dossier import (Dossier, Identificatie, Opname, Geometrie, VloerInfo, Ruimte,  # noqa
                           SchilDeel, Ventilatie, Installaties, Verwarming, Tapwater, Koeling,
                           ZonneEnergieSysteem, Foto, save_json)
 from magicplan.form_fingerprint import stamp_dossier_meta
+from magicplan.ssl_context import magicplan_ssl_context
 
 # Containers die we 1x live verifieren (eerste alternatief dat bestaat wint).
 EXPECTED_CONTAINERS = {
@@ -56,9 +57,7 @@ def _ssl_context():
     vervalst certificaat (Windows/curl accepteren dezelfde keten probleemloos, en de rest van het
     internet werkt gewoon vanuit deze machine - dus geen MITM/proxy-probleem). We schakelen ALLEEN
     die ene profielcheck uit; CA-vertrouwen, hostnaam- en verloopcontrole blijven onverkort actief."""
-    ctx = ssl.create_default_context()
-    ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
-    return ctx
+    return magicplan_ssl_context()
 
 
 class MagicPlanClient:
