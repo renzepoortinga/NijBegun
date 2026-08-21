@@ -63,6 +63,13 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   resterende codeblockers; `verify.sh` PASS met 977/977 en geen advisories. Taak blijft actief en
   PR blijft draft: provider/model, gegevensbeleid, upload-UI en tien echte gelabelde
   validatieplattegronden ontbreken, waardoor de <5%-acceptatie-eis niet aantoonbaar is.
+- 2026-08-21 Codex integratiebeheer: branch gerebased op actuele `origin/main` inclusief taken
+  016/021/025. Enig conflict zat aan het einde van `tests/run_tests.py`; zowel de volledige
+  taak-016-intakesuite als de taak-022-contractsuite inhoudelijk behouden en de sectienummering
+  uniek gemaakt. Geen provider-, UI-, beleids- of nauwkeurigheidskeuze toegevoegd. Blocking
+  `scripts/verify.sh` PASS; volledige suite 1034/1034 groen en `.verify-report.json` heeft geen
+  blockers/advisories. Taak blijft `active` en PR draft wegens de reeds vastgelegde externe
+  provider-/gegevensbeleid-/datasetblokkades.
 
 ## Notes
 De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan
