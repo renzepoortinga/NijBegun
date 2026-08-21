@@ -61,7 +61,18 @@ Alleen `ventilatie/ventilatie.py` plus tests. Geen webapp, geen tekening, geen P
   vuistregeltoetsen) zelf doorgerekend en als test vastgelegd, incl. edge cases (>2 deuren, afvoerpunt
   in slaapkamer, ontbrekende plan-gegevens). 30 nieuwe checks, 821/821 tests groen; `verify.sh` PASS
   (Python-tests blijven advisory op deze Windows-sessie zonder `python3`-alias, zie taak 002 — met
-  `python` draaien ze wél, 821/0 gefaald). Wacht nu op AI-review door een andere agent.
+  `python` draaien ze wél, 821/0 gefaald).
+- 2026-08-21: AI-review (`/code-review high`, andere agent) vond 5 punten. 2 ervan (magicplan/
+  extractor.py) horen bij taak 012 op de onderliggende, nog niet gemerged branch — buiten scope van
+  deze taak, niet aangeraakt. 3 echte bevindingen in eigen werk verwerkt: (1) `verdeel_balans()` kon
+  bij >=5 natte ruimten door een vastgeklikte 0,1 l/s-afrondingsfout de grootste regel juist ÓNDER
+  zijn eigen minimum duwen — vervangen door de grootste-restmethode (Hamilton) in eenheden van 0,1 l/s,
+  die per constructie nooit een negatief aandeel geeft; (2) een 0 m2-regel op een verblijfsgebied gaf
+  stil 0 l/s toevoer i.p.v. de oude vloer van 7 l/s, wat een echt ontbrekende MagicPlan-oppervlakte kon
+  maskeren — geeft nu een expliciete waarschuwing; (3) `deurbelasting()` viel stil terug op 0 l/s bij
+  een onbekende ruimtenaam in de topologie — geeft nu een harde `ValueError` (vergelijkbaar met de
+  bestaande validatie-poorten elders in de tool). 4 nieuwe regressietests. 825/825 groen, verify.sh
+  PASS. Taak gereed voor tasks/done/.
 
 ## Notes
 **Beslissing die eerst vastgelegd moet worden in `docs/decisions/`:** Aira rondt af op hele
