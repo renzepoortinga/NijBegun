@@ -37,6 +37,15 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
 
 ## Sessions
 
+- 2026-08-21 Codex Manager na eindreview: een brede bestandsinventarisatie onder `C:\dev` vond
+  naast de drie geparseerde JSON/CSV/XML-bronnen slechts één echte bouwtekening; twee andere
+  `Bouwtekening*.jpg`-bestanden zijn sfeerfoto's. Het ontbrekende bewijs voor tien echte
+  rasterplattegronden kan daarom niet uit de aanwezige bestanden worden samengesteld. De
+  niet-blokkerende documentatiedrift is wel hersteld: alleen expliciete `ai.vision_model`-
+  configuratie wordt genoemd, gelijk aan de fail-closed code. Taak blijft actief tot echte
+  MagicPlan-rasteropnames via een bereikbare ingelogde sessie of een aangeleverde beeldset
+  beschikbaar zijn.
+
 - 2026-08-21 Codex onafhankelijke eindreviewer op `fdc133e`: **VERDICT FAIL**. De codepaden voor
   volledige JPG/PNG-decode, begrensde upload, expliciet `ai.vision_model`, providerprovenance,
   schaalbewijs, adviseursbevestiging en atomische dossiermutatie zijn inhoudelijk PASS. Blocking

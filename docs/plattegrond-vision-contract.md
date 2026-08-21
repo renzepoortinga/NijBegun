@@ -33,7 +33,7 @@ grens bewijzen.
 ## Provider en gegevensbeleid
 
 De webroute gebruikt de al aanwezige Anthropic-koppeling en vereist een expliciete
-`ai.vision_model` (of bestaande `ai.model`) plus API-sleutel. Uploaden of bekijken verstuurt niets:
+`ai.vision_model` plus API-sleutel. Uploaden of bekijken verstuurt niets:
 uitsluitend **Afbeeldingen analyseren** start de live call. De pagina waarschuwt vooraf dat namen en
 persoonsgegevens uit de tekening moeten worden verwijderd. Provider, exacte modelnaam en versie staan
 in ieder concept. Een andere provider of ander bewaarbeleid vereist een nieuw besluit.
