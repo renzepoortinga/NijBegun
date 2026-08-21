@@ -46,6 +46,11 @@ dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gerev
 formulier-snapshotcontract. Optie-, label- en overige snapshotdrift maken CI luid rood.
 Alle importpaden bewaren fingerprint/importmetadata; onafhankelijke herreview PASS, 845/845 groen.
 
+Taak 024 onderzoekt en importeert de actuele maatregelencatalogus uit de publieke Nij Begun API.
+De API heeft specversie 1.0 maar geen inhoudelijk versielabel; de import wordt daarom vastgelegd
+met ophaaltijd en contentfingerprint. De eerste live vergelijking vond 291 API-regels tegenover
+338 XLSX-regels en vereist expliciete verschilvalidatie vóór vervanging.
+
 Taak 017 (atomische Vabi-exportset) is afgerond: writers publiceren eerst een gevalideerde,
 immutable set en maken die zichtbaar via één atomische `CURRENT.json`-wissel. Fouten behouden
 de vorige geldige set; dashboarddownloads en projectexport volgen CURRENT met legacyfallback.
