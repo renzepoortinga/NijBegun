@@ -35,9 +35,12 @@ from dashboard import knowledge as knowledge_mod                                
 from dashboard import bouwjaar as bouwjaar_mod                                        # noqa: E402
 from engine.advies_text import genereer_advies                                        # noqa: E402
 from engine.standaard import verliesoppervlak, standaard_eis                          # noqa: E402
-from ventilatie.ventilatie import bereken as vent_bereken, rapport as vent_rapport    # noqa: E402
+from ventilatie.ventilatie import (bereken as vent_bereken, rapport as vent_rapport,  # noqa: E402
+                                   verdeel_balans as vent_verdeel_balans,
+                                   toets_vuistregels as vent_toets_vuistregels)
 from ventilatie.ventilatieplan_svg import ventilatieplan_svg                          # noqa: E402
 from dashboard.gebouw_svg import gebouw_svg                                            # noqa: E402
+from dashboard import ventilatieplan as vp_mod                                         # noqa: E402
 from isolatieplan import fill_template                                                # noqa: E402
 from foto import checklist as foto_checklist                                          # noqa: E402
 from validator import validate as validator_mod                                       # noqa: E402
@@ -558,6 +561,7 @@ function compasPrev(f){
 
 <div class=card><h2>Ventilatie</h2>
 <p class=muted>Nij Begun rekent met vuistregels: toevoer 0,7 dm³/s·m² per verblijfsgebied (min 7 l/s), afvoer keuken 21 / bad 14 / toilet 7, in balans. Ventilatie is een <b>verplicht</b> onderdeel van het isolatieplan.</p>
+{% if d.geometrie.ruimtes %}<a class="btn sec" href="{{url_for('ventilatieplan_pagina', tag=tag)}}">📐 Ventilatieplan tekenen</a>{% endif %}
 <form method=post action="{{url_for('opname_installaties', tag=tag)}}"><div class=grid2>
 <div><label>Ventilatie (A-E)</label><input name=vent_systeem value="{{d.ventilatie.systeem}}" placeholder="A/B/C/D/E"></div>
 <div><label>Ventilatie subsysteem</label><input name=vent_sub value="{{d.ventilatie.subsysteem_code}}" placeholder="bv. C1"></div>
@@ -1842,6 +1846,176 @@ def opname_vabi_huidig(tag):
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
                     headers={"Content-Disposition": "attachment; filename=vabi_huidig_%s.zip" % tag})
+
+
+# ---------------- ventilatieplan (taak 020: sleepbare pijlen op de plattegrond) ----------------
+VENTILATIEPLAN_TMPL = """{{stepper|safe}}
+<h1>Ventilatieplan — {{st.adres}}</h1>
+<p class=lead><a href="{{url_for('opname', tag=tag)}}">&larr; Terug naar de opname</a></p>
+<div class="btn-row" style="align-items:center">
+<span id=vp-balans class="pill {{'green' if balans.sluitend else 'amber'}}">
+Balans: toevoer {{'%.1f'|format(balans.toevoer)}} l/s {{'=' if balans.sluitend else '≠'}} afvoer {{'%.1f'|format(balans.afvoer)}} l/s</span>
+<button type=button class="btn sec" id=vp-herbereken>Herbereken balans</button>
+</div>
+<p class="muted small">De tekening is leidend voor de balans hierboven — je kunt een marker bijstellen naar een
+échte roostercapaciteit. De tabellen rechts komen rechtstreeks uit de rekenlaag (Nij Begun-vuistregels) en
+veranderen niet mee; ze zijn het uitgangspunt waarmee de tekening is voorgevuld.</p>
+
+<div class=vp-layout>
+<div class=vp-verdiepingen>
+<h2>Plan per verdieping</h2>
+{% for v in verdiepingen_json %}
+<div class=card>
+<h3>{{v.naam}}
+{% if v.ruimtes %}<select class=vp-ruimte-kiezer data-verdieping="{{v.naam}}">
+{% for r in v.ruimtes %}<option value="{{r.naam}}">{{r.naam}}</option>{% endfor %}
+</select>{% endif %}
+</h3>
+<div class=vp-canvas-wrap>
+<svg class=vp-canvas viewBox="0 0 1000 750" data-verdieping="{{v.naam}}" data-soort="{{v.achtergrond_soort}}">
+<rect x=0 y=0 width=1000 height=750 fill="var(--card)"></rect>
+{% if v.achtergrond_soort == 'afbeelding' %}<image href="{{v.achtergrond_url}}" x=0 y=0 width=1000 height=750 preserveAspectRatio="xMidYMid meet"></image>
+{% elif v.achtergrond_soort == 'contour' %}<polygon points="{% for p in v.contour_punten %}{{'%.1f'|format(p[0]*1000)}},{{'%.1f'|format(p[1]*750)}} {% endfor %}" fill="var(--tint)" stroke="var(--sub)" stroke-width=2></polygon>
+{% else %}<text x=500 y=375 text-anchor=middle fill="var(--sub)" font-size=22>Geen plattegrond beschikbaar — sleep de markers op het lege vlak</text>{% endif %}
+<g class=vp-markers></g>
+</svg>
+</div>
+<p class="muted small">Slepen = verplaatsen · klik = 90° draaien · dubbelklik = waarde wijzigen (leeg = verwijderen)</p>
+<div class=btn-row>
+<button type=button class="btn sec vp-add" data-type=toevoer data-verdieping="{{v.naam}}">+ Toevoer</button>
+<button type=button class="btn sec vp-add" data-type=afvoer data-verdieping="{{v.naam}}">+ Afvoer</button>
+<button type=button class="btn sec vp-add" data-type=overstroom data-verdieping="{{v.naam}}">+ Overstroom</button>
+<span class=spacer></span>
+<button type=button class="btn sec vp-herstel" data-verdieping="{{v.naam}}">Herstel</button>
+</div>
+</div>
+{% endfor %}
+<div class=card><h3>Legenda</h3>
+<div class=btn-row>
+<span class=vp-legenda><svg width=18 height=18><path d="M9 1 L17 15 L1 15 Z" fill="var(--blue)"></path></svg> toevoer</span>
+<span class=vp-legenda><svg width=18 height=18><ellipse cx=9 cy=9 rx=8 ry=6 fill="var(--orange)"></ellipse></svg> afvoer</span>
+<span class=vp-legenda><svg width=18 height=18><path d="M9 1 L17 15 L1 15 Z" fill="var(--green)"></path></svg> overstroom</span>
+</div></div>
+</div>
+
+<div class=vp-berekening>
+<h2>Berekening</h2>
+<div class=card><h3>Toevoer per verblijfsruimte</h3>
+<div class=table-wrap><table><thead><tr><th>Ruimte</th><th>M2</th><th>Min. l/s</th><th>Advies l/s</th></tr></thead><tbody>
+{% for r in res.rows %}{% if r.toevoer %}<tr><td data-label=Ruimte>{{r.naam}}</td><td data-label=M2>{{'%.1f'|format(r.opp)}}</td>
+<td data-label="Min. l/s">{{'%.1f'|format(r.toevoer)}}</td><td data-label="Advies l/s"><b>{{'%.1f'|format(r.toevoer)}}</b></td></tr>{% endif %}{% endfor %}
+</tbody></table></div></div>
+<div class=card><h3>Afvoer per natte ruimte</h3>
+<div class=table-wrap><table><thead><tr><th>Ruimte</th><th>Min. l/s</th><th>Advies l/s</th><th>Afvoerpunt</th></tr></thead><tbody>
+{% for r in res.rows %}{% if r.afvoerpunt %}<tr><td data-label=Ruimte>{{r.naam}}</td><td data-label="Min. l/s">{{'%.1f'|format(r.afvoer)}}</td>
+<td data-label="Advies l/s"><b>{{'%.1f'|format(r.afvoer_advies_ls)}}</b>{% if r.afvoer_herkomst == 'balansophoging' %} <span class="pill gray" title="Opgehoogd om de balans te sluiten (taak 019)">↑</span>{% endif %}</td>
+<td data-label=Afvoerpunt>Ja</td></tr>{% endif %}{% endfor %}
+</tbody></table></div></div>
+<div class=card><h3>Vuistregels</h3>
+<ul class=vp-vuistregels>
+{% for t in toets %}<li><span class="pill {{'green' if t.status=='voldoet' else ('amber' if t.status=='niet te bepalen' else 'red')}}">{{t.status}}</span> {{t.regel}}
+<span class="muted small">{{t.reden}}</span></li>{% endfor %}
+</ul>
+{% if res.waarschuwingen %}<div class=warn>{% for w in res.waarschuwingen %}<p>{{w}}</p>{% endfor %}</div>{% endif %}
+</div>
+</div>
+</div>
+
+<script src="{{url_for('static', filename='ventilatieplan.js')}}"></script>
+<script>
+window.VP_TAG = {{tag|tojson}};
+window.VP_MARKER_TYPES = {{marker_types|tojson}};
+window.VP_VERDIEPINGEN = {{verdiepingen_json|tojson}};
+document.addEventListener('DOMContentLoaded', function(){ ventilatieplanInit(); });
+</script>
+"""
+
+
+def _vp_context(tag, dos):
+    """Bouwt de rekenlaag (taak 019) + de tekendata (taak 020) voor één keer op, gedeeld door de
+    GET-pagina en de POST-routes (die na een wijziging dezelfde balans teruggeven)."""
+    import dataclasses
+    res = vent_verdeel_balans(vent_bereken(dos.geometrie.ruimtes))
+    dos.ventilatieplan.systeem = dos.ventilatie.systeem   # gespiegeld, geen eigen bron van waarheid
+    gewijzigd = vp_mod.zorg_voor_verdiepingen(dos, res["rows"])
+    by_naam = {r["naam"]: r for r in res["rows"]}
+    groepen = {naam: ruimtes for naam, _vloer, ruimtes in vp_mod.groepeer_per_verdieping(dos)}
+    vloeren = {naam: vloer for naam, vloer, _r in vp_mod.groepeer_per_verdieping(dos)}
+    verdiepingen_json = []
+    for v in dos.ventilatieplan.verdiepingen:
+        vloer = vloeren.get(v.naam)
+        pad, soort = vp_mod.achtergrond_van(vloer)
+        ruimtes_json = [{"naam": r.naam, "toevoer": (by_naam.get(r.naam) or {}).get("toevoer", 0.0),
+                         "afvoer": (by_naam.get(r.naam) or {}).get("afvoer_advies_ls",
+                                    (by_naam.get(r.naam) or {}).get("afvoer", 0.0)),
+                         "afvoerpunt": bool((by_naam.get(r.naam) or {}).get("afvoerpunt"))}
+                        for r in groepen.get(v.naam, [])]
+        verdiepingen_json.append({
+            "naam": v.naam,
+            "achtergrond_soort": soort,
+            "achtergrond_url": url_for("download", tag=tag, filename=pad) if pad else None,
+            "contour_punten": vp_mod.contour_punten_relatief(vloer),
+            "markers": [dataclasses.asdict(m) for m in v.markers],
+            "ruimtes": ruimtes_json,
+        })
+    return res, gewijzigd, verdiepingen_json
+
+
+@app.route("/project/<tag>/ventilatieplan")
+@login_required
+def ventilatieplan_pagina(tag):
+    st = _load_state(tag)
+    dos = _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    if not dos.geometrie.ruimtes:
+        flash("Nog geen ruimtes in de opname — vul eerst de opname in voordat je het ventilatieplan tekent.")
+        return redirect(url_for("opname", tag=tag))
+    res, gewijzigd, verdiepingen_json = _vp_context(tag, dos)
+    if gewijzigd:
+        _dos_save(tag, st, dos)
+    balans = vp_mod.marker_balans(dos)
+    toets = vent_toets_vuistregels(res)   # nog zonder topologie/plan-gegevens -> 'niet te bepalen' waar dat hoort
+    return page(VENTILATIEPLAN_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
+                res=res, balans=balans, toets=toets, verdiepingen_json=verdiepingen_json,
+                marker_types=vp_mod.MARKER_TYPES)
+
+
+@app.route("/project/<tag>/ventilatieplan/<verdieping>/markers", methods=["POST"])
+@login_required
+def ventilatieplan_markers(tag, verdieping):
+    st = _load_state(tag)
+    dos = _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    v = next((v for v in dos.ventilatieplan.verdiepingen if v.naam == verdieping), None)
+    if v is None:
+        return {"ok": False, "fout": "Onbekende verdieping '%s'." % verdieping}, 404
+    data = request.get_json(silent=True) or {}
+    geldig = vp_mod.geldige_ruimtenamen(dos)
+    markers, fout = vp_mod.valideer_markers(data.get("markers") or [], geldig)
+    if fout:
+        return {"ok": False, "fout": fout}, 400
+    v.markers = markers
+    _dos_save(tag, st, dos)
+    return {"ok": True, "balans": vp_mod.marker_balans(dos)}
+
+
+@app.route("/project/<tag>/ventilatieplan/<verdieping>/herstel", methods=["POST"])
+@login_required
+def ventilatieplan_herstel(tag, verdieping):
+    import dataclasses
+    st = _load_state(tag)
+    dos = _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    res = vent_verdeel_balans(vent_bereken(dos.geometrie.ruimtes))
+    v = vp_mod.herstel_verdieping(dos, verdieping, res["rows"])
+    if v is None:
+        return {"ok": False, "fout": "Onbekende verdieping '%s'." % verdieping}, 404
+    _dos_save(tag, st, dos)
+    return {"ok": True, "markers": [dataclasses.asdict(m) for m in v.markers],
+            "balans": vp_mod.marker_balans(dos)}
 
 
 @app.route("/project/<tag>/naar_maatregelen")

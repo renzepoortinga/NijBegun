@@ -367,7 +367,8 @@ def build_dossier(csv_path, straat="", huisnummer="", postcode="", plaats="", wo
             continue
         _rz_room = _rv("vloer - rekenzone")
         geo.ruimtes.append(Ruimte(naam=naam, functie=_functie_uit_naam(naam), oppervlakte_m2=ag,
-                                  rekenzone=(int(_rz_room) if _rz_room.strip().isdigit() else 1)))
+                                  rekenzone=(int(_rz_room) if _rz_room.strip().isdigit() else 1),
+                                  verdieping=_cur_verd))
         rb = _norm_begrenzing(_rv("vloer - begrenzing")) or _begrenzing_uit_naam(naam)
         if rb not in ("Buitenlucht", "AVR"):   # veld-override of ruimtenaam-token -> apart vloerdeel
             vloer_split[rb] = round(vloer_split.get(rb, 0.0) + ag, 2)
