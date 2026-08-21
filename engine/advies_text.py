@@ -83,14 +83,14 @@ def begeleidende_tekst(m):
 def _staat_regel(resultaat, label):
     if not resultaat:
         return None
-    eb = resultaat.get("IndicatorEnergiebehoefte")
+    eb = resultaat.get("_toetswaarde") or resultaat.get("NettoWarmtebehoefte") or resultaat.get("IndicatorEnergiebehoefte")
     std = resultaat.get("Standaard")
     lab = resultaat.get("Labelklasse")
     parts = []
     if lab:
         parts.append("energielabel %s" % lab)
     if eb:
-        parts.append("energiebehoefte %s kWh/m2.jr" % eb)
+        parts.append("netto warmtebehoefte %s kWh/m2.jr" % eb)
     if std:
         parts.append("Standaard-eis %s kWh/m2.jr" % std)
     return "%s: %s." % (label, ", ".join(parts)) if parts else None

@@ -152,7 +152,9 @@ def read_vabi_result(vabi_export: Any) -> dict:
     else:
         raw = read_results(str(vabi_export))
 
-    eb = raw.get("IndicatorEnergiebehoefte")
+    # Standaard-toets = netto warmtebehoefte van de schil, niet de bredere energiebehoefte-
+    # indicator (die installaties meeweegt); val terug op die laatste bij oudere exports.
+    eb = raw.get("NettoWarmtebehoefte") or raw.get("IndicatorEnergiebehoefte")
     st = raw.get("Standaard")
     return {
         "energiebehoefte": float(eb) if eb is not None else None,

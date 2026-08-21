@@ -38,7 +38,12 @@ def parse(path):
         gebruiksoppervlakte_ag_m2=(txt(summary, "Gebruiksoppervlakte", float)
                                    or txt(main, "SurfaceArea", float) or 0.0))
     dos.berekening = Berekening(
-        kwh_m2_huidig=txt(summary, "IndicatorEnergiebehoefte", float),
+        # Standaard-toets = netto warmtebehoefte van de schil, niet de bredere energiebehoefte-
+        # indicator (die installaties meeweegt); val terug op die laatste bij oudere exports zonder
+        # NettoWarmtebehoefte. Zie vabi/result_reader.py voor dezelfde afweging.
+        kwh_m2_huidig=(txt(summary, "NettoWarmtebehoefte", float)
+                       if txt(summary, "NettoWarmtebehoefte", float) is not None
+                       else txt(summary, "IndicatorEnergiebehoefte", float)),
         standaard_eis_kwh_m2=txt(summary, "Standaard", float),
         label_huidig=txt(summary, "Labelklasse") or "",
         bron="Vabi EPA-W (NTA8800) monitoringbestand")
