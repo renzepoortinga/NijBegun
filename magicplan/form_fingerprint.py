@@ -84,18 +84,26 @@ def refresh_snapshot_live(path=DEFAULT_SNAPSHOT_PATH):
 
     env = _load_env()
     forms_out = {}
+
+    def _merge(naam, velden):
+        # Project-forms (fetch_forms) en element-veldgroepen (fetch_fields) kunnen in theorie
+        # dezelfde naam gebruiken -- MERGE de velden i.p.v. de tweede set stil te laten vallen
+        # (setdefault deed dat eerder: bij een naamsbotsing verdween een heel veldenblok uit de
+        # snapshot zonder foutmelding, mappingmanifest-audit 21-8).
+        bestaand = forms_out.setdefault(naam, [])
+        bekende_namen = {v["name"] for v in bestaand}
+        bestaand.extend(v for v in velden if v["name"] not in bekende_namen)
+
     for record in fetch_forms(env):
         naam = (record.get("name") or record.get("name_escaped") or "onbekend")
-        velden = []
-        for q in record.get("fields", record.get("questions", [])) or []:
-            velden.append({"name": q.get("name", ""), "options": q.get("options") or None})
-        forms_out[naam] = velden
+        velden = [{"name": q.get("name", ""), "options": q.get("options") or None}
+                  for q in record.get("fields", record.get("questions", [])) or []]
+        _merge(naam, velden)
     for record in fetch_fields(env):
         naam = (record.get("name") or record.get("name_escaped") or "onbekend")
-        velden = []
-        for q in record.get("fields", record.get("questions", [])) or []:
-            velden.append({"name": q.get("name", ""), "options": q.get("options") or None})
-        forms_out.setdefault(naam, velden)
+        velden = [{"name": q.get("name", ""), "options": q.get("options") or None}
+                  for q in record.get("fields", record.get("questions", [])) or []]
+        _merge(naam, velden)
 
     snap = {
         "_meta": {

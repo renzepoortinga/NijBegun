@@ -29,6 +29,7 @@ BETEKENIS heeft in VABI — dat is mensenwerk (live EPA-import), vastgelegd in `
 Dit script signaleert AFWIJKING, het bevestigt geen nieuwe waarheid.
 """
 import argparse
+import functools
 import os
 import sys
 
@@ -46,7 +47,10 @@ class DriftError(Exception):
     pass
 
 
+@functools.lru_cache(maxsize=1)
 def _codebook():
+    # Parseert de 219-constructie XML-export -- 1x per proces (meerdere manifest-entries gebruiken
+    # 'm; niet per entry opnieuw parsen, mappingmanifest-audit 21-8).
     from vabi.codebook import Codebook
     return Codebook.default()
 

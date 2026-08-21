@@ -87,6 +87,12 @@ def _subtype_code(woningtype):
     w = (woningtype or "").strip().lower()
     if not w:
         return None
+    # Meergezins ('Appartement (tussen)'/'Appartement (hoek)' etc.) buiten Nij Begun-scope
+    # (grondgebonden eengezinswoningen) -> ALTIJD flaggen, ook al bevat de tekst 'tussen'/'hoek'
+    # (mappingmanifest-audit 21-8: die substring-match matchte deze appartementtypes eerder
+    # per ongeluk op de grondgebonden woningposities 1/2 -> nooit gegokt, golden rule).
+    if "appartement" in w:
+        return None
     if "vrijstaand" in w:
         return "0"
     if ("onder een kap" in w or "onder-een-kap" in w or w.startswith("twee")

@@ -85,9 +85,9 @@ tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 | VABI-pad | Objecten > Object > Subtype (woningpositie; Gebouwtype vast 0=Eengezinswoning, Nij Begun-scope) |
 | VABI-codes | `vabi.objecten_generate:_subtype_code` |
 | VABI-codes normalizer | — |
-| Bewust onbevestigde opties | Galerijwoning, Portiekwoning, Maisonnette (bovenwoning), Woning boven bedrijfsruimte |
+| Bewust onbevestigde opties | Galerijwoning, Portiekwoning, Maisonnette (bovenwoning), Woning boven bedrijfsruimte, Appartement (tussen), Appartement (hoek) |
 | Bewijsstatus | **gedeeltelijk** |
-| Bron | Objecten-export hoekwoning (Subtype=1) + monitor-fixture tussenwoning (Subtype=2), 18-7-2026; de 4 meergezins-varianten vallen buiten de Nij Begun-scope (grondgebonden eengezinswoningen) en worden bewust NIET gegokt (golden rule) |
+| Bron | Objecten-export hoekwoning (Subtype=1) + monitor-fixture tussenwoning (Subtype=2), 18-7-2026; alle 6 meergezins-varianten vallen buiten de Nij Begun-scope (grondgebonden eengezinswoningen) en worden bewust NIET gegokt (golden rule; _subtype_code() sloot 'appartement' expliciet uit na een mappingmanifest-audit 21-8: 'Appartement (tussen)'/'(hoek)' matchten eerder per ongeluk de grondgebonden hoek/tussen-substring-check) |
 
 ## pv_orientatie
 

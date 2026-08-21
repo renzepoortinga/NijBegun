@@ -138,11 +138,13 @@ MANIFEST: List[VeldMapping] = [
         vabi_pad="Objecten > Object > Subtype (woningpositie; Gebouwtype vast 0=Eengezinswoning, Nij Begun-scope)",
         vabi_codes="vabi.objecten_generate:_subtype_code",
         vabi_onbevestigde_opties=["Galerijwoning", "Portiekwoning", "Maisonnette (bovenwoning)",
-                                  "Woning boven bedrijfsruimte"],
+                                  "Woning boven bedrijfsruimte", "Appartement (tussen)", "Appartement (hoek)"],
         bewijsstatus="gedeeltelijk",
         bron_doc="Objecten-export hoekwoning (Subtype=1) + monitor-fixture tussenwoning (Subtype=2), 18-7-2026; "
-                 "de 4 meergezins-varianten vallen buiten de Nij Begun-scope (grondgebonden eengezinswoningen) "
-                 "en worden bewust NIET gegokt (golden rule)",
+                 "alle 6 meergezins-varianten vallen buiten de Nij Begun-scope (grondgebonden eengezinswoningen) "
+                 "en worden bewust NIET gegokt (golden rule; _subtype_code() sloot 'appartement' expliciet uit "
+                 "na een mappingmanifest-audit 21-8: 'Appartement (tussen)'/'(hoek)' matchten eerder per ongeluk "
+                 "de grondgebonden hoek/tussen-substring-check)",
     ),
     VeldMapping(
         id="pv_orientatie",
