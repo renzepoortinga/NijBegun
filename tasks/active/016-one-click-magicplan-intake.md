@@ -70,6 +70,13 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
   al gemeten vloeroppervlakte. Alleen simple-polygonvalidatie wordt met taak 020 gedeeld. De referentie
   is hersteld naar 8×5 m en ketentests bewijzen 40 m² plus de echte `gebouw_svg`-contourroute zonder
   fallback. Concurrency/CAS/rollback ongewijzigd behouden. Blocking `verify.sh`: PASS, 997/997 groen.
+- 2026-08-21 Codex Builder: vierde herreview-blocker verwerkt. Er bestond geen harde projectgrens
+  voor vloerbreedte/-diepte; daarom uitsluitend een numeriek-defensieve (geen NTA-/bouwnorm) grens
+  toegevoegd: eindige positieve bounding-boxmaten en maximaal `10^6` voor aspectratio en
+  bbox-/polygonoppervlakteverhouding. De exacte equal-area IEEE-754-repro
+  `[[0,0],[1e308,0],[1e308,4e-307],[0,4e-307]]` wordt nu geweigerd, terwijl een normale langwerpige
+  40×1 m-contour met dezelfde 40 m² expliciet geaccepteerd blijft. Blocking `verify.sh`: PASS,
+  998/998 groen.
 
 ## Notes
 Afhankelijk van dakmigratie en een stabiel mappingmanifest.

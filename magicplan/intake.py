@@ -22,6 +22,10 @@ from core.polygon import oppervlakte as polygon_oppervlakte, zelfsnijdend
 VERPLICHT = {"manifest.json", "statistics.csv", "geometry.json"}
 MANIFEST_SCHEMA = "nijbegun-magicplan-intake/1"
 GEOMETRY_SCHEMA = "nijbegun-magicplan-geometry/1"
+# Numerieke conditioneringsgrens, geen woning-/NTA-norm. Verhoudingen boven 10^6 maken een
+# 2D-vlak praktisch lijnvormig en laten extreme maar eindige IEEE-754-invoer door area-checks glippen.
+MAX_BBOX_ASPECT = 1_000_000.0
+MAX_BBOX_AREA_FACTOR = 1_000_000.0
 BEHOUD_BELEID = {
     "handmatige_daken": "behouden",
     "fotos": "behouden",
@@ -152,6 +156,13 @@ def _valideer_geometry(geo, verdiepingen, project_id):
         # volgt exact dat metrische contract; zo lekken pixel-/wereldcoördinaten niet stil door.
         if min(p[0] for p in schoon) != 0.0 or min(p[1] for p in schoon) != 0.0:
             raise IntakeError("Metrische grondvlakcontour moet op oorsprong (0,0) zijn genormaliseerd")
+        breedte = max(p[0] for p in schoon) - min(p[0] for p in schoon)
+        diepte = max(p[1] for p in schoon) - min(p[1] for p in schoon)
+        bbox_area = breedte * diepte
+        if (not all(math.isfinite(x) and x > 0 for x in (breedte, diepte, bbox_area))
+                or max(breedte, diepte) / min(breedte, diepte) > MAX_BBOX_ASPECT
+                or bbox_area / area > MAX_BBOX_AREA_FACTOR):
+            raise IntakeError("Metrische grondvlakcontour is numeriek te slecht geconditioneerd")
         vloer_area = float(bekend[naam].oppervlakte_m2 or 0)
         if vloer_area <= 0 or round(area, 2) != round(vloer_area, 2):
             raise IntakeError("Contour-oppervlakte komt niet overeen met VloerInfo.oppervlakte_m2")

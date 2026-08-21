@@ -20,6 +20,12 @@ live API-call tijdens preview of import.
   eenvoudige-polygonkern wordt gedeeld met het interactieve ventilatieplan;
   diens relatieve `0..1`-coördinatencontract geldt nadrukkelijk niet voor
   `VloerInfo.contour_m`.
+
+Als inputveiligheidsgrens (geen bouwkundige of NTA-norm) moeten bounding-box-
+breedte en -diepte positief/eindig zijn. Aspectratio en de verhouding tussen
+bounding-boxoppervlak en polygonoppervlak mogen maximaal `10^6` zijn. Deze zeer
+ruime conditioneringsgrens weigert IEEE-754-extremen die ondanks gelijke m² door
+de shoelace-check komen; een gewone langwerpige contour van 40×1 m blijft geldig.
 - Optioneel `sha256` in het manifest: mapping van bestandsnaam naar volledige
   SHA-256. Als een hash is opgegeven, is die verplicht correct.
 

@@ -5410,6 +5410,7 @@ try:
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[float("nan"),1],[0,1]]}),
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[8,5],[0,5],[8,0]]}),
             dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1000000000,0],[0,0.000001]]}),
+            dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[1e308,0],[1e308,4e-307],[0,4e-307]]}),
         ]
         _geoblok16 = True
         for _ix16, _geo16 in enumerate(_geo_cases16):
@@ -5417,6 +5418,14 @@ try:
             try: _bp16(_gz16, _oud16, os.path.join(_td16, "gs%d" % _ix16)); _geoblok16 = False
             except _IE16: pass
         check("intake geometrie: unit m, verdieping, self-intersectie, degeneratie, eindigheid en metrische area strict", _geoblok16)
+        _langgeo16 = dict(_basegeo16, floor_contours={"Ground Floor": [[0,0],[40,0],[40,1],[0,1]]})
+        _langzip16 = os.path.join(_td16, "langwerpig.zip"); _pakket16(_langzip16, _langgeo16)
+        try:
+            _langp16 = _bp16(_langzip16, _oud16, os.path.join(_td16, "langstage")); _langok16 = True
+        except _IE16:
+            _langok16 = False
+        check("intake geometrie: normale langwerpige metrische 40x1-contour wordt niet overgereject",
+              _langok16 and _polyopp16(_langp16["nieuw"].geometrie.vloeren[0].contour_m) == 40.0)
         _dup16 = os.path.join(_td16, "dup.zip"); _pakket16(_dup16, extra=[("geometry.json", b"{}")])
         try: _bp16(_dup16, _oud16, os.path.join(_td16, "dupstage")); _dupblok16 = False
         except _IE16: _dupblok16 = True
