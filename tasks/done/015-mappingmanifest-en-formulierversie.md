@@ -64,7 +64,7 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
       (geen bekende klacht zoals bij dak).
 - [x] `./scripts/verify.sh` slaagt (PASS na rebase op `origin/main`; Python-tests blocking:
       845/845 groen).
-- [ ] AI-review PASS door een andere agent dan de bouwer. (review loopt, zie Sessions zodra klaar)
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 - 2026-08-15 (los gesprek, ná taak 013's ketenaudit) — user vroeg expliciet om taak 014
@@ -114,6 +114,10 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
   en PV-oriëntatie. Regressies toegevoegd voor optie-, bronlabel- en overige fingerprintdrift;
   misleidende docstrings en gegenereerd mappingoverzicht gecorrigeerd. Blocking verify PASS,
   845/845 tests groen. Onafhankelijke herreview blijft vereist.
+- 2026-08-21 (Codex Reviewer/Manager) — onafhankelijke herreview op `ed9fa08`: PASS zonder
+  blockers. Snapshotcontract, letterlijke labels/opties, onafhankelijke fingerprintpin en alle
+  negatieve drifttests gecontroleerd; `verify.sh` PASS met 845/845 en geen advisories. Taak naar
+  `done` verplaatst.
 
 ## Notes
 `magicplan-forms-live.md` (23-7) en de doorgevoerde dakvelden van 27-7 spreken elkaar nu tegen —
