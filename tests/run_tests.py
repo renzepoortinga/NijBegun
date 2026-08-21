@@ -5009,7 +5009,26 @@ try:
     _, _pg_kruisAE = _vp.valideer_ruimtepolygonen(
         {"Woonkamer": [[0,0],[1,1],[0,1],[1,0]]}, {"Woonkamer"})
     check("ruimtepolygonen: degeneratieve en zelfsnijdende contour geweigerd",
-          "degeneratieve" in _pg_degenAE and "zelfsnijdende" in _pg_kruisAE)
+          _pg_degenAE is not None and _pg_kruisAE is not None)
+    # Exacte reproducties uit reviewronde 4: self-touch, teruglopende overlap en een niet-aangrenzend
+    # herhaald edge-eindpunt moeten alle drie luid worden afgewezen.
+    _review_poly1AE = [[0,0],[1,0],[.5,.5],[1,1],[0,1],[.5,.5]]
+    _review_poly2AE = [[0,0],[1,0],[.5,0],[1,1],[0,1]]
+    _review_poly3AE = [[0,0],[1,0],[1,1],[0,1],[1,0]]
+    _review_foutenAE = [_vp.valideer_ruimtepolygonen({"Woonkamer": p}, {"Woonkamer"})[1]
+                        for p in (_review_poly1AE, _review_poly2AE, _review_poly3AE)]
+    check("ruimtepolygonen reviewrepro 1: non-adjacent self-touch/herhaald punt geweigerd",
+          _review_foutenAE[0] is not None)
+    check("ruimtepolygonen reviewrepro 2: teruglopend/overlappend segment geweigerd",
+          _review_foutenAE[1] is not None)
+    check("ruimtepolygonen reviewrepro 3: duplicate non-adjacent edge endpoint geweigerd",
+          _review_foutenAE[2] is not None)
+    _c_okAE, _c_foutAE = _vp.valideer_ruimtepolygonen(
+        {"C": _c_bronAE.contour_relatief}, {"C"})
+    _u_okAE, _u_foutAE = _vp.valideer_ruimtepolygonen(
+        {"U": _u_bronAE.contour_relatief}, {"U"})
+    check("ruimtepolygonen: geldige concave C- en U-vormen blijven geaccepteerd",
+          _c_foutAE is None and _u_foutAE is None and _c_okAE and _u_okAE)
 
     # --- marker_balans ---
     _d5 = _DAE()

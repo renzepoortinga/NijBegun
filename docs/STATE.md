@@ -44,7 +44,7 @@ legacyvlakken — het Essenhage-dakdubbelingspatroon uit taak 013) zijn afgerond
 (MagicPlan-SSL) in `backlog/`.
 
 Taak 020 (ventilatieplan-pagina in de webapp) is na review-FAIL heropend en staat in `tasks/active/`.
-De blockers zijn gerepareerd en na integratie met taak 015 zijn 953/953 tests groen;
+De blockers zijn gerepareerd en na integratie met taak 015 zijn 957/957 tests groen;
 onafhankelijke herreview staat nog open.
 De taak levert route `/project/<tag>/ventilatieplan` (GET pagina + POST markers +
 POST herstel) bovenop de taak-019-rekenlaag. Dossier minimaal uitgebreid (`core/dossier.py`):

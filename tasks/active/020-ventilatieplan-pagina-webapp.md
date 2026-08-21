@@ -146,6 +146,16 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   weigert nu ook degeneratieve contouren zonder oppervlak en zelfsnijdende contouren. De generieke
   vuistregelreden noemt bij >15 l/s nu expliciet dat een deurrooster geadviseerd is. Blocking
   `scripts/verify.sh`: PASS, 953/953 tests groen. Taak blijft `active` tot onafhankelijke herreview.
+- 2026-08-21: Vierde herreview FAIL (uitsluitend polygonvalidatie) verwerkt na expliciet planakkoord.
+  Segmentvalidatie gebruikt nu een algemene gesloten-segmenttest met epsilon en `on_segment`, zodat
+  naast echte kruisingen ook collineaire overlap en niet-aangrenzende endpoint-touch worden gevonden.
+  Dubbele vertices (ook niet-aangrenzend) en zero-length edges worden vooraf afgewezen; aangrenzende
+  zijden mogen alleen hun ene hoekpunt delen en teruglopen over de vorige zijde wordt als overlap
+  geweigerd. De drie exacte reviewerreproducties (herhaald self-touchpunt, teruglopend segment en
+  duplicate non-adjacent edge-endpoint) staan als regressies vast. Geldige concave C- en U-vormen
+  blijven geaccepteerd. `_intern_punt` bleef conform plan ongemoeid: geen reproductie vereiste daar
+  een wijziging. Blocking `scripts/verify.sh`: PASS, 957/957 tests groen. Taak blijft `active` tot
+  onafhankelijke herreview PASS.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.

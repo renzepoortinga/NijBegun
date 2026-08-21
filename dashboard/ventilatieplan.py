@@ -94,13 +94,37 @@ def _orientatie(a, b, c):
     return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
 
 
+_GEOM_EPS = 1e-10
+
+
+def _op_segment(a, b, p):
+    """P ligt collineair op het gesloten segment a-b, inclusief eindpunten."""
+    return (abs(_orientatie(a, b, p)) <= _GEOM_EPS
+            and min(a[0], b[0]) - _GEOM_EPS <= p[0] <= max(a[0], b[0]) + _GEOM_EPS
+            and min(a[1], b[1]) - _GEOM_EPS <= p[1] <= max(a[1], b[1]) + _GEOM_EPS)
+
+
 def _segmenten_kruisen(a, b, c, d):
-    return (_orientatie(a, b, c) * _orientatie(a, b, d) < 0
-            and _orientatie(c, d, a) * _orientatie(c, d, b) < 0)
+    """Algemene gesloten-segmentintersectie, ook touch en collineaire overlap."""
+    o1, o2, o3, o4 = (_orientatie(a, b, c), _orientatie(a, b, d),
+                      _orientatie(c, d, a), _orientatie(c, d, b))
+    if ((o1 > _GEOM_EPS and o2 < -_GEOM_EPS) or (o1 < -_GEOM_EPS and o2 > _GEOM_EPS)) and \
+       ((o3 > _GEOM_EPS and o4 < -_GEOM_EPS) or (o3 < -_GEOM_EPS and o4 > _GEOM_EPS)):
+        return True
+    return ((abs(o1) <= _GEOM_EPS and _op_segment(a, b, c))
+            or (abs(o2) <= _GEOM_EPS and _op_segment(a, b, d))
+            or (abs(o3) <= _GEOM_EPS and _op_segment(c, d, a))
+            or (abs(o4) <= _GEOM_EPS and _op_segment(c, d, b)))
 
 
 def _zelfsnijdend(punten):
     n = len(punten)
+    # Aangrenzende zijden mogen alleen hun ene hoekpunt delen. Teruglopen over (een deel van) de
+    # vorige zijde is een overlap, ook al worden aangrenzende paren hieronder normaal overgeslagen.
+    for i in range(n):
+        vorig, huidig, volgend = punten[i - 1], punten[i], punten[(i + 1) % n]
+        if abs(_orientatie(vorig, huidig, volgend)) <= _GEOM_EPS and _op_segment(vorig, huidig, volgend):
+            return True
     for i in range(n):
         a, b = punten[i], punten[(i + 1) % n]
         for j in range(i + 1, n):
@@ -301,6 +325,9 @@ def valideer_ruimtepolygonen(polygonen, geldige_namen):
             if not (0 <= x <= 1 and 0 <= y <= 1):
                 return None, "Ruimte '%s' valt buiten het tekenvlak." % naam
             schoon.append([round(x, 4), round(y, 4)])
+        unieke_punten = {tuple(p) for p in schoon}
+        if len(unieke_punten) != len(schoon):
+            return None, "Ruimte '%s' bevat dubbele punten of een rand zonder lengte." % naam
         if _zelfsnijdend(schoon):
             return None, "Ruimte '%s' heeft een zelfsnijdende contour." % naam
         if _polygoon_oppervlakte(schoon) < 1e-6:
