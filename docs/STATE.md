@@ -16,6 +16,12 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
 
+Taak 022 (plattegrond uit afbeelding) heeft een expliciete Anthropic-visionroute, volledig gedecodeerde
+JPG/PNG-upload en verplichte corrigeerbare adviseurscontrole vóór dossiermutatie. De drie genoemde
+MagicPlan/Vabi-bronfixtures worden echt geparsed, maar leveren samen minder dan 10 vloeren en geen
+gekoppelde rastergrondwaarheid; de <5%-praktijk-AC blijft daarom open. Een echte historische
+bouwtekening zonder maatlijn blijft terecht `schaal onbekend`. Herreview en blocking verify volgen.
+
 Taak 016 (veilige one-click MagicPlan-intake) is afgerond: pakketten krijgen identiteit- en
 fingerprintgates, een hashgebonden merged preview en een per-project CAS-bevestiging. Herimport
 behoudt expliciet handmatig werk/resultaten; ZIP, schema en metrische geometrie zijn fail-closed.

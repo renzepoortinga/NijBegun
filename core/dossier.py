@@ -8,7 +8,7 @@ Run direct om sample_dossier.json + canonical_schema.json te (her)genereren:
 """
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict, fields, is_dataclass
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 import json, os, datetime
 
 SCHEMA_VERSION = "0.3"
@@ -75,6 +75,9 @@ class VloerInfo:
     # nog door niets gevuld (komt met taak 022, "plattegrond uit een foto lezen"); ventilatieplan.py
     # (taak 020) kijkt er al wel naar als eerste keus voor de tekenachtergrond.
     plattegrond_afbeelding: Optional[str] = None
+    # Herkomst per veld voor afbeeldingimport. Bijvoorbeeld
+    # {"plattegrond_afbeelding": "afgelezen", "naam": "handmatig_gecorrigeerd"}.
+    bron_per_waarde: Dict[str, str] = field(default_factory=dict)
 
 @dataclass
 class Ruimte:
@@ -89,6 +92,9 @@ class Ruimte:
     # Optionele gemeten ruimtecontour, relatief aan de plattegrond (0..1). Alleen vullen uit een
     # expliciete bron of handmatige kalibratie; nooit afleiden uit oppervlakte of ruimtenaam.
     contour_relatief: Optional[List[List[float]]] = None
+    # Alleen na adviseursbevestiging gevuld door de afbeeldingimport (taak 022).
+    aangrenzende_ruimtes: List[str] = field(default_factory=list)
+    bron_per_waarde: Dict[str, str] = field(default_factory=dict)
 
 @dataclass
 class Geometrie:

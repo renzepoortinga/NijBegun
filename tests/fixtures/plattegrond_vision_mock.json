@@ -1,0 +1,24 @@
+{
+  "contractversie": "1",
+  "model": {"provider": "mock", "naam": "offline-fixture", "versie": "1"},
+  "verdiepingen": [{
+    "naam": "Begane grond",
+    "afbeelding": "uploads/plattegrond-bg.png",
+    "schaal": {
+      "betrouwbaar": true,
+      "meter_per_pixel": 0.02,
+      "maatlijn_bewijzen": [{
+        "tekst": "4,00 m", "bron": "maatlijn onder woonkamer",
+        "lengte_m": 4.0, "pixel_lengte": 200
+      }]
+    },
+    "ruimtes": [
+      {"naam": "Woonkamer", "functie": "verblijfsruimte", "oppervlakte_m2": 20.0,
+       "contour_relatief": [[0.05, 0.05], [0.55, 0.05], [0.55, 0.75], [0.05, 0.75]],
+       "aangrenzend": ["Keuken"], "onzekerheden": []},
+      {"naam": "Keuken", "functie": "keuken", "oppervlakte_m2": 8.0,
+       "contour_relatief": [[0.55, 0.05], [0.95, 0.05], [0.95, 0.75], [0.55, 0.75]],
+       "aangrenzend": ["Woonkamer"], "onzekerheden": ["Ruimtelabel deels onscherp"]}
+    ]
+  }]
+}
