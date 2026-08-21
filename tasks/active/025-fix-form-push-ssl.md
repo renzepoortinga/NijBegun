@@ -39,6 +39,9 @@ dezelfde `SSLCertVerificationError` tegenkomen.
 
 ## Sessions
 
+- 2026-08-21 Codex Builder: draft opnieuw conflictvrij gerebased op de actuele `origin/main` en
+  blocking `scripts/verify.sh` opnieuw PASS. De taak blijft `active`/draft: live MagicPlan-handshake,
+  form-push en fotodownload zijn nog steeds niet geautoriseerd of uitgevoerd.
 - 2026-08-21 Codex Builder: na onafhankelijke review PASS gerebased op de nieuwste `origin/main`.
   Blocking `scripts/verify.sh` slaagt na rebase met 970/970 tests. Alle acceptance criteria zijn
   voldaan. De live MagicPlan-handshake, form-push en fotodownload
