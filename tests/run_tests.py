@@ -5216,6 +5216,55 @@ try:
     check("ventilatieplan-export: PNG-signature + Word-bruikbare 1200x900-afmeting",
           _pngAF.status_code == 200 and _pngAF.data.startswith(b"\x89PNG\r\n\x1a\n")
           and (_wAF, _hAF) == (1200, 900))
+
+    # Echte lokale PNG-achtergrond wordt veilig opgelost en in beide uitvoerformaten gecomposited.
+    _bgRasterAF = _WAF.vp_export._Raster(4, 4)
+    for _pyAF in range(4):
+        for _pxAF in range(4): _bgRasterAF.pixel(_pxAF, _pyAF, (210, 20, 30))
+    _bgNaamAF = "vloer-achtergrond.png"
+    with open(os.path.join(_WAF._pdir(_tagAF), _bgNaamAF), "wb") as _fhbgAF:
+        _fhbgAF.write(_WAF.vp_export._png(_bgRasterAF))
+    _dbgAF = _WAF._dossier(_tagAF); _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = _bgNaamAF
+    _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
+    _pngBgAF = _cAF.get("/project/%s/ventilatieplan/%s/export.png" % (_tagAF, "Begane grond"))
+    _bwAF, _bhAF, _bcAF, _browsAF = _WAF.vp_export._decode_png(_pngBgAF.data)
+    _biAF = 900 * _bcAF
+    check("ventilatieplan-export: echte achtergrondpixels zitten in de losse PNG",
+          tuple(_browsAF[800][_biAF:_biAF+3]) == (210, 20, 30))
+    _pdfBgAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF)
+    _prBgAF = _PdfReaderAF(_ioAF.BytesIO(_pdfBgAF.data))
+    _xobjAF = _prBgAF.pages[1]["/Resources"]["/XObject"]["/Im1"].get_object()
+    _rawPdfImgAF = _xobjAF.get_data(); _pdfPixAF = (800*1200+900)*3
+    check("ventilatieplan-export: dezelfde achtergrondpixels zitten in het PDF-vloerbeeld",
+          tuple(_rawPdfImgAF[_pdfPixAF:_pdfPixAF+3]) == (210, 20, 30))
+    _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = "../buiten-project.png"
+    _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
+    _travAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF, follow_redirects=True)
+    check("ventilatieplan-export: achtergrond-traversal wordt geweigerd",
+          _travAF.status_code == 200 and "binnen dit project" in _travAF.get_data(as_text=True))
+    _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = None
+    _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
+
+    # Markersemantiek volgt het scherm: typevorm, 90°-rotatie en auto-opacity zijn zichtbaar in pixels.
+    def _markerRasterAF(typ, rot=0, bron="handmatig"):
+        return _WAF.vp_export._vloer_raster({"naam":"X", "ruimtes":[], "markers":[{
+            "type":typ, "x":.5, "y":.5, "waarde_ls":21.0, "rotatie":rot, "bron":bron}]})
+    _mt0AF, _mt90AF = _markerRasterAF("toevoer", 0), _markerRasterAF("toevoer", 90)
+    _mxAF, _myAF = 600, 470
+    def _pixAF(ras, x, y):
+        _i=(y*ras.w+x)*3; return tuple(ras.data[_i:_i+3])
+    check("ventilatieplan-export: toevoerdriehoek roteert exact 0°/90°",
+          _pixAF(_mt0AF,_mxAF,_myAF-25) == (0,105,170)
+          and _pixAF(_mt90AF,_mxAF+25,_myAF) == (0,105,170)
+          and _pixAF(_mt90AF,_mxAF,_myAF-25) == (255,255,255))
+    _maAF, _moAF = _markerRasterAF("afvoer", 90), _markerRasterAF("overstroom", 0)
+    check("ventilatieplan-export: afvoerellipse/overstroomvorm houden eigen typekleur en rotatie",
+          _pixAF(_maAF,_mxAF,_myAF+30) == (223,103,0)
+          and _pixAF(_maAF,_mxAF+30,_myAF) == (255,255,255)
+          and _pixAF(_moAF,_mxAF,_myAF-18) == (25,135,84))
+    _mautoAF = _markerRasterAF("toevoer", 0, "auto")
+    check("ventilatieplan-export: auto-marker heeft dezelfde 0,75 opacity als het scherm",
+          _pixAF(_mautoAF,_mxAF,_myAF-25) == (64,142,191))
     check("ventilatieplan-export: onbekende vloer geeft nette 404", _cAF.get(
           "/project/%s/ventilatieplan/Bestaat%%20niet/export.png" % _tagAF).status_code == 404)
     _cAF_uit = _WAF.app.test_client()
@@ -5232,6 +5281,30 @@ try:
                                          [], "Leeg 1", "C", "2026-08-21")
     check("ventilatieplan-export: dossier zonder plattegrond wordt expliciet als leeg herkend",
           _leeg_sceneAF["verdiepingen"] == [])
+
+    # Stress: berekening groeit over pagina's; geen tekstbaseline komt in de footerzone.
+    _stressRowsAF = [{"naam":"Lange ruimte %03d"%i, "opp":20.0, "toevoer":14.0,
+                      "afvoer":14.0, "afvoer_advies_ls":14.0, "afvoerpunt":True}
+                     for i in range(90)]
+    _stressToetsAF = [{"status":"niet te bepalen", "regel":"Regel %02d"%i,
+                       "reden":"Een uitvoerige reden die veilig moet afbreken zonder de paginavoet te raken. "*2}
+                      for i in range(15)]
+    _stressSceneAF = _WAF.vp_export.scene([{"naam":"BG","achtergrond_soort":"contour",
+        "contour_punten":[[0,0],[1,0],[1,1]],"ruimtes":[],"markers":[]}],
+        {"rows":_stressRowsAF,"waarschuwingen":[]},{"toevoer":1260,"afvoer":1260,"sluitend":True},
+        _stressToetsAF,"Stress 1","C","2026-08-21")
+    _calcPagesAF = _WAF.vp_export.berekening_paginas(_stressSceneAF)
+    _stressPdfAF = _WAF.vp_export.pdf(_stressSceneAF)
+    _stressReaderAF = _PdfReaderAF(_ioAF.BytesIO(_stressPdfAF))
+    _stressTextAF = "\n".join(p.extract_text() or "" for p in _stressReaderAF.pages)
+    check("ventilatieplan-export: lange berekening pagineert dynamisch",
+          len(_calcPagesAF) > 4 and len(_stressReaderAF.pages) == 2+len(_calcPagesAF))
+    check("ventilatieplan-export: layout houdt elke tekstpagina boven de footerzone",
+          max(map(len,_calcPagesAF)) <= 42 and 790-(max(map(len,_calcPagesAF))-1)*15 >= 175)
+    check("ventilatieplan-export: stress-PDF heeft correcte X/N-footer op elke pagina en geen clipping",
+          all("Pagina %d / %d"%(i,len(_stressReaderAF.pages)) in _stressTextAF
+              for i in range(1,len(_stressReaderAF.pages)+1))
+          and "Lange ruimte 089" in _stressTextAF and "Regel 14" in _stressTextAF)
     _rAF_nieuwleeg = _cAF.post("/nieuw", data={"straat":"Leegplan 2", "postcode":"9999LP",
                          "plaats":"X", "woningtype":"Tussenwoning"})
     _tagAF_leeg = _rAF_nieuwleeg.headers["Location"].rstrip("/").split("/")[-2]
@@ -5292,6 +5365,8 @@ try:
     check("ventilatieplan-JS: markers zijn toetsenbordbedienbaar en hebben toegankelijke naam",
           all(term in _jsbronAF for term in ('tabindex: "0"', 'role: "button"', '"aria-label"',
                                              'ev.key === "Enter"', 'ev.key === "Delete"', '"ArrowLeft"')))
+    check("ventilatieplan-JS: capaciteit blijft bij markerrotatie horizontaal leesbaar",
+          't.setAttribute("transform", "rotate(" + (-(m.rotatie || 0))' in _jsbronAF)
 
     # Productieroute: kalibratie schrijft echte polygonen naar het dossier en activeert daarna slepen.
     _poly_postAF = {"polygonen": {"Woonkamer": [[.05,.05],[.55,.05],[.55,.7],[.05,.7]],

@@ -41,6 +41,44 @@ def scene(verdiepingen, res, balans, toets, adres, systeem, opnamedatum):
             "exportdatum": datetime.date.today().isoformat()}
 
 
+def _decode_png(data):
+    """Decodeert gangbare 8-bit RGB/RGBA-PNG's, inclusief alle vijf PNG-rowfilters."""
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("Achtergrond is geen geldig PNG-bestand.")
+    pos, width, height, kleurtype, idat = 8, None, None, None, bytearray()
+    while pos + 12 <= len(data):
+        lengte = struct.unpack(">I", data[pos:pos+4])[0]
+        typ, inhoud = data[pos+4:pos+8], data[pos+8:pos+8+lengte]
+        pos += 12 + lengte
+        if typ == b"IHDR":
+            width, height, depth, kleurtype, comp, filt, interlace = struct.unpack(">IIBBBBB", inhoud)
+            if depth != 8 or kleurtype not in (2, 6) or comp or filt or interlace:
+                raise ValueError("PNG-achtergrond moet 8-bit RGB/RGBA en niet-geïnterlinieerd zijn.")
+        elif typ == b"IDAT": idat.extend(inhoud)
+        elif typ == b"IEND": break
+    if not width or not height or width*height > 30_000_000:
+        raise ValueError("PNG-achtergrond heeft ongeldige of te grote afmetingen.")
+    kanalen = 3 if kleurtype == 2 else 4
+    raw, stride = zlib.decompress(bytes(idat)), width*kanalen
+    if len(raw) != height*(stride+1): raise ValueError("PNG-achtergrond heeft ongeldige beelddata.")
+    rows, prev, off = [], bytearray(stride), 0
+    for _ in range(height):
+        ft, scan = raw[off], bytearray(raw[off+1:off+1+stride]); off += stride+1
+        for i in range(stride):
+            a = scan[i-kanalen] if i >= kanalen else 0
+            b = prev[i]
+            c = prev[i-kanalen] if i >= kanalen else 0
+            if ft == 1: scan[i] = (scan[i]+a) & 255
+            elif ft == 2: scan[i] = (scan[i]+b) & 255
+            elif ft == 3: scan[i] = (scan[i]+((a+b)//2)) & 255
+            elif ft == 4:
+                p, pa, pb, pc = a+b-c, abs(b-c), abs(a-c), abs(a+b-2*c)
+                scan[i] = (scan[i]+(a if pa <= pb and pa <= pc else (b if pb <= pc else c))) & 255
+            elif ft != 0: raise ValueError("PNG-achtergrond gebruikt een onbekend rijfilter.")
+        rows.append(bytes(scan)); prev = scan
+    return width, height, kanalen, rows
+
+
 _FONT = {
     "0":"111101101101111", "1":"010110010010111", "2":"111001111100111",
     "3":"111001111001111", "4":"101101111001001", "5":"111100111001111",
@@ -67,11 +105,15 @@ class _Raster:
         self.w, self.h = width, height
         self.data = bytearray(b"\xff" * (width * height * 3))
 
-    def pixel(self, x, y, kleur):
+    def pixel(self, x, y, kleur, dekking=1.0):
         x, y = int(x), int(y)
         if 0 <= x < self.w and 0 <= y < self.h:
             i = (y * self.w + x) * 3
-            self.data[i:i+3] = bytes(kleur)
+            if dekking >= 1:
+                self.data[i:i+3] = bytes(kleur)
+            else:
+                oud = self.data[i:i+3]
+                self.data[i:i+3] = bytes(round(dekking*kleur[c] + (1-dekking)*oud[c]) for c in range(3))
 
     def lijn(self, x0, y0, x1, y1, kleur, dikte=3):
         dx, dy = x1-x0, y1-y0
@@ -89,15 +131,39 @@ class _Raster:
             for x in range(int(cx-r), int(cx+r)+1):
                 if (x-cx)**2 + (y-cy)**2 <= r*r: self.pixel(x, y, kleur)
 
-    def tekst(self, x, y, tekst, kleur=(22, 39, 55), schaal=3):
-        cursor = x
-        for teken in str(tekst).upper():
+    def gevuld_polygoon(self, punten, kleur, dekking=1.0):
+        minx, maxx = int(min(p[0] for p in punten)), int(max(p[0] for p in punten))+1
+        miny, maxy = int(min(p[1] for p in punten)), int(max(p[1] for p in punten))+1
+        for y in range(miny, maxy):
+            for x in range(minx, maxx):
+                binnen, j = False, len(punten)-1
+                for i, p in enumerate(punten):
+                    q = punten[j]
+                    if ((p[1] > y) != (q[1] > y)) and x < (q[0]-p[0])*(y-p[1])/(q[1]-p[1])+p[0]:
+                        binnen = not binnen
+                    j = i
+                if binnen: self.pixel(x, y, kleur, dekking)
+
+    def tekst(self, x, y, tekst, kleur=(22, 39, 55), schaal=3, rotatie=0, midden=False, dekking=1.0):
+        tekst = str(tekst).upper()
+        breedte = max(0, len(tekst)*4*schaal-schaal)
+        oorsprong_x = -breedte/2 if midden else 0
+        oorsprong_y = -(5*schaal)/2 if midden else 0
+        hoek = rotatie % 360
+        cursor = oorsprong_x
+        for teken in tekst:
             bits = _FONT.get(teken, _FONT.get(" "))
             for ry in range(5):
                 for rx in range(3):
                     if bits[ry*3+rx] == "1":
                         for oy in range(schaal):
-                            for ox in range(schaal): self.pixel(cursor+rx*schaal+ox, y+ry*schaal+oy, kleur)
+                            for ox in range(schaal):
+                                px, py = cursor+rx*schaal+ox, oorsprong_y+ry*schaal+oy
+                                if hoek == 90: tx, ty = -py, px
+                                elif hoek == 180: tx, ty = -px, -py
+                                elif hoek == 270: tx, ty = py, -px
+                                else: tx, ty = px, py
+                                self.pixel(x+tx, y+ty, kleur, dekking)
             cursor += 4*schaal
 
 
@@ -105,6 +171,18 @@ def _vloer_raster(v):
     r = _Raster()
     donker, licht = (42, 61, 74), (161, 176, 184)
     r.tekst(35, 25, v.get("naam", "Verdieping"), schaal=4)
+    achtergrond = v.get("achtergrond_data")
+    if achtergrond:
+        bw, bh, kanalen, rows = _decode_png(achtergrond)
+        schaal = min(1080/bw, 760/bh)
+        dw, dh = max(1, int(bw*schaal)), max(1, int(bh*schaal))
+        ox, oy = 60+(1080-dw)//2, 90+(760-dh)//2
+        for dy in range(dh):
+            sy = min(bh-1, int(dy*bh/dh)); row = rows[sy]
+            for dx in range(dw):
+                sx = min(bw-1, int(dx*bw/dw)); i = sx*kanalen
+                alpha = row[i+3]/255 if kanalen == 4 else 1.0
+                r.pixel(ox+dx, oy+dy, row[i:i+3], alpha)
     def pts(rel): return [(60+p[0]*1080, 90+p[1]*760) for p in (rel or [])]
     contour = pts(v.get("contour_punten"))
     if contour: r.polygoon(contour, donker, 5)
@@ -117,9 +195,22 @@ def _vloer_raster(v):
     for m in v.get("markers", []):
         x, y = 60+m["x"]*1080, 90+m["y"]*760
         kleur = kleuren.get(m.get("type"), donker)
-        if m.get("type") == "afvoer": r.cirkel(x, y, 25, kleur)
-        else: r.polygoon([(x, y-30), (x+27, y+25), (x-27, y+25)], kleur, 8)
-        r.tekst(x-18, y-7, "%.1f" % m.get("waarde_ls", 0), (255,255,255), 2)
+        dekking = .75 if m.get("bron") == "auto" else 1.0
+        rot = int(m.get("rotatie") or 0) % 360
+        if m.get("type") == "afvoer":
+            # De schermellipse is rotatiesymmetrisch bij 180°, maar bij 90° wisselen rx/ry.
+            rx, ry = ((26, 34) if rot in (90, 270) else (34, 26))
+            for py in range(int(y-ry), int(y+ry)+1):
+                for px in range(int(x-rx), int(x+rx)+1):
+                    if ((px-x)/rx)**2 + ((py-y)/ry)**2 <= 1: r.pixel(px, py, kleur, dekking)
+        else:
+            basis = [(0, -34), (34, 34), (-34, 34)] if m.get("type") == "toevoer" else [(0,-26),(26,26),(-26,26)]
+            def draai(p):
+                return ((-p[1], p[0]) if rot == 90 else ((-p[0],-p[1]) if rot == 180
+                        else ((p[1],-p[0]) if rot == 270 else p)))
+            r.gevuld_polygoon([(x+draai(p)[0], y+draai(p)[1]) for p in basis], kleur, dekking)
+        r.tekst(x, y, "%.1f" % m.get("waarde_ls", 0), (255,255,255), 2,
+                rotatie=0, midden=True, dekking=dekking)
     return r
 
 
@@ -154,18 +245,7 @@ def _text_lines(lines, x=48, y=770, size=11, leading=16):
     return b"\n".join(out)
 
 
-def pdf(scene_data):
-    floors = scene_data["verdiepingen"]
-    total = len(floors) + 2
-    pages = []
-    title = ["VENTILATIEPLAN", "", scene_data["adres"],
-             "Exportdatum: %s" % scene_data["exportdatum"],
-             "Ventilatiesysteem: %s" % scene_data["systeem"], "",
-             "Balans: toevoer %.1f l/s %s afvoer %.1f l/s" % (
-                 scene_data["balans"]["toevoer"], "=" if scene_data["balans"]["sluitend"] else "!=",
-                 scene_data["balans"]["afvoer"])]
-    pages.append((title, None))
-    for v in floors: pages.append(([v["naam"], "Herkomst plattegrond: MagicPlan-opname, %s" % scene_data["opnamedatum"]], _vloer_raster(v)))
+def _berekening_regels(scene_data):
     rows = scene_data["res"]["rows"]
     lines = ["BEREKENING", "", "Toevoer per verblijfsruimte", "Ruimte | m2 | Min. l/s | Advies l/s"]
     for row in rows:
@@ -180,7 +260,39 @@ def pdf(scene_data):
         scene_data["balans"]["afvoer"]), "", "Vuistregels / aandachtspunten"]
     lines += ["[%s] %s - %s" % (t["status"], t["regel"], t["reden"]) for t in scene_data["toets"]]
     lines += ["Waarschuwing: %s" % w for w in scene_data["res"].get("waarschuwingen", [])]
-    pages.append((lines, None))
+    # Pagina-indeling werkt met de werkelijk gewrapte regels, niet met het aantal records.
+    gewrapt = []
+    for line in lines:
+        gewrapt.extend(textwrap.wrap(str(line), width=82, break_long_words=False,
+                                     break_on_hyphens=False) or [""])
+    return gewrapt
+
+
+def berekening_paginas(scene_data, regels_per_pagina=40):
+    """Publieke layout-helper: laatste tekst-baseline blijft op 175pt, ruim boven footer (45pt)."""
+    regels = _berekening_regels(scene_data)
+    paginas = []
+    for start in range(0, len(regels), regels_per_pagina):
+        deel = regels[start:start+regels_per_pagina]
+        if start:
+            deel = ["BEREKENING (vervolg)", ""] + deel
+        paginas.append(deel)
+    return paginas or [["BEREKENING", "", "Geen berekeningsregels beschikbaar."]]
+
+
+def pdf(scene_data):
+    floors = scene_data["verdiepingen"]
+    pages = []
+    title = ["VENTILATIEPLAN", "", scene_data["adres"],
+             "Exportdatum: %s" % scene_data["exportdatum"],
+             "Ventilatiesysteem: %s" % scene_data["systeem"], "",
+             "Balans: toevoer %.1f l/s %s afvoer %.1f l/s" % (
+                 scene_data["balans"]["toevoer"], "=" if scene_data["balans"]["sluitend"] else "!=",
+                 scene_data["balans"]["afvoer"])]
+    pages.append((title, None))
+    for v in floors: pages.append(([v["naam"], "Herkomst plattegrond: MagicPlan-opname, %s" % scene_data["opnamedatum"]], _vloer_raster(v)))
+    pages.extend((regels, None) for regels in berekening_paginas(scene_data))
+    total = len(pages)
 
     objs = [None]  # 1-based
     def add(data): objs.append(data); return len(objs)-1
@@ -199,7 +311,7 @@ def pdf(scene_data):
                        + b"\nq 510 0 0 382 42 205 cm /Im1 Do Q\n"
                        + _text_lines(text[1:], 48, 180, 9, 12))
         else:
-            content = _text_lines(text, 48, 790, 11 if idx == total else 13, 15)
+            content = _text_lines(text, 48, 790, 13 if idx == 1 else 11, 15)
         footer = _text_lines([DISCLAIMER, "Pagina %d / %d" % (idx, total)], 48, 45, 8, 11)
         stream = content + b"\n" + footer
         content_id = add(b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream")

@@ -38,6 +38,8 @@
       g.appendChild(markerVorm(m.type));
       var t = svgEl("text", { x: 0, y: 9 });
       t.textContent = (Math.round(m.waarde_ls * 10) / 10).toFixed(1);
+      // De vorm draait met de gekozen richting; de capaciteit blijft horizontaal leesbaar.
+      t.setAttribute("transform", "rotate(" + (-(m.rotatie || 0)) + ")");
       g.appendChild(t);
       if (m.bron === "auto") g.setAttribute("opacity", "0.75");
       laag.appendChild(g);

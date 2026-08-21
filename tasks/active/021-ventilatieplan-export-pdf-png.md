@@ -52,6 +52,18 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
   de lokale Codex PDF-runtime; niet aanwezig. De eerste post-rebase verify-run rapporteerde één
   niet-zichtbaar/transiënt testfalen; een directe volledige testrun was 973/973 groen en de daarop
   volgende blocking `scripts/verify.sh` was PASS (973/973). Geen bronwijziging nodig.
+- 2026-08-21 Codex Builder: review-FAIL verwerkt. Lokale achtergronden worden nu tegen de echte
+  projectmap geresolved (remote/absoluut/traversal/te groot geweigerd) en 8-bit RGB/RGBA-PNG wordt
+  met stdlib inclusief alle PNG-filters gedecodeerd en in exact hetzelfde vloerbeeld voor PNG én
+  PDF gecomposited; tests bewijzen identieke rode bronpixels in beide. Marker-vorm, kleur, 0/90°-
+  rotatie en 0,75 auto-opacity zijn gelijkgetrokken met het scherm; capaciteit blijft op scherm en
+  export horizontaal leesbaar. Berekening pagineert na werkelijk gewrapte regels; 90 ruimtes plus
+  15 lange aandachtspunten bewijzen variabel paginatal, laatste-regelgrens en iedere X/N-footer.
+  PNG/marker-preview visueel gecontroleerd; blocking verify PASS, 983/983. **Open dependencykeuze:**
+  JPEG-decodering kan niet robuust met stdlib; PIL/Pillow, cv2, imageio en Wand zijn niet geïnstalleerd
+  en `make_icons.py` documenteert bewust dat Pillow niet op de VPS staat. Twee keer expliciet om
+  managerakkoord voor Pillow gevraagd zonder antwoord; JPEG faalt daarom nu luid met instructie PNG
+  te gebruiken, in plaats van een witte/onjuiste export te leveren.
 
 ## Notes
 Het aantal pagina's is variabel: voorblad + één pagina per verdieping + berekeningspagina.

@@ -2301,6 +2301,33 @@ def _vp_export_scene(tag, st, dos):
     balans = vp_mod.marker_balans(dos)
     rekentopologie = [[pad[1], pad[0]] for pad in dos.ventilatieplan.topologie if len(pad) == 2]
     toets = vent_toets_vuistregels(res, {"topologie": rekentopologie})
+    vloeren = {naam: vloer for naam, vloer, _ruimtes in vp_mod.groepeer_per_verdieping(dos)}
+    projectmap = os.path.realpath(_pdir(tag))
+    for verdieping in verdiepingen:
+        vloer = vloeren.get(verdieping["naam"])
+        bron = (getattr(vloer, "plattegrond_afbeelding", None) or "") if vloer else ""
+        if not bron:
+            continue
+        # Alleen een lokaal projectbestand; URL's, absolute paden en traversal worden nooit gelezen.
+        if "://" in bron or os.path.isabs(bron):
+            raise ValueError("Plattegrondachtergrond moet een lokaal projectbestand zijn.")
+        pad = os.path.realpath(os.path.join(projectmap, bron))
+        try:
+            binnen_project = os.path.commonpath([projectmap, pad]) == projectmap
+        except ValueError:
+            binnen_project = False
+        if not binnen_project or not os.path.isfile(pad):
+            raise ValueError("Plattegrondachtergrond bestaat niet binnen dit project.")
+        if os.path.getsize(pad) > 25 * 1024 * 1024:
+            raise ValueError("Plattegrondachtergrond is groter dan 25 MB.")
+        with open(pad, "rb") as fh:
+            data = fh.read()
+        if data.startswith(b"\x89PNG\r\n\x1a\n"):
+            verdieping["achtergrond_data"] = data
+        elif data.startswith(b"\xff\xd8\xff"):
+            raise ValueError("JPEG-plattegronden vereisen beeldconversie; gebruik voorlopig PNG.")
+        else:
+            raise ValueError("Plattegrondachtergrond is geen geldige PNG of JPEG.")
     return vp_export.scene(verdiepingen, res, balans, toets, st.get("adres", ""),
                            dos.ventilatie.systeem, vp_export.opname_datum(dos))
 
@@ -2311,7 +2338,11 @@ def ventilatieplan_pdf(tag):
     st, dos = _load_state(tag), _dossier(tag)
     if not st or not dos:
         abort(404)
-    data = _vp_export_scene(tag, st, dos)
+    try:
+        data = _vp_export_scene(tag, st, dos)
+    except ValueError as exc:
+        flash(str(exc))
+        return redirect(url_for("ventilatieplan_pagina", tag=tag))
     if not data["verdiepingen"]:
         flash("Geen plattegrond beschikbaar — voeg eerst een vloercontour of ruimtecontouren toe.")
         return redirect(url_for("ventilatieplan_pagina", tag=tag))
@@ -2326,7 +2357,10 @@ def ventilatieplan_png(tag, verdieping):
     st, dos = _load_state(tag), _dossier(tag)
     if not st or not dos:
         abort(404)
-    data = _vp_export_scene(tag, st, dos)
+    try:
+        data = _vp_export_scene(tag, st, dos)
+    except ValueError as exc:
+        abort(422, description=str(exc))
     vloer = next((v for v in data["verdiepingen"] if v["naam"] == verdieping), None)
     if vloer is None:
         abort(404, description="Geen plattegrond beschikbaar voor deze verdieping.")
