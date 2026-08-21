@@ -5242,6 +5242,18 @@ try:
     _travAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF, follow_redirects=True)
     check("ventilatieplan-export: achtergrond-traversal wordt geweigerd",
           _travAF.status_code == 200 and "binnen dit project" in _travAF.get_data(as_text=True))
+    _unsupportedAF = bytearray(_WAF.vp_export._png(_bgRasterAF)); _unsupportedAF[25] = 0
+    _unsupportedNaamAF = "grayscale-niet-ondersteund.png"
+    with open(os.path.join(_WAF._pdir(_tagAF), _unsupportedNaamAF), "wb") as _fhUnsupAF:
+        _fhUnsupAF.write(_unsupportedAF)
+    _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = _unsupportedNaamAF
+    _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
+    _unsupPdfAF = _cAF.get("/project/%s/ventilatieplan/export.pdf" % _tagAF, follow_redirects=True)
+    _unsupPngAF = _cAF.get("/project/%s/ventilatieplan/%s/export.png" % (_tagAF, "Begane grond"))
+    check("ventilatieplan-export: unsupported PNG-variant geeft PDF-melding, geen 500",
+          _unsupPdfAF.status_code == 200 and "8-bit RGB/RGBA" in _unsupPdfAF.get_data(as_text=True))
+    check("ventilatieplan-export: unsupported PNG-variant geeft nette PNG-422, geen 500",
+          _unsupPngAF.status_code == 422 and "8-bit RGB/RGBA" in _unsupPngAF.get_data(as_text=True))
     _dbgAF.geometrie.vloeren[0].plattegrond_afbeelding = None
     _WAF._dos_save(_tagAF, _WAF._load_state(_tagAF), _dbgAF)
 

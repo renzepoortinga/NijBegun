@@ -64,6 +64,14 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
   en `make_icons.py` documenteert bewust dat Pillow niet op de VPS staat. Twee keer expliciet om
   managerakkoord voor Pillow gevraagd zonder antwoord; JPEG faalt daarom nu luid met instructie PNG
   te gebruiken, in plaats van een witte/onjuiste export te leveren.
+- 2026-08-21 Codex Builder: reviewer bevestigt dat achtergrondresolutie, markersemantiek en dynamische
+  paginering zijn hersteld; enig resterend acceptatieblok is JPEG-ondersteuning. Daarbij blijft het
+  expliciete risico dat de stdlib-decoder palette-, grayscale- en interlaced PNG niet ondersteunt.
+  Branch op nieuwste `origin/main` inclusief taak 016 gerebased (STATE-conflict inhoudelijk opgelost,
+  beide statussen behouden). Renderfouten van zulke PNG-varianten worden nu op PDF als leesbare flash
+  + redirect en op PNG als HTTP 422 afgehandeld, nooit als 500; beide routes hebben regressietests.
+  Blocking verify na rebase: PASS, 1020/1020 tests. Taak blijft daarom `active/` en de
+  JPEG-acceptatiecheckbox blijft open tot de dependencykeuze.
 
 ## Notes
 Het aantal pagina's is variabel: voorblad + één pagina per verdieping + berekeningspagina.

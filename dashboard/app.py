@@ -2347,7 +2347,12 @@ def ventilatieplan_pdf(tag):
         flash("Geen plattegrond beschikbaar — voeg eerst een vloercontour of ruimtecontouren toe.")
         return redirect(url_for("ventilatieplan_pagina", tag=tag))
     naam = "ventilatieplan-%s.pdf" % vp_export.bestands_slug(st.get("adres"))
-    return Response(vp_export.pdf(data), mimetype="application/pdf",
+    try:
+        inhoud = vp_export.pdf(data)
+    except ValueError as exc:
+        flash("Plattegrond kon niet worden geëxporteerd: %s" % exc)
+        return redirect(url_for("ventilatieplan_pagina", tag=tag))
+    return Response(inhoud, mimetype="application/pdf",
                     headers={"Content-Disposition": "attachment; filename=%s" % naam})
 
 
@@ -2366,7 +2371,11 @@ def ventilatieplan_png(tag, verdieping):
         abort(404, description="Geen plattegrond beschikbaar voor deze verdieping.")
     naam = "ventilatieplan-%s-%s.png" % (vp_export.bestands_slug(st.get("adres")),
                                          vp_export.bestands_slug(verdieping))
-    return Response(vp_export.verdieping_png(vloer), mimetype="image/png",
+    try:
+        inhoud = vp_export.verdieping_png(vloer)
+    except ValueError as exc:
+        abort(422, description="Plattegrond kon niet worden geëxporteerd: %s" % exc)
+    return Response(inhoud, mimetype="image/png",
                     headers={"Content-Disposition": "attachment; filename=%s" % naam})
 
 
