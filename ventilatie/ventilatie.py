@@ -86,9 +86,12 @@ def bereken(ruimtes, situatie="bestaand"):
                 toevoer = max(opp_toevoer, MIN_LEEFRUIMTE)
                 toevoer_herkomst = "oppervlakte" if opp_toevoer >= MIN_LEEFRUIMTE else "minimum"
             else:
-                waarschuwingen.append("%s: 0 m2 geregistreerd (%s) — toevoer niet meegerekend; "
+                # toon het WERKELIJKE getal (kan ook negatief zijn, bv. een MagicPlan-editfout) —
+                # anders claimt de melding '0 m2' terwijl er iets ergers aan de hand is (gevonden
+                # in code review bij taak 020).
+                waarschuwingen.append("%s: %.1f m2 geregistreerd (%s) — toevoer niet meegerekend; "
                     "controleer of het oppervlak elders is meegeteld of dat de opname ontbreekt."
-                    % (r.naam, functie))
+                    % (r.naam, opp, functie))
         afvoerpunt = functie in AFVOER
         if afvoerpunt:                             # natte ruimte: vaste minimale afvoer
             afvoer = AFVOER[functie]
@@ -183,10 +186,14 @@ def deurbelasting(res, topologie):
     for pad in topologie:
         if len(pad) < 2:
             continue
-        eind = by_naam.get(pad[0])
-        if eind is None:
-            raise ValueError("deurbelasting: ruimte '%s' (begin van een overstroomweg) komt niet voor "
-                              "in res['rows']." % pad[0])
+        # ALLE ruimten op de weg controleren, niet alleen het begin — een tikfout verderop in het
+        # pad (de 'naar'-kant van een deur) mag net zo min stil doorglippen (gevonden in code
+        # review bij taak 020: dit valideerde eerder alleen pad[0]).
+        onbekend = [naam for naam in pad if naam not in by_naam]
+        if onbekend:
+            raise ValueError("deurbelasting: ruimte(s) %s (in een overstroomweg) komen niet voor "
+                              "in res['rows']." % ", ".join(repr(n) for n in onbekend))
+        eind = by_naam[pad[0]]
         ls = round(eind.get("afvoer_advies_ls", eind.get("afvoer", 0.0)), 1)
         boven = ls > OVERSTROOM_DEURROOSTER_DM3S
         for a, b in zip(pad, pad[1:]):
