@@ -92,6 +92,11 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   `res['rows']`, niet de rest — een tikfout verderop gleed er stil doorheen, in tegenspraak met de
   eigen docstring. Beide gefixt + 2 regressietests. 876/876 groen, verify.sh PASS. Taak gereed voor
   tasks/done/.
+- 2026-08-21: Codex-integratie op actuele `origin/main` na afronding van taken 001, 002, 017 en
+  018. De zes commits voor taken 019 en 020 chronologisch gecherry-pickt; alleen de twee
+  historische `docs/STATE.md`-conflicten opgelost door de bestaande en nieuwe taakstatussen samen
+  te voegen. Actuele blocking `scripts/verify.sh`: PASS, 881/881 tests groen. De administratieve
+  advisory "geen actieve taak" is verwacht omdat 019 en 020 al in `tasks/done/` staan.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.
