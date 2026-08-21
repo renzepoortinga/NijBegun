@@ -33,7 +33,10 @@ check("sample heeft ruimtes", len(d.geometrie.ruimtes) > 0)
 
 print("2. Catalogus")
 cat = json.load(open(CATALOG, encoding="utf-8"))
-check("catalogus >300 maatregelen", len(cat["maatregelen"]) > 300, str(len(cat["maatregelen"])))
+check("catalogus bevat >250 actuele API-regels", len(cat["maatregelen"]) > 250, str(len(cat["maatregelen"])))
+check("catalogus heeft herleidbare API-metadata",
+      cat.get("api_specversie") == "1.0" and str(cat.get("opgehaald_op", "")).endswith("+00:00")
+      and str(cat.get("contentfingerprint", "")).startswith("sha256:"))
 check("V6 kierdichting aanwezig", any(m["code"].startswith("V6") for m in cat["maatregelen"]))
 
 print("3. VABI monitor-parser")
@@ -1351,7 +1354,8 @@ except Exception as _e:
 
 print("\n36. Catalogus-API live-mapping (JSON:API -> catalog.json)")
 try:
-    from catalog.api_client import map_measures_to_catalog
+    from catalog.api_client import (compare_catalogs, content_fingerprint, map_measures_to_catalog,
+                                    validate_catalog)
     _raw = {"data": [
         {"id": "V1-1-A1", "type": "measure", "attributes": {
             "name": "Spouwmuurisolatie 60", "unit": "m²", "rcValue": 1.7, "thicknessInMm": 60,
@@ -1370,7 +1374,7 @@ try:
             "additionalCosts": [{"id": "V1-1-X7", "type": "cost", "attributes": {
                 "contractorValuePerUnit": 91.13, "unit": "won", "notes": "Betreft: dubbel"}}]}},
     ]}
-    _cat = map_measures_to_catalog(_raw)
+    _cat = map_measures_to_catalog(_raw, opgehaald_op="2026-08-21T12:00:00+00:00")
     _ms = {m["code"]: m for m in _cat["maatregelen"]}
     check("api-map: 4 rijen (2 brackets + 1 bracket + 1 X; gedeelde X gededupe)", len(_cat["maatregelen"]) == 4)
     check("api-map: V1-1-A1 incl=23.09 / excl~19.08",
@@ -1381,6 +1385,26 @@ try:
           sum(1 for m in _cat["maatregelen"] if m["code"] == "V1-1-X7") == 1)
     check("api-map: 'Betreft:' uit X-notitie gestript", not _ms["V1-1-X7"]["omschrijving"].startswith("Betreft"))
     check("api-map: extra rc_waarde meegenomen", _ms["V1-1-A1"].get("rc_waarde") == 1.7)
+    check("api-map: specversie/ophaaltijd/fingerprint vastgelegd",
+          _cat["api_specversie"] == "1.0" and _cat["opgehaald_op"] == "2026-08-21T12:00:00+00:00"
+          and _cat["contentfingerprint"] == content_fingerprint(_raw))
+    check("api-map: fingerprint onafhankelijk van API-lijstvolgorde",
+          content_fingerprint(_raw) == content_fingerprint({"data": list(reversed(_raw["data"]))}))
+    _diff = compare_catalogs({"maatregelen": [_ms["V1-1-A1"], {"code": "VERVALLEN"}]}, _cat)
+    check("api-map: verschilvalidatie toegevoegd/verwijderd/gewijzigd",
+          "VERVALLEN" in _diff["verwijderd"] and "V1-1-X7" in _diff["toegevoegd"]
+          and not any(x["code"] == "V1-1-A1" for x in _diff["gewijzigd"]))
+    try:
+        validate_catalog({"maatregelen": [dict(_ms["V1-1-A1"], onderdeel="")]})
+        _bad_rejected = False
+    except ValueError:
+        _bad_rejected = True
+    check("api-map: lege categorie wordt luid geblokkeerd", _bad_rejected)
+    _b5_raw = json.load(open(os.path.join(HERE, "fixtures", "nijbegun_catalog_b5_response.json"),
+                             encoding="utf-8"))
+    _b5 = map_measures_to_catalog(_b5_raw)["maatregelen"][0]
+    check("api-map: B5-kostcode erft expliciete V5-categorie",
+          _b5["onderdeel"] == "E Ventilatie" and _b5["level"] == "Level 5 - VENTILATIE")
 except Exception as _e:
     check("api-map: mapper draait zonder fout", False)
     print("     " + repr(_e)[:160])

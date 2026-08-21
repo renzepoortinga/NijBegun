@@ -52,6 +52,14 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
   gemeenschappelijke regels gewijzigd. Nieuwe `B5-*`-codes tonen dat de huidige vaste V1–V6-
   prefixmapping niet blind kan worden gebruikt. Taak daarom afgebakend vóór import.
 
+- 2026-08-21 Codex Builder: publieke endpoint live opgehaald zonder `.env`; 192 measures zijn naar
+  291 gevalideerde catalogusregels gemapt. API-relaties sturen de categorie (daardoor vallen
+  `B5-1-A1/A2` correct onder V5), en bron-URL, specversie 1.0, UTC-ophaaltijd en canonieke
+  SHA-256-fingerprint zijn vastgelegd. Verschilrapport commitklaar gemaakt: 6 toegevoegd, 52
+  verwijderd, 285 gewijzigd; exacte scan vond geen productiereferenties naar verwijderde codes.
+  Offline fixture/tests dekken B5, fingerprint, metadata, validatie en diff. `verify.sh`: PASS,
+  801/801 Python-checks groen. Onafhankelijke AI-review is nog aan de Manager.
+
 ## Notes
 De API-response bevat geen inhoudelijke catalogusversie of `updatedAt`; noem de live stand dus
 niet bijvoorbeeld “Q4” zonder bronbewijs. Gebruik ophaaltijd + fingerprint voor herleidbaarheid.
