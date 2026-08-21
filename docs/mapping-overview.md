@@ -4,12 +4,15 @@
 via `python scripts/check_mapping_manifest.py --write-doc`. Wijzig het manifest, niet deze
 tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 
+Vaste snapshotfingerprint: `c6b1d01ed8ea`.
+
 ## begrenzing
 
 | | |
 |---|---|
 | Bronform | Constructies (project) + Gevel per wand / Vloer per kamer / Deur (element) |
 | Bronlabel | Gevel - begrenzing · Vloer - begrenzing · Begrenzing (anders dan buitenlucht) |
+| Snapshotvelden | `Constructies` → `Gevel - begrenzing` (9 opties)<br>`Constructies` → `Vloer - begrenzing` (9 opties)<br>`Gevel per wand` → `Gevel - begrenzing` (9 opties)<br>`Vloer per kamer` → `Vloer - begrenzing` (9 opties)<br>`Raam/paneel` → `Begrenzing (anders dan buitenlucht)` (9 opties)<br>`Deur` → `Begrenzing (anders dan buitenlucht)` (9 opties) |
 | Verplicht | conditioneel: alleen tonen als niet Buitenlucht |
 | Canoniek dossierveld | `SchilDeel.begrenzing` |
 | Parser-normalisatie | `magicplan.statistics_csv:_BEGR_CANON` |
@@ -27,6 +30,7 @@ tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 |---|---|
 | Bronform | Raam/paneel + Deur (element) |
 | Bronlabel | Type glas · Type glas (indien glas in deur) · Bovenlicht deur - type glas |
+| Snapshotvelden | `Raam/paneel` → `Type glas` (9 opties)<br>`Deur` → `Type glas (indien glas in deur)` (9 opties)<br>`Deur` → `Bovenlicht deur - type glas` (9 opties) |
 | Verplicht | verplicht (hoofdraam) / conditioneel (bovenlicht/deur) |
 | Canoniek dossierveld | `SchilDeel.glastype` |
 | Parser-normalisatie | `magicplan.statistics_csv:_GLAS_CANON` |
@@ -44,6 +48,7 @@ tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 |---|---|
 | Bronform | Raam/paneel + Deur (element) |
 | Bronlabel | Kozijnmateriaal |
+| Snapshotvelden | `Raam/paneel` → `Kozijnmateriaal` (3 opties)<br>`Deur` → `Kozijnmateriaal` (3 opties) |
 | Verplicht | optioneel (default Hout of kunststof) |
 | Canoniek dossierveld | `SchilDeel.kozijnmateriaal` |
 | Parser-normalisatie | `magicplan.statistics_csv:_KOZIJN_MAT` |
@@ -61,6 +66,7 @@ tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 |---|---|
 | Bronform | Object (project) + Gevel per wand (override) |
 | Bronlabel | Oriëntatie voorgevel · Gevel - oriëntatie (override) |
+| Snapshotvelden | `Object` → `Oriëntatie voorgevel` (8 opties)<br>`Gevel per wand` → `Gevel - oriëntatie (override)` (8 opties) |
 | Verplicht | verplicht (voorgevel) |
 | Canoniek dossierveld | `SchilDeel.orientatie` |
 | Parser-normalisatie | — |
@@ -78,6 +84,7 @@ tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 |---|---|
 | Bronform | Object (project) |
 | Bronlabel | Woningtype |
+| Snapshotvelden | `Object` → `Woningtype` (10 opties) |
 | Verplicht | verplicht |
 | Canoniek dossierveld | `Identificatie.woningtype` |
 | Parser-normalisatie | — |
@@ -95,6 +102,7 @@ tabel; `--check-doc` faalt luid als ze uit elkaar lopen.
 |---|---|
 | Bronform | Installaties > ZONNE-ENERGIE (project) |
 | Bronlabel | PV - oriëntatie |
+| Snapshotvelden | `Installaties` → `PV - oriëntatie` (8 opties) |
 | Verplicht | conditioneel: alleen als PV aanwezig |
 | Canoniek dossierveld | `ZonneEnergieSysteem.orientatie` |
 | Parser-normalisatie | — |

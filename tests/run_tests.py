@@ -4525,7 +4525,8 @@ except Exception as _e:
 
 print("\nAD. Mappingmanifest (taak 015): drift-detectie parser <-> webapp <-> VABI + form-fingerprint")
 try:
-    from core.mapping_manifest import MANIFEST, resolve, get as _mm_get
+    from core.mapping_manifest import (MANIFEST, VERWACHTE_SNAPSHOT_FINGERPRINT,
+                                       resolve, get as _mm_get)
     from scripts.check_mapping_manifest import (run_checks as _mm_run_checks, render_doc as _mm_render_doc,
                                                  check_doc as _mm_check_doc, DOC_PATH as _mm_doc_path)
     from magicplan.form_fingerprint import (compute_fingerprint, snapshot_fingerprint, load_snapshot,
@@ -4572,6 +4573,8 @@ try:
     _fp1 = snapshot_fingerprint()
     _fp2 = snapshot_fingerprint()
     check("form-fingerprint: reproduceerbaar (zelfde snapshot -> zelfde fingerprint)", _fp1 == _fp2)
+    check("form-fingerprint: gecommitte snapshot matcht onafhankelijke contractpin",
+          _fp1 == VERWACHTE_SNAPSHOT_FINGERPRINT)
     _forms_gewijzigd = dict(_snap["forms"])
     _forms_gewijzigd["Object"] = _forms_gewijzigd["Object"] + [{"name": "Nieuw testveld", "options": None}]
     check("form-fingerprint: verandert bij een echte veldwijziging",
@@ -4579,6 +4582,41 @@ try:
     _forms_zelfde_volgorde_anders = {k: list(reversed(v)) for k, v in _snap["forms"].items()}
     check("form-fingerprint: ongevoelig voor volgorde (alleen inhoud telt)",
           compute_fingerprint(_forms_zelfde_volgorde_anders) == _fp1)
+
+    # De drift-check moet de snapshot daadwerkelijk lezen. Drie mutaties bewijzen dat optie-,
+    # label- én overige formulierdrift rood worden; dit is geen zinloze snapshot-self-compare.
+    import copy as _copy_ad
+    def _snapshot_errors_ad(mutator):
+        gewijzigd = _copy_ad.deepcopy(_snap)
+        mutator(gewijzigd)
+        pad = tempfile.mktemp(suffix=".json")
+        try:
+            with open(pad, "w", encoding="utf-8") as fh:
+                json.dump(gewijzigd, fh, ensure_ascii=False)
+            return _mm_run_checks(pad)
+        finally:
+            if os.path.exists(pad):
+                os.unlink(pad)
+
+    _optiedrift_ad = _snapshot_errors_ad(
+        lambda s: s["forms"]["Raam/paneel"][6]["options"].append("Nieuw glastype"))
+    check("manifest-snapshot: gewijzigde dropdownoptie faalt luid",
+          any("snapshotopties" in e and "glastype" in e for e in _optiedrift_ad),
+          str(_optiedrift_ad))
+
+    def _labeldrift_ad(s):
+        next(v for v in s["forms"]["Object"] if v["name"] == "Woningtype")["name"] = "Woningsoort"
+    _label_errors_ad = _snapshot_errors_ad(_labeldrift_ad)
+    check("manifest-snapshot: gewijzigd bronlabel faalt luid",
+          any("labeldrift" in e and "woningtype_subtype" in e for e in _label_errors_ad),
+          str(_label_errors_ad))
+
+    def _overige_drift_ad(s):
+        s["forms"]["Object"].append({"name": "Nieuw los veld", "options": None})
+    _fp_errors_ad = _snapshot_errors_ad(_overige_drift_ad)
+    check("manifest-snapshot: overige fingerprintdrift faalt tegen vaste contractpin",
+          any("fingerprint" in e and "wijkt af" in e for e in _fp_errors_ad),
+          str(_fp_errors_ad))
 
     # Live-refresh blijft offline testbaar: bij een gelijknamige groep/veld uit beide API-routes
     # moeten unieke velden én alle opties behouden blijven, zonder dubbele veldrecords.

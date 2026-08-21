@@ -12,10 +12,11 @@ parser produceerde "Metaal thermisch onderbroken" zonder haakjes, de webapp-`<se
 eerstvolgende webapp-save stil overschreven met de default; gefixt in dezelfde sessie als dit
 manifest).
 
-ELKE entry verwijst naar de ECHTE objecten in de code (`module:attribuut`) i.p.v. de opties hier
-te dupliceren — zo kan dit manifest zelf nooit los raken van de code die het beschrijft.
-`scripts/check_mapping_manifest.py` valideert elke referentie en signaleert drift; zie dat bestand
-voor de uitleg per controle. `docs/mapping-overview.md` wordt UIT dit manifest gegenereerd
+Elke entry verwijst naar de echte parser/webapp/VABI-objecten (`module:attribuut`) en bevat daarnaast
+expliciete `snapshot_velden`: de letterlijke formnaam, het veldlabel en de verwachte live bronopties.
+Die bewuste, onafhankelijke bronverwachting is nodig om drift in de gecommitte live snapshot te kunnen
+detecteren; een snapshot met zichzelf vergelijken zou niets bewaken. `scripts/check_mapping_manifest.py`
+valideert beide kanten en signaleert drift. `docs/mapping-overview.md` wordt uit dit manifest gegenereerd
 (`python scripts/check_mapping_manifest.py --write-doc`), nooit andersom.
 
 Velden:
@@ -39,7 +40,19 @@ Velden:
   bron_doc       waar de bevestiging vandaan komt (mens-leesbare voetnoot)
 """
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Tuple
+
+# Onafhankelijk contract voor de VOLLEDIGE gecommitte snapshot. Bij een expliciete live refresh
+# verandert deze waarde zodra enig formulier/veld/optie wijzigt; CI blijft dan rood totdat de diff
+# beoordeeld en zowel snapshot, manifestverwachtingen als deze pin bewust zijn bijgewerkt.
+VERWACHTE_SNAPSHOT_FINGERPRINT = "c6b1d01ed8ea"
+
+
+@dataclass(frozen=True)
+class SnapshotVeld:
+    form: str
+    label: str
+    opties: Tuple[str, ...]
 
 
 @dataclass
@@ -55,6 +68,7 @@ class VeldMapping:
     vabi_codes: Optional[str]
     bewijsstatus: str
     bron_doc: str
+    snapshot_velden: List[SnapshotVeld] = field(default_factory=list)
     # Voor Codebook-afgeleide velden (vabi_codes="vabi.codebook:Codebook.<methode>") normaliseert de
     # generator de dossierwaarde EERST via een eigen functie (bv. 'HR (dubbel glas met coating)' ->
     # 'hr' vóór 'dubbel' checken, vacuümglas -> hr++) — die zit in vabi/constructie_generate.py, niet
@@ -64,6 +78,19 @@ class VeldMapping:
     # Webapp-opties die BEWUST geen VABI-code opleveren (golden rule: de generator flagt deze i.p.v.
     # te gokken, zie bron_doc) — geen drift, geen fout.
     vabi_onbevestigde_opties: List[str] = field(default_factory=list)
+
+
+_BEGRENZING_BRONOPTIES = ("Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)",
+                           "AOS (serre)", "AVR (aangrenzend verwarmd)",
+                           "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder")
+_GLAS_BRONOPTIES = ("Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)",
+                     "HR+", "HR++", "TripleHR", "Vacuümglas", "Onbekend")
+_KOZIJN_BRONOPTIES = ("Hout of kunststof", "Metaal (thermisch onderbroken)",
+                       "Metaal (niet thermisch onderbroken)")
+_ORIENTATIE_BRONOPTIES = ("N", "NO", "O", "ZO", "Z", "ZW", "W", "NW")
+_WONINGTYPE_BRONOPTIES = ("Vrijstaand", "Twee-onder-een-kap", "Hoekwoning", "Tussenwoning",
+                           "Galerijwoning", "Portiekwoning", "Maisonnette (bovenwoning)",
+                           "Appartement (tussen)", "Appartement (hoek)", "Woning boven bedrijfsruimte")
 
 
 MANIFEST: List[VeldMapping] = [
@@ -82,6 +109,14 @@ MANIFEST: List[VeldMapping] = [
         vabi_codes="vabi.objecten_generate:_grenst_aan_code",
         bewijsstatus="bevestigd",
         bron_doc="vabi/refs/grenstaan_mapping.md; volledige dropdown 0-9 live afgelezen EPA 12.0.1 (19-7-2026)",
+        snapshot_velden=[
+            SnapshotVeld("Constructies", "Gevel - begrenzing", _BEGRENZING_BRONOPTIES),
+            SnapshotVeld("Constructies", "Vloer - begrenzing", _BEGRENZING_BRONOPTIES),
+            SnapshotVeld("Gevel per wand", "Gevel - begrenzing", _BEGRENZING_BRONOPTIES),
+            SnapshotVeld("Vloer per kamer", "Vloer - begrenzing", _BEGRENZING_BRONOPTIES),
+            SnapshotVeld("Raam/paneel", "Begrenzing (anders dan buitenlucht)", _BEGRENZING_BRONOPTIES),
+            SnapshotVeld("Deur", "Begrenzing (anders dan buitenlucht)", _BEGRENZING_BRONOPTIES),
+        ],
     ),
     VeldMapping(
         id="glastype",
@@ -98,6 +133,11 @@ MANIFEST: List[VeldMapping] = [
         bewijsstatus="bevestigd",
         bron_doc="vabi/codebook.py leidt de codes zelf af uit vabi/refs/standaard_constructies_v120001001.xml (219 constructies); "
                  "'Onbekend' wordt bewust NIET gegokt (generator-issue, audit-glas-F3 15-7)",
+        snapshot_velden=[
+            SnapshotVeld("Raam/paneel", "Type glas", _GLAS_BRONOPTIES),
+            SnapshotVeld("Deur", "Type glas (indien glas in deur)", _GLAS_BRONOPTIES),
+            SnapshotVeld("Deur", "Bovenlicht deur - type glas", _GLAS_BRONOPTIES),
+        ],
     ),
     VeldMapping(
         id="kozijnmateriaal",
@@ -112,6 +152,10 @@ MANIFEST: List[VeldMapping] = [
         vabi_codes_normalizer="vabi.constructie_generate:_norm_kozijn",
         bewijsstatus="bevestigd",
         bron_doc="vabi/codebook.py (zelfde export als glastype); labels incl. haakjes = NTA 8.3 kozijntype A/B/C, letterlijk het live MagicPlan-optielabel (docs/magicplan-forms-live.md)",
+        snapshot_velden=[
+            SnapshotVeld("Raam/paneel", "Kozijnmateriaal", _KOZIJN_BRONOPTIES),
+            SnapshotVeld("Deur", "Kozijnmateriaal", _KOZIJN_BRONOPTIES),
+        ],
     ),
     VeldMapping(
         id="gevel_orientatie",
@@ -126,6 +170,10 @@ MANIFEST: List[VeldMapping] = [
         vabi_onbevestigde_opties=[""],   # lege keuze (nog niet ingevuld) -> geen code, geen drift
         bewijsstatus="bevestigd",
         bron_doc="Geometrie-export voorbeeldproject 'hoekwoning' (18-7-2026): Zuid=0/Noord=4/Oost=6 rechtstreeks bevestigd, rest via dropdownvolgorde",
+        snapshot_velden=[
+            SnapshotVeld("Object", "Oriëntatie voorgevel", _ORIENTATIE_BRONOPTIES),
+            SnapshotVeld("Gevel per wand", "Gevel - oriëntatie (override)", _ORIENTATIE_BRONOPTIES),
+        ],
     ),
     VeldMapping(
         id="woningtype_subtype",
@@ -145,6 +193,7 @@ MANIFEST: List[VeldMapping] = [
                  "en worden bewust NIET gegokt (golden rule; _subtype_code() sloot 'appartement' expliciet uit "
                  "na een mappingmanifest-audit 21-8: 'Appartement (tussen)'/'(hoek)' matchten eerder per ongeluk "
                  "de grondgebonden hoek/tussen-substring-check)",
+        snapshot_velden=[SnapshotVeld("Object", "Woningtype", _WONINGTYPE_BRONOPTIES)],
     ),
     VeldMapping(
         id="pv_orientatie",
@@ -158,6 +207,7 @@ MANIFEST: List[VeldMapping] = [
         vabi_codes="vabi.installatie_generate:PV_ORIENTATIE",
         bewijsstatus="bevestigd",
         bron_doc="PV end-to-end geverifieerd (22-6-2026): 12x1,70=20,40 m2 PV/Zuid/35 graden foutloos geimporteerd in EPA",
+        snapshot_velden=[SnapshotVeld("Installaties", "PV - oriëntatie", _ORIENTATIE_BRONOPTIES)],
     ),
 ]
 

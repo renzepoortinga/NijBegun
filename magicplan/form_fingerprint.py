@@ -13,12 +13,11 @@ zonder dat elke gewone import live moet bellen. Twee lagen:
    internet) en de snapshot herschrijft + herdateert. Nooit automatisch aangeroepen (golden rule:
    live API-calls alleen expliciet gevraagd).
 
-Drift-detectie (CI, offline): `tests/run_tests.py` vergelijkt de fingerprint van de gecommitte
-snapshot met de fingerprint die `core.mapping_manifest` verwacht (VERWACHTE_SNAPSHOT_FINGERPRINT).
-Wijzigt iemand de snapshot (of loopt additions.json/de bulletlijst in magicplan-forms-live.md uit de
-pas) zonder de verwachte fingerprint bij te werken, dan faalt die test luid — precies het "drift faalt
-luid"-doel van taak 015. Dit vangt drift in het FORM-SPEC-document zelf; het vangt niet stil een
-verkeerde live MagicPlan-stand op (dat vereist de aparte, expliciete --refresh-live-controle).
+Drift-detectie (CI, offline): `scripts/check_mapping_manifest.py` vergelijkt elk gekoppeld snapshotveld
+en zijn bronopties met de onafhankelijke verwachtingen in `core.mapping_manifest`, én vergelijkt de
+volledige snapshotfingerprint met `VERWACHTE_SNAPSHOT_FINGERPRINT`. Een expliciete live refresh die
+een label, optie of ander formulierveld wijzigt maakt CI dus rood totdat de diff is beoordeeld en
+snapshot + manifest + pin bewust samen zijn bijgewerkt. CI belt de live API nooit zelf.
 """
 import hashlib
 import json
@@ -77,8 +76,9 @@ def stamp_dossier_meta(dos, path=DEFAULT_SNAPSHOT_PATH):
 def refresh_snapshot_live(path=DEFAULT_SNAPSHOT_PATH):
     """Haalt de ECHTE live custom-forms + custom-fields op (form_push.fetch_forms/fetch_fields) en
     herschrijft de snapshot met de huidige veldnamen + opties, herdateerd op vandaag. Vereist .env
-    (MAGICPLAN_API_KEY/MAGICPLAN_CUSTOMER_ID) + internet -> NOOIT vanuit build_dossier of tests
-    aangeroepen; alleen via `python -m magicplan.form_fingerprint --refresh-live`."""
+    (MAGICPLAN_API_KEY/MAGICPLAN_CUSTOMER_ID) + internet -> NOOIT vanuit build_dossier aangeroepen;
+    alleen via `python -m magicplan.form_fingerprint --refresh-live`. Tests roepen uitsluitend het
+    mergepad aan met volledig gemockte fetchers, zonder `.env` of netwerk."""
     import datetime
     from magicplan.form_push import _load_env, fetch_forms, fetch_fields
 

@@ -63,7 +63,7 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
       stabiele per-vlak-ID voor gevel/vloer/kozijn bij herimport — nog steeds vervolgwerk, niet acuut
       (geen bekende klacht zoals bij dak).
 - [x] `./scripts/verify.sh` slaagt (PASS na rebase op `origin/main`; Python-tests blocking:
-      841/841 groen).
+      845/845 groen).
 - [ ] AI-review PASS door een andere agent dan de bouwer. (review loopt, zie Sessions zodra klaar)
 
 ## Sessions
@@ -103,6 +103,17 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
   duplicaten samengevoegd en bewaren de unie van beide optielijsten, zodat drift niet stil
   verdwijnt. Drie regressietests toegevoegd. Volledige blocking `scripts/verify.sh`: PASS,
   841/841 tests groen.
+- 2026-08-21 (Builder, reviewfix) — onafhankelijke review gaf FAIL omdat de eerste checker de
+  form-snapshot niet werkelijk tegen een onafhankelijk manifestcontract controleerde. Opgelost
+  met expliciete `SnapshotVeld`-koppelingen (form + letterlijk label + verwachte bronopties) voor
+  alle zes entries en ieder relevant herhaald MagicPlan-veld. `run_checks()` leest nu de
+  gecommitte snapshot, vergelijkt labels en opties exact en controleert daarnaast de volledige
+  snapshot tegen een vaste `VERWACHTE_SNAPSHOT_FINGERPRINT`; een live refresh blijft daardoor
+  offline rood tot snapshot, manifest en pin bewust samen worden bijgewerkt. Snapshot aangevuld
+  met de eerder ontbrekende optielijsten voor woningtype, geveloriëntatie-override, raambegrenzing
+  en PV-oriëntatie. Regressies toegevoegd voor optie-, bronlabel- en overige fingerprintdrift;
+  misleidende docstrings en gegenereerd mappingoverzicht gecorrigeerd. Blocking verify PASS,
+  845/845 tests groen. Onafhankelijke herreview blijft vereist.
 
 ## Notes
 `magicplan-forms-live.md` (23-7) en de doorgevoerde dakvelden van 27-7 spreken elkaar nu tegen —

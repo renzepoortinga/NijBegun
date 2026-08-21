@@ -1,7 +1,7 @@
 {
  "_meta": {
   "snapshot_datum": "2026-08-21",
-  "bron": "docs/magicplan-forms-live.md (live afgelezen 23-7-2026, workspace R.poortinga) + de 3 dropdown-optielijsten (Begrenzing/Glas/Kozijn) letterlijk overgenomen uit datzelfde document.",
+  "bron": "docs/magicplan-forms-live.md (live afgelezen 23-7-2026, workspace R.poortinga); alle aan het mappingmanifest gekoppelde dropdownlabels en -opties zijn als expliciet offline contract opgenomen.",
   "waarschuwing": "Dit is GEEN live API-fetch — handmatig samengesteld uit de gedocumenteerde live-stand. Ververs met: python magicplan/form_fingerprint.py --refresh-live (los, expliciet, vereist .env + internet; nooit vanuit build_dossier of de testsuite aangeroepen)."
  },
  "forms": {
@@ -11,7 +11,7 @@
    {"name": "Qv10 gemeten?", "options": null},
    {"name": "Bouwjaar", "options": null},
    {"name": "Renovatiejaar", "options": null},
-   {"name": "Woningtype", "options": null},
+   {"name": "Woningtype", "options": ["Vrijstaand", "Twee-onder-een-kap", "Hoekwoning", "Tussenwoning", "Galerijwoning", "Portiekwoning", "Maisonnette (bovenwoning)", "Appartement (tussen)", "Appartement (hoek)", "Woning boven bedrijfsruimte"]},
    {"name": "Gevelhoogte (m)", "options": null},
    {"name": "Gebouwhoogte tot de nok (m)", "options": null},
    {"name": "Ag-aftrek zolder (m2)", "options": null},
@@ -37,11 +37,12 @@
    {"name": "Koeling aanwezig?", "options": null},
    {"name": "Tapwater - toestel", "options": null},
    {"name": "PV aanwezig?", "options": null},
+   {"name": "PV - oriëntatie", "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]},
    {"name": "Meerdere PV-systemen?", "options": null}
   ],
   "Gevel per wand": [
    {"name": "Gevelnaam", "options": null},
-   {"name": "Gevel - oriëntatie (override)", "options": null},
+   {"name": "Gevel - oriëntatie (override)", "options": ["N", "NO", "O", "ZO", "Z", "ZW", "W", "NW"]},
    {"name": "Gevel - invoer (override)", "options": null},
    {"name": "Gevel - foto kwaliteitsverklaring", "options": null},
    {"name": "Gevel - isolatie aanwezig?", "options": null},
@@ -69,7 +70,7 @@
    {"name": "Onderlicht kozijn - toevoerrooster aanwezig?", "options": null},
    {"name": "Type glas", "options": ["Enkel", "Voorzetglas", "Dubbel", "HR (dubbel glas met coating)", "HR+", "HR++", "TripleHR", "Vacuümglas", "Onbekend"]},
    {"name": "Kozijnmateriaal", "options": ["Hout of kunststof", "Metaal (thermisch onderbroken)", "Metaal (niet thermisch onderbroken)"]},
-   {"name": "Begrenzing (anders dan buitenlucht)", "options": null}
+   {"name": "Begrenzing (anders dan buitenlucht)", "options": ["Buitenlucht", "Grond", "Kruipruimte", "AOR (onverwarmd)", "AOS (serre)", "AVR (aangrenzend verwarmd)", "ASGR (sterk geventileerd)", "Water", "Onverwarmde kelder"]}
   ],
   "Deur": [
    {"name": "Bovenlicht boven de deur?", "options": null},

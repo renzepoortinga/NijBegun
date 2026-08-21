@@ -1,7 +1,8 @@
 """
 Mappingmanifest-drift-checker (taak 015).
 
-Valideert `core/mapping_manifest.py` tegen de ECHTE code waar het naar verwijst, en genereert/
+Valideert `core/mapping_manifest.py` tegen de echte code én tegen de afzonderlijk gecommitte
+`magicplan/refs/forms_snapshot.json`, en genereert/
 controleert `docs/mapping-overview.md` uit het manifest. Puur offline (geen live MagicPlan/VABI-
 calls) — gebruikt de dossier-canon-dicts, webapp-optielijsten en het VABI-codebook (dat zichzelf al
 afleidt uit een echte export) die al in de repo staan.
@@ -12,6 +13,9 @@ Gebruik:
     python scripts/check_mapping_manifest.py --check-doc # faalt als de doc niet meer bij het manifest past
 
 Wat WEL gecontroleerd wordt:
+  - elk manifestveld wijst naar concrete form+label-records in de snapshot; labels en letterlijke
+    bronopties moeten exact overeenkomen met de onafhankelijke verwachting in het manifest.
+  - de fingerprint van de volledige snapshot moet overeenkomen met de vaste, bewust bijgewerkte pin.
   - elke `parser_canon`/`webapp_opties`/`vabi_codes`-referentie bestaat nog (module/attribuut) —
     een hernoemde of verwijderde dict/functie laat dit meteen luid falen.
   - parser -> webapp: elke canonieke waarde die de parser kan produceren, staat als optie in de
@@ -30,6 +34,7 @@ Dit script signaleert AFWIJKING, het bevestigt geen nieuwe waarheid.
 """
 import argparse
 import functools
+import json
 import os
 import sys
 
@@ -38,7 +43,8 @@ ROOT = os.path.dirname(HERE)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from core.mapping_manifest import MANIFEST, resolve  # noqa: E402
+from core.mapping_manifest import MANIFEST, VERWACHTE_SNAPSHOT_FINGERPRINT, resolve  # noqa: E402
+from magicplan.form_fingerprint import compute_fingerprint, DEFAULT_SNAPSHOT_PATH  # noqa: E402
 
 DOC_PATH = os.path.join(ROOT, "docs", "mapping-overview.md")
 
@@ -65,6 +71,32 @@ def check_references(entry, errors):
             resolve(ref)
         except Exception as exc:
             errors.append("%s: referentie %s=%r bestaat niet meer (%s)" % (entry.id, veldnaam, ref, exc))
+
+
+def check_snapshot(entry, snapshot, errors):
+    """Vergelijk expliciete bronvelden en bronopties met de gecommitte live snapshot."""
+    forms = snapshot.get("forms", {})
+    if not entry.snapshot_velden:
+        errors.append("%s: geen snapshot_velden gekoppeld; bronform/bronlabel worden niet bewaakt" % entry.id)
+        return
+    for verwacht in entry.snapshot_velden:
+        velden = forms.get(verwacht.form)
+        if not isinstance(velden, list):
+            errors.append("%s: snapshot mist bronform %r" % (entry.id, verwacht.form))
+            continue
+        matches = [v for v in velden if v.get("name") == verwacht.label]
+        if len(matches) != 1:
+            errors.append("%s: snapshot verwacht exact 1 veld %r > %r, gevonden %d (labeldrift?)"
+                          % (entry.id, verwacht.form, verwacht.label, len(matches)))
+            continue
+        werkelijk = matches[0].get("options")
+        if werkelijk is None:
+            errors.append("%s: snapshotveld %r > %r heeft geen optielijst; dropdowncontract is onvolledig"
+                          % (entry.id, verwacht.form, verwacht.label))
+        elif set(werkelijk) != set(verwacht.opties) or len(werkelijk) != len(verwacht.opties):
+            errors.append("%s: snapshotopties voor %r > %r wijken af: verwacht %s, gevonden %s"
+                          % (entry.id, verwacht.form, verwacht.label,
+                             sorted(verwacht.opties), sorted(werkelijk)))
 
 
 def _canon_values(entry):
@@ -150,9 +182,20 @@ def check_vabi_codes(entry, errors):
                     % (entry.id, optie, ref))
 
 
-def run_checks():
+def run_checks(snapshot_path=DEFAULT_SNAPSHOT_PATH):
     errors = []
+    try:
+        with open(snapshot_path, encoding="utf-8") as fh:
+            snapshot = json.load(fh)
+    except Exception as exc:
+        return ["forms-snapshot is niet leesbaar: %s" % exc]
+    werkelijk_fp = compute_fingerprint(snapshot.get("forms", {}))
+    if werkelijk_fp != VERWACHTE_SNAPSHOT_FINGERPRINT:
+        errors.append("forms-snapshot fingerprint %s wijkt af van contract %s; beoordeel live drift en "
+                      "werk snapshot + manifest + pin bewust samen bij"
+                      % (werkelijk_fp, VERWACHTE_SNAPSHOT_FINGERPRINT))
     for entry in MANIFEST:
+        check_snapshot(entry, snapshot, errors)
         check_references(entry, errors)
         check_parser_vs_webapp(entry, errors)
         check_vabi_codes(entry, errors)
@@ -172,6 +215,8 @@ def render_doc():
         "via `python scripts/check_mapping_manifest.py --write-doc`. Wijzig het manifest, niet deze",
         "tabel; `--check-doc` faalt luid als ze uit elkaar lopen.",
         "",
+        "Vaste snapshotfingerprint: `%s`." % VERWACHTE_SNAPSHOT_FINGERPRINT,
+        "",
     ]
     for entry in MANIFEST:
         lines += [
@@ -181,6 +226,9 @@ def render_doc():
             "|---|---|",
             "| Bronform | %s |" % entry.bronform,
             "| Bronlabel | %s |" % entry.bronlabel,
+            "| Snapshotvelden | %s |" % "<br>".join(
+                "`%s` → `%s` (%d opties)" % (v.form, v.label, len(v.opties))
+                for v in entry.snapshot_velden),
             "| Verplicht | %s |" % entry.verplicht,
             "| Canoniek dossierveld | `%s` |" % entry.canoniek_veld,
             "| Parser-normalisatie | %s |" % _fmt_ref(entry.parser_canon),
