@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 002 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 001 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,10 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 001 (nulmeting en repositorygate) is afgerond: `main` is groen met 786/786 tests en
+branch protection vereist voortaan een actuele, geslaagde `verify`-check. De regel geldt ook
+voor admins; force-push en branch deletion zijn uitgeschakeld. Onafhankelijke AI-review: PASS.
 
 Taak 002 (draagbare tests) is afgerond: de plan-JSON- en loginchecks gebruiken eigen fixtures,
 de suite is 786/786 groen en `verify.sh` blokkeert weer op Python-testfalen. Onafhankelijke
