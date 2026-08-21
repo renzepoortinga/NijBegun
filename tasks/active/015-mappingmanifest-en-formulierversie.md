@@ -62,8 +62,8 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
       CSV-herimport draagt `webapp-wizard`-dakvlakken nu over i.p.v. ze stil te wissen. GEEN generieke
       stabiele per-vlak-ID voor gevel/vloer/kozijn bij herimport — nog steeds vervolgwerk, niet acuut
       (geen bekende klacht zoals bij dak).
-- [x] `./scripts/verify.sh` slaagt (PASS; Python-tests advisory door de bekende taak-002-omgevings-
-      beperking — `python tests/run_tests.py` rechtstreeks: 826/828, 2 bekende falen buiten dit werk).
+- [x] `./scripts/verify.sh` slaagt (PASS na rebase op `origin/main`; Python-tests blocking:
+      838/838 groen).
 - [ ] AI-review PASS door een andere agent dan de bouwer. (review loopt, zie Sessions zodra klaar)
 
 ## Sessions
@@ -94,7 +94,11 @@ Dropdown- en veldendrift tussen MagicPlan, parser, dossier, webapp en Vabi autom
 - 2026-08-21 (Builder/Integrator, vervolgsessie) — vóór de rebase de twee lokaal aangemaakte
   backlogtaken hernummerd om botsingen met de inmiddels gebruikte nummers te voorkomen:
   dakkapel/preflight van 020 naar 023 en MagicPlan-SSL van 019 naar 025; interne verwijzingen
-  in taak 014 en 023 overeenkomstig bijgewerkt.
+  in taak 014 en 023 overeenkomstig bijgewerkt. Daarna alle 7 branchcommits op actuele
+  `origin/main` gerebased. Conflicten in `docs/STATE.md` en `vabi/generate_all.py` inhoudelijk
+  opgelost: taak-017's atomische publicatie bleef leidend en taak-014's dubbele-dakpreflight
+  is daarin behouden. Door de rebase teruggekomen backlogkopieën van de reeds afgeronde taken
+  017/018 verwijderd. Volledige blocking `scripts/verify.sh`: PASS, 838/838 tests groen.
 
 ## Notes
 `magicplan-forms-live.md` (23-7) en de doorgevoerde dakvelden van 27-7 spreken elkaar nu tegen —

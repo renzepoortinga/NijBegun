@@ -35,11 +35,10 @@ AI-review: PASS.
 
 Taak 013 (ketenaudit MagicPlan → tool → Vabi) en taak 014 (dakmigratie zonder dubbele
 legacyvlakken — het Essenhage-dakdubbelingspatroon uit taak 013) zijn afgerond en staan in
-`tasks/done/`, op branch `feat/015-mappingmanifest-formulierversie` (2 reviewrondes, laatste
-zonder blockers; 804/806 tests groen, 2 bekende omgevingsfalen). Taak 015 blijft `active/` —
-alleen het dak-specifieke bronprovenance-stuk dat 014 nodig had is gedaan, het brede
-mappingmanifest/form-fingerprint niet (zie dat taakbestand). Taak 025 (SSL-fix `form_push.py`,
-zelfde patroon als taak 012) staat in `backlog/`, gevonden tijdens de 014-review.
+`tasks/done/`. Taak 015 blijft `active/`: mappingmanifest, formulierfingerprint en de eerdere
+dakprovenance zijn gebouwd en na rebase op `main` met 838/838 tests geverifieerd; alleen de
+onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 (dakkapel/
+preflight) en 025 (MagicPlan-SSL) in `backlog/`.
 
 Taak 003 (kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export)
 is afgerond en staat in `tasks/done/`: onafhankelijke herreview van commit
