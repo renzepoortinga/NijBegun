@@ -47,6 +47,13 @@ niet langer afhankelijk is van een handmatig aangeleverde XLSX-catalogus.
 
 ## Sessions
 
+- 2026-08-21 Codex Manager (live hercontrole): de publieke endpoint opnieuw read-only opgehaald,
+  zonder `.env` of API-key. De API levert nog steeds 192 measures en de gevalideerde mapper stopt
+  nog steeds luid op `V1-2-X3`: vijfmaal rolsteiger EUR 250,43/st onder V1-2 tegenover viermaal
+  hoogwerker EUR 569,25/wk onder V2-3. Er is niets gepubliceerd of aan `catalog/catalog.json`
+  gewijzigd; broncorrectie blijft noodzakelijk voordat de live-importcriteria veilig kunnen worden
+  afgevinkt.
+
 - 2026-08-21 Codex Manager: live API geïnventariseerd. API-spec `1.0`, 192 measures; bestaande
   mapper levert 291 regels versus 338 XLSX-regels: 6 codes toegevoegd, 52 verwijderd en 285
   gemeenschappelijke regels gewijzigd. Nieuwe `B5-*`-codes tonen dat de huidige vaste V1–V6-
