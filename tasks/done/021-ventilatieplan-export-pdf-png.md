@@ -33,7 +33,7 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
 - [x] PNG per verdieping heeft transparante of witte achtergrond en is bruikbaar in Word.
 - [x] Dossier zonder plattegrond geeft een nette melding, geen lege pagina.
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 
@@ -80,6 +80,11 @@ begrijpen, plus losse PNG's voor gebruik in het isolatieplan.
   via de echte routes getest; JPEG-bronpixels zijn in zowel losse PNG als ingebed PDF-beeld bewezen.
   Blocking verify PASS, 1020/1020. Alle inhoudelijke acceptatiecriteria zijn afgevinkt; alleen de
   onafhankelijke herreview staat nog open.
+- 2026-08-21 onafhankelijke Reviewer (andere leverancier): VERDICT PASS op `e00d710`. JPEG en alle
+  gevraagde PNG-varianten renderen via echte routes en zijn in PNG/PDF aangetoond; traversal-, 25 MB-
+  en 30 miljoen-pixelgrenzen, foutafhandeling, dependency-packaging, markersemantiek en paginering
+  zijn intact. Eigen blocking verify eveneens PASS, 1020/1020; geen advisories. Enige niet-blokkerende
+  documentatienit (`dependencyvrij`) direct gecorrigeerd naar `offline`.
 
 ## Notes
 Het aantal pagina's is variabel: voorblad + één pagina per verdieping + berekeningspagina.

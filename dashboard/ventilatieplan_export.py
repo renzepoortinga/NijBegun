@@ -1,4 +1,4 @@
-"""Dependencyvrije PDF/PNG-export voor het interactieve ventilatieplan.
+"""Offline PDF/PNG-export voor het interactieve ventilatieplan.
 
 De Flask-pagina levert met ``_vp_context`` al de ene, canonieke scene op. Deze
 module tekent die scene zowel naar PNG als naar de vloerpagina's van de PDF;
