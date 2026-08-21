@@ -46,7 +46,7 @@ onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 
 preflight) en 025 (MagicPlan-SSL) in `backlog/`.
 
 Taak 020 (ventilatieplan-pagina in de webapp) is na review-FAIL heropend en staat in `tasks/active/`.
-De blockers zijn gerepareerd en 888/888 tests zijn groen; onafhankelijke herreview staat nog open.
+De blockers zijn gerepareerd en 889/889 tests zijn groen; onafhankelijke herreview staat nog open.
 De taak levert route `/project/<tag>/ventilatieplan` (GET pagina + POST markers +
 POST herstel) bovenop de taak-019-rekenlaag. Dossier minimaal uitgebreid (`core/dossier.py`):
 `Ruimte.verdieping`, `VloerInfo.plattegrond_afbeelding` (forward-compat taak 022) en de nieuwe

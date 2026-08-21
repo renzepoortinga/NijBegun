@@ -107,7 +107,9 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   marker aan bij de bronruimte zonder een onbekende deur/doelruimte te verzinnen. Dubbelklik kan
   nu waarden wijzigen, verwijderen of expliciet splitsen via `waarde+waarde`. Template/CSS op
   design-tokens gebracht (geen component-hex/rgba, losse font-size, inline stijl of non-grid
-  spacing). Blocking `scripts/verify.sh`: PASS, 888/888 tests groen. Browser-QA op 390/768/1440
+  spacing). Blocking `scripts/verify.sh`: PASS; na de extra regressie die ook bevestigt dat
+  automarkers binnen een gemeten ruimte starten staat de suite op 889/889 groen. Browser-QA op
+  390/768/1440
   kon niet worden uitgevoerd: de voorgeschreven in-app-browserruntime gaf na diagnose exact nul
   beschikbare browsers (`agent.browsers.list() == []`). Taak blijft actief tot onafhankelijke
   herreview PASS geeft.
