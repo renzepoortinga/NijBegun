@@ -3,19 +3,22 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-15 door Claude (taak 012 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 002 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
 VABI-bibliotheken (foutloos importeerbaar in EPA 12.0.1) → isolatieplan
 (Word/PDF) + ventilatie + fotochecklist + KWACO-validatie, met een lokaal
-dashboard. 746 functionele checks groen; de Git-Bash-verificatie houdt de Python-run
-nog advisory totdat taak 002 `python3` op Windows draagbaar maakt (zie
-Technische schuld). Historie staat in `BUILD_LOG.md` en
+dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck in
+`verify.sh` is blocking. Historie staat in `BUILD_LOG.md` en
 `STATUS_NACHT_2026-06-13.md`; vanaf nu is dít bestand + `tasks/` de stand.
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 002 (draagbare tests) is afgerond: de plan-JSON- en loginchecks gebruiken eigen fixtures,
+de suite is 786/786 groen en `verify.sh` blokkeert weer op Python-testfalen. Onafhankelijke
+AI-review: PASS.
 
 Taak 003 (kwaliteitsverklaring in `SchilDeel.rc_bron` blokkeert Vabi-export)
 is afgerond en staat in `tasks/done/`: onafhankelijke herreview van commit
@@ -109,10 +112,6 @@ de draaiende container. AI-review vond de fix eerst onvolledig (`--probe`-route 
 - Geen.
 
 ## Technische schuld
-- 2 ketentests hangen aan lokale bestanden buiten de repo
-  (`config.json`, een plan-json) en falen in elke verse omgeving/CI. De
-  testcheck in `verify.sh` staat daarom tijdelijk op advisory — taak 002
-  maakt de tests draagbaar en zet hem terug op blocking.
 - `CLAUDE.md` is 465 regels operationeel geheugen; werkt, maar migreer
   stukken naar `docs/` wanneer je ze toch aanraakt (geen aparte
   verbouwtaak waard op dit moment).
