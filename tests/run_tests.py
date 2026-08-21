@@ -5874,6 +5874,67 @@ try:
             _app16.PROJECTS_DIR = _orig_projects16
 except Exception as _e:
     check("one-click intake: draait zonder fout", False); print("     " + repr(_e)[:300])
+print("\n69. Plattegrond-visioncontract: schaalgate, bevestiging en herkomst (taak 022)")
+try:
+    import copy as _copy67
+    import json as _json67
+    from dashboard.plattegrond_import import (
+        PlattegrondImportFout as _PIF67, bevestig_in_dossier as _bevestig67,
+        valideer_vision_resultaat as _valideer67)
+    with open(os.path.join(ROOT, "tests", "fixtures", "plattegrond_vision_mock.json"),
+              encoding="utf-8") as _fh67:
+        _raw67 = _json67.load(_fh67)
+    _concept67 = _valideer67(_raw67)
+    check("visioncontract: expliciete maatlijn laat afgelezen oppervlakte door",
+          _concept67["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"] == 20.0)
+    check("visioncontract: onzekerheid wordt zichtbaar aandachtspunt",
+          any("onscherp" in x for x in _concept67["aandachtspunten"]))
+
+    _geen_schaal67 = _copy67.deepcopy(_raw67)
+    _geen_schaal67["verdiepingen"][0]["schaal"] = {"betrouwbaar": False}
+    _geen_schaal67["verdiepingen"][0]["ruimtes"][0]["oppervlakte_m2"] = 999
+    _concept_zonder67 = _valideer67(_geen_schaal67)
+    check("visioncontract: onbetrouwbare schaal verwerpt modeloppervlakten fail-closed",
+          all(r["oppervlakte_m2"] is None for r in _concept_zonder67["verdiepingen"][0]["ruimtes"]))
+    _bewijsloos67 = _copy67.deepcopy(_raw67)
+    _bewijsloos67["verdiepingen"][0]["schaal"]["maatlijn_bewijzen"] = []
+    try:
+        _valideer67(_bewijsloos67); _bewijs_fout67 = False
+    except _PIF67:
+        _bewijs_fout67 = True
+    check("visioncontract: betrouwbaar=true zonder maatlijnbewijs wordt geweigerd", _bewijs_fout67)
+
+    _bev67 = {"expliciet_bevestigd": True, "verdiepingen": [{
+        "bron_volgorde": 0, "naam": "Begane grond", "ruimtes": [{
+            "naam": r["naam"], "functie": r["functie"],
+            "oppervlakte_m2": (21.0 if r["naam"] == "Woonkamer" else r["oppervlakte_m2"]),
+            "contour_relatief": r["contour_relatief"], "aangrenzend": r["aangrenzend"]}
+            for r in _concept67["verdiepingen"][0]["ruimtes"]]}]}
+    _dos67 = Dossier()
+    _bevestig67(_dos67, _concept67, _bev67)
+    _woon67 = next(r for r in _dos67.geometrie.ruimtes if r.naam == "Woonkamer")
+    check("visioncontract: bevestigde correctie krijgt herkomst per waarde",
+          _woon67.oppervlakte_m2 == 21.0
+          and _woon67.bron_per_waarde["oppervlakte_m2"] == "handmatig_gecorrigeerd"
+          and _woon67.bron_per_waarde["functie"] == "afgelezen")
+    check("visioncontract: volgorde, afbeelding en aangrenzendheid landen in dossier",
+          _dos67.geometrie.vloeren[0].plattegrond_afbeelding == "uploads/plattegrond-bg.png"
+          and _woon67.aangrenzende_ruimtes == ["Keuken"])
+    check("visioncontract: nieuwe herkomstvelden overleven dossier-roundtrip",
+          Dossier.from_dict(_dos67.to_dict()).to_dict() == _dos67.to_dict())
+    try:
+        _bevestig67(Dossier(), _concept67, {"expliciet_bevestigd": False}); _stil67 = False
+    except _PIF67:
+        _stil67 = True
+    check("visioncontract: zonder expliciete bevestiging geen dossiermutatie", _stil67)
+    try:
+        _bevestig67(_dos67, _concept67, _bev67); _overschrijf67 = False
+    except _PIF67:
+        _overschrijf67 = True
+    check("visioncontract: bestaande geometrie wordt niet overschreven", _overschrijf67)
+except Exception as _e:
+    check("plattegrond-visioncontract (taak 022): draait zonder fout", False)
+    print("     " + repr(_e)[:300])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

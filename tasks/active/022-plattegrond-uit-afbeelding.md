@@ -39,6 +39,16 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
 - 2026-08-21 Codex Manager: door expliciete opdracht "alle openstaande taken" geclaimd. Eerst
   discovery op bestaande providers/dataset; geen live visioncall of providerkeuze zonder bewijs en
   autorisatie. Taak 020 is gemerged en levert de gecontroleerde ruimtegeometrie/topologieroute.
+- 2026-08-21 Codex (OpenAI), Builder: discovery bevestigt dat de vier aanwezige PNG's uitsluitend
+  dashboardiconen zijn; geen echte gelabelde plattegrondset gevonden. De bestaande Anthropic-route
+  is alleen voor tekst en legt geen visionmodel/-beleid vast. Na managerakkoord een zelfstandige,
+  provider-onafhankelijke contractgrens gebouwd: modelidentiteit verplicht, schaal alleen met
+  expliciet maatlijnbewijs, anders worden modeloppervlakten fail-closed `null`; onzekerheden worden
+  aandachtspunten. Dossiermutatie is atomisch en pas na een volledige expliciete bevestigingspayload;
+  bestaande geometrie wordt niet overschreven en herkomst staat per vloer-/ruimtewaarde als
+  `afgelezen` of `handmatig_gecorrigeerd`. Offline fixture en regressietests toegevoegd. Geen UI,
+  provider of live call. `scripts/verify.sh` via Git Bash PASS, 972/972 tests. Taak blijft actief:
+  <5%-AC en provider-/gegevensbeleid ontbreken nog, dus geen accuracyclaim en nog geen review gevraagd.
 
 ## Notes
 De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan
