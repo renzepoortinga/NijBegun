@@ -75,14 +75,20 @@ def bereken(ruimtes, situatie="bestaand"):
         opp = r.oppervlakte_m2 or 0
         toevoer = afvoer = 0.0
         toevoer_herkomst = None
-        # verblijfsgebied: 0,7*opp, min 7 l/s/leefruimte. De vloer van 7 l/s geldt alleen als de
-        # ruimte ook echt oppervlak heeft — een 0 m2-ruimte (bv. een 'Keuken'-regel die alleen
-        # dient om de afvoereis vast te leggen omdat de keuken al in een andere ruimte is
-        # meegemeten) mag geen fantoom-toevoer krijgen (geen stille aanname, taak 019).
-        if functie in TOEVOER_FUNCTIES and opp > 0:
-            opp_toevoer = round(opp * rate, 1)
-            toevoer = max(opp_toevoer, MIN_LEEFRUIMTE)
-            toevoer_herkomst = "oppervlakte" if opp_toevoer >= MIN_LEEFRUIMTE else "minimum"
+        # verblijfsgebied: 0,7*opp, min 7 l/s/leefruimte. De vloer van 7 l/s geldt alleen als de ruimte
+        # ook echt oppervlak heeft — een 0 m2-ruimte (bv. een 'Keuken'-regel die alleen dient om de
+        # afvoereis vast te leggen omdat het oppervlak al in een andere ruimte is meegemeten) mag geen
+        # fantoom-toevoer krijgen. Maar 0 m2 kan ook een kapotte opname zijn (oppervlakte niet
+        # doorgekomen uit MagicPlan) — dat mag nooit stil 0 l/s worden, dus altijd een waarschuwing.
+        if functie in TOEVOER_FUNCTIES:
+            if opp > 0:
+                opp_toevoer = round(opp * rate, 1)
+                toevoer = max(opp_toevoer, MIN_LEEFRUIMTE)
+                toevoer_herkomst = "oppervlakte" if opp_toevoer >= MIN_LEEFRUIMTE else "minimum"
+            else:
+                waarschuwingen.append("%s: 0 m2 geregistreerd (%s) — toevoer niet meegerekend; "
+                    "controleer of het oppervlak elders is meegeteld of dat de opname ontbreekt."
+                    % (r.naam, functie))
         afvoerpunt = functie in AFVOER
         if afvoerpunt:                             # natte ruimte: vaste minimale afvoer
             afvoer = AFVOER[functie]
@@ -119,9 +125,12 @@ def verdeel_balans(res):
     retourneert een NIEUWE resultaatdict, wijzigt `res` niet.
 
     Verdeling: naar rato van elke natte ruimte z'n eigen minimum-afvoer (grotere minimale afnemers als
-    de keuken krijgen dus het grootste deel van het tekort — 'de keuken als grootste afnemer'). De
-    afrondingsrest gaat naar de grootste afnemer, zodat de som exact sluit ondanks 0,1 l/s-afronding
-    per regel (zie docs/decisions/0002-ventilatie-afronding.md voor de afrondingskeuze zelf).
+    de keuken krijgen dus het grootste deel van het tekort — 'de keuken als grootste afnemer'), met de
+    grootste-restmethode (Hamilton/largest remainder) in eenheden van 0,1 l/s: elke regel krijgt eerst
+    naar beneden afgeronde eenheden, de resterende eenheden gaan één voor één naar de regels met de
+    grootste afgeronde fractie. Zo sluit de som altijd exact ÉN kan geen enkele regel door de afronding
+    onder zijn eigen aandeel zakken (een simpele 'grootste afnemer krijgt de rest' bleek dat wél te
+    kunnen doen bij >=5 natte ruimten — vaste-punt-rondingsfout, gevonden in code review).
 
     Doet niets als de afvoerminima al gelijk zijn aan of groter dan de toevoer — dan is er geen tekort
     om te verdelen (ophogen van de toevoer zelf is geen onderdeel van deze functie).
@@ -131,14 +140,15 @@ def verdeel_balans(res):
     som_min = round(sum(r["afvoer"] for r in natte), 1)
     tekort = round(res.get("toevoer_totaal", 0.0) - som_min, 1)
     if natte and tekort > 0 and som_min > 0:
-        natte_op_min = sorted(natte, key=lambda r: r["afvoer"])  # kleinste afnemer eerst
-        toegewezen = 0.0
-        for i, r in enumerate(natte_op_min):
-            if i < len(natte_op_min) - 1:
-                deel = round(tekort * (r["afvoer"] / som_min), 1)
-                toegewezen = round(toegewezen + deel, 1)
-            else:
-                deel = round(tekort - toegewezen, 1)          # grootste afnemer krijgt de afrondingsrest
+        eenheden_tekort = round(tekort * 10)                  # in stappen van 0,1 l/s (gehele getallen)
+        ruw = [eenheden_tekort * (r["afvoer"] / som_min) for r in natte]
+        eenheden = [int(x) for x in ruw]                       # naar beneden afgerond, dus nooit negatief
+        rest = eenheden_tekort - sum(eenheden)
+        volgorde = sorted(range(len(natte)), key=lambda i: ruw[i] - eenheden[i], reverse=True)
+        for i in range(rest):
+            eenheden[volgorde[i % len(volgorde)]] += 1
+        for r, e in zip(natte, eenheden):
+            deel = round(e / 10.0, 1)
             r["afvoer_advies_ls"] = round(r["afvoer"] + deel, 1)
             if deel > 0:
                 r["afvoer_herkomst"] = "balansophoging"
@@ -162,6 +172,11 @@ def deurbelasting(res, topologie):
     (massabalans: die lucht moet van de aangrenzende ruimte onder de deur door naar binnen om de afzuiging
     te voeden; overstroomlucht wordt zelf niet afgezogen, dus elke deur op de weg draagt dezelfde last).
     Geef `res` liefst NA `verdeel_balans` mee, anders wordt de kale minimum-afvoer gebruikt.
+
+    Een ruimtenaam in `topologie` die niet in `res['rows']` voorkomt (tikfout, of losgeraakt van de
+    geometrie) is een fout in de aanroep, geen 'geen belasting' — die wordt niet stilgehouden als 0 l/s
+    (dan zou toets_vuistregels vuistregel 4 een node deurrooster kunnen missen) maar geeft een harde
+    ValueError.
     """
     by_naam = {r["naam"]: r for r in res.get("rows", [])}
     regels = []
@@ -169,7 +184,10 @@ def deurbelasting(res, topologie):
         if len(pad) < 2:
             continue
         eind = by_naam.get(pad[0])
-        ls = round((eind or {}).get("afvoer_advies_ls") or (eind or {}).get("afvoer") or 0.0, 1)
+        if eind is None:
+            raise ValueError("deurbelasting: ruimte '%s' (begin van een overstroomweg) komt niet voor "
+                              "in res['rows']." % pad[0])
+        ls = round(eind.get("afvoer_advies_ls", eind.get("afvoer", 0.0)), 1)
         boven = ls > OVERSTROOM_DEURROOSTER_DM3S
         for a, b in zip(pad, pad[1:]):
             regels.append({

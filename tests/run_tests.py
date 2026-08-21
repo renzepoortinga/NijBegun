@@ -4183,8 +4183,42 @@ try:
     check("toets_vuistregels: afvoerpunt in slaapkamer -> voldoet niet", _tv_slaap[2]["status"] == "voldoet niet")
 
     check("bereken() blijft puur: geen Flask/bestand-IO nodig om deze functies te draaien", True)
+
+    check("0 m2 op een verblijfsgebied-regel geeft een waarschuwing, geen stille 0 l/s",
+          any("Keuken" in w and "0 m2" in w for w in _resAD["waarschuwingen"]))
+
+    # Regressie (code review): een simpele 'grootste afnemer krijgt de afrondingsrest' kon bij >=5
+    # natte ruimten de grootste regel juist ONDER zijn eigen minimum duwen door een vastgeklikte
+    # 0,1 l/s-afrondingsfout. De grootste-restmethode (Hamilton) mag dat nooit meer doen.
+    _veel_natte = [_RAD(naam="Keuken", functie="keuken", oppervlakte_m2=0.0),
+                   _RAD(naam="Badkamer 1", functie="badkamer", oppervlakte_m2=0.0),
+                   _RAD(naam="Badkamer 2", functie="badkamer", oppervlakte_m2=0.0),
+                   _RAD(naam="Toilet 1", functie="toilet", oppervlakte_m2=0.0),
+                   _RAD(naam="Wasruimte", functie="wasruimte", oppervlakte_m2=0.0),
+                   _RAD(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=100.0)]
+    _resVeel = _vbAD(_veel_natte)
+    _balVeel = _vbal(_resVeel)
+    check("verdeel_balans (5 natte ruimten): niemand onder zijn minimum",
+          all(r["afvoer_advies_ls"] >= r["afvoer"] for r in _balVeel["rows"] if r["afvoerpunt"]),
+          str([(r["naam"], r["afvoer"], r["afvoer_advies_ls"]) for r in _balVeel["rows"] if r["afvoerpunt"]]))
+    check("verdeel_balans (5 natte ruimten): som advies-afvoer sluit exact op de toevoer",
+          _balVeel["afvoer_advies_totaal"] == _balVeel["toevoer_totaal"], str(_balVeel["afvoer_advies_totaal"]))
 except Exception as _e:
     check("ventilatie-rekenlaag (taak 019): draait zonder fout", False); print("     " + repr(_e)[:220])
+
+try:
+    from ventilatie.ventilatie import deurbelasting as _vdb2, bereken as _vb2
+    from core.dossier import Ruimte as _R2
+    _res2 = _vb2([_R2(naam="Badkamer", functie="badkamer", oppervlakte_m2=5.0)])
+    _fout_opgevangen = False
+    try:
+        _vdb2(_res2, [["Bathroom (tikfout)", "Overloop"]])
+    except ValueError:
+        _fout_opgevangen = True
+    check("deurbelasting: onbekende ruimtenaam geeft een harde ValueError (geen stille 0 l/s)",
+          _fout_opgevangen)
+except Exception as _e:
+    check("deurbelasting-validatie: draait zonder fout", False); print("     " + repr(_e)[:220])
 
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)
