@@ -4185,7 +4185,14 @@ try:
     check("bereken() blijft puur: geen Flask/bestand-IO nodig om deze functies te draaien", True)
 
     check("0 m2 op een verblijfsgebied-regel geeft een waarschuwing, geen stille 0 l/s",
-          any("Keuken" in w and "0 m2" in w for w in _resAD["waarschuwingen"]))
+          any("Keuken" in w and "0.0 m2" in w for w in _resAD["waarschuwingen"]))
+
+    # Regressie (code review taak 020): de waarschuwing moet het WERKELIJKE (mogelijk negatieve)
+    # oppervlak tonen, niet altijd hardcoded '0 m2' — anders verhult de melding zelf een ergere fout
+    # (een negatief oppervlak, bv. een MagicPlan-editfout) achter een onschuldig ogend '0 m2'.
+    _negAD = _vbAD([_RAD(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=-12.0)])
+    check("negatief oppervlak op een verblijfsgebied-regel: waarschuwing toont het ECHTE (negatieve) getal",
+          any("Woonkamer" in w and "-12.0 m2" in w for w in _negAD["waarschuwingen"]))
 
     # Regressie (code review): een simpele 'grootste afnemer krijgt de afrondingsrest' kon bij >=5
     # natte ruimten de grootste regel juist ONDER zijn eigen minimum duwen door een vastgeklikte
@@ -4217,6 +4224,16 @@ try:
         _fout_opgevangen = True
     check("deurbelasting: onbekende ruimtenaam geeft een harde ValueError (geen stille 0 l/s)",
           _fout_opgevangen)
+
+    # Regressie (code review taak 020): eerder werd ALLEEN pad[0] gevalideerd — een tikfout verderop
+    # in het pad (de 'naar'-kant van een deur) gleed er stil doorheen. 'Badkamer' bestaat hier wél.
+    _fout_verderop = False
+    try:
+        _vdb2(_res2, [["Badkamer", "Overlop (tikfout)"]])
+    except ValueError:
+        _fout_verderop = True
+    check("deurbelasting: tikfout VERDEROP in het pad (niet pad[0]) geeft ook een harde ValueError",
+          _fout_verderop)
 except Exception as _e:
     check("deurbelasting-validatie: draait zonder fout", False); print("     " + repr(_e)[:220])
 
