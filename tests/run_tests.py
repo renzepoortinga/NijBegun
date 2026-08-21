@@ -3995,6 +3995,148 @@ try:
 except Exception as _e:
     check("KV exportgate: draait zonder fout", False); print("     " + repr(_e)[:220])
 
+print("X3. VABI-exportset wordt atomisch gepubliceerd")
+try:
+    import io
+    import json as _jsonX3
+    import shutil as _shX3
+    import zipfile
+    from vabi import generate_all as _gaX3
+    _tdX3 = tempfile.mkdtemp(prefix="nb_atomic_vabi_")
+    _dosX3 = build_sample()
+    _firstX3 = _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+    _manifest_pathX3 = os.path.join(_tdX3, _gaX3.MANIFEST)
+    with open(_manifest_pathX3, "rb") as _fhX3:
+        _manifest_beforeX3 = _fhX3.read()
+    _set_beforeX3 = _firstX3["set_dir"]
+    _files_beforeX3 = sorted(os.listdir(_set_beforeX3))
+
+    _targetsX3 = [
+        (_gaX3.constructie_generate, "write"),
+        (_gaX3.objecten_generate, "write"),
+        (_gaX3.installatie_generate, "write"),
+        (_gaX3, "_write_instructions"),
+    ]
+    _fault_resultsX3 = []
+    for _ownerX3, _attrX3 in _targetsX3:
+        _originalX3 = getattr(_ownerX3, _attrX3)
+        def _failX3(*_argsX3, **_kwargsX3):
+            raise RuntimeError("geinjecteerde writerfout")
+        setattr(_ownerX3, _attrX3, _failX3)
+        try:
+            try:
+                _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+                _raisedX3 = False
+            except RuntimeError:
+                _raisedX3 = True
+            with open(_manifest_pathX3, "rb") as _fhX3:
+                _manifest_afterX3 = _fhX3.read()
+            _setsX3 = [p for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR))
+                       if not p.startswith(".staging-")]
+            _stagingX3 = [p for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR))
+                          if p.startswith(".staging-")]
+            _fault_resultsX3.append(_raisedX3
+                                     and _manifest_afterX3 == _manifest_beforeX3
+                                     and _gaX3.current_set_dir(_tdX3) == _set_beforeX3
+                                     and sorted(os.listdir(_set_beforeX3)) == _files_beforeX3
+                                     and len(_setsX3) == 1 and not _stagingX3)
+        finally:
+            setattr(_ownerX3, _attrX3, _originalX3)
+    check("writerfout in elk van 4 fasen behoudt vorige complete set", all(_fault_resultsX3))
+
+    _secondX3 = _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+    with open(_manifest_pathX3, encoding="utf-8") as _fhX3:
+        _manifestX3 = _jsonX3.load(_fhX3)
+    _published_filesX3 = sorted(os.listdir(_secondX3["set_dir"]))
+    check("succes wijst naar precies een intern consistente immutable set",
+          _secondX3["set_dir"] != _set_beforeX3
+          and _gaX3.current_set_dir(_tdX3) == _secondX3["set_dir"]
+          and sorted(_manifestX3["files"]) == _published_filesX3
+          and all(os.path.dirname(_secondX3[k][0]) == _secondX3["set_dir"]
+                  for k in ("constructies", "objecten", "installaties")))
+    check("tijdelijke publicatiebestanden zijn na succes opgeruimd",
+          not any(p.startswith(".") for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR)))
+          and not any(p.startswith(".CURRENT-") for p in os.listdir(_tdX3)))
+
+    _traversalX3 = []
+    for _bad_prefixX3 in ("../uit", "sub/map", "sub\\map", ".verborgen", "a b"):
+        _bad_outX3 = os.path.join(_tdX3, "bad_" + str(len(_traversalX3)))
+        try:
+            _gaX3.generate_all(_dosX3, _bad_outX3, prefix=_bad_prefixX3)
+            _traversalX3.append(False)
+        except ValueError:
+            _traversalX3.append(not os.path.exists(_bad_outX3))
+    check("prefix path traversal en onveilige bestandscomponenten worden vóór schrijven geweigerd",
+          all(_traversalX3))
+
+    _before_switchX3 = _gaX3.current_set_dir(_tdX3)
+    _sets_before_switchX3 = sorted(os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR)))
+    _replaceX3 = _gaX3.os.replace
+    def _fail_manifest_switchX3(src, dst):
+        if os.path.basename(dst) == _gaX3.MANIFEST:
+            raise PermissionError("geinjecteerde manifestwisselfout")
+        return _replaceX3(src, dst)
+    _gaX3.os.replace = _fail_manifest_switchX3
+    try:
+        try:
+            _gaX3.generate_all(_dosX3, _tdX3, prefix="huidig")
+            _switch_failedX3 = False
+        except PermissionError:
+            _switch_failedX3 = True
+    finally:
+        _gaX3.os.replace = _replaceX3
+    check("manifestwisselfout behoudt vorige pointer en ruimt onzichtbare set op",
+          _switch_failedX3 and _gaX3.current_set_dir(_tdX3) == _before_switchX3
+          and sorted(os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR))) == _sets_before_switchX3
+          and not any(p.startswith(".staging-") for p in os.listdir(os.path.join(_tdX3, _gaX3.SETS_DIR))))
+
+    import concurrent.futures as _cfX3
+    _concurrent_dirX3 = os.path.join(_tdX3, "concurrent")
+    with _cfX3.ThreadPoolExecutor(max_workers=2) as _poolX3:
+        _futuresX3 = [_poolX3.submit(_gaX3.generate_all, _dosX3, _concurrent_dirX3, "na")
+                      for _iX3 in range(2)]
+        _resultsX3 = [_fX3.result() for _fX3 in _futuresX3]
+    _current_concurrentX3 = _gaX3.current_set_dir(_concurrent_dirX3)
+    check("gelijktijdige publicaties leveren één complete CURRENT-set zonder stagingresten",
+          _current_concurrentX3 in [r["set_dir"] for r in _resultsX3]
+          and len(os.listdir(_current_concurrentX3)) == 4
+          and not any(p.startswith(".staging-") for p in os.listdir(
+              os.path.join(_concurrent_dirX3, _gaX3.SETS_DIR))))
+
+    import dashboard.app as _WAX3
+    _dashboard_dirX3 = os.path.join(_tdX3, "dashboard")
+    os.makedirs(_dashboard_dirX3)
+    _published_dashX3 = _gaX3.generate_all(_dosX3, os.path.join(_dashboard_dirX3, "vabi_na"), "na")
+    _legacy_dashX3 = os.path.join(_dashboard_dirX3, "vabi_huidig")
+    os.makedirs(_legacy_dashX3)
+    with open(os.path.join(_legacy_dashX3, "legacy.xml"), "w", encoding="utf-8") as _fhX3:
+        _fhX3.write("<Project/>")
+    _old_pdirX3, _old_stateX3 = _WAX3._pdir, _WAX3._load_state
+    _WAX3._pdir = lambda _tagX3: _dashboard_dirX3
+    _WAX3._load_state = lambda _tagX3: {"adres": "Testweg 17"}
+    try:
+        _WAX3.app.config.update(TESTING=True, SECRET_KEY="atomic-dashboard-test")
+        _clientX3 = _WAX3.app.test_client()
+        with _clientX3.session_transaction() as _sessionX3:
+            _sessionX3["ingelogd"] = True
+        _nameX3 = os.path.basename(_published_dashX3["objecten"][0])
+        _download_currentX3 = _clientX3.get("/download/test/vabi_na/" + _nameX3)
+        _download_legacyX3 = _clientX3.get("/download/test/vabi_huidig/legacy.xml")
+        _exportX3 = _clientX3.get("/project/test/export")
+        _zipX3 = zipfile.ZipFile(io.BytesIO(_exportX3.data))
+        _zip_namesX3 = _zipX3.namelist()
+        check("dashboard-download volgt CURRENT en behoudt legacy vlakke export",
+              _download_currentX3.status_code == 200 and _download_legacyX3.status_code == 200)
+        check("projectexport vult 02_VABI uit CURRENT zonder manifest-infrastructuur",
+              any("02_VABI/toekomstige_staat/" in n and n.endswith(_nameX3) for n in _zip_namesX3)
+              and any("02_VABI/huidige_staat/legacy.xml" in n for n in _zip_namesX3)
+              and not any(n.endswith("CURRENT.json") or "/sets/" in n for n in _zip_namesX3))
+    finally:
+        _WAX3._pdir, _WAX3._load_state = _old_pdirX3, _old_stateX3
+    _shX3.rmtree(_tdX3, ignore_errors=True)
+except Exception as _e:
+    check("atomische VABI-exporttests draaien zonder fout", False); print("     " + repr(_e)[:220])
+
 print("Y. Gevel-onderbouwing + tegenoverliggende wand op dezelfde gevel (wandnummer +2)")
 try:
     import tempfile as _tfY, os as _osY

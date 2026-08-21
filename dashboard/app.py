@@ -1831,13 +1831,13 @@ def opname_vabi_huidig(tag):
         abort(404)
     outdir = os.path.join(_pdir(tag), "vabi_huidig")
     try:
-        generate_all.generate_all(dos, outdir, prefix="huidig")
+        export = generate_all.generate_all(dos, outdir, prefix="huidig")
     except Exception as e:
         flash("VABI-export genereren mislukte: %s" % e)
         return redirect(url_for("opname", tag=tag))
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as z:
-        for p in glob.glob(os.path.join(outdir, "*")):
+        for p in glob.glob(os.path.join(export["set_dir"], "*")):
             z.write(p, os.path.basename(p))
     mem.seek(0)
     return Response(mem.read(), mimetype="application/zip",
@@ -1973,7 +1973,8 @@ def vabi(tag):
         generate_all.generate_all(toekomst, outdir, prefix="na")
     except Exception as e:
         flash("VABI-import genereren mislukte: %s" % e)
-    vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(outdir, "*.xml")))
+    current_vabi_set = generate_all.current_set_dir(outdir)
+    vabi_files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(current_vabi_set, "*.xml"))) if current_vabi_set else []
     # gewogen verliesoppervlakte Als (NTA 8800 §6.7.3)
     verlies = verliesoppervlak(dos)
     # gevels zijn BRUTO (b x h; ramen/deuren zitten erin) -> kozijnen niet dubbel tellen
@@ -2235,6 +2236,14 @@ def _leesmij(adres, tag):
     return "\n".join(r) + "\n"
 
 
+def _vabi_publicatiebestanden(pdir, submap):
+    """Actuele manifestset, of een legacy vlakke export van vóór taak 017."""
+    outdir = os.path.join(pdir, submap)
+    current = generate_all.current_set_dir(outdir)
+    bron = current or outdir
+    return [p for p in sorted(glob.glob(os.path.join(bron, "*"))) if os.path.isfile(p)]
+
+
 @app.route("/project/<tag>/export")
 @login_required
 def export(tag):
@@ -2259,7 +2268,9 @@ def export(tag):
             if os.path.isfile(p) and not p.endswith("project.json"):   # project.json = interne status
                 leg_in(p)
         for sub in ("vabi_huidig", "vabi_na", "fotos", "bijlagen"):
-            for p in sorted(glob.glob(os.path.join(pdir, sub, "*"))):
+            bestanden = (_vabi_publicatiebestanden(pdir, sub) if sub.startswith("vabi_")
+                          else sorted(glob.glob(os.path.join(pdir, sub, "*"))))
+            for p in bestanden:
                 if os.path.isfile(p):
                     leg_in(p, sub)
 
@@ -2283,6 +2294,13 @@ def download(tag, filename):
     pdir = _pdir(tag)
     if ".." in filename or not os.path.isdir(pdir):
         abort(404)
+    delen = filename.replace("\\", "/").split("/")
+    if len(delen) == 2 and delen[0] in ("vabi_huidig", "vabi_na"):
+        bestanden = _vabi_publicatiebestanden(pdir, delen[0])
+        match = next((p for p in bestanden if os.path.basename(p) == delen[1]), None)
+        if not match:
+            abort(404)
+        return send_from_directory(os.path.dirname(match), os.path.basename(match), as_attachment=True)
     # bijlagen staan in de submap bijlagen/ — daar ook zoeken als het bestand niet in de root staat
     if not os.path.isfile(os.path.join(pdir, filename)) and os.path.isfile(os.path.join(pdir, "bijlagen", filename)):
         return send_from_directory(os.path.join(pdir, "bijlagen"), filename, as_attachment=True)
