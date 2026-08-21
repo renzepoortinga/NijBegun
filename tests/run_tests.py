@@ -5988,14 +5988,13 @@ try:
     import io as _io70, tempfile as _tmp70, shutil as _sh70
     from PIL import Image as _Image70
     from dashboard import plattegrond_import as _pi70
-    from dashboard.plattegrond_benchmark import gecontroleerde_set as _set70, evalueer as _eval70
-
-    _regels70 = _eval70()
-    check("visionbenchmark: 10 afzonderlijke vloeren uit 3 opnamebrontypen",
-          len(_set70()) == 10 and len({v["bron"] for v in _set70()}) == 3)
-    check("visionbenchmark: elke ruimte op gecontroleerde set <5% oppervlakteafwijking",
-          len(_regels70) == 20 and all(r["afwijking_pct"] < 5 for r in _regels70),
-          str(max(r["afwijking_pct"] for r in _regels70)))
+    from dashboard.plattegrond_dataset import inventariseer as _invent70
+    _inv70 = _invent70(ROOT)
+    check("visiondataset: alle 3 genoemde echte fixtures zijn werkelijk geparsed",
+          len(_inv70["bronnen"]) == 3 and {b["type"] for b in _inv70["bronnen"]} == {
+              "magicplan_json", "magicplan_statistics_csv", "vabi_monitor"})
+    check("visiondataset: inventarisatie fabriceert geen 10 rastervloeren/<5%-claim",
+          _inv70["aantal_vloeren"] < 10 and _inv70["aantal_rastervloeren"] == 0)
 
     _provider_raw70 = {"contractversie":"1", "model":{"provider":"Anthropic","naam":"claude-test-v1","versie":"claude-test-v1"},
         "verdiepingen":[{"naam":"modelnaam",
@@ -6009,12 +6008,29 @@ try:
         def read(self): return _json67.dumps({"content":[{"type":"text","text":_json67.dumps(_provider_raw70)}]}).encode()
     _req70 = []
     def _open70(req, timeout=0): _req70.append((req,timeout)); return _Resp70()
-    _rawuit70 = _pi70.analyseer_met_anthropic([("01-bg.png", b"\x89PNG\r\n\x1a\nX")],
+    _geldigBio70 = _io70.BytesIO(); _Image70.new("RGB",(20,20),"white").save(_geldigBio70,format="PNG")
+    _geldigPng70 = _geldigBio70.getvalue()
+    _rawuit70 = _pi70.analyseer_met_anthropic([("01-bg.png", _geldigPng70)],
         {"ai":{"api_key":"test-geheim", "vision_model":"claude-test-v1"}}, opener=_open70)
     _body70 = _json67.loads(_req70[0][0].data.decode())
     check("visionprovider: injecteerbare expliciete Anthropic-call met beeldblok en exact model",
           _rawuit70["model"]["naam"] == "claude-test-v1" and _body70["model"] == "claude-test-v1"
           and any(x.get("type") == "image" for x in _body70["messages"][0]["content"]))
+    _slecht70 = []
+    for _naamBad70, _badData70 in (("prefix.png", b"\x89PNG\r\n\x1a\nX"),
+                                   ("truncated.png", _geldigPng70[:-8]),
+                                   ("polyglot.png", _geldigPng70+b"<script>x</script>")):
+        try: _pi70.valideer_afbeeldingsbytes(_naamBad70,_badData70); _slecht70.append(False)
+        except _pi70.PlattegrondImportFout: _slecht70.append(True)
+    import struct as _struct70, zlib as _zlib70
+    _bom70=bytearray(_geldigPng70); _bom70[16:24]=_struct70.pack(">II",10000,4000)
+    _bom70[29:33]=_struct70.pack(">I",_zlib70.crc32(bytes(_bom70[12:29]))&0xffffffff)
+    try: _pi70.valideer_afbeeldingsbytes("bom.png",bytes(_bom70)); _bomOk70=False
+    except _pi70.PlattegrondImportFout: _bomOk70=True
+    check("visionupload: corrupt/truncated/polyglot en >30M-pixelbom geweigerd vóór provider",
+          all(_slecht70) and _bomOk70)
+    check("visionupload: echte volledig decodeerbare PNG-fixture geaccepteerd",
+          _pi70.valideer_afbeeldingsbytes("geldig.png",_geldigPng70)=="image/png")
 
     import dashboard.app as _app70
     _orig_projects70, _orig_analyse70 = _app70.PROJECTS_DIR, _app70.pi_mod.analyseer_met_anthropic
@@ -6025,9 +6041,8 @@ try:
         _nieuw70 = _c70.post("/nieuw", data={"straat":"Vision 1","postcode":"9999VI","plaats":"X","woningtype":"Tussenwoning"})
         _tag70 = _nieuw70.headers["Location"].rstrip("/").split("/")[-2]
         _app70.pi_mod.analyseer_met_anthropic = lambda beelden,cfg: _json67.loads(_json67.dumps(_provider_raw70))
-        _bio70 = _io70.BytesIO(); _Image70.new("RGB",(20,20),"white").save(_bio70,format="PNG")
         _analyse70 = _c70.post("/project/%s/plattegrond-import/analyse" % _tag70,
-            data={"verdiepingsnamen":"Begane grond", "afbeeldingen":(_io70.BytesIO(_bio70.getvalue()),"plan.png")},
+            data={"verdiepingsnamen":"Begane grond", "afbeeldingen":(_io70.BytesIO(_geldigPng70),"plan.png")},
             content_type="multipart/form-data", follow_redirects=True)
         _html70 = _analyse70.get_data(as_text=True)
         check("vision-UI: upload/analyse toont onzekerheid en volledige corrigeerbare controlestap",

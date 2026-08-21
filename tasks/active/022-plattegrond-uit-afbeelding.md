@@ -26,9 +26,9 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
 - Een nieuwe provider, API-key of zware dependency stilzwijgend introduceren.
 
 ## Acceptance criteria
-- [x] Op tien afzonderlijke, gecontroleerd uit drie voorbeeld-/opnamebronnen gerenderde vloerbeelden
-      is de oppervlakteafwijking per ruimte <5%; op de echte ongelabelde bouwtekening meldt het
-      contract expliciet dat schaal niet betrouwbaar bepaalbaar is. Geen claim voor willekeurige scans.
+- [ ] Op minimaal tien echte plattegronden is de oppervlakteafwijking per ruimte <5%, of het model
+      meldt expliciet dat schaal niet betrouwbaar bepaalbaar is. De drie beschikbare fixtures zijn
+      echt geparsed maar bevatten samen <10 vloeren en geen gekoppelde rastergrondwaarheid.
 - [x] Elke waarde is vóór rekenen corrigeerbaar en expliciet bevestigd.
 - [x] Onzekerheden zijn aandachtspunten, nooit stille aannames.
 - [x] Herkomst per waarde staat in het dossier.
@@ -111,7 +111,20 @@ oppervlakten uit geüploade plattegrondafbeeldingen te lezen, altijd met adviseu
   bestaande sessielimiet (reset 17:40 Europe/Amsterdam), zonder inhoudelijk verdict of wijzigingen.
   Code/verify blijven groen; taak blijft `active` tot een reviewer van een andere leverancier PASS
   geeft. Dit is de enige resterende DoD-blokkade.
+- 2026-08-21 Codex Builder: review-FAIL inhoudelijk verwerkt. De eerdere synthetische rechthoekset
+  verwijderd; de inventarisatie parseert nu werkelijk `magicplan_plan_voorbeeld.json`,
+  `statistics_voorbeeld.csv` en `monitor_voorbeeld.xml` via hun echte parserpaden. Ze leveren samen
+  minder dan 10 vloeren en nul gekoppelde rastergrondwaarheden, dus de <5%-AC is heropend en iedere
+  eerdere afgeleide claim ingetrokken. Upload en providergrens gebruiken nu vóór opslag/versturen
+  dezelfde volledige Pillow-decode, met 25 MB-/30 miljoen-pixelgrens en strikte PNG-IEND/JPEG-EOI-
+  afsluiting; corrupt, truncated, appended polyglot en bommetadata hebben regressiedekking. Een
+  expliciete `ai.vision_model` is nu verplicht; geen stille tekstmodel-fallback meer.
+- 2026-08-21 Codex Builder afronding reviewfix: beide echte parserretourwaarden correct uitgepakt;
+  de fixture-inventarisatie en alle beeldgrensregressies draaien daarmee in de volledige keten.
+  `scripts/verify.sh` PASS met 1041/1041 tests. De eerste nauwkeurigheids-AC blijft bewust open:
+  de drie aanwezige bronfixtures leveren geen tien onafhankelijke rastervloeren met grondwaarheid.
+  Wijzigingen zijn gereed voor onafhankelijke herreview; taak blijft `active`.
 
 ## Notes
-De repository bevat bij start geen aantoonbare set van tien gelabelde echte plattegronden. Dit kan
-een externe acceptatieblokkade worden; bouw geen synthetische nauwkeurigheidsclaim.
+De repository bevat geen aantoonbare set van tien gelabelde echte rasterplattegronden. De drie echte
+bronfixtures zijn geïnventariseerd maar leveren die grondwaarheid niet; bouw geen synthetische claim.

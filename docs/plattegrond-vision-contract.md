@@ -40,10 +40,10 @@ in ieder concept. Een andere provider of ander bewaarbeleid vereist een nieuw be
 
 ## Benchmark en grens van de claim
 
-`tests/fixtures/plattegrond_benchmark_manifest.json` beschrijft tien afzonderlijke vloerbeelden over
-drie bestaande opnamebrontypen. Ze worden gecontroleerd/synthetisch uit dossiergeometrie gerenderd;
-`dashboard/plattegrond_benchmark.py` meet de pixeloppervlakken terug. De <5%-uitkomst geldt voor deze
-schaal-/pixeloverdracht en het dossiercontract, niet voor providerherkenning op willekeurige scans.
+`tests/fixtures/plattegrond_benchmark_manifest.json` beschrijft de drie werkelijk geparseerde bronnen.
+`dashboard/plattegrond_dataset.py` laadt de MagicPlan-JSON, Statistics-CSV en Vabi-monitor via hun
+echte parserpaden. Samen bevatten ze minder dan tien vloeren en geen gekoppelde rastergrondwaarheid.
+Daarom blijft de <5%-AC open; er wordt geen synthetische nauwkeurigheidsclaim gemaakt.
 
 Het bestaande echte `Bouwtekening.jpg` is als real-world smoke bekeken: zonder betrouwbare maatlijn
 en onafhankelijke ruimtelabels moet de schaal terecht onbekend blijven. Tien echte, onafhankelijk

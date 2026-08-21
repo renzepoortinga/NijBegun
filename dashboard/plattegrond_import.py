@@ -9,9 +9,13 @@ from __future__ import annotations
 import math
 import os
 import base64
+import io
 import json
 import urllib.request
+import warnings
 from pathlib import Path, PureWindowsPath
+
+from PIL import Image, UnidentifiedImageError
 
 from core.dossier import Ruimte, VloerInfo
 from dashboard.ventilatieplan import valideer_ruimtepolygonen
@@ -38,20 +42,55 @@ class PlattegrondImportFout(ValueError):
     pass
 
 
+MAX_AFBEELDING_BYTES = 25 * 1024 * 1024
+MAX_AFBEELDING_PIXELS = 30_000_000
+
+
+def valideer_afbeeldingsbytes(naam, data):
+    """Volledige decode vóór opslag/versturen; weigert bommen, truncatie en appended polyglots."""
+    if not isinstance(data, bytes) or not data or len(data) > MAX_AFBEELDING_BYTES:
+        raise PlattegrondImportFout(f"{naam}: afbeelding ontbreekt of is groter dan 25 MB.")
+    png = data.startswith(b"\x89PNG\r\n\x1a\n")
+    jpeg = data.startswith(b"\xff\xd8\xff")
+    if png:
+        # IEND moet het laatste chunk zijn; appended payloads zijn niet nodig voor een afbeelding.
+        if len(data) < 12 or data[-12:-8] != b"\x00\x00\x00\x00" or data[-8:-4] != b"IEND":
+            raise PlattegrondImportFout(f"{naam}: PNG bevat data na IEND of is afgekapt.")
+    elif jpeg:
+        if not data.endswith(b"\xff\xd9"):
+            raise PlattegrondImportFout(f"{naam}: JPEG is afgekapt of bevat aangeplakte data.")
+    else:
+        raise PlattegrondImportFout(f"{naam}: alleen echte JPG/PNG is toegestaan.")
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(data)) as beeld:
+                if beeld.format not in {"PNG", "JPEG"}:
+                    raise PlattegrondImportFout(f"{naam}: alleen JPG/PNG is toegestaan.")
+                breedte, hoogte = beeld.size
+                if not breedte or not hoogte or breedte * hoogte > MAX_AFBEELDING_PIXELS:
+                    raise PlattegrondImportFout(f"{naam}: afbeelding heeft te veel pixels.")
+                beeld.load()
+    except PlattegrondImportFout:
+        raise
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError,
+            Image.DecompressionBombWarning) as exc:
+        raise PlattegrondImportFout(f"{naam}: afbeelding is corrupt, afgekapt of te groot.") from exc
+    return "image/png" if png else "image/jpeg"
+
+
 def analyseer_met_anthropic(afbeeldingen, cfg, opener=None):
     """Expliciete live-providergrens; `opener` maakt de volledige call offline testbaar."""
     ai = (cfg or {}).get("ai") or {}
     sleutel = os.environ.get("ANTHROPIC_API_KEY") or ai.get("api_key", "")
-    model = str(ai.get("vision_model") or ai.get("model") or "").strip()
+    model = str(ai.get("vision_model") or "").strip()
     if not sleutel or not model:
         raise PlattegrondImportFout("Configureer ai.api_key en ai.vision_model vóór beeldanalyse.")
     if not afbeeldingen:
         raise PlattegrondImportFout("Upload minimaal één plattegrond.")
     content = [{"type": "text", "text": VISION_PROMPT}]
     for naam, data in afbeeldingen:
-        media = "image/png" if data.startswith(b"\x89PNG") else "image/jpeg" if data.startswith(b"\xff\xd8\xff") else None
-        if not media:
-            raise PlattegrondImportFout(f"{naam}: alleen echte JPG/PNG is toegestaan.")
+        media = valideer_afbeeldingsbytes(naam, data)
         content.append({"type": "text", "text": "Bestandsnaam: " + naam})
         content.append({"type": "image", "source": {"type": "base64", "media_type": media,
                                                        "data": base64.b64encode(data).decode("ascii")}})

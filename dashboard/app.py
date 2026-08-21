@@ -2216,10 +2216,9 @@ def plattegrond_analyse(tag):
     beelden = []
     try:
         for i, (vloer_naam, upload) in enumerate(zip(namen, uploads), 1):
-            data = upload.read(25 * 1024 * 1024 + 1)
-            ext = ".png" if data.startswith(b"\x89PNG\r\n\x1a\n") else ".jpg" if data.startswith(b"\xff\xd8\xff") else ""
-            if not ext or len(data) > 25 * 1024 * 1024:
-                raise pi_mod.PlattegrondImportFout("Alleen echte JPG/PNG tot 25 MB is toegestaan.")
+            data = upload.read(pi_mod.MAX_AFBEELDING_BYTES + 1)
+            media = pi_mod.valideer_afbeeldingsbytes(upload.filename, data)
+            ext = ".png" if media == "image/png" else ".jpg"
             bestand = "%02d-%s%s" % (i, re.sub(r"[^a-z0-9]+", "-", vloer_naam.lower()).strip("-") or "vloer", ext)
             with open(os.path.join(root, bestand), "wb") as fh:
                 fh.write(data)
