@@ -45,6 +45,9 @@ Dashboard bewaart per project in out/projects/<postcode_huisnr>/ (incl. import_m
 - magicplan/assemble.py   HYBRIDE: report-antwoorden + API-geometrie -> compleet dossier (build_dossier);
                          getest op echte Oosterkade-opname -> volledige isolatieplan-pijplijn. Gevel-m2 =
                          benadering (4*sqrt(footprint)*1.15 x hoogte - openingen); adviseur verifieert in Vabi
+- magicplan/intake.py     OFFLINE one-click ZIP-intake: project-/woningidentiteit + formfingerprint,
+                         preview/diff en expliciete merge met behoud van wizarddak, foto's, maatregelen
+                         en Vabi-resultaten; pakketcontract: docs/magicplan-intakepakket.md
 - magicplan/statistics_csv.py  GEVEL-NAAMGEVING (na 1e echte opname): benoem muren voorgevel/achter/links/
                          rechts; tool leidt oriëntatie af uit 'Oriëntatie voorgevel' (rechter -90/links +90/
                          achter +180, Oost-vanaf-straat). Naam-override 'Rechtergevel ZW' wint. Ook: meerdere

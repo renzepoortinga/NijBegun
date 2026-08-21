@@ -5298,5 +5298,59 @@ try:
 except Exception as _e:
     check("ventilatieplan-route (taak 020): draait zonder fout", False); print("     " + repr(_e)[:250])
 
+print("\n68. Veilige one-click MagicPlan-intake (taak 016)")
+try:
+    import copy as _copy16, hashlib as _hash16, tempfile as _temp16, zipfile as _zip16
+    from magicplan.intake import bouw_preview as _bp16, merge as _merge16, IntakeError as _IE16
+    from magicplan.form_fingerprint import snapshot_fingerprint as _sfp16
+    from core.dossier import Dossier as _D16, SchilDeel as _S16, Foto as _F16, Maatregel as _M16
+    _root16 = os.path.join(os.path.dirname(__file__), "fixtures")
+    _ref16 = os.path.join(_root16, "intake_complete")
+    with open(os.path.join(_ref16, "manifest.json"), encoding="utf-8") as _f:
+        _man16 = json.load(_f)
+    _man16["form_fingerprint"] = _sfp16()
+    with _temp16.TemporaryDirectory() as _td16:
+        _zip_pad16 = os.path.join(_td16, "intake.zip")
+        with _zip16.ZipFile(_zip_pad16, "w") as _z16:
+            _z16.writestr("manifest.json", json.dumps(_man16))
+            _z16.write(os.path.join(_root16, "statistics_voorbeeld.csv"), "statistics.csv")
+            _z16.write(os.path.join(_ref16, "report.txt"), "report.txt")
+            _z16.write(os.path.join(_ref16, "geometry.json"), "geometry.json")
+        _oud16 = _D16()
+        _oud16.identificatie.postcode, _oud16.identificatie.huisnummer = "9503HN", "7"
+        _oud16.schil = [_S16(id="wizard-dak", type="dak", bron="webapp-wizard", oppervlakte_m2=42)]
+        _oud16.fotos = [_F16(bestand="bewijs.jpg")]
+        _oud16.maatregelen = [_M16(code="V1-test")]
+        _oud16.berekening.label_huidig = "C"
+        _p16 = _bp16(_zip_pad16, _oud16, os.path.join(_td16, "stage"))
+        with open(os.path.join(_ref16, "expected.json"), encoding="utf-8") as _f:
+            _exp16 = json.load(_f)
+        check("intake referentie: exact vooraf vastgelegde resttaken", _p16["acties"] == _exp16["resttaken"], str(_p16["acties"]))
+        check("intake referentie: expliciete dakcontrole blijft open",
+              _exp16["dakcontrole"] in _p16["acties"]["dak"])
+        check("intake: geometriepakket levert grondvlakcontour",
+              _p16["nieuw"].geometrie.vloeren[0].contour_m == [[0, 0], [8, 0], [8, 5], [0, 5]])
+        _uit16 = _merge16(_oud16, _p16["nieuw"])
+        check("intake merge: handmatige wizarddaken behouden",
+              any(s.id == "wizard-dak" for s in _uit16.schil))
+        check("intake merge: footprint-fallback verdwijnt naast behouden wizarddak",
+              not any(s.bron == "magicplan-dak-fallback" for s in _uit16.schil))
+        check("intake merge: foto's en maatregelen behouden",
+              _uit16.fotos[0].bestand == "bewijs.jpg" and _uit16.maatregelen[0].code == "V1-test")
+        check("intake merge: eerdere Vabi-resultaten behouden", _uit16.berekening.label_huidig == "C")
+        _fout16 = _copy16.deepcopy(_oud16); _fout16.identificatie.huisnummer = "9"
+        try:
+            _bp16(_zip_pad16, _fout16, os.path.join(_td16, "stage2")); _blok16 = False
+        except _IE16:
+            _blok16 = True
+        check("intake identiteit: verkeerd project/dossier wordt geblokkeerd", _blok16)
+        try:
+            _bp16(_zip_pad16, _oud16, os.path.join(_td16, "stage3"), "ander-project"); _pidblok16 = False
+        except _IE16:
+            _pidblok16 = True
+        check("intake identiteit: project-id kan bij herimport niet stil wisselen", _pidblok16)
+except Exception as _e:
+    check("one-click intake: draait zonder fout", False); print("     " + repr(_e)[:300])
+
 print("\n=== RESULTAAT: %d geslaagd, %d gefaald ===" % (passed, failed))
 sys.exit(1 if failed else 0)

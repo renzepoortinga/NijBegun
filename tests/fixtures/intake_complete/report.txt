@@ -1,0 +1,11 @@
+Projectgegevens
+Postcode
+9503HN
+Huisnummer (+toev.)
+7
+Bouwjaar
+1994
+Woningtype
+Vrijstaand
+Gebruiksoppervlak Ag [m2]
+80

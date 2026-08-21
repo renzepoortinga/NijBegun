@@ -1,0 +1,13 @@
+{
+  "schema": "nijbegun-magicplan-intake/1",
+  "project_id": "mp-reference-016",
+  "form_fingerprint": "__CURRENT_SNAPSHOT__",
+  "identity": {
+    "bag_vboid": "",
+    "postcode": "9503HN",
+    "huisnummer": "7",
+    "straat": "Referentiestraat",
+    "plaats": "Stadskanaal",
+    "woningtype": "Vrijstaand"
+  }
+}

@@ -26,6 +26,11 @@ dakkapelbewerking correct herclassificeerd. Samengestelde Vabi-export scant de d
 exact eenmaal via private kernen; publieke writers blijven altijd fail-closed. Herreview PASS,
 851/851 groen.
 
+Taak 016 (veilige one-click MagicPlan-intake) is gebouwd op de featurebranch: offline
+ZIP-pakket met project-/woningidentiteitsgate, formfingerprint, preview/diff, expliciet
+behoudbeleid en gegroepeerde resttaken. De vooraf vastgelegde referentiecase en volledige
+dry-run zijn groen; onafhankelijke AI-review staat nog open.
+
 Taak 015 (mappingmanifest en MagicPlan-formulierfingerprint) is afgerond: zes kritieke
 dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gereviewd
 formulier-snapshotcontract. Optie-, label- en overige snapshotdrift maken CI luid rood.

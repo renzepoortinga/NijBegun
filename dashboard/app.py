@@ -397,12 +397,17 @@ TYPE_ICO = {"dak": "⛰", "gevel": "🧱", "vloer": "▬", "kozijn": "🪟", "pa
 
 OPNAME_TMPL = """{{stepper|safe}}<h1>Opname — {{st.adres}}</h1>
 <p class=lead>Alle opnamegegevens, bewerkbaar. Laad je MagicPlan-opname in of vul handmatig aan — <b>Vabi blijft de rekenkern</b>.</p>
-<div class=card><h2>① MagicPlan-opname inladen</h2>
-<p class=muted>Upload de MagicPlan <b>Statistics-CSV</b> (of een eerder dossier .json). De gebouwboom, installaties en gegevens hieronder worden gevuld; je kunt daarna alles nalopen.</p>
+<div class=card><h2>① MagicPlan-opname inladen — pakket controleren</h2>
+<p class=muted>Upload één pakket met projectidentiteit, Statistics, rapport en geometrie. Er verandert niets voordat je de preview bevestigt.</p>
+<form method=post action="{{url_for('opname_intake_preview', tag=tag)}}" enctype=multipart/form-data>
+<div class=file-drop>MagicPlan-importpakket (.zip)<br><input type=file name=pakket accept=".zip" required></div>
+<div class=btn-row><button class=btn>Preview en verschillen tonen</button></div></form>
+<details class=acc><summary>Losse legacy-import</summary><div class=acc-body>
+<p class=muted>Alleen voor bestaande exports zonder importpakket. Deze route heeft geen pakketbrede identiteitscontrole.</p>
 <form method=post action="{{url_for('opname_magicplan', tag=tag)}}" enctype=multipart/form-data>
 <div class=file-drop>Sleep hier de MagicPlan-CSV of dossier (.csv / .json)<br><input type=file name=bestand accept=".csv,.json"></div>
 <div class=btn-row><button class=btn>Inladen in de opname</button>
-<span class="muted small">Al ingeladen? Loop de gegevens hieronder na en pas aan waar nodig.</span></div></form></div>
+<span class="muted small">Loop de gegevens daarna volledig na.</span></div></form></div></details></div>
 {% if st.import_historie %}<div class=card><h2>🕓 Import-historie</h2>
 <p class="muted small">Elke MagicPlan-import met datum/tijd — zo zie je (ook vanaf een ander device) of dit de meest recente opname is.</p>
 <div class=table-wrap><table><thead><tr><th>Wanneer</th><th>Bestand</th><th>Vlakken</th></tr></thead><tbody>
@@ -1354,6 +1359,91 @@ def opname(tag):
                 begr_opts=BEGR_OPTS, ori_opts=ORI_OPTS, glas_opts=GLAS_OPTS,
                 koz_opts=KOZ_OPTS, bouwjaarklasse_opts=BOUWJAARKLASSE_OPTS, rc_bron_opts=RC_BRON_OPTS,
                 ico=TYPE_ICO, gebouw_svg=gebouw_overzicht_svg)
+
+
+INTAKE_PREVIEW = """{{stepper|safe}}<h1>MagicPlan-intake controleren</h1>
+<p class=lead>Controleer de projectkoppeling en de gevolgen. Het dossier is nog niet gewijzigd.</p>
+<div class=card><h2>Projectidentiteit</h2>
+<dl class=kv><dt>MagicPlan-project</dt><dd>{{p.manifest.project_id}}</dd>
+<dt>Woning</dt><dd>{{p.manifest.identity.postcode}} {{p.manifest.identity.huisnummer}} · {{p.manifest.identity.straat}}</dd>
+<dt>Formulierfingerprint</dt><dd><code>{{p.manifest.form_fingerprint}}</code></dd></dl></div>
+<div class=card><h2>Verschillen</h2>
+<dl class=kv><dt>Schildelen</dt><dd>{{p.diff.schil.voor}} → {{p.diff.schil.na}}</dd>
+<dt>Toegevoegd</dt><dd>{{p.diff.schil.toegevoegd|join(', ') or 'geen'}}</dd>
+<dt>Vervallen uit import</dt><dd>{{p.diff.schil.verwijderd|join(', ') or 'geen'}}</dd>
+<dt>Installaties</dt><dd>{{p.diff.installaties}}</dd></dl>
+<h3>Mergebeleid</h3><ul class=check>{% for naam, beleid in p.diff.behoud.items() %}<li>{{naam|replace('_',' ')}}: <b>{{beleid}}</b></li>{% endfor %}</ul></div>
+<div class=card><h2>Actiepunten na import</h2>
+{% for groep, items in p.acties.items() %}<h3>{{groep|capitalize}} <span class="pill gray">{{items|length}}</span></h3>
+{% if items %}<ul class=check>{% for item in items %}<li>{{item}}</li>{% endfor %}</ul>{% else %}<p class=muted>Geen open punten.</p>{% endif %}{% endfor %}</div>
+<form method=post action="{{url_for('opname_intake_bevestig', tag=tag)}}">
+<input type=hidden name=pakket_sha256 value="{{p.pakket_sha256}}">
+<div class=btn-row><button class="btn lg">Import expliciet bevestigen</button>
+<a class="btn sec" href="{{url_for('opname', tag=tag)}}">Annuleren</a></div></form>"""
+
+
+@app.route("/project/<tag>/opname/intake/preview", methods=["POST"])
+@login_required
+def opname_intake_preview(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    f = request.files.get("pakket")
+    if not f or not f.filename or os.path.splitext(f.filename)[1].lower() != ".zip":
+        flash("Kies één MagicPlan-importpakket (.zip).")
+        return redirect(url_for("opname", tag=tag))
+    pakket = os.path.join(_pdir(tag), ".intake-pakket.zip")
+    stage = os.path.join(_pdir(tag), ".intake-stage")
+    f.save(pakket)
+    try:
+        from magicplan.intake import bouw_preview
+        p = bouw_preview(pakket, dos, stage, st.get("magicplan_project_id", ""))
+        save_json(p["nieuw"], os.path.join(_pdir(tag), ".intake-dossier.json"))
+        publiek = {k: v for k, v in p.items() if k not in ("nieuw", "notes")}
+        with open(os.path.join(_pdir(tag), ".intake-preview.json"), "w", encoding="utf-8") as fh:
+            json.dump(publiek, fh, ensure_ascii=False, indent=2)
+    except Exception as e:
+        for pad in (pakket, os.path.join(_pdir(tag), ".intake-dossier.json"),
+                    os.path.join(_pdir(tag), ".intake-preview.json")):
+            try: os.remove(pad)
+            except OSError: pass
+        flash("Importpakket geweigerd: %s" % e)
+        return redirect(url_for("opname", tag=tag))
+    return page(INTAKE_PREVIEW, stepper=stepper("opname", st), tag=tag, p=publiek)
+
+
+@app.route("/project/<tag>/opname/intake/bevestig", methods=["POST"])
+@login_required
+def opname_intake_bevestig(tag):
+    st, dos = _load_state(tag), _dossier(tag)
+    pp = os.path.join(_pdir(tag), ".intake-preview.json")
+    dp = os.path.join(_pdir(tag), ".intake-dossier.json")
+    pakket = os.path.join(_pdir(tag), ".intake-pakket.zip")
+    if not st or not dos or not all(os.path.isfile(x) for x in (pp, dp, pakket)):
+        flash("De intake-preview is verlopen; upload het pakket opnieuw.")
+        return redirect(url_for("opname", tag=tag))
+    with open(pp, encoding="utf-8") as fh: p = json.load(fh)
+    import hashlib
+    with open(pakket, "rb") as fh:
+        werkelijk = hashlib.sha256(fh.read()).hexdigest()
+    if (request.form.get("pakket_sha256") != werkelijk or p.get("pakket_sha256") != werkelijk):
+        flash("Het importpakket veranderde na de preview; import is gestopt.")
+        return redirect(url_for("opname", tag=tag))
+    from magicplan.intake import merge
+    nieuw = merge(dos, load_json(dp))
+    save_json(nieuw, os.path.join(_pdir(tag), st["dossier_file"]))
+    st["magicplan_project_id"] = p["manifest"]["project_id"]
+    st["intake_acties"] = p["acties"]
+    st.setdefault("import_historie", []).append({"tijd": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "bestand": "MagicPlan-pakket %s" % p["manifest"]["project_id"], "vlakken": len(nieuw.schil)})
+    st["import_historie"] = st["import_historie"][-12:]
+    _save_state(tag, st)
+    for pad in (pp, dp, pakket):
+        try: os.remove(pad)
+        except OSError: pass
+    shutil.rmtree(os.path.join(_pdir(tag), ".intake-stage"), ignore_errors=True)
+    flash("MagicPlan-import bevestigd; adviseurswerk en Vabi-resultaten zijn behouden.")
+    return redirect(url_for("opname", tag=tag))
 
 
 @app.route("/project/<tag>/opname/magicplan", methods=["POST"])
