@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 015 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 020 heropend na review)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -40,13 +40,12 @@ AI-review: PASS.
 
 Taak 013 (ketenaudit MagicPlan → tool → Vabi) en taak 014 (dakmigratie zonder dubbele
 legacyvlakken — het Essenhage-dakdubbelingspatroon uit taak 013) zijn afgerond en staan in
-`tasks/done/`. Taak 015 blijft `active/`: mappingmanifest, formulierfingerprint en de eerdere
-dakprovenance zijn gebouwd en na rebase op `main` met 845/845 tests geverifieerd; alleen de
-onafhankelijke eindreview staat nog open. Vervolgbevindingen staan als taak 023 (dakkapel/
-preflight) en 025 (MagicPlan-SSL) in `backlog/`.
+`tasks/done/`. Vervolgbevindingen staan als taak 023 (dakkapel/preflight) en 025
+(MagicPlan-SSL) in `backlog/`.
 
 Taak 020 (ventilatieplan-pagina in de webapp) is na review-FAIL heropend en staat in `tasks/active/`.
-De blockers zijn gerepareerd en 889/889 tests zijn groen; onafhankelijke herreview staat nog open.
+De blockers zijn gerepareerd en na integratie met taak 015 zijn 939/939 tests groen;
+onafhankelijke herreview staat nog open.
 De taak levert route `/project/<tag>/ventilatieplan` (GET pagina + POST markers +
 POST herstel) bovenop de taak-019-rekenlaag. Dossier minimaal uitgebreid (`core/dossier.py`):
 `Ruimte.verdieping`, `VloerInfo.plattegrond_afbeelding` (forward-compat taak 022) en de nieuwe
@@ -54,8 +53,8 @@ POST herstel) bovenop de taak-019-rekenlaag. Dossier minimaal uitgebreid (`core/
 `dashboard/ventilatieplan.py` (groeperen per verdieping, autoplaatsing inclusief overstroom bij de
 bronruimte zonder een onbekende deurverbinding te verzinnen, batch- en verdiepingvalidatie) +
 `dashboard/static/ventilatieplan.js` (vanilla JS: ruimtepolygon-hit-test, highlight/koppellijn,
-rollback buiten een ruimte en dubbelklik=wijzigen/verwijderen/splitsen). AI-review vond eerder
-ongeluk de verkeerde diff beoordeelde, 2 restbevindingen in `ventilatie/ventilatie.py` (taak 019:
+rollback buiten een ruimte en dubbelklik=wijzigen/verwijderen/splitsen). Een eerdere AI-review vond
+2 restbevindingen in `ventilatie/ventilatie.py` (taak 019:
 misleidende '0 m2'-waarschuwing bij een negatief oppervlak, `deurbelasting()` valideerde niet het
 hele overstroompad) — beide gefixt op deze branch. Blocking verify PASS. Geen browser-visuele-QA:
 de browserruntime meldde nul beschikbare browsers. Vervolgtaken 021

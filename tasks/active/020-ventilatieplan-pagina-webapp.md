@@ -113,6 +113,12 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   kon niet worden uitgevoerd: de voorgeschreven in-app-browserruntime gaf na diagnose exact nul
   beschikbare browsers (`agent.browsers.list() == []`). Taak blijft actief tot onafhankelijke
   herreview PASS geeft.
+- 2026-08-21: Voor herreview gerebased op `origin/main` na merge van taak 015 (mappingmanifest en
+  dakpreflight). Conflicten waren uitsluitend append-conflicten in `tests/run_tests.py` en
+  `docs/STATE.md`; zowel alle taak-015-tests/status als alle 019/020-code en reviewfixes behouden.
+  Een reeds op main aanwezige verouderde STATE-regel die taak 015 nog `active` noemde verwijderd;
+  het taakbestand staat daadwerkelijk in `tasks/done/`. Actuele blocking `scripts/verify.sh`:
+  PASS, 939/939 tests groen. Taak 020 blijft `active` tot onafhankelijke herreview PASS.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.
