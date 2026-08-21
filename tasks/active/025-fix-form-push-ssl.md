@@ -39,6 +39,10 @@ dezelfde `SSLCertVerificationError` tegenkomen.
 
 ## Sessions
 
+- 2026-08-21 Codex Builder: draft conflictvrij gerebased op `origin/main` na merge van taak 024;
+  blocking `scripts/verify.sh` opnieuw PASS. De gedeeltelijke live TLS-validatie blijft geldig en
+  de ontbrekende credentials/bruikbare browsersessie blijven de concrete blokkade voor foto- en
+  form-pushvalidatie. Geen `.env*` gelezen en geen MagicPlan-state gemuteerd.
 - 2026-08-21 Codex Builder live-validatie: de gedeelde context maakte live succesvol een TLS-
   verbinding met `cloud.magicplan.app/api/v2/workspace`; de server antwoordde daarna zoals verwacht
   met HTTP 401 JSON omdat er geen credentials waren. In de procesomgeving ontbreken API-key,
