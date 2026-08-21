@@ -4894,8 +4894,8 @@ try:
           {m.ruimte_id for m in _autoAE if m.type == "toevoer"} == {"Woonkamer", "Slaapkamer 1"})
     check("auto_markers: afvoer voor elke natte ruimte (afvoerpunt)",
           {m.ruimte_id for m in _autoAE if m.type == "afvoer"} == {"Keuken", "Badkamer", "Toilet"})
-    check("auto_markers: nooit automatisch een overstroom-marker (geen adjacency-data)",
-          not any(m.type == "overstroom" for m in _autoAE))
+    check("auto_markers: overstroom bij iedere toevoer-BRON zonder verzonnen doelruimte",
+          {m.ruimte_id for m in _autoAE if m.type == "overstroom"} == {"Woonkamer", "Slaapkamer 1"})
     check("auto_markers: coördinaten relatief (0..1)",
           all(0.0 <= m.x <= 1.0 and 0.0 <= m.y <= 1.0 for m in _autoAE))
     check("auto_markers: bron='auto' op elke gegenereerde marker", all(m.bron == "auto" for m in _autoAE))
@@ -4956,6 +4956,12 @@ try:
          {"type": "afvoer", "ruimte_id": "Onbekend", "x": 0.1, "y": 0.1, "waarde_ls": 10}], _geldigAE)
     check("valideer_markers: 1 foute regel weigert de HELE batch, niets half opgeslagen",
           _goed_mix is None and _fout_mix is not None)
+    check("verdiepingsvalidatie: alleen ruimtenamen van de gevraagde verdieping",
+          _vp.geldige_ruimtenamen_op_verdieping(_d2, "Begane grond") == {"Woonkamer"})
+    _polyAE = {"Woonkamer": [[0, 0], [.5, 0], [.5, .5], [0, .5]]}
+    _, _buitenAE = _vp.valideer_markers(
+        [{"type": "toevoer", "ruimte_id": "Woonkamer", "x": .8, "y": .8}], {"Woonkamer"}, _polyAE)
+    check("valideer_markers: positie buiten gekoppelde ruimte -> geweigerd", "buiten ruimte" in _buitenAE)
 
     # --- marker_balans ---
     _d5 = _DAE()
@@ -4974,6 +4980,8 @@ try:
 
     # --- round-trip door de dossier-(de)serialisatie (core/dossier.py-uitbreiding) ---
     _d7 = _DAE()
+    _d7.geometrie.ruimtes = [_RAE(naam="Woonkamer", contour_relatief=[[0.1, 0.1], [0.9, 0.1],
+                                                                       [0.9, 0.9], [0.1, 0.9]])]
     _d7.ventilatieplan.systeem = "C"
     _d7.ventilatieplan.verdiepingen = [_VPVAE(naam="Begane grond", achtergrond="bg.png", breedte_px=1600,
         markers=[_VMAE(id="t1", type="toevoer", ruimte_id="Woonkamer", waarde_ls=21.0, x=0.1, y=0.2,
@@ -4982,6 +4990,8 @@ try:
     check("ventilatieplan: round-trip door to_dict/from_dict identiek", _terug7.to_dict() == _d7.to_dict())
     check("ventilatieplan: marker-veld blijft na round-trip een VentilatieMarker-object",
           _terug7.ventilatieplan.verdiepingen[0].markers[0].ruimte_id == "Woonkamer")
+    check("ventilatieplan: expliciete ruimtegeometrie overleeft round-trip",
+          _terug7.geometrie.ruimtes[0].contour_relatief == _d7.geometrie.ruimtes[0].contour_relatief)
 except Exception as _e:
     check("ventilatieplan-datalaag (taak 020): draait zonder fout", False); print("     " + repr(_e)[:220])
 
@@ -5005,11 +5015,16 @@ try:
     _dAF = _WAF._dossier(_tagAF)
     _dAF.geometrie.vloeren = [_VIAE(naam="Begane grond"), _VIAE(naam="1e verdieping")]
     _dAF.geometrie.ruimtes = [
-        _RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30, verdieping="Begane grond"),
-        _RAE(naam="Keuken", functie="keuken", oppervlakte_m2=10, verdieping="Begane grond"),
-        _RAE(naam="Toilet", functie="toilet", oppervlakte_m2=1.5, verdieping="Begane grond"),
-        _RAE(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12, verdieping="1e verdieping"),
-        _RAE(naam="Badkamer", functie="badkamer", oppervlakte_m2=6, verdieping="1e verdieping")]
+        _RAE(naam="Woonkamer", functie="verblijfsruimte", oppervlakte_m2=30, verdieping="Begane grond",
+             contour_relatief=[[.05,.05],[.55,.05],[.55,.7],[.05,.7]]),
+        _RAE(naam="Keuken", functie="keuken", oppervlakte_m2=10, verdieping="Begane grond",
+             contour_relatief=[[.55,.05],[.95,.05],[.95,.5],[.55,.5]]),
+        _RAE(naam="Toilet", functie="toilet", oppervlakte_m2=1.5, verdieping="Begane grond",
+             contour_relatief=[[.55,.5],[.75,.5],[.75,.7],[.55,.7]]),
+        _RAE(naam="Slaapkamer 1", functie="slaapkamer", oppervlakte_m2=12, verdieping="1e verdieping",
+             contour_relatief=[[.05,.05],[.55,.05],[.55,.7],[.05,.7]]),
+        _RAE(naam="Badkamer", functie="badkamer", oppervlakte_m2=6, verdieping="1e verdieping",
+             contour_relatief=[[.55,.05],[.95,.05],[.95,.7],[.55,.7]])]
     _stAF = _WAF._load_state(_tagAF)
     _WAF._dos_save(_tagAF, _stAF, _dAF)
 
@@ -5020,6 +5035,8 @@ try:
           "vp-balans" in _htmlAF1 and "Begane grond" in _htmlAF1 and "1e verdieping" in _htmlAF1
           and "Toevoer per verblijfsruimte" in _htmlAF1 and "Afvoer per natte ruimte" in _htmlAF1)
     check("ventilatieplan-route: laadt ventilatieplan.js", "ventilatieplan.js" in _htmlAF1)
+    check("ventilatieplan-route: rendert echte ruimtepolygonen en labels voor hit-testing",
+          _htmlAF1.count("class=vp-ruimte ") == 5 and "vp-koppellijn" in _htmlAF1)
     check("ventilatieplan-route: alle 7 vuistregels staan er (ook 'niet te bepalen', geen stille voldoet)",
           _htmlAF1.count("niet te bepalen") >= 5)
 
@@ -5056,6 +5073,20 @@ try:
     _dAF4 = _WAF._dossier(_tagAF)
     check("markers-route: geweigerd verzoek verandert het dossier niet (nog steeds de vorige, geldige marker)",
           next(v for v in _dAF4.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers[0].id == "x1")
+
+    # Een bestaande ruimte van een ANDERE verdieping is ook ongeldig voor deze POST.
+    _verkeerde_verdieping = [{"type": "toevoer", "ruimte_id": "Slaapkamer 1", "x": .2, "y": .2,
+                              "waarde_ls": 7}]
+    _rAF4b = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, _bg_naam),
+                       data=_jsAF.dumps({"markers": _verkeerde_verdieping}), content_type="application/json")
+    check("markers-route: ruimte van andere verdieping -> 400", _rAF4b.status_code == 400)
+
+    _jsbronAF = open(os.path.join(os.path.dirname(__file__), "..", "dashboard", "static",
+                                  "ventilatieplan.js"), encoding="utf-8").read()
+    check("ventilatieplan-JS: polygon-hit-test + highlight + rollback buiten ruimte aanwezig",
+          all(term in _jsbronAF for term in ("puntInPolygoon", "sleepIndicatie", "Object.assign(m, vorige)")))
+    check("ventilatieplan-JS: dubbelklik ondersteunt expliciet splitsen",
+          'antwoord.split("+")' in _jsbronAF and 'verdieping.markers.push' in _jsbronAF)
 
     # onbekende verdieping -> 404, nette fout
     _rAF5 = _cAF.post("/project/%s/ventilatieplan/%s/markers" % (_tagAF, "Kelder (bestaat niet)"),

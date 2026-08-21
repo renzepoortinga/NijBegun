@@ -86,6 +86,9 @@ class Ruimte:
     # (oudere dossiers, of een parser-pad dat de verdieping nog niet doorgeeft). Gebruikt door
     # dashboard/ventilatieplan.py (taak 020) om ruimtes per verdieping te groeperen.
     verdieping: str = ""
+    # Optionele gemeten ruimtecontour, relatief aan de plattegrond (0..1). Alleen vullen uit een
+    # expliciete bron of handmatige kalibratie; nooit afleiden uit oppervlakte of ruimtenaam.
+    contour_relatief: Optional[List[List[float]]] = None
 
 @dataclass
 class Geometrie:

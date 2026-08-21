@@ -17,6 +17,14 @@ from core.dossier import VentilatieMarker, VentilatieplanVerdieping
 MARKER_TYPES = ("toevoer", "afvoer", "overstroom")
 
 
+def polygoon_middelpunt(punten):
+    """Stabiel labelpunt voor een expliciet ruimtepolygoon; geen punten betekent kaartmidden."""
+    if not punten:
+        return [0.5, 0.5]
+    return [round(sum(float(p[0]) for p in punten) / len(punten), 4),
+            round(sum(float(p[1]) for p in punten) / len(punten), 4)]
+
+
 def groepeer_per_verdieping(dos):
     """Geeft [(verdieping_naam, VloerInfo|None, [Ruimte, ...]), ...].
 
@@ -84,10 +92,9 @@ def auto_markers(ruimtes, res_rows):
     gemeten wandpositie: het dossier kent geen wandcoördinaten per ruimte, dus 'in de buitengevel
     plaatsen' kan alleen bij benadering. De adviseur sleept ze naar de echte plek.
 
-    Overstroom wordt NIET automatisch geplaatst: welke twee ruimtes een deur delen staat nergens in
-    het dossier (precies waarom `ventilatie.deurbelasting()` een expliciet aangeleverde topologie
-    vraagt) — dat verzinnen zou een adjacency-aanname zijn die niet klopt. De adviseur voegt overstroom
-    zelf toe met '+ Overstroom'.
+    Voor iedere toevoerruimte wordt ook een overstroommarker bij de BRONRUIMTE geplaatst. De marker
+    zegt alleen waar lucht die ruimte verlaat; zonder expliciete topologie wordt geen doelruimte of
+    deurverbinding verzonnen. De adviseur legt hem op de gemeten deuropening.
     """
     by_naam = {r["naam"]: r for r in res_rows}
     toevoer_namen = [r.naam for r in ruimtes if (by_naam.get(r.naam) or {}).get("toevoer")]
@@ -100,6 +107,10 @@ def auto_markers(ruimtes, res_rows):
             id="t%d" % (i + 1), type="toevoer", ruimte_id=naam,
             waarde_ls=rij.get("toevoer", 0.0), x=0.06, y=round((i + 1) / (n_t + 1), 3),
             rotatie=90, bron="auto"))
+        markers.append(VentilatieMarker(
+            id="o%d" % (i + 1), type="overstroom", ruimte_id=naam,
+            waarde_ls=rij.get("toevoer", 0.0), x=0.14,
+            y=round((i + 1) / (n_t + 1), 3), rotatie=90, bron="auto"))
     n_a = len(afvoer_namen)
     for i, naam in enumerate(afvoer_namen):
         rij = by_naam[naam]
@@ -151,7 +162,33 @@ def geldige_ruimtenamen(dos):
     return {r.naam for r in (dos.geometrie.ruimtes or [])}
 
 
-def valideer_markers(markers_data, geldige_namen):
+def geldige_ruimtenamen_op_verdieping(dos, verdieping_naam):
+    """Ruimte-id's die uitsluitend bij de gevraagde verdieping horen."""
+    for naam, _vloer, ruimtes in groepeer_per_verdieping(dos):
+        if naam == verdieping_naam:
+            return {r.naam for r in ruimtes}
+    return set()
+
+
+def ruimtecontouren_op_verdieping(dos, verdieping_naam):
+    for naam, _vloer, ruimtes in groepeer_per_verdieping(dos):
+        if naam == verdieping_naam:
+            return {r.naam: r.contour_relatief for r in ruimtes if r.contour_relatief}
+    return {}
+
+
+def punt_in_polygoon(x, y, punten):
+    binnen = False
+    j = len(punten) - 1
+    for i in range(len(punten)):
+        xi, yi = punten[i]; xj, yj = punten[j]
+        if ((yi > y) != (yj > y)) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            binnen = not binnen
+        j = i
+    return binnen
+
+
+def valideer_markers(markers_data, geldige_namen, ruimtecontouren=None):
     """`markers_data`: lijst dicts uit de POST-body (één verdieping). Geeft
     `(markers: [VentilatieMarker], fout: str|None)` terug. Weigert het HELE verzoek bij de eerste
     fout — nooit een deel van de tekening stil opslaan terwijl de rest wordt verworpen."""
@@ -170,6 +207,9 @@ def valideer_markers(markers_data, geldige_namen):
             return None, "Marker heeft geen geldige positie (x/y)."
         if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
             return None, "Marker valt buiten de tekening (x/y moeten tussen 0 en 1 liggen)."
+        contour = (ruimtecontouren or {}).get(ruimte_id)
+        if contour and not punt_in_polygoon(x, y, contour):
+            return None, "Marker valt buiten ruimte '%s' — niet opgeslagen." % ruimte_id
         try:
             waarde = float(m.get("waarde_ls", 0))
         except (TypeError, ValueError):

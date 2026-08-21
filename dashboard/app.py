@@ -1908,7 +1908,7 @@ def opname_vabi_huidig(tag):
 VENTILATIEPLAN_TMPL = """{{stepper|safe}}
 <h1>Ventilatieplan — {{st.adres}}</h1>
 <p class=lead><a href="{{url_for('opname', tag=tag)}}">&larr; Terug naar de opname</a></p>
-<div class="btn-row" style="align-items:center">
+<div class="btn-row vp-balansrij">
 <span id=vp-balans class="pill {{'green' if balans.sluitend else 'amber'}}">
 Balans: toevoer {{'%.1f'|format(balans.toevoer)}} l/s {{'=' if balans.sluitend else '≠'}} afvoer {{'%.1f'|format(balans.afvoer)}} l/s</span>
 <button type=button class="btn sec" id=vp-herbereken>Herbereken balans</button>
@@ -1932,11 +1932,17 @@ veranderen niet mee; ze zijn het uitgangspunt waarmee de tekening is voorgevuld.
 <rect x=0 y=0 width=1000 height=750 fill="var(--card)"></rect>
 {% if v.achtergrond_soort == 'afbeelding' %}<image href="{{v.achtergrond_url}}" x=0 y=0 width=1000 height=750 preserveAspectRatio="xMidYMid meet"></image>
 {% elif v.achtergrond_soort == 'contour' %}<polygon points="{% for p in v.contour_punten %}{{'%.1f'|format(p[0]*1000)}},{{'%.1f'|format(p[1]*750)}} {% endfor %}" fill="var(--tint)" stroke="var(--sub)" stroke-width=2></polygon>
-{% else %}<text x=500 y=375 text-anchor=middle fill="var(--sub)" font-size=22>Geen plattegrond beschikbaar — sleep de markers op het lege vlak</text>{% endif %}
+{% else %}<text class=vp-empty x=500 y=375 text-anchor=middle>Geen plattegrond beschikbaar</text>{% endif %}
+<g class=vp-ruimtes>
+{% for r in v.ruimtes if r.contour %}<polygon class=vp-ruimte data-ruimte-id="{{r.naam}}" points="{% for p in r.contour %}{{'%.1f'|format(p[0]*1000)}},{{'%.1f'|format(p[1]*750)}} {% endfor %}"></polygon>
+<text class=vp-ruimtelabel data-ruimte-id="{{r.naam}}" x="{{'%.1f'|format(r.label[0]*1000)}}" y="{{'%.1f'|format(r.label[1]*750)}}">{{r.naam}}</text>{% endfor %}
+</g>
+<line class=vp-koppellijn></line>
 <g class=vp-markers></g>
 </svg>
 </div>
-<p class="muted small">Slepen = verplaatsen · klik = 90° draaien · dubbelklik = waarde wijzigen (leeg = verwijderen)</p>
+{% if v.heeft_ruimtegeometrie %}<p class="muted small">Slepen = verplaatsen · klik = 90° draaien · dubbelklik = waarde wijzigen of splitsen</p>
+{% else %}<p class="warn">Ruimtecontouren ontbreken. Markers blijven via de ruimtekeuze gekoppeld; slepen is geblokkeerd tot gemeten ruimtegeometrie beschikbaar is.</p>{% endif %}
 <div class=btn-row>
 <button type=button class="btn sec vp-add" data-type=toevoer data-verdieping="{{v.naam}}">+ Toevoer</button>
 <button type=button class="btn sec vp-add" data-type=afvoer data-verdieping="{{v.naam}}">+ Afvoer</button>
@@ -2004,7 +2010,9 @@ def _vp_context(tag, dos):
         ruimtes_json = [{"naam": r.naam, "toevoer": (by_naam.get(r.naam) or {}).get("toevoer", 0.0),
                          "afvoer": (by_naam.get(r.naam) or {}).get("afvoer_advies_ls",
                                     (by_naam.get(r.naam) or {}).get("afvoer", 0.0)),
-                         "afvoerpunt": bool((by_naam.get(r.naam) or {}).get("afvoerpunt"))}
+                         "afvoerpunt": bool((by_naam.get(r.naam) or {}).get("afvoerpunt")),
+                         "contour": r.contour_relatief,
+                         "label": vp_mod.polygoon_middelpunt(r.contour_relatief)}
                         for r in groepen.get(v.naam, [])]
         verdiepingen_json.append({
             "naam": v.naam,
@@ -2013,6 +2021,7 @@ def _vp_context(tag, dos):
             "contour_punten": vp_mod.contour_punten_relatief(vloer),
             "markers": [dataclasses.asdict(m) for m in v.markers],
             "ruimtes": ruimtes_json,
+            "heeft_ruimtegeometrie": bool(ruimtes_json) and all(r["contour"] for r in ruimtes_json),
         })
     return res, gewijzigd, verdiepingen_json
 
@@ -2048,8 +2057,9 @@ def ventilatieplan_markers(tag, verdieping):
     if v is None:
         return {"ok": False, "fout": "Onbekende verdieping '%s'." % verdieping}, 404
     data = request.get_json(silent=True) or {}
-    geldig = vp_mod.geldige_ruimtenamen(dos)
-    markers, fout = vp_mod.valideer_markers(data.get("markers") or [], geldig)
+    geldig = vp_mod.geldige_ruimtenamen_op_verdieping(dos, verdieping)
+    contouren = vp_mod.ruimtecontouren_op_verdieping(dos, verdieping)
+    markers, fout = vp_mod.valideer_markers(data.get("markers") or [], geldig, contouren)
     if fout:
         return {"ok": False, "fout": fout}, 400
     v.markers = markers

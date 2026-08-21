@@ -45,6 +45,7 @@
      i.p.v. losse font-size-waarden per <text>-element */
   --svg-fs-1:10px; --svg-fs-2:11px; --svg-fs-3:12px; --svg-fs-4:13px;
   --svg-fs-5:14px; --svg-fs-6:15px; --svg-fs-7:17px; --svg-fs-8:22px;
+  --on-accent:#FFFFFF;
 
   /* materials (blur-lagen) */
   --bar-bg:rgba(255,255,255,.8);
@@ -599,17 +600,25 @@ details.acc .acc-body :is(h1,h2,h3){color:var(--ink)}
 /* ============================================================
    Ventilatieplan (taak 020) — sleepbare pijlen op de plattegrond
    ============================================================ */
-.vp-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
-.vp-canvas-wrap{width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.vp-balansrij{align-items:center}
+.vp-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:var(--s5);align-items:start}
+.vp-canvas-wrap{width:100%;aspect-ratio:4/3;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--line)}
 .vp-canvas{width:100%;height:100%;display:block;touch-action:none}
-.vp-ruimte-kiezer{margin-left:10px;font-size:13px}
-.vp-legenda{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--sub)}
+.vp-ruimte-kiezer{margin-left:var(--s2);font-size:var(--svg-fs-4)}
+.vp-legenda{display:inline-flex;align-items:center;gap:var(--s2);font-size:var(--svg-fs-4);color:var(--sub)}
 .vp-legenda svg{flex:none}
-.vp-vuistregels{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-.vp-vuistregels li{display:flex;flex-direction:column;gap:2px}
+.vp-vuistregels{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.vp-vuistregels li{display:flex;flex-direction:column;gap:var(--s1)}
+.vp-empty{fill:var(--sub);font-size:var(--svg-fs-8)}
+.vp-ruimte{fill:transparent;stroke:var(--line-strong);stroke-width:2}
+.vp-ruimte.vp-actief{fill:var(--info-bg);stroke:var(--red);stroke-width:4}
+.vp-ruimtelabel{fill:var(--ink);font-size:var(--svg-fs-7);text-anchor:middle;pointer-events:none}
+.vp-ruimtelabel.vp-actief{fill:var(--err-fg);font-weight:700}
+.vp-koppellijn{display:none;stroke:var(--blue);stroke-width:4;pointer-events:none}
+.vp-koppellijn.vp-zichtbaar{display:block}
 .vp-marker{cursor:grab}
 .vp-marker.vp-dragging{cursor:grabbing;opacity:.85}
-.vp-marker text{font-size:26px;font-weight:650;fill:#fff;text-anchor:middle;paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px}
-@media (max-width:700px){
+.vp-marker text{font-size:var(--svg-fs-8);font-weight:650;fill:var(--on-accent);text-anchor:middle;paint-order:stroke;stroke:var(--ink);stroke-width:2px}
+@media (max-width:768px){
   .vp-layout{grid-template-columns:1fr}
 }

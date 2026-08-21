@@ -1,7 +1,7 @@
 ---
 id: 020
-assigned:
-branch:
+assigned: Codex
+branch: feat/020-ventilatieplan-integratie
 depends_on: [019]
 ---
 
@@ -97,6 +97,20 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   historische `docs/STATE.md`-conflicten opgelost door de bestaande en nieuwe taakstatussen samen
   te voegen. Actuele blocking `scripts/verify.sh`: PASS, 881/881 tests groen. De administratieve
   advisory "geen actieve taak" is verwacht omdat 019 en 020 al in `tasks/done/` staan.
+- 2026-08-21: Taak heropend na onafhankelijke review: FAIL op vier scope-blockers. Gefixt met
+  optionele expliciete `Ruimte.contour_relatief`-geometrie (nooit afgeleid of verzonnen), SVG-
+  ruimtepolygonen/-labels, polygon-hit-testing tijdens slepen, live highlight + verbindingslijn,
+  binding aan de ruimte onder de pointer en volledige rollback buiten een ruimte. Zonder gemeten
+  ruimtecontouren blijft ruimtekeuze/persistentie werken maar is slepen expliciet geblokkeerd.
+  Servervalidatie beperkt `ruimte_id` nu tot de geposte verdieping en weigert bij beschikbare
+  geometrie ook posities buiten die ruimte. Autoplaatsing maakt per toevoerruimte een overstroom-
+  marker aan bij de bronruimte zonder een onbekende deur/doelruimte te verzinnen. Dubbelklik kan
+  nu waarden wijzigen, verwijderen of expliciet splitsen via `waarde+waarde`. Template/CSS op
+  design-tokens gebracht (geen component-hex/rgba, losse font-size, inline stijl of non-grid
+  spacing). Blocking `scripts/verify.sh`: PASS, 888/888 tests groen. Browser-QA op 390/768/1440
+  kon niet worden uitgevoerd: de voorgeschreven in-app-browserruntime gaf na diagnose exact nul
+  beschikbare browsers (`agent.browsers.list() == []`). Taak blijft actief tot onafhankelijke
+  herreview PASS geeft.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.

@@ -3,8 +3,8 @@
    VENTILATIEPLAN_TMPL in dashboard/app.py). Elke wijziging (slepen/draaien/waarde/toevoegen/verwijderen)
    stuurt de VOLLEDIGE markerlijst van die ene verdieping naar de server (POST .../markers) — de server
    is de waarheid, dit script tekent alleen en houdt de UI in de tussentijd bij.
-   'Splitsen' (één marker in twee opsplitsen) zit NIET in deze versie — dubbelklik met een lege waarde
-   verwijdert de marker, dat dekt de acceptatiecriteria van taak 020 (wijzigen + verwijderen). */
+   Ruimtepolygonen komen uitsluitend uit expliciete dossiergeometrie. Zonder die geometrie wordt slepen
+   geblokkeerd; het script verzint nooit ruimtevormen. */
 (function () {
   "use strict";
   var KLEUR = { toevoer: "var(--blue)", afvoer: "var(--orange)", overstroom: "var(--green)" };
@@ -50,6 +50,35 @@
     return null;
   }
 
+  function puntInPolygoon(x, y, punten) {
+    var binnen = false;
+    for (var i = 0, j = punten.length - 1; i < punten.length; j = i++) {
+      var xi = punten[i][0], yi = punten[i][1], xj = punten[j][0], yj = punten[j][1];
+      if (((yi > y) !== (yj > y)) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) binnen = !binnen;
+    }
+    return binnen;
+  }
+
+  function ruimteOpPunt(verdieping, x, y) {
+    for (var i = 0; i < verdieping.ruimtes.length; i++) {
+      var r = verdieping.ruimtes[i];
+      if (r.contour && r.contour.length >= 3 && puntInPolygoon(x, y, r.contour)) return r;
+    }
+    return null;
+  }
+
+  function sleepIndicatie(svg, ruimte, x, y) {
+    [].slice.call(svg.querySelectorAll(".vp-ruimte,.vp-ruimtelabel")).forEach(function (n) {
+      n.classList.toggle("vp-actief", !!ruimte && n.dataset.ruimteId === ruimte.naam);
+    });
+    var lijn = svg.querySelector(".vp-koppellijn");
+    if (!lijn) return;
+    if (!ruimte) { lijn.classList.remove("vp-zichtbaar"); return; }
+    lijn.setAttribute("x1", x * 1000); lijn.setAttribute("y1", y * 750);
+    lijn.setAttribute("x2", ruimte.label[0] * 1000); lijn.setAttribute("y2", ruimte.label[1] * 750);
+    lijn.classList.add("vp-zichtbaar");
+  }
+
   function opslaan(verdieping) {
     return fetch("/project/" + encodeURIComponent(window.VP_TAG) + "/ventilatieplan/"
         + encodeURIComponent(verdieping.naam) + "/markers", {
@@ -87,11 +116,13 @@
   }
 
   function bindMarker(g, verdieping) {
-    var slepend = false, start = null, verplaatst = false, svg = g.ownerSVGElement;
+    var slepend = false, start = null, verplaatst = false, svg = g.ownerSVGElement, vorige = null;
     g.addEventListener("pointerdown", function (ev) {
       ev.preventDefault();
       slepend = true; verplaatst = false;
       start = { px: ev.clientX, py: ev.clientY };
+      var huidig = vindMarker(verdieping, g.dataset.id);
+      vorige = { x: huidig.x, y: huidig.y, ruimte_id: huidig.ruimte_id, bron: huidig.bron };
       g.setPointerCapture(ev.pointerId);
       g.classList.add("vp-dragging");
     });
@@ -100,11 +131,15 @@
       var dx = ev.clientX - start.px, dy = ev.clientY - start.py;
       if (Math.abs(dx) > SLEEP_DREMPEL_PX || Math.abs(dy) > SLEEP_DREMPEL_PX) verplaatst = true;
       if (!verplaatst) return;
+      if (!verdieping.heeft_ruimtegeometrie) return;
       var rect = svg.getBoundingClientRect();
       var x = Math.min(1, Math.max(0, (ev.clientX - rect.left) / rect.width));
       var y = Math.min(1, Math.max(0, (ev.clientY - rect.top) / rect.height));
       var m = vindMarker(verdieping, g.dataset.id);
       m.x = Math.round(x * 10000) / 10000; m.y = Math.round(y * 10000) / 10000; m.bron = "handmatig";
+      var ruimte = ruimteOpPunt(verdieping, m.x, m.y);
+      if (ruimte) m.ruimte_id = ruimte.naam;
+      sleepIndicatie(svg, ruimte, m.x, m.y);
       g.setAttribute("transform", "translate(" + (m.x * 1000) + " " + (m.y * 750) + ") rotate(" + (m.rotatie || 0) + ")");
     });
     g.addEventListener("pointerup", function (ev) {
@@ -113,7 +148,20 @@
       try { g.releasePointerCapture(ev.pointerId); } catch (e) {}
       var m = vindMarker(verdieping, g.dataset.id);
       if (verplaatst) {
-        opslaan(verdieping);
+        if (!verdieping.heeft_ruimtegeometrie) {
+          alert("Slepen kan pas nadat gemeten ruimtecontouren beschikbaar zijn.");
+          return;
+        }
+        var ruimte = ruimteOpPunt(verdieping, m.x, m.y);
+        sleepIndicatie(svg, null, 0, 0);
+        if (!ruimte) {
+          m.x = vorige.x; m.y = vorige.y; m.ruimte_id = vorige.ruimte_id; m.bron = vorige.bron;
+          teken(verdieping);
+          alert("Laat de marker binnen een gemeten ruimte los.");
+          return;
+        }
+        m.ruimte_id = ruimte.naam;
+        opslaan(verdieping).then(function (ok) { if (!ok) { Object.assign(m, vorige); teken(verdieping); } });
       } else {
         // geen beweging = klik -> 90 graden draaien
         m.rotatie = ((m.rotatie || 0) + 90) % 360; m.bron = "handmatig";
@@ -124,7 +172,7 @@
     g.addEventListener("dblclick", function (ev) {
       ev.preventDefault();
       var m = vindMarker(verdieping, g.dataset.id);
-      var antwoord = window.prompt("Nieuwe waarde in l/s (leeg = marker verwijderen):", m.waarde_ls.toFixed(1));
+      var antwoord = window.prompt("Nieuwe waarde in l/s. Splits met + (bijvoorbeeld 10+11); leeg verwijdert:", m.waarde_ls.toFixed(1));
       if (antwoord === null) return;                 // geannuleerd
       antwoord = antwoord.trim().replace(",", ".");
       if (antwoord === "") {
@@ -132,9 +180,17 @@
         teken(verdieping); opslaan(verdieping);
         return;
       }
-      var waarde = parseFloat(antwoord);
-      if (isNaN(waarde) || waarde < 0) { alert("Geen geldig getal."); return; }
-      m.waarde_ls = Math.round(waarde * 10) / 10; m.bron = "handmatig";
+      var delen = antwoord.split("+").map(function (deel) { return parseFloat(deel.trim()); });
+      if (delen.length > 2 || delen.some(function (waarde) { return isNaN(waarde) || waarde < 0; })) {
+        alert("Gebruik één waarde of twee waarden gescheiden door +."); return;
+      }
+      m.waarde_ls = Math.round(delen[0] * 10) / 10; m.bron = "handmatig";
+      if (delen.length === 2) {
+        verdieping.markers.push({ id: "s" + Date.now().toString(36), type: m.type,
+          ruimte_id: m.ruimte_id, waarde_ls: Math.round(delen[1] * 10) / 10,
+          x: m.x, y: m.y, rotatie: m.rotatie,
+          bron: "handmatig" });
+      }
       teken(verdieping); opslaan(verdieping);
     });
   }
@@ -146,7 +202,7 @@
     var waarde = type === "toevoer" ? (ruimte.toevoer || 7.0) : (type === "afvoer" ? (ruimte.afvoer || 7.0) : 0.0);
     var id = "n" + Date.now().toString(36) + Math.floor(Math.random() * 1000);
     verdieping.markers.push({ id: id, type: type, ruimte_id: ruimte.naam, waarde_ls: waarde,
-                              x: 0.5, y: 0.5, rotatie: 0, bron: "handmatig" });
+                              x: ruimte.label[0], y: ruimte.label[1], rotatie: 0, bron: "handmatig" });
     teken(verdieping); opslaan(verdieping);
   }
 
