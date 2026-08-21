@@ -51,17 +51,17 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
 - De rekenregels wijzigen. Die komen uit taak 019.
 
 ## Acceptance criteria
-- [ ] Markers verslepen, draaien, toevoegen, verwijderen en van waarde wijzigen werkt, en
+- [x] Markers verslepen, draaien, toevoegen, verwijderen en van waarde wijzigen werkt, en
       overleeft een herlaad van de pagina.
-- [ ] Coordinaten worden relatief (0..1) opgeslagen; de tekening klopt op een ander
+- [x] Coordinaten worden relatief (0..1) opgeslagen; de tekening klopt op een ander
       schermformaat en in de export.
-- [ ] Een marker zonder geldige `ruimte_id` wordt geweigerd, met een leesbare melding.
-- [ ] "Herstel" zet de automatische plaatsing terug zonder de handmatige waarden van andere
+- [x] Een marker zonder geldige `ruimte_id` wordt geweigerd, met een leesbare melding.
+- [x] "Herstel" zet de automatische plaatsing terug zonder de handmatige waarden van andere
       verdiepingen te raken.
-- [ ] Balans-pil en tabellen werken bij: waarde wijzigen leidt tot een nieuwe balansstatus.
-- [ ] Werkt zonder internet (VPS achter Caddy, geen CDN).
-- [ ] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] Balans-pil en tabellen werken bij: waarde wijzigen leidt tot een nieuwe balansstatus.
+- [x] Werkt zonder internet (VPS achter Caddy, geen CDN).
+- [x] `./scripts/verify.sh` slaagt.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 - 2026-08-21: Gebouwd op taak 019 (branch nog niet gemerged naar main — dependency, zie depends_on).
@@ -156,6 +156,10 @@ kaart met de melding dat er geen plattegrond is. Nooit een verzonnen vorm tekene
   blijven geaccepteerd. `_intern_punt` bleef conform plan ongemoeid: geen reproductie vereiste daar
   een wijziging. Blocking `scripts/verify.sh`: PASS, 957/957 tests groen. Taak blijft `active` tot
   onafhankelijke herreview PASS.
+- 2026-08-21: Vijfde onafhankelijke herreview op `0f1f755`: PASS zonder blockers. Alle eerdere
+  reproducties (deurbelastingrichting, concave C/U, self-touch/overlap, productiekalibratie,
+  topologie, keyboard/focus en design) gecontroleerd. `verify.sh` PASS, 957/957, geen advisories.
+  Taak naar `done` verplaatst.
 
 ## Notes
 Referentie met exacte schermteksten en gedrag: `docs/ventilatieplan-webapp-spec.md`, sectie 1.

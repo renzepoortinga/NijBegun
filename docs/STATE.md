@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 020 heropend na review)
+Bijgewerkt: 2026-08-21 door Codex (taak 020 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,11 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 020 (interactief ventilatieplan) is afgerond: ruimtepolygonen worden expliciet gekalibreerd,
+markers blijven ruimte- en verdiepingsgebonden, overstroom volgt pas na expliciete topologie en
+deurbelasting wordt correct getoetst. Pointer- en toetsenbordbediening, concave geometrie en strikte
+polygonvalidatie zijn gedekt. Vijf reviewrondes; eindverdict PASS, 957/957 groen.
 
 Taak 015 (mappingmanifest en MagicPlan-formulierfingerprint) is afgerond: zes kritieke
 dropdownketens verwijzen naar de echte parser/webapp/Vabi-code en naar een gereviewd
