@@ -4899,6 +4899,11 @@ try:
     check("auto_markers: coördinaten relatief (0..1)",
           all(0.0 <= m.x <= 1.0 and 0.0 <= m.y <= 1.0 for m in _autoAE))
     check("auto_markers: bron='auto' op elke gegenereerde marker", all(m.bron == "auto" for m in _autoAE))
+    _ruimtes_geoAE = [_RAE(naam="Geo", functie="slaapkamer", oppervlakte_m2=10,
+                            contour_relatief=[[.2,.2],[.6,.2],[.6,.6],[.2,.6]])]
+    _auto_geoAE = _vp.auto_markers(_ruimtes_geoAE, _vbalAE(_vbAE(_ruimtes_geoAE))["rows"])
+    check("auto_markers: met echte ruimtegeometrie starten alle markers binnen de gekoppelde ruimte",
+          all(_vp.punt_in_polygoon(m.x, m.y, _ruimtes_geoAE[0].contour_relatief) for m in _auto_geoAE))
     _bk_marker = next(m for m in _autoAE if m.ruimte_id == "Badkamer")
     check("auto_markers: afvoerwaarde komt uit afvoer_advies_ls (na balansverdeling), niet het kale minimum",
           _bk_marker.waarde_ls == next(r for r in _resAE["rows"] if r["naam"] == "Badkamer")["afvoer_advies_ls"]

@@ -100,26 +100,32 @@ def auto_markers(ruimtes, res_rows):
     toevoer_namen = [r.naam for r in ruimtes if (by_naam.get(r.naam) or {}).get("toevoer")]
     afvoer_namen = [r.naam for r in ruimtes if (by_naam.get(r.naam) or {}).get("afvoerpunt")]
     markers = []
+    ruimte_by_naam = {r.naam: r for r in ruimtes}
     n_t = len(toevoer_namen)
     for i, naam in enumerate(toevoer_namen):
         rij = by_naam[naam]
+        midden = polygoon_middelpunt(ruimte_by_naam[naam].contour_relatief)
+        x_t, y_t = (midden if ruimte_by_naam[naam].contour_relatief
+                    else [0.06, round((i + 1) / (n_t + 1), 3)])
         markers.append(VentilatieMarker(
             id="t%d" % (i + 1), type="toevoer", ruimte_id=naam,
-            waarde_ls=rij.get("toevoer", 0.0), x=0.06, y=round((i + 1) / (n_t + 1), 3),
+            waarde_ls=rij.get("toevoer", 0.0), x=x_t, y=y_t,
             rotatie=90, bron="auto"))
         markers.append(VentilatieMarker(
             id="o%d" % (i + 1), type="overstroom", ruimte_id=naam,
-            waarde_ls=rij.get("toevoer", 0.0), x=0.14,
-            y=round((i + 1) / (n_t + 1), 3), rotatie=90, bron="auto"))
+            waarde_ls=rij.get("toevoer", 0.0), x=x_t, y=y_t, rotatie=90, bron="auto"))
     n_a = len(afvoer_namen)
     for i, naam in enumerate(afvoer_namen):
         rij = by_naam[naam]
+        midden = polygoon_middelpunt(ruimte_by_naam[naam].contour_relatief)
+        x_a, y_a = (midden if ruimte_by_naam[naam].contour_relatief
+                    else [0.5, round((i + 1) / (n_a + 1), 3)])
         waarde = rij.get("afvoer_advies_ls")
         if waarde is None:
             waarde = rij.get("afvoer", 0.0)
         markers.append(VentilatieMarker(
             id="a%d" % (i + 1), type="afvoer", ruimte_id=naam, waarde_ls=waarde,
-            x=0.5, y=round((i + 1) / (n_a + 1), 3), rotatie=0, bron="auto"))
+            x=x_a, y=y_a, rotatie=0, bron="auto"))
     return markers
 
 
