@@ -28,7 +28,7 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
 - [x] De vastgelegde complete referentiefixture resulteert in exact de vooraf benoemde resttaken en dakcontrole.
 - [x] Offline dry-run dekt de volledige merge.
 - [x] `./scripts/verify.sh` slaagt.
-- [ ] AI-review PASS door een andere agent dan de bouwer.
+- [x] AI-review PASS door een andere agent dan de bouwer.
 
 ## Sessions
 
@@ -77,6 +77,10 @@ Een adviseur laat een compleet MagicPlan-project met minimale handelingen in een
   `[[0,0],[1e308,0],[1e308,4e-307],[0,4e-307]]` wordt nu geweigerd, terwijl een normale langwerpige
   40×1 m-contour met dezelfde 40 m² expliciet geaccepteerd blijft. Blocking `verify.sh`: PASS,
   998/998 groen.
+- 2026-08-21 Codex Reviewer/Manager: vijfde herreview op `3caf976`: PASS zonder blockers.
+  Identiteit, merged preview, ZIP/schema, token/CAS/concurrency, rollback en metrische geometrie
+  inclusief extreme-conditionering gecontroleerd. `verify.sh` PASS, 998/998, geen advisories.
+  Taak naar `done` verplaatst.
 
 ## Notes
 Afhankelijk van dakmigratie en een stabiel mappingmanifest.

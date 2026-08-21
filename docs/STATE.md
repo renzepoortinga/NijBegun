@@ -3,7 +3,7 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 023 afgerond)
+Bijgewerkt: 2026-08-21 door Codex (taak 016 afgerond)
 
 ## Nu
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
@@ -15,6 +15,11 @@ dashboard. De volledige suite is omgevingsonafhankelijk en de Python-testcheck i
 
 ## Actief
 Zie `tasks/active/`. Draai `./scripts/status.sh` voor het actuele beeld.
+
+Taak 016 (veilige one-click MagicPlan-intake) is afgerond: pakketten krijgen identiteit- en
+fingerprintgates, een hashgebonden merged preview en een per-project CAS-bevestiging. Herimport
+behoudt expliciet handmatig werk/resultaten; ZIP, schema en metrische geometrie zijn fail-closed.
+Vijf reviewrondes; eindverdict PASS, 998/998 groen.
 
 Taak 020 (interactief ventilatieplan) is afgerond: ruimtepolygonen worden expliciet gekalibreerd,
 markers blijven ruimte- en verdiepingsgebonden, overstroom volgt pas na expliciete topologie en
