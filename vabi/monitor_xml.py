@@ -41,12 +41,19 @@ def parse(path):
     # (die installaties meeweegt); val terug op die laatste bij oudere exports zonder
     # NettoWarmtebehoefte. Zie vabi/result_reader.py voor dezelfde afweging.
     _nwb = txt(summary, "NettoWarmtebehoefte", float)
+    _eb_fallback = txt(summary, "IndicatorEnergiebehoefte", float)
+    if _nwb is not None:
+        _indicator_type_huidig = "NettoWarmtebehoefte"
+    elif _eb_fallback is not None:
+        _indicator_type_huidig = "IndicatorEnergiebehoefte"
+    else:
+        _indicator_type_huidig = ""   # geen van beide aanwezig -- geen fallback om te claimen
     dos.berekening = Berekening(
-        kwh_m2_huidig=_nwb if _nwb is not None else txt(summary, "IndicatorEnergiebehoefte", float),
+        kwh_m2_huidig=_nwb if _nwb is not None else _eb_fallback,
         standaard_eis_kwh_m2=txt(summary, "Standaard", float),
         label_huidig=txt(summary, "Labelklasse") or "",
         bron="Vabi EPA-W (NTA8800) monitoringbestand",
-        indicator_type_huidig="NettoWarmtebehoefte" if _nwb is not None else "IndicatorEnergiebehoefte")
+        indicator_type_huidig=_indicator_type_huidig)
     schil = []
     for cd in root.iter():
         if L(cd) != "Constructiedeel": continue

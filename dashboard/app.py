@@ -195,7 +195,9 @@ def _verdict(res_or_dos, is_dossier=False):
         # de echte NettoWarmtebehoefte was. Legacy dossiers (indicator_type_huidig == "") of dossiers
         # die op de fallback-indicator rusten geven "niet te bepalen" (None), nooit een gegokt oordeel.
         is_nwb = b.indicator_type_huidig == "NettoWarmtebehoefte"
-        v = (eb is not None and std and eb <= std) if is_nwb else None
+        # Expliciete bool of None -- nooit een leftover None/0 uit een kortgesloten and-keten
+        # (die "voldoet" ongemerkt een niet-boolean sentinel liet zijn bij ontbrekende Standaard).
+        v = (eb <= std) if (is_nwb and eb is not None and std) else None
         return {"label": b.label_huidig or "—", "behoefte": eb, "standaard": std,
                 "behoefte_label": "netto warmtebehoefte" if is_nwb else "warmtebehoefte",
                 "indicator_type": b.indicator_type_huidig,

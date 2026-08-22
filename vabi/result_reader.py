@@ -56,7 +56,14 @@ def read_results(path):
     std = _num(out.get("Standaard"))
     out["_toetswaarde"] = eb
     out["_toetswaarde_bron"] = "NettoWarmtebehoefte" if nwb is not None else "IndicatorEnergiebehoefte (fallback)"
-    out["_indicator_type"] = "NettoWarmtebehoefte" if nwb is not None else "IndicatorEnergiebehoefte"
+    # Provenance mag nooit "IndicatorEnergiebehoefte" claimen als die ZELF ook ontbreekt -- anders
+    # suggereert het een fallback die niet heeft plaatsgevonden (audit-vervolgbevinding, Codex-review).
+    if nwb is not None:
+        out["_indicator_type"] = "NettoWarmtebehoefte"
+    elif eb is not None:
+        out["_indicator_type"] = "IndicatorEnergiebehoefte"
+    else:
+        out["_indicator_type"] = None
     # Fail-closed: een "voldoet"-oordeel mag alleen op de echte NettoWarmtebehoefte rusten. Bij de
     # IndicatorEnergiebehoefte-fallback (of ontbrekende Standaard) is het oordeel "niet te bepalen"
     # (None) -- nooit stilzwijgend rood (False) en nooit een verkeerd-maar-groen oordeel.

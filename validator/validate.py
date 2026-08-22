@@ -69,6 +69,12 @@ def validate(dos, catalog_codes=None):
         add(WARN, "Standaard-eis (kWh/m2.jr) ontbreekt - bereken in Vabi EPA-W")
     if ber.kwh_m2_na_maatregelen is None:
         add(WARN, "Warmteverlies NA maatregelen ontbreekt - herbereken in Vabi EPA-W")
+    elif ber.indicator_type_na != "NettoWarmtebehoefte":
+        # Fail-closed: kwh_m2_na_maatregelen kan de IndicatorEnergiebehoefte-fallback zijn (of een
+        # legacy/ongetypeerd dossier) -- die overschat de warmtevraag (installaties tellen mee) en
+        # mag NOOIT tot een BLOKKEREND "haalt de norm niet" leiden. Zie taak 028/Codex-review.
+        add(WARN, "Warmteverlies NA maatregelen is niet vastgelegd als NettoWarmtebehoefte "
+            "(mogelijk oudere/bredere indicator) - doeltreffendheid niet te bepalen, herimporteer in Vabi EPA-W")
     elif ber.standaard_eis_kwh_m2 is not None and ber.kwh_m2_na_maatregelen > ber.standaard_eis_kwh_m2:
         add(BLOCKER, "Doeltreffendheid: na maatregelen (%.1f) > Standaard (%.1f) - haalt de norm NIET"
             % (ber.kwh_m2_na_maatregelen, ber.standaard_eis_kwh_m2))

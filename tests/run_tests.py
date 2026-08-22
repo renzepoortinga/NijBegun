@@ -514,6 +514,70 @@ if _tag19:
 else:
     check("na-maatregelen-upload persisteert kwh_m2_na_maatregelen (kon testproject niet aanmaken)", False)
 
+# Codex-onafhankelijke-review-bevindingen (22-8-2026) op taak 028, alle drie verwerkt:
+
+# (1) provenance mag geen fallback claimen als OOK IndicatorEnergiebehoefte ontbreekt
+_mon3 = os.path.join(_tf.gettempdir(), "test_summary_monitor_geen_indicator.xml")
+open(_mon3, "w", encoding="utf-8").write(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<tns:Energieprestatie xmlns:tns="http://schemas.ep-online.nl/monitoringbestand">'
+    '<Summary><Labelklasse>C</Labelklasse><Standaard>80</Standaard></Summary></tns:Energieprestatie>')
+_rres3 = _rr(_mon3)
+check("result_reader: _indicator_type is None wanneer GEEN van beide indicatoren aanwezig is "
+      "(geen valse fallback-claim, Codex-review taak 028)",
+      _rres3.get("_indicator_type") is None and _rres3.get("_toetswaarde") is None
+      and _rres3.get("_voldoet_aan_standaard") is None)
+_dos_geen, _ = _mxparse(_mon3)
+check("monitor_xml.parse(): indicator_type_huidig='' wanneer geen van beide indicatoren aanwezig is",
+      _dos_geen.berekening.indicator_type_huidig == "")
+
+# (2) dossierpad: NWB getypeerd maar Standaard ontbreekt/0 -> voldoet moet EXPLICIET None zijn,
+# nooit een kortgesloten None/0 uit de and-keten (Codex-review taak 028)
+_dos19b = _Dos19()
+_dos19b.berekening = _Ber19(kwh_m2_huidig=60.0, standaard_eis_kwh_m2=None,
+                            indicator_type_huidig="NettoWarmtebehoefte")
+check("dashboard._verdict(is_dossier=True): echte NWB maar ontbrekende Standaard -> voldoet is None",
+      _WA19._verdict(_dos19b, is_dossier=True)["voldoet"] is None)
+_dos19b.berekening.standaard_eis_kwh_m2 = 0.0
+check("dashboard._verdict(is_dossier=True): echte NWB maar Standaard=0 -> voldoet is None (niet 0)",
+      _WA19._verdict(_dos19b, is_dossier=True)["voldoet"] is None)
+
+# (3) KWACO-validator moet fail-closed zijn op indicator_type_na: een fallback-waarde boven de
+# Standaard mag NOOIT een BLOKKEREND "haalt de norm niet" geven (Codex-review taak 028)
+from core.dossier import Dossier as _DosV28
+_dosV28 = _DosV28()
+_dosV28.berekening.standaard_eis_kwh_m2 = 80.0
+_dosV28.berekening.kwh_m2_na_maatregelen = 120.0          # ruim boven de Standaard
+_dosV28.berekening.indicator_type_na = "IndicatorEnergiebehoefte"   # fallback, GEEN echte NWB
+_issuesV28, _ = validate(_dosV28)
+check("validate(): fallback-indicator_type_na boven de Standaard geeft WARN, geen BLOKKEREND",
+      not any(sev == "BLOKKEREND" and "haalt de norm" in msg for sev, msg in _issuesV28)
+      and any(sev == "WAARSCHUWING" and "niet vastgelegd als NettoWarmtebehoefte" in msg for sev, msg in _issuesV28))
+_dosV28.berekening.indicator_type_na = "NettoWarmtebehoefte"       # nu een ECHTE NWB boven de Standaard
+_issuesV28b, _ = validate(_dosV28)
+check("validate(): echte NettoWarmtebehoefte boven de Standaard geeft nog steeds BLOKKEREND (regressie)",
+      any(sev == "BLOKKEREND" and "haalt de norm" in msg for sev, msg in _issuesV28b))
+
+# (4) /vabi-upload met een fallback-export (geen NettoWarmtebehoefte): dossier krijgt indicator_type_na
+# != NettoWarmtebehoefte, en validate() daarop geeft WARN, geen BLOKKEREND (ontbrekende dekking laten
+# zien die Codex meldde)
+_r19fb = _c19.post("/nieuw", data={"straat": "Testlaan Fallback 1", "postcode": "9999FB", "plaats": "Teststad"},
+                   follow_redirects=False)
+_tag19fb = (_r19fb.headers.get("Location", "").rstrip("/").split("/")[-2]
+            if _r19fb.status_code in (302, 303) else "")
+if _tag19fb:
+    with open(_mon, "rb") as _fh19fb:   # _mon = alleen IndicatorEnergiebehoefte, geen NWB
+        _c19.post("/project/%s/vabi" % _tag19fb, data={"export": (_fh19fb, "vabi_na_fallback.xml")},
+                  content_type="multipart/form-data", follow_redirects=False)
+    _dos19fb = _WA19._dossier(_tag19fb)
+    check("/vabi-upload zonder NettoWarmtebehoefte: indicator_type_na != NettoWarmtebehoefte",
+          _dos19fb is not None and _dos19fb.berekening.indicator_type_na != "NettoWarmtebehoefte"
+          and _dos19fb.berekening.kwh_m2_na_maatregelen == 118.45)
+    check("KWACO-validate() op zo'n dossier: geen BLOKKEREND op doeltreffendheid",
+          not any(sev == "BLOKKEREND" and "haalt de norm" in msg for sev, msg in validate(_dos19fb)[0]))
+else:
+    check("/vabi-upload zonder NettoWarmtebehoefte (kon testproject niet aanmaken)", False)
+
 print("20. Maatregel-advies met begeleidende tekst")
 from engine.advies_text import genereer_advies as _gadv
 from core.dossier import Maatregel as _Mt

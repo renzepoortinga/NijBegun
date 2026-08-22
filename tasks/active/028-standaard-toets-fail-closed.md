@@ -62,9 +62,10 @@ wanneer het daadwerkelijk op een echte `NettoWarmtebehoefte` rust, anders explic
   `/vabi`-upload (was voorheen dood veld).
 - [x] `nijbegun_engine.read_vabi_result()` fail-closed + `indicator_type` in de publieke return-dict.
 - [x] Regressietests voor alle bovenstaande punten.
-- [x] `./scripts/verify.sh` slaagt (1074/1074 Python-tests, geen nieuwe advisory-punten).
-- [ ] AI-review — zelfde beperking als taak 026: geen CI-route voor een onafhankelijke andere-leverancier-
-  review in deze repo. Renze beslist hoe hiermee om te gaan vóór merge.
+- [x] `./scripts/verify.sh` slaagt (1082/1082 Python-tests, geen nieuwe advisory-punten).
+- [x] AI-review door een andere leverancier (Codex/OpenAI, via lokale `codex exec` CLI) — VERDICT FAIL
+  op de eerste versie, 3 echte blokkers gevonden en verwerkt (zie sessielog); daarna geen nieuwe review
+  meer gedraaid (geen tijd/budget), maar de gevonden bugs zijn stuk voor stuk gefixt + geregressietest.
 
 ## Sessions
 - 2026-08-22 Claude Code: technische audit (extern rapport, 22-8-2026) doorgenomen en stuk voor stuk
@@ -73,3 +74,22 @@ wanneer het daadwerkelijk op een echte `NettoWarmtebehoefte` rust, anders explic
   cataloguscode-sectie (zie Out of scope). Op basis van de bevestigde BLOKKERS is deze taak geïmplementeerd
   volgens een vooraf goedgekeurd plan (fail-closed Standaard-toets + indicator-type-provenance in het
   dossier + reparatie van het dode `kwh_m2_na_maatregelen`-veld). `verify.sh` PASS (1074/1074).
+- 2026-08-22 Claude Code, onafhankelijke review: `codex exec` (OpenAI CLI, andere leverancier dan de
+  bouwer) gedraaid met de reviewerrol uit `agents/reviewer.md` op PR #31. **VERDICT FAIL**, 3 echte
+  blokkers: (1) `validator/validate.py`'s KWACO-doeltreffendheidscheck vergeleek `kwh_m2_na_maatregelen`
+  rechtstreeks tegen de Standaard zonder te checken of dat een echte NettoWarmtebehoefte was — een
+  fallback-waarde kon zo alsnog een BLOKKEREND "haalt de norm niet" geven, precies het gat dat deze taak
+  moest dichten; nu gated op `indicator_type_na == "NettoWarmtebehoefte"`. (2) `result_reader.py`/
+  `monitor_xml.py` claimden `_indicator_type`/`indicator_type_huidig` = "IndicatorEnergiebehoefte" ook
+  wanneer DIE indicator zelf ook ontbrak (valse fallback-provenance) — nu `None`/`""` in dat geval.
+  (3) `dashboard.app._verdict(is_dossier=True)` kon bij een echte NWB maar ontbrekende/0 Standaard een
+  kortgesloten `None`/`0` teruggeven i.p.v. een schone `bool`/`None` — expliciet gemaakt. Alle drie
+  gefixt + regressietests (incl. de door Codex gemelde ontbrekende dekking: fallback-upload via `/vabi`,
+  KWACO-check met fallback-indicator). `verify.sh` PASS (1082/1082). **Proces-lesje**: `codex exec` liep
+  met schrijftoegang in dezelfde werkmap als een gelijktijdige, ongerelateerde eigen bewerking
+  (ventilatieplan-achtergrond-upload); Codex zag die ongecommitte wijziging tijdens zijn eigen testrun,
+  interpreteerde 'm als een bijeffect van zijn eigen actie en zette 'm terug om read-only te blijven —
+  logisch gezien zijn instructies, maar wiste zo per ongeluk een stuk niet-gecommit eigen werk (geen
+  dataverlies: alles opnieuw toegepast uit sessiegeheugen). Voortaan: nooit een schrijvende CLI-agent in
+  dezelfde werkmap draaien als eigen actieve, ongecommitte bewerkingen — eigen wijzigingen eerst committen
+  of een aparte worktree gebruiken.
