@@ -83,14 +83,19 @@ def begeleidende_tekst(m):
 def _staat_regel(resultaat, label):
     if not resultaat:
         return None
-    eb = resultaat.get("IndicatorEnergiebehoefte")
+    eb = resultaat.get("_toetswaarde") or resultaat.get("NettoWarmtebehoefte") or resultaat.get("IndicatorEnergiebehoefte")
+    # het label moet kloppen met wat eb daadwerkelijk is: alleen "netto warmtebehoefte" noemen als
+    # dat ook echt de bron is, anders (fallback / oude resultaat-dict zonder _toetswaarde_bron) de
+    # brede indicator niet stilzwijgend een verkeerd label geven.
+    eb_bron = resultaat.get("_toetswaarde_bron", "")
+    eb_label = "energiebehoefte" if "fallback" in eb_bron or (not eb_bron and resultaat.get("IndicatorEnergiebehoefte") and not resultaat.get("NettoWarmtebehoefte")) else "netto warmtebehoefte"
     std = resultaat.get("Standaard")
     lab = resultaat.get("Labelklasse")
     parts = []
     if lab:
         parts.append("energielabel %s" % lab)
     if eb:
-        parts.append("energiebehoefte %s kWh/m2.jr" % eb)
+        parts.append("%s %s kWh/m2.jr" % (eb_label, eb))
     if std:
         parts.append("Standaard-eis %s kWh/m2.jr" % std)
     return "%s: %s." % (label, ", ".join(parts)) if parts else None
