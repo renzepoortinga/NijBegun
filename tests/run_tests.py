@@ -5633,6 +5633,30 @@ try:
     check("herstel-route: de 1e verdieping is ongemoeid gebleven",
           next(v for v in _dAF6.ventilatieplan.verdiepingen if v.naam != _bg_naam).markers == _v_1e_voor.markers)
 
+    # achtergrond-uploadroute (kleine, veilige aanvulling naast de volledige plattegrond-vision-
+    # import, die weigert op een project met bestaande geometrie): alleen de referentieafbeelding
+    # zetten, geen geometrie-/ruimtemutatie.
+    _bioBgAF = _ioAF.BytesIO(); _ImageAF.new("RGB", (4, 4), (10, 20, 30)).save(_bioBgAF, format="PNG")
+    _rBgAF = _cAF.post("/project/%s/ventilatieplan/achtergrond" % _tagAF,
+                       data={"verdieping": _bg_naam, "achtergrond": (_ioAF.BytesIO(_bioBgAF.getvalue()), "bg.png")},
+                       content_type="multipart/form-data", follow_redirects=True)
+    _dBgAF = _WAF._dossier(_tagAF)
+    _vloerBgAF = next(v for v in _dBgAF.geometrie.vloeren if v.naam == _bg_naam)
+    check("ventilatieplan-achtergrond: upload zet plattegrond_afbeelding op de juiste vloer",
+          _rBgAF.status_code == 200 and _vloerBgAF.plattegrond_afbeelding
+          and _vloerBgAF.plattegrond_afbeelding.startswith("ventilatieplan_achtergrond/"))
+    check("ventilatieplan-achtergrond: bestand staat daadwerkelijk in de projectmap",
+          os.path.isfile(os.path.join(_WAF._pdir(_tagAF), _vloerBgAF.plattegrond_afbeelding)))
+    check("ventilatieplan-achtergrond: geen ruimte-/markergeometrie aangeraakt",
+          next(v for v in _dBgAF.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers
+          == next(v for v in _dAF6.ventilatieplan.verdiepingen if v.naam == _bg_naam).markers)
+    _rBgFoutAF = _cAF.post("/project/%s/ventilatieplan/achtergrond" % _tagAF,
+                           data={"verdieping": "Kelder (bestaat niet)",
+                                 "achtergrond": (_ioAF.BytesIO(_bioBgAF.getvalue()), "bg2.png")},
+                           content_type="multipart/form-data", follow_redirects=True)
+    check("ventilatieplan-achtergrond: onbekende verdieping wordt geweigerd (geen 500, nette flash)",
+          _rBgFoutAF.status_code == 200 and "Onbekende verdieping" in _rBgFoutAF.get_data(as_text=True))
+
     _shAF.rmtree(_WAF._pdir(_tagAF), ignore_errors=True)
 except Exception as _e:
     check("ventilatieplan-route (taak 020): draait zonder fout", False); print("     " + repr(_e)[:250])
