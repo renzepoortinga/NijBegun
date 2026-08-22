@@ -130,9 +130,15 @@ def read_vabi_result(vabi_export: Any) -> dict:
         vabi_export: Path to the EPA monitoring XML, or its contents as a string/bytes.
 
     Returns a dict with at least:
-        energiebehoefte  – float (kWh/m2.jr) or None
+        energiebehoefte  – float (kWh/m2.jr) or None. Despite the name, this is the NettoWarmtebehoefte
+                            (schil-only) when available; only falls back to the broader
+                            IndicatorEnergiebehoefte (which also weighs installations) for older exports
+                            that lack NettoWarmtebehoefte — check indicator_type to tell which.
         standaard        – float (kWh/m2.jr) or None
-        voldoet          – bool or None
+        indicator_type   – "NettoWarmtebehoefte" | "IndicatorEnergiebehoefte" | None
+        voldoet          – bool or None. Fail-closed: None ("not determinable") whenever
+                            indicator_type != "NettoWarmtebehoefte", never a guessed pass/fail on the
+                            broader fallback indicator.
         labelklasse      – str or None
         raw              – full parsed dict
     """
@@ -152,14 +158,17 @@ def read_vabi_result(vabi_export: Any) -> dict:
     else:
         raw = read_results(str(vabi_export))
 
-    # result_reader.read_results() heeft de NettoWarmtebehoefte/IndicatorEnergiebehoefte-keuze al
-    # gemaakt (_toetswaarde); hergebruik die i.p.v. de fallback-regel hier te dupliceren.
+    # result_reader.read_results() heeft de NettoWarmtebehoefte/IndicatorEnergiebehoefte-keuze én het
+    # fail-closed "voldoet"-oordeel al gemaakt (_toetswaarde/_voldoet_aan_standaard) -- hergebruik die
+    # i.p.v. hier zelf opnieuw eb<=std te berekenen (dat zou het fail-closed gedrag omzeilen: bij een
+    # fallback-waarde zou het weer een keihard boolean opleveren i.p.v. "niet te bepalen").
     eb = raw.get("_toetswaarde")
     st = raw.get("Standaard")
     return {
         "energiebehoefte": float(eb) if eb is not None else None,
         "standaard": float(st) if st is not None else None,
-        "voldoet": (float(eb) <= float(st)) if (eb is not None and st is not None) else None,
+        "indicator_type": raw.get("_indicator_type"),
+        "voldoet": raw.get("_voldoet_aan_standaard"),
         "labelklasse": raw.get("Labelklasse"),
         "raw": raw,
     }

@@ -191,19 +191,24 @@ def _verdict(res_or_dos, is_dossier=False):
     if is_dossier:
         b = res_or_dos.berekening
         eb, std = b.kwh_m2_huidig, b.standaard_eis_kwh_m2
-        v = (eb is not None and std and eb <= std)
-        # dossier.berekening bewaart niet welke VABI-indicator kwh_m2_huidig voedde (Netto
-        # WarmteBehoefte of de fallback) -> neutraal label, geen "netto" claimen dat niet klopt.
+        # Fail-closed: alleen een groen/rood oordeel wanneer het dossier zelf vastlegt dat kwh_m2_huidig
+        # de echte NettoWarmtebehoefte was. Legacy dossiers (indicator_type_huidig == "") of dossiers
+        # die op de fallback-indicator rusten geven "niet te bepalen" (None), nooit een gegokt oordeel.
+        is_nwb = b.indicator_type_huidig == "NettoWarmtebehoefte"
+        v = (eb is not None and std and eb <= std) if is_nwb else None
         return {"label": b.label_huidig or "—", "behoefte": eb, "standaard": std,
-                "behoefte_label": "warmtebehoefte",
-                "voldoet": bool(v), "marge": (round(std - eb, 1) if (eb is not None and std) else None)}
+                "behoefte_label": "netto warmtebehoefte" if is_nwb else "warmtebehoefte",
+                "indicator_type": b.indicator_type_huidig,
+                "voldoet": v, "marge": (round(std - eb, 1) if (is_nwb and eb is not None and std) else None)}
     r = res_or_dos
     eb = r.get("_toetswaarde")   # netto warmtebehoefte (schil); fallback: IndicatorEnergiebehoefte
     std = float(r["Standaard"]) if r.get("Standaard") else None
     behoefte_label = "energiebehoefte" if "fallback" in (r.get("_toetswaarde_bron") or "") else "netto warmtebehoefte"
     return {"label": r.get("Labelklasse", "—"), "behoefte": eb, "standaard": std,
             "behoefte_label": behoefte_label,
-            "voldoet": bool(r.get("_voldoet_aan_standaard")), "marge": r.get("_marge_kwh_m2")}
+            "indicator_type": r.get("_indicator_type"),
+            # geen bool()! een expliciete None ("niet te bepalen") mag niet stilzwijgend rood worden.
+            "voldoet": r.get("_voldoet_aan_standaard"), "marge": r.get("_marge_kwh_m2")}
 
 
 # ---------------- toekomstige staat (maatregelen toepassen op de schil) ----------------
@@ -370,10 +375,10 @@ HUIDIG = """{{stepper|safe}}<h1>Huidige staat — nulmeting</h1>
 <p class=lead>Je hebt de opname in Vabi ingelezen en doorgerekend. <b>Exporteer de woning uit Vabi</b> en laad die
 hier terug — de webapp leest het huidige energielabel en of de woning de Standaard al haalt.</p>
 {% if h and h.behoefte is not none %}
-<div class="verdict {{ 'ok' if h.voldoet else 'no' }}"><span class=ico>{{ '✅' if h.voldoet else '🎯' }}</span>
+<div class="verdict {{ 'ok' if h.voldoet else 'no' }}"><span class=ico>{{ '✅' if h.voldoet else ('❓' if h.voldoet is none else '🎯') }}</span>
 <div><b>Huidige staat — label {{h.label}}</b><br>
 <span class=muted>{{h.behoefte_label}} {{h.behoefte}} vs Standaard {{h.standaard if h.standaard is not none else '—'}} kWh/m²·jr
-{% if h.voldoet %}→ voldoet al{% elif h.marge is not none %}→ {{h.marge}} kWh/m²·jr te overbruggen met maatregelen{% endif %}</span></div></div>
+{% if h.voldoet %}→ voldoet al{% elif h.voldoet is none %}→ niet te bepalen (geen NettoWarmtebehoefte vastgelegd — herbereken in Vabi){% elif h.marge is not none %}→ {{h.marge}} kWh/m²·jr te overbruggen met maatregelen{% endif %}</span></div></div>
 {% else %}
 <div class=hint>Nog geen VABI-export ingeladen. Upload hieronder de export van de <b>huidige</b> woning uit Vabi (het monitoring-/resultatenbestand). <b>Vabi blijft de rekenkern.</b></div>
 {% endif %}
@@ -689,9 +694,9 @@ VABI = """{{stepper|safe}}<h1>VABI-toets met maatregelen</h1>
 <form method=post enctype=multipart/form-data>
 <div class=file-drop>VABI-export ná maatregelen (.xml)<br><input type=file name=export accept=".xml" required></div>
 <div class=btn-row><button class=btn>Standaard toetsen →</button></div></form>
-{% if na %}<div class="verdict {{ 'ok' if na.voldoet else 'no' }}" style="margin-top:16px"><span class=ico>{{ '✅' if na.voldoet else '⚠️' }}</span>
-<div><b>{{ 'Voldoet aan de Standaard!' if na.voldoet else 'Voldoet nog niet' }}</b><br>
-<span class=muted>{{na.behoefte_label}} {{na.behoefte}} vs Standaard {{na.standaard}} kWh/m²·jr{% if na.marge is not none %} · marge {{na.marge}}{% endif %}</span></div></div>
+{% if na %}<div class="verdict {{ 'ok' if na.voldoet else 'no' }}" style="margin-top:16px"><span class=ico>{{ '✅' if na.voldoet else ('❓' if na.voldoet is none else '⚠️') }}</span>
+<div><b>{{ 'Voldoet aan de Standaard!' if na.voldoet else ('Niet te bepalen' if na.voldoet is none else 'Voldoet nog niet') }}</b><br>
+<span class=muted>{{na.behoefte_label}} {{na.behoefte}} vs Standaard {{na.standaard}} kWh/m²·jr{% if na.marge is not none %} · marge {{na.marge}}{% endif %}{% if na.voldoet is none %} — geen NettoWarmtebehoefte vastgelegd in deze export, herbereken in Vabi{% endif %}</span></div></div>
 {% if na.voldoet %}<div class=btn-row><a class="btn lg green" href="{{url_for('afronden', tag=tag)}}">Afronden →</a></div>
 {% else %}<div class=btn-row><a class="btn sec" href="{{url_for('maatregelen', tag=tag)}}">← pakket uitbreiden</a></div>{% endif %}{% endif %}</div>"""
 
@@ -1267,6 +1272,7 @@ def huidig(tag):
                     b.label_huidig = st["huidig"].get("label") or b.label_huidig
                     b.kwh_m2_huidig = st["huidig"].get("behoefte")
                     b.standaard_eis_kwh_m2 = st["huidig"].get("standaard")
+                    b.indicator_type_huidig = st["huidig"].get("indicator_type") or ""
                     save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
                 except Exception:
                     pass
@@ -2702,6 +2708,16 @@ def vabi(tag):
             ex.save(p)
             try:
                 st["na"] = _verdict(read_results(p))
+                # ook in het dossier zetten (voor validator/validate.py's KWACO-check en het
+                # isolatieplan-Word-template V1-V6, die kwh_m2_na_maatregelen al verwachten maar
+                # tot nu toe nooit gevuld kregen)
+                try:
+                    b = dos.berekening
+                    b.kwh_m2_na_maatregelen = st["na"].get("behoefte")
+                    b.indicator_type_na = st["na"].get("indicator_type") or ""
+                    save_json(dos, os.path.join(_pdir(tag), st["dossier_file"]))
+                except Exception:
+                    pass
             except Exception as e:
                 flash("Kon de VABI-export niet lezen: %s" % e)
             if st.get("na", {}).get("voldoet"):

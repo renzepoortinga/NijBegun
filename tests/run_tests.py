@@ -438,8 +438,11 @@ open(_mon, "w", encoding="utf-8").write(
     '<Standaard>91</Standaard></Summary></tns:Energieprestatie>')
 _rres = _rr(_mon)
 check("result_reader leest Summary", _rres.get("Labelklasse") == "B" and _rres.get("Standaard") == "91")
-check("result_reader Standaard-toets fallback op IndicatorEnergiebehoefte zonder NettoWarmtebehoefte",
-      _rres.get("_voldoet_aan_standaard") is False and _rres.get("_toetswaarde") == 118.45)
+check("result_reader Standaard-toets fail-closed: fallback op IndicatorEnergiebehoefte geeft 'niet te "
+      "bepalen' (None), nooit een gegokt groen/rood oordeel (audit 22-8-2026)",
+      _rres.get("_voldoet_aan_standaard") is None and _rres.get("_marge_kwh_m2") is None
+      and _rres.get("_toetswaarde") == 118.45
+      and _rres.get("_indicator_type") == "IndicatorEnergiebehoefte")
 
 _mon2 = os.path.join(_tf.gettempdir(), "test_summary_monitor_nwb.xml")
 open(_mon2, "w", encoding="utf-8").write(
@@ -452,7 +455,64 @@ open(_mon2, "w", encoding="utf-8").write(
 _rres2 = _rr(_mon2)
 check("result_reader Standaard-toets gebruikt NettoWarmtebehoefte i.p.v. IndicatorEnergiebehoefte "
       "(regressie 21-8-2026: 9502CS_26 toonde 'voldoet niet' op 101.25 terwijl 77.99<=84 voldoet)",
-      _rres2.get("_toetswaarde") == 77.99 and _rres2.get("_voldoet_aan_standaard") is True)
+      _rres2.get("_toetswaarde") == 77.99 and _rres2.get("_voldoet_aan_standaard") is True
+      and _rres2.get("_indicator_type") == "NettoWarmtebehoefte")
+
+# monitor_xml.parse() zet indicator_type_huidig conform dezelfde NWB/fallback-keuze
+from vabi.monitor_xml import parse as _mxparse
+_dos_nwb, _ = _mxparse(_mon2)
+check("monitor_xml.parse() zet indicator_type_huidig=NettoWarmtebehoefte wanneer aanwezig",
+      _dos_nwb.berekening.indicator_type_huidig == "NettoWarmtebehoefte"
+      and _dos_nwb.berekening.kwh_m2_huidig == 77.99)
+_dos_fb, _ = _mxparse(_mon)
+check("monitor_xml.parse() zet indicator_type_huidig=IndicatorEnergiebehoefte bij fallback",
+      _dos_fb.berekening.indicator_type_huidig == "IndicatorEnergiebehoefte"
+      and _dos_fb.berekening.kwh_m2_huidig == 118.45)
+
+# dashboard.app._verdict(is_dossier=True) fail-closed op indicator_type_huidig
+import dashboard.app as _WA19
+from core.dossier import Dossier as _Dos19, Berekening as _Ber19
+_dos19 = _Dos19()
+_dos19.berekening = _Ber19(kwh_m2_huidig=77.99, standaard_eis_kwh_m2=84.0, label_huidig="A")  # legacy: geen indicator_type
+_v19_legacy = _WA19._verdict(_dos19, is_dossier=True)
+check("dashboard._verdict(is_dossier=True) fail-closed: legacy dossier zonder indicator_type_huidig "
+      "geeft 'niet te bepalen', ook al is het getal toevallig <= Standaard",
+      _v19_legacy["voldoet"] is None)
+_dos19.berekening.indicator_type_huidig = "NettoWarmtebehoefte"
+_v19_nwb = _WA19._verdict(_dos19, is_dossier=True)
+check("dashboard._verdict(is_dossier=True) geeft normale boolean wanneer indicator_type_huidig="
+      "NettoWarmtebehoefte", _v19_nwb["voldoet"] is True)
+
+# nijbegun_engine publieke API: fail-closed + indicator_type
+from nijbegun_engine import read_vabi_result as _nbe_rvr
+_nbe_fb = _nbe_rvr(_mon)
+check("nijbegun_engine.read_vabi_result() fail-closed bij fallback: voldoet=None, indicator_type aanwezig",
+      _nbe_fb["voldoet"] is None and _nbe_fb["indicator_type"] == "IndicatorEnergiebehoefte")
+_nbe_nwb = _nbe_rvr(_mon2)
+check("nijbegun_engine.read_vabi_result() normale boolean bij echte NettoWarmtebehoefte",
+      _nbe_nwb["voldoet"] is True and _nbe_nwb["indicator_type"] == "NettoWarmtebehoefte"
+      and _nbe_nwb["energiebehoefte"] == 77.99)
+
+# /project/<tag>/vabi persisteert kwh_m2_na_maatregelen + indicator_type_na in het dossier
+# (was voorheen dood: nergens gezet, dus validator/validate.py meldde altijd "ontbreekt")
+_c19 = _WA19.app.test_client()
+with _c19.session_transaction() as _sess19:
+    _sess19["ingelogd"] = True
+_r19new = _c19.post("/nieuw", data={"straat": "Testlaan 1", "postcode": "9999ZZ", "plaats": "Teststad"},
+                    follow_redirects=False)
+_tag19 = (_r19new.headers.get("Location", "").rstrip("/").split("/")[-2]
+          if _r19new.status_code in (302, 303) else "")
+if _tag19:
+    with open(_mon2, "rb") as _fh19:
+        _c19.post("/project/%s/vabi" % _tag19, data={"export": (_fh19, "vabi_na.xml")},
+                  content_type="multipart/form-data", follow_redirects=False)
+    _dos19_after = _WA19._dossier(_tag19)
+    check("na-maatregelen-upload persisteert kwh_m2_na_maatregelen + indicator_type_na in dossier",
+          _dos19_after is not None
+          and _dos19_after.berekening.kwh_m2_na_maatregelen == 77.99
+          and _dos19_after.berekening.indicator_type_na == "NettoWarmtebehoefte")
+else:
+    check("na-maatregelen-upload persisteert kwh_m2_na_maatregelen (kon testproject niet aanmaken)", False)
 
 print("20. Maatregel-advies met begeleidende tekst")
 from engine.advies_text import genereer_advies as _gadv

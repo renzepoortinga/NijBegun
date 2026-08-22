@@ -45,7 +45,8 @@ def parse(path):
         kwh_m2_huidig=_nwb if _nwb is not None else txt(summary, "IndicatorEnergiebehoefte", float),
         standaard_eis_kwh_m2=txt(summary, "Standaard", float),
         label_huidig=txt(summary, "Labelklasse") or "",
-        bron="Vabi EPA-W (NTA8800) monitoringbestand")
+        bron="Vabi EPA-W (NTA8800) monitoringbestand",
+        indicator_type_huidig="NettoWarmtebehoefte" if _nwb is not None else "IndicatorEnergiebehoefte")
     schil = []
     for cd in root.iter():
         if L(cd) != "Constructiedeel": continue
