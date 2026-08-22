@@ -44,6 +44,28 @@ teruggeeft.
 - [ ] `./scripts/verify.sh` slaagt.
 - [ ] AI-review PASS door een andere leverancier dan de bouwer.
 
+## Status voor de volgende sessie (22-8-2026)
+**Nog open, niet gemerged, niet gedeployed.** PR #28 (https://github.com/renzepoortinga/NijBegun/pull/28)
+staat OPEN, de `verify`-Actions-check is groen, maar de `ai-review`-Actions-check is GEEN echte review
+— de workflowlog toont letterlijk `ANTHROPIC_API_KEY ontbreekt — AI-review overgeslagen`. Er is dus nog
+GEEN onafhankelijke review geweest (mijn eigen `/code-review high` in-sessie hieronder is dezelfde
+leverancier en telt niet als de vereiste onafhankelijke review).
+
+Live op de VPS (production) draait nog de OUDE code: bevestigd 22-8-2026 op project 9502CS_26 — de
+VABI-toets-pagina toont "Netto warmtebehoefte (met maatregelen) 101,25". Het label zelf was al goed
+(stond al zo in de bestaande template, dat verwarde me eerst), maar het GETAL erachter is nog fout —
+moet 77,99 zijn (uit `NettoWarmtebehoefte` in de eigen VABI-export van de gebruiker). Bevestigt dat de
+bug reëel en nog live/ongefixt is voor de gebruiker.
+
+**Volgende stappen voor wie dit oppakt:**
+1. Onafhankelijke review regelen op PR #28 (andere leverancier dan Claude/Anthropic — Codex/OpenAI is
+   in dit project de gangbare route, zie eerdere taken se `agents/reviewer.md`).
+2. Na PASS: mergen naar `main` (niet zelf `--admin` forceren).
+3. VPS deployen: `ssh renzepoortinga@37.97.195.196 "cd /opt/nijbegun && git pull && sudo docker compose -f deploy/docker-compose.yml up -d --build"`.
+4. Live op project 9502CS_26 verifiëren (https://nijbegun.poortinga-energieadvies.nl/project/9502CS_26/vabi):
+   moet 77,99 vs 84,0 tonen -> "voldoet".
+5. Taak naar `tasks/done/` verplaatsen + `docs/STATE.md` bijwerken.
+
 ## Sessions
 - 2026-08-21 Claude Code: bug gevonden tijdens live vergelijking van project 9502CS_26 in de webapp
   vs SOBOLT (browser-automatisering), bevestigd met de ruwe VABI-XML van de gebruiker. Fix
