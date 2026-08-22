@@ -11,9 +11,12 @@ Belangrijkste velden (uit Summary):
   - IndicatorPrimaireFossieleEnergie, TOjuliNTA8800, Compactheid, Gebruiksoppervlakte, Verliesoppervlakte
 
 Nij Begun-toets (M29, schil-only):  netto warmtebehoefte <= Standaard  ->  voldoet aan de Standaard.
-(Ontbreekt NettoWarmtebehoefte in het exportbestand -- oudere Vabi-versie -- dan valt de toets terug op
-IndicatorEnergiebehoefte, maar dat overschat de warmtevraag omdat het ook installaties meeweegt; zie
-docs/nta8800-analyse-vs-tool.md en de vergelijking met SOBOLT die dit blootlegde, 21-8-2026.)
+(Ontbreekt NettoWarmtebehoefte in het exportbestand -- oudere Vabi-versie -- dan toont de tool die
+export nog wel informatief via IndicatorEnergiebehoefte (_toetswaarde/_toetswaarde_bron), maar het
+groen/rood-oordeel zelf (_voldoet_aan_standaard) is dan FAIL-CLOSED: None ("niet te bepalen"), nooit
+een vervangend oordeel op de bredere indicator -- die overschat de warmtevraag omdat hij ook
+installaties meeweegt. Zie docs/nta8800-analyse-vs-tool.md en de vergelijking met SOBOLT die dit
+blootlegde, 21-8-2026, en de audit van 22-8-2026 die het fail-closed-gat blootlegde.)
 
     python vabi/result_reader.py --monitor "9503HN-23-- (monitor).xml"
 """
@@ -53,9 +56,22 @@ def read_results(path):
     std = _num(out.get("Standaard"))
     out["_toetswaarde"] = eb
     out["_toetswaarde_bron"] = "NettoWarmtebehoefte" if nwb is not None else "IndicatorEnergiebehoefte (fallback)"
-    if eb is not None and std is not None and std > 0:
-        out["_voldoet_aan_standaard"] = eb <= std
-        out["_marge_kwh_m2"] = round(std - eb, 2)   # >0 = ruimte tot Standaard
+    # Provenance mag nooit "IndicatorEnergiebehoefte" claimen als die ZELF ook ontbreekt -- anders
+    # suggereert het een fallback die niet heeft plaatsgevonden (audit-vervolgbevinding, Codex-review).
+    if nwb is not None:
+        out["_indicator_type"] = "NettoWarmtebehoefte"
+    elif eb is not None:
+        out["_indicator_type"] = "IndicatorEnergiebehoefte"
+    else:
+        out["_indicator_type"] = None
+    # Fail-closed: een "voldoet"-oordeel mag alleen op de echte NettoWarmtebehoefte rusten. Bij de
+    # IndicatorEnergiebehoefte-fallback (of ontbrekende Standaard) is het oordeel "niet te bepalen"
+    # (None) -- nooit stilzwijgend rood (False) en nooit een verkeerd-maar-groen oordeel.
+    out["_voldoet_aan_standaard"] = None
+    out["_marge_kwh_m2"] = None
+    if nwb is not None and std is not None and std > 0:
+        out["_voldoet_aan_standaard"] = nwb <= std
+        out["_marge_kwh_m2"] = round(std - nwb, 2)   # >0 = ruimte tot Standaard
     return out
 
 
@@ -68,7 +84,10 @@ def main():
     for k in KERN:
         if k in r:
             print("  %-32s = %s" % (k, r[k]))
-    if "_voldoet_aan_standaard" in r:
+    if r.get("_voldoet_aan_standaard") is None:
+        print("\n  Standaard-toets: niet te bepalen (%s, geen NettoWarmtebehoefte of Standaard-eis)" %
+              r.get("_toetswaarde_bron", "?"))
+    elif "_voldoet_aan_standaard" in r:
         status = "VOLDOET" if r["_voldoet_aan_standaard"] else "VOLDOET NIET"
         print("\n  Standaard-toets: %s %.2f vs Standaard %.2f -> %s (marge %s kWh/m2.jr)" % (
             r["_toetswaarde_bron"], r["_toetswaarde"], _num(r["Standaard"]), status, r["_marge_kwh_m2"]))

@@ -296,6 +296,11 @@ class Berekening:
     kwh_m2_na_maatregelen: Optional[float] = None
     label_huidig: str = ""
     bron: str = "Vabi EPA-W (NTA8800)"
+    # Welke VABI-indicator kwh_m2_huidig/kwh_m2_na_maatregelen voedde: "NettoWarmtebehoefte" |
+    # "IndicatorEnergiebehoefte" | "" (onbekend/legacy dossier). Een "voldoet aan de Standaard"-oordeel
+    # mag alleen groen/rood zijn wanneer dit exact "NettoWarmtebehoefte" is -- anders "niet te bepalen".
+    indicator_type_huidig: str = ""
+    indicator_type_na: str = ""
 
 @dataclass
 class Subpost:
