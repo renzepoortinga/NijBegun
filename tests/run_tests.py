@@ -438,7 +438,21 @@ open(_mon, "w", encoding="utf-8").write(
     '<Standaard>91</Standaard></Summary></tns:Energieprestatie>')
 _rres = _rr(_mon)
 check("result_reader leest Summary", _rres.get("Labelklasse") == "B" and _rres.get("Standaard") == "91")
-check("result_reader Standaard-toets (voldoet niet bij 118>91)", _rres.get("_voldoet_aan_standaard") is False)
+check("result_reader Standaard-toets fallback op IndicatorEnergiebehoefte zonder NettoWarmtebehoefte",
+      _rres.get("_voldoet_aan_standaard") is False and _rres.get("_toetswaarde") == 118.45)
+
+_mon2 = os.path.join(_tf.gettempdir(), "test_summary_monitor_nwb.xml")
+open(_mon2, "w", encoding="utf-8").write(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<tns:Energieprestatie xmlns:tns="http://schemas.ep-online.nl/monitoringbestand">'
+    '<Summary><Labelklasse>A</Labelklasse>'
+    '<IndicatorEnergiebehoefte>101.25</IndicatorEnergiebehoefte>'
+    '<NettoWarmtebehoefte>77.99</NettoWarmtebehoefte>'
+    '<Standaard>84</Standaard></Summary></tns:Energieprestatie>')
+_rres2 = _rr(_mon2)
+check("result_reader Standaard-toets gebruikt NettoWarmtebehoefte i.p.v. IndicatorEnergiebehoefte "
+      "(regressie 21-8-2026: 9502CS_26 toonde 'voldoet niet' op 101.25 terwijl 77.99<=84 voldoet)",
+      _rres2.get("_toetswaarde") == 77.99 and _rres2.get("_voldoet_aan_standaard") is True)
 
 print("20. Maatregel-advies met begeleidende tekst")
 from engine.advies_text import genereer_advies as _gadv

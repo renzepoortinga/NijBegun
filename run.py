@@ -126,7 +126,7 @@ def main():
         fh.write("Adres: %s %s, %s %s | bouwjaar %s | %s\n" % (
             dos.identificatie.straat, dos.identificatie.huisnummer, dos.identificatie.postcode,
             dos.identificatie.plaats, dos.identificatie.bouwjaar, dos.identificatie.woningtype))
-        fh.write("Label (huidig): %s | energiebehoefte: %s | Standaard-eis: %s kWh/m2.jr\n" % (
+        fh.write("Label (huidig): %s | warmtebehoefte (schil): %s | Standaard-eis: %s kWh/m2.jr\n" % (
             dos.berekening.label_huidig, dos.berekening.kwh_m2_huidig, dos.berekening.standaard_eis_kwh_m2))
         fh.write("\nMaatregelen (catalogus, laagste kosten per vlak):\n")
         for m in dos.maatregelen:

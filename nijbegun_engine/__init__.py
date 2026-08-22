@@ -152,7 +152,9 @@ def read_vabi_result(vabi_export: Any) -> dict:
     else:
         raw = read_results(str(vabi_export))
 
-    eb = raw.get("IndicatorEnergiebehoefte")
+    # result_reader.read_results() heeft de NettoWarmtebehoefte/IndicatorEnergiebehoefte-keuze al
+    # gemaakt (_toetswaarde); hergebruik die i.p.v. de fallback-regel hier te dupliceren.
+    eb = raw.get("_toetswaarde")
     st = raw.get("Standaard")
     return {
         "energiebehoefte": float(eb) if eb is not None else None,
