@@ -2310,8 +2310,13 @@ veranderen niet mee; ze zijn het uitgangspunt waarmee de tekening is voorgevuld.
 <a class="btn sec" href="{{url_for('ventilatieplan_png', tag=tag, verdieping=v.naam)}}">Download plan (PNG)</a>
 <button type=button class="btn sec vp-herstel" data-verdieping="{{v.naam}}">Herstel</button>
 </div>
-<details class=vp-instellen><summary>Ruimtecontouren kalibreren</summary>
+<details class=vp-instellen{% if v.achtergrond_soort == 'geen' %} open{% endif %}><summary>Ruimtecontouren kalibreren</summary>
 <p class="muted small">Kies een ruimte, klik minimaal drie punten op de bestaande plattegrond en sla op. De preview is pas definitief na opslaan.</p>
+{% if v.achtergrond_soort == 'geen' %}<form method=post action="{{url_for('ventilatieplan_achtergrond', tag=tag)}}" enctype=multipart/form-data class=btn-row style="margin-bottom:8px">
+<input type=hidden name=verdieping value="{{v.naam}}">
+<input type=file name=achtergrond accept="image/png,image/jpeg" required>
+<button class="btn sec">Achtergrond uploaden</button></form>
+<p class="muted small">Geen plattegrond? Upload hier een foto/scan als referentie om op te klikken — dit past géén geometrie of ruimtematen aan, alleen de achtergrondafbeelding.</p>{% endif %}
 <div class=btn-row><select class=vp-kalibratie-ruimte data-verdieping="{{v.naam}}">{% for r in v.ruimtes %}<option value="{{r.naam}}">{{r.naam}}</option>{% endfor %}</select>
 <button type=button class="btn sec vp-kalibratie-start" data-verdieping="{{v.naam}}">Contour tekenen</button>
 <button type=button class="btn sec vp-kalibratie-wis" data-verdieping="{{v.naam}}">Punten wissen</button>
@@ -2421,6 +2426,42 @@ def ventilatieplan_pagina(tag):
     return page(VENTILATIEPLAN_TMPL, stepper=stepper("opname", st), tag=tag, st=st, d=dos,
                 res=res, balans=balans, toets=toets, verdiepingen_json=verdiepingen_json,
                 marker_types=vp_mod.MARKER_TYPES)
+
+
+@app.route("/project/<tag>/ventilatieplan/achtergrond", methods=["POST"])
+@login_required
+def ventilatieplan_achtergrond(tag):
+    """Alleen een REFERENTIEAFBEELDING achter een verdieping zetten (geen AI, geen geometrie-
+    mutatie) zodat 'Ruimtecontouren kalibreren' iets heeft om op te klikken. Voor projecten met
+    bestaande opname-geometrie werkt de volledige plattegrond-importvisionflow niet (die weigert
+    bewust een niet-lege opname te overschrijven) — dit is de kleine, veilige aanvulling daarop."""
+    st, dos = _load_state(tag), _dossier(tag)
+    if not st or not dos:
+        abort(404)
+    verdieping = (request.form.get("verdieping") or "").strip()
+    fp = request.files.get("achtergrond")
+    vloer = next((v for v in dos.geometrie.vloeren if v.naam == verdieping), None)
+    if not vloer:
+        flash("Onbekende verdieping.")
+    elif not fp or not fp.filename:
+        flash("Geen afbeelding gekozen.")
+    else:
+        try:
+            data = fp.read(pi_mod.MAX_AFBEELDING_BYTES + 1)
+            media = pi_mod.valideer_afbeeldingsbytes(fp.filename, data)
+            ext = ".png" if media == "image/png" else ".jpg"
+            root = os.path.join(_pdir(tag), "ventilatieplan_achtergrond")
+            os.makedirs(root, exist_ok=True)
+            slug = re.sub(r"[^a-z0-9]+", "-", verdieping.lower()).strip("-") or "vloer"
+            bestand = "%s%s" % (slug, ext)
+            with open(os.path.join(root, bestand), "wb") as fh:
+                fh.write(data)
+            vloer.plattegrond_afbeelding = "ventilatieplan_achtergrond/" + bestand
+            _dos_save(tag, st, dos)
+            flash("Achtergrond opgeslagen voor %s." % verdieping)
+        except pi_mod.PlattegrondImportFout as exc:
+            flash(str(exc))
+    return redirect(url_for("ventilatieplan_pagina", tag=tag))
 
 
 def _vp_export_scene(tag, st, dos):
