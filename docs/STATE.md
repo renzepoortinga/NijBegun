@@ -3,9 +3,17 @@
 > Dit is een overzicht, geen administratie. De taken zelf staan in `tasks/`.
 > Houd dit kort: als het langer wordt dan één scherm, hoort iets in een taakbestand.
 
-Bijgewerkt: 2026-08-21 door Codex (taak 016 afgerond)
+Bijgewerkt: 2026-08-22 door Claude Code (taak 026 gebouwd, wacht op review+deploy)
 
 ## Nu
+**Taak 026** (Standaard-toets vergelijkt de verkeerde VABI-indicator — `IndicatorEnergiebehoefte`
+i.p.v. `NettoWarmtebehoefte`) staat in `tasks/active/`, PR #28 open, `verify.sh` PASS, maar de
+CI-`ai-review`-check is GEEN echte review (secret ontbreekt in Actions) — een onafhankelijke review
+door een andere leverancier dan Claude/Anthropic staat nog open, dan mergen + VPS-deploy. Live op de
+VPS draait nu nog de oude, foute waarde (zie taakbestand voor het volledige handoff-plan).
+**Taak 027** (documenten/foto-upload per categorie, SOBOLT-vergelijking) staat in `tasks/backlog/` —
+nog niet besproken/opgestart.
+
 De keten werkt end-to-end: MagicPlan-opname → canoniek dossier → alle drie
 VABI-bibliotheken (foutloos importeerbaar in EPA 12.0.1) → isolatieplan
 (Word/PDF) + ventilatie + fotochecklist + KWACO-validatie, met een lokaal
